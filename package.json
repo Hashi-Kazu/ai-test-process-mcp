@@ -1,0 +1,30 @@
+{
+  "name": "ai-test-process-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MCP server providing AI-assisted test process tools, starting with ISO/IEC/IEEE 29119-3 conformant test plan draft generation.",
+  "bin": {
+    "ai-test-process-mcp": "dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.22.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

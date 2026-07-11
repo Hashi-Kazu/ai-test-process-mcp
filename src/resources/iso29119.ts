@@ -1,0 +1,115 @@
+import type { Iso29119TestPlanStructure } from "../types.js";
+
+// Section purposes are paraphrased summaries of ISO/IEC/IEEE 29119-3:2013 clause 4.2
+// (Test Plan document), not verbatim standard text.
+export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
+  standard: "ISO/IEC/IEEE 29119-3:2013",
+  documentType: "Test Plan",
+  sections: [
+    {
+      id: "introduction",
+      title: "Introduction",
+      standardRef: "§4.2.1",
+      description: "Purpose, background, and references for the test plan.",
+      requiredFields: ["purpose", "background", "references"],
+    },
+    {
+      id: "test-items",
+      title: "Test Items",
+      standardRef: "§4.2.2",
+      description: "The items (software, systems, features) that are the object of testing.",
+      requiredFields: ["itemsUnderTest", "versionOrRelease"],
+    },
+    {
+      id: "features-to-be-tested",
+      title: "Features to be Tested",
+      standardRef: "§4.2.3",
+      description: "Features or functions that are within scope of the testing effort.",
+      requiredFields: ["featureList"],
+    },
+    {
+      id: "features-not-to-be-tested",
+      title: "Features Not to be Tested",
+      standardRef: "§4.2.4",
+      description: "Features or functions explicitly excluded from testing, with rationale.",
+      requiredFields: ["excludedFeatureList", "exclusionRationale"],
+    },
+    {
+      id: "approach",
+      title: "Test Approach",
+      standardRef: "§4.2.5",
+      description: "The overall testing strategy, techniques, and levels to be applied.",
+      requiredFields: ["testLevels", "testTypes", "testTechniques"],
+    },
+    {
+      id: "item-pass-fail-criteria",
+      title: "Item Pass/Fail Criteria",
+      standardRef: "§4.2.6",
+      description: "Criteria used to determine whether a test item has passed or failed testing.",
+      requiredFields: ["passCriteria", "failCriteria"],
+    },
+    {
+      id: "suspension-resumption-criteria",
+      title: "Suspension and Resumption Criteria",
+      standardRef: "§4.2.7",
+      description: "Conditions that would cause testing to be suspended, and conditions for resuming.",
+      requiredFields: ["suspensionCriteria", "resumptionCriteria"],
+    },
+    {
+      id: "test-deliverables",
+      title: "Test Deliverables",
+      standardRef: "§4.2.8",
+      description: "Documents and artifacts produced as output of the testing process.",
+      requiredFields: ["deliverableList"],
+    },
+    {
+      id: "testing-tasks",
+      title: "Testing Tasks",
+      standardRef: "§4.2.9",
+      description: "The set of tasks necessary to prepare for and perform testing.",
+      requiredFields: ["taskList", "taskDependencies"],
+    },
+    {
+      id: "environmental-needs",
+      title: "Environmental Needs",
+      standardRef: "§4.2.10",
+      description: "Hardware, software, data, tools, and facilities required for testing.",
+      requiredFields: ["hardware", "software", "testData", "tools"],
+    },
+    {
+      id: "responsibilities",
+      title: "Responsibilities",
+      standardRef: "§4.2.11",
+      description: "Roles and responsibilities of individuals or groups involved in testing.",
+      requiredFields: ["roleAssignments"],
+    },
+    {
+      id: "staffing-and-training-needs",
+      title: "Staffing and Training Needs",
+      standardRef: "§4.2.12",
+      description: "Staffing requirements and any training needed to carry out the test tasks.",
+      requiredFields: ["staffingNeeds", "trainingNeeds"],
+    },
+    {
+      id: "schedule",
+      title: "Schedule",
+      standardRef: "§4.2.13",
+      description: "Key dates, milestones, and duration estimates for testing tasks.",
+      requiredFields: ["startDate", "endDate", "milestones"],
+    },
+    {
+      id: "risks-and-contingencies",
+      title: "Risks and Contingencies",
+      standardRef: "§4.2.14",
+      description: "Risks that could affect the testing effort, along with mitigation/contingency plans.",
+      requiredFields: ["riskList"],
+    },
+    {
+      id: "approvals",
+      title: "Approvals",
+      standardRef: "§4.2.15",
+      description: "Names and roles of people who must approve the test plan.",
+      requiredFields: ["approverList"],
+    },
+  ],
+};
