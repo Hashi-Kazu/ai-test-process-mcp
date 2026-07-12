@@ -55,6 +55,27 @@ npx @modelcontextprotocol/inspector --cli node dist/server.js --method tools/cal
 }
 ```
 
+npm公開後は、リポジトリをローカルにcloneしなくても `npx` 経由で起動できる（`.vscode/mcp.json` の例）。
+
+```json
+{
+  "servers": {
+    "ai-test-process-mcp": {
+      "command": "npx",
+      "args": ["-y", "ai-test-process-mcp"]
+    }
+  }
+}
+```
+
+## 公開手順（メンテナ向け）
+
+1. `npm login`（npmjs.comのアカウントで認証）
+2. `npm run build`（`npm publish` 実行時は `prepublishOnly` フックにより自動実行されるため、手動実行は任意）
+3. `npm publish`
+
+公開後の接続方式（stdio）は変わらない。MCPレジストリ（`server.json` / `mcp-publisher`）への登録は本手順の対象外で、将来の別タスクとして扱う。
+
 ## 将来機能の追加方法
 
 新しい機能（テスト設計・レビュー・品質ゲート・テストメトリクス・改善提案）を追加する際は、以下のパターンに従う：

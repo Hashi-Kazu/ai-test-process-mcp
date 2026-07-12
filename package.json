@@ -1,9 +1,24 @@
 {
   "name": "ai-test-process-mcp",
-  "private": true,
   "version": "0.1.0",
   "type": "module",
   "description": "MCP server providing AI-assisted test process tools, starting with ISO/IEC/IEEE 29119-3 conformant test plan draft generation.",
+  "license": "MIT",
+  "author": "Hashi_Kazu <outsider.prs.0721@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hashi-Kazu/ai-test-process-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "test-plan",
+    "iso29119",
+    "testing"
+  ],
+  "files": [
+    "dist"
+  ],
   "bin": {
     "ai-test-process-mcp": "dist/server.js"
   },
@@ -12,7 +27,8 @@
     "dev": "tsc --watch",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/server.js"
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/server.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
