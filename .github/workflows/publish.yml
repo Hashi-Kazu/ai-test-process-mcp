@@ -1,0 +1,55 @@
+name: Publish to npm
+
+# package.json の version が更新され、その版が npm に未公開のときだけ publish する。
+# main への push（package.json を含む変更）で起動し、既に公開済みの版なら何もしない（冪等）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check whether this version is already published
+        id: check
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION は公開済みのため publish をスキップします。"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$NAME@$VERSION は未公開のため publish します。"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.check.outputs.publish == 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.check.outputs.publish }}" = "true" ]; then
+            echo "✅ published ${{ steps.check.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⏭️ skipped: ${{ steps.check.outputs.version }} は既に公開済み" >> "$GITHUB_STEP_SUMMARY"
+          fi
