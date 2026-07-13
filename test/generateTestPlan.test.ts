@@ -1,29 +1,59 @@
 import { describe, expect, it } from "vitest";
 import { renderTestPlan } from "../src/tools/generateTestPlan.js";
-import { iso29119TestPlanStructure } from "../src/resources/iso29119.js";
+import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
 import type { TestPlanInput } from "../src/types.js";
 
 describe("renderTestPlan", () => {
-  it("includes all 15 ISO 29119 section headings", () => {
+  it("includes every QUINTEE template section heading with the correct level", () => {
     const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
     const markdown = renderTestPlan(input);
 
-    expect(iso29119TestPlanStructure.sections).toHaveLength(15);
-    iso29119TestPlanStructure.sections.forEach((section, index) => {
-      expect(markdown).toContain(`## ${index + 1}. ${section.title}`);
-    });
+    for (const section of testPlanTemplate.sections) {
+      const prefix = section.level === 1 ? "##" : "###";
+      expect(markdown).toContain(`${prefix} ${section.no} ${section.titleJa}`);
+    }
   });
 
-  it("marks omitted optional fields as TBD when only required fields are provided", () => {
+  it("renders the document title and revision history", () => {
     const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
     const markdown = renderTestPlan(input);
 
-    expect(markdown).toContain("_TBD — not provided by caller_");
-    expect(markdown).toContain("# Test Plan: Sample");
-    expect(markdown).toContain(iso29119TestPlanStructure.standard);
+    expect(markdown).toContain("# テスト計画書: Sample");
+    expect(markdown).toContain("## 改訂履歴");
+    expect(markdown).toContain(testPlanTemplate.templateName);
   });
 
-  it("interpolates provided fields instead of TBD", () => {
+  it("marks omitted optional fields as 未記入 and required fields as 未記入（必須）", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
+    const markdown = renderTestPlan(input);
+
+    expect(markdown).toContain("_未記入_");
+    expect(markdown).toContain("_未記入（必須）_");
+  });
+
+  it("always outputs fixed boilerplate references regardless of input", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
+    const markdown = renderTestPlan(input);
+
+    expect(markdown).toContain("移植性テスト");
+    expect(markdown).toContain("ランクA");
+    expect(markdown).toContain("インシデント曲線");
+    expect(markdown).toContain("OK");
+  });
+
+  it("marks selected test types with 〇 in the test type catalog", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Login and checkout flows",
+      selectedTestTypes: ["機能テスト", "性能テスト"],
+    };
+    const markdown = renderTestPlan(input);
+
+    expect(markdown).toContain("| 〇 | 機能テスト |");
+    expect(markdown).toContain("| 〇 | 性能テスト |");
+  });
+
+  it("interpolates provided fields instead of 未記入", () => {
     const input: TestPlanInput = {
       projectName: "Full Project",
       scope: "Full scope",
@@ -42,6 +72,12 @@ describe("renderTestPlan", () => {
       passFailCriteria: "All critical test cases pass",
       suspensionCriteria: "Blocker defect in checkout",
       approvers: ["QA Manager"],
+      testLevels: ["System test"],
+      testPeriod: "2026-08-01 - 2026-08-31",
+      completionCriteria: ["All planned cases executed"],
+      stakeholders: [{ role: "Product Owner", name: "Bob" }],
+      glossary: [{ term: "SUT", definition: "System Under Test" }],
+      notes: "Special handling for payment gateway",
     };
 
     const markdown = renderTestPlan(input);
@@ -58,5 +94,10 @@ describe("renderTestPlan", () => {
     expect(markdown).toContain("All critical test cases pass");
     expect(markdown).toContain("Blocker defect in checkout");
     expect(markdown).toContain("QA Manager");
+    expect(markdown).toContain("System test");
+    expect(markdown).toContain("All planned cases executed");
+    expect(markdown).toContain("Product Owner");
+    expect(markdown).toContain("SUT");
+    expect(markdown).toContain("Special handling for payment gateway");
   });
 });

@@ -9,6 +9,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "introduction",
       title: "Introduction",
+      titleJa: "はじめに",
       standardRef: "§4.2.1",
       description: "Purpose, background, and references for the test plan.",
       requiredFields: ["purpose", "background", "references"],
@@ -16,6 +17,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "test-items",
       title: "Test Items",
+      titleJa: "テスト対象",
       standardRef: "§4.2.2",
       description: "The items (software, systems, features) that are the object of testing.",
       requiredFields: ["itemsUnderTest", "versionOrRelease"],
@@ -23,6 +25,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "features-to-be-tested",
       title: "Features to be Tested",
+      titleJa: "テスト対象機能",
       standardRef: "§4.2.3",
       description: "Features or functions that are within scope of the testing effort.",
       requiredFields: ["featureList"],
@@ -30,6 +33,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "features-not-to-be-tested",
       title: "Features Not to be Tested",
+      titleJa: "テスト対象外機能",
       standardRef: "§4.2.4",
       description: "Features or functions explicitly excluded from testing, with rationale.",
       requiredFields: ["excludedFeatureList", "exclusionRationale"],
@@ -37,6 +41,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "approach",
       title: "Test Approach",
+      titleJa: "テスト方針",
       standardRef: "§4.2.5",
       description: "The overall testing strategy, techniques, and levels to be applied.",
       requiredFields: ["testLevels", "testTypes", "testTechniques"],
@@ -44,6 +49,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "item-pass-fail-criteria",
       title: "Item Pass/Fail Criteria",
+      titleJa: "合否基準",
       standardRef: "§4.2.6",
       description: "Criteria used to determine whether a test item has passed or failed testing.",
       requiredFields: ["passCriteria", "failCriteria"],
@@ -51,6 +57,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "suspension-resumption-criteria",
       title: "Suspension and Resumption Criteria",
+      titleJa: "中断・再開基準",
       standardRef: "§4.2.7",
       description: "Conditions that would cause testing to be suspended, and conditions for resuming.",
       requiredFields: ["suspensionCriteria", "resumptionCriteria"],
@@ -58,6 +65,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "test-deliverables",
       title: "Test Deliverables",
+      titleJa: "成果物",
       standardRef: "§4.2.8",
       description: "Documents and artifacts produced as output of the testing process.",
       requiredFields: ["deliverableList"],
@@ -65,6 +73,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "testing-tasks",
       title: "Testing Tasks",
+      titleJa: "テスト作業",
       standardRef: "§4.2.9",
       description: "The set of tasks necessary to prepare for and perform testing.",
       requiredFields: ["taskList", "taskDependencies"],
@@ -72,6 +81,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "environmental-needs",
       title: "Environmental Needs",
+      titleJa: "環境",
       standardRef: "§4.2.10",
       description: "Hardware, software, data, tools, and facilities required for testing.",
       requiredFields: ["hardware", "software", "testData", "tools"],
@@ -79,6 +89,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "responsibilities",
       title: "Responsibilities",
+      titleJa: "責任分担",
       standardRef: "§4.2.11",
       description: "Roles and responsibilities of individuals or groups involved in testing.",
       requiredFields: ["roleAssignments"],
@@ -86,6 +97,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "staffing-and-training-needs",
       title: "Staffing and Training Needs",
+      titleJa: "要員・教育",
       standardRef: "§4.2.12",
       description: "Staffing requirements and any training needed to carry out the test tasks.",
       requiredFields: ["staffingNeeds", "trainingNeeds"],
@@ -93,6 +105,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "schedule",
       title: "Schedule",
+      titleJa: "スケジュール",
       standardRef: "§4.2.13",
       description: "Key dates, milestones, and duration estimates for testing tasks.",
       requiredFields: ["startDate", "endDate", "milestones"],
@@ -100,6 +113,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "risks-and-contingencies",
       title: "Risks and Contingencies",
+      titleJa: "リスク・対策",
       standardRef: "§4.2.14",
       description: "Risks that could affect the testing effort, along with mitigation/contingency plans.",
       requiredFields: ["riskList"],
@@ -107,6 +121,7 @@ export const iso29119TestPlanStructure: Iso29119TestPlanStructure = {
     {
       id: "approvals",
       title: "Approvals",
+      titleJa: "承認",
       standardRef: "§4.2.15",
       description: "Names and roles of people who must approve the test plan.",
       requiredFields: ["approverList"],

@@ -2,7 +2,7 @@
 
 AIによるテストプロセス支援MCPサーバー。
 
-**Phase 1（実装済み）**: テスト計画書（ISO/IEC/IEEE 29119-3準拠）のドラフト生成のみ。
+**Phase 1（実装済み）**: テスト計画書（QUINTEEテンプレート17セクション構成・ISO/IEC/IEEE 29119-3準拠）の日本語ドラフト生成、および質問形式でのコンテキスト収集ガイド。
 **将来構想**: テスト設計・レビュー・品質ゲート・テストメトリクス・改善提案を段階的に追加。
 
 ## セットアップ
@@ -16,11 +16,19 @@ npm run build
 
 ### Resource: `iso29119://test-plan/structure`
 
-ISO/IEC/IEEE 29119-3のテスト計画15章立て（Introduction〜Approvals）を構造化データ（JSON）として公開する。
+ISO/IEC/IEEE 29119-3のテスト計画15章立て（Introduction〜Approvals）を構造化データ（JSON）として公開する。各セクションに日本語見出し（`titleJa`）を併記。
 
-### Tool: `generate_test_plan_draft`
+### Resource: `testplan://template/quintee`
 
-プロジェクト情報（`projectName`, `scope` は必須。`objectives`, `risks`, `scheduleConstraints`, `team` など任意項目）を入力すると、ISO29119の章立てに沿ったMarkdown形式のテスト計画書ドラフトを生成する。未入力の項目は `_TBD — not provided by caller_` として明示される。
+QUINTEEテスト計画書テンプレート（17セクション構成）の構造データ（JSON）を公開する。各セクションの見出し・必須フラグ・ISO29119対応（`isoRef`）・入力マッピング（`fieldKey`）に加え、固定リファレンス（テストタイプ・カタログ、インシデントランク、判定ステータス、標準メトリクス等）を含む。
+
+### Tool: `gen_test_plan`
+
+プロジェクト情報（`projectName`, `scope` は必須。`objectives`, `risks`, `scheduleConstraints`, `team`, `testItems`, `stakeholders`, `glossary` など多数の任意項目）を入力すると、QUINTEEテンプレートの17セクション構成（ISO/IEC/IEEE 29119-3準拠）に沿った**日本語**Markdown形式のテスト計画書ドラフトを生成する。未入力の項目は `_未記入_`（必須項目は `_未記入（必須）_`）として明示される。テストタイプ説明・インシデントランク等の固定リファレンスは常に出力される。
+
+### Prompt: `test_plan_interview`
+
+質問形式でテスト計画書のコンテキストを収集するためのガイド。テンプレートの必須項目を中心に、ユーザーへ順に質問して回答を集め、`gen_test_plan` を呼び出すようアシスタントを誘導する。任意引数 `projectName` を受け取る。
 
 ## コマンド
 
@@ -36,10 +44,13 @@ npm run inspect   # build後、MCP Inspectorを起動して動作確認
 ```bash
 npx @modelcontextprotocol/inspector --cli node dist/server.js --method resources/list
 npx @modelcontextprotocol/inspector --cli node dist/server.js --method tools/list
+npx @modelcontextprotocol/inspector --cli node dist/server.js --method prompts/list
 npx @modelcontextprotocol/inspector --cli node dist/server.js --method tools/call \
-  --tool-name generate_test_plan_draft \
+  --tool-name gen_test_plan \
   --tool-arg projectName="ECサイト" \
   --tool-arg scope="決済とログイン機能"
+npx @modelcontextprotocol/inspector --cli node dist/server.js --method prompts/get \
+  --prompt-name test_plan_interview --prompt-args projectName="ECサイト"
 ```
 
 ## 実クライアントへの登録例（Claude Desktop / Claude Code）

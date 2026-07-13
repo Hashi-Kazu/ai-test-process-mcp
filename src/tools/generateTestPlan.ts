@@ -1,14 +1,24 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { iso29119TestPlanStructure } from "../resources/iso29119.js";
+import {
+  testPlanTemplate,
+  testTypeCatalog,
+  judgmentStatusDefinitions,
+  incidentRankDefinitions,
+  questionPriorityDefinitions,
+  executionRecordNotes,
+  standardMetrics,
+} from "../resources/testPlanTemplate.js";
 import type {
-  Iso29119TestPlanStructure,
+  TestPlanTemplate,
+  TestPlanTemplateSection,
   TestPlanInput,
   TestPlanRisk,
   TestPlanTeamMember,
 } from "../types.js";
 
-const TBD = "_TBD — not provided by caller_";
+const TBD = "_未記入_";
+const TBD_REQUIRED = "_未記入（必須）_";
 
 export const generateTestPlanInputShape = {
   projectName: z.string().describe("Name of the project or system under test"),
@@ -46,30 +56,109 @@ export const generateTestPlanInputShape = {
   passFailCriteria: z.string().optional(),
   suspensionCriteria: z.string().optional(),
   approvers: z.array(z.string()).optional(),
+  systemOverview: z
+    .object({
+      name: z.string().optional(),
+      users: z.string().optional(),
+      purpose: z.string().optional(),
+      detail: z.string().optional(),
+      devType: z.string().optional(),
+    })
+    .optional(),
+  references: z
+    .array(
+      z.object({
+        name: z.string(),
+        author: z.string().optional(),
+        version: z.string().optional(),
+        receivedDate: z.string().optional(),
+        note: z.string().optional(),
+      })
+    )
+    .optional(),
+  background: z
+    .object({
+      current: z.string().optional(),
+      concerns: z.string().optional(),
+    })
+    .optional(),
+  testLevels: z.array(z.string()).optional(),
+  revisionContent: z.array(z.string()).optional(),
+  testItems: z
+    .array(z.object({ name: z.string(), summary: z.string().optional() }))
+    .optional(),
+  selectedTestTypes: z.array(z.string()).optional(),
+  testTechniques: z
+    .array(
+      z.object({
+        testType: z.string(),
+        approach: z.string().optional(),
+        technique: z.string().optional(),
+      })
+    )
+    .optional(),
+  testPeriod: z.string().optional(),
+  startCriteria: z.string().optional(),
+  endCriteria: z.string().optional(),
+  completionCriteria: z.array(z.string()).optional(),
+  metricsNote: z.string().optional(),
+  testDataRequirements: z
+    .array(
+      z.object({
+        description: z.string(),
+        owner: z.string().optional(),
+        period: z.string().optional(),
+      })
+    )
+    .optional(),
+  stakeholders: z
+    .array(
+      z.object({
+        role: z.string(),
+        name: z.string().optional(),
+        contact: z.string().optional(),
+      })
+    )
+    .optional(),
+  assumptions: z.array(z.string()).optional(),
+  constraints: z.array(z.string()).optional(),
+  glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
+  referenceDocs: z
+    .array(z.object({ name: z.string(), description: z.string().optional() }))
+    .optional(),
+  notes: z.string().optional(),
 } as const;
 
 const generateTestPlanInputSchema = z.object(generateTestPlanInputShape);
 export type GenerateTestPlanInput = z.infer<typeof generateTestPlanInputSchema>;
 
-function listOrTbd(items: string[] | undefined): string {
-  if (!items || items.length === 0) return TBD;
+function requiredTbd(required: boolean): string {
+  return required ? TBD_REQUIRED : TBD;
+}
+
+function listOrTbd(items: string[] | undefined, required = false): string {
+  if (!items || items.length === 0) return requiredTbd(required);
   return items.map((item) => `- ${item}`).join("\n");
 }
 
-function risksOrTbd(risks: TestPlanRisk[] | undefined): string {
-  if (!risks || risks.length === 0) return TBD;
+function textOrTbd(value: string | undefined, required = false): string {
+  return value && value.trim() ? value : requiredTbd(required);
+}
+
+function risksOrTbd(risks: TestPlanRisk[] | undefined, required = false): string {
+  if (!risks || risks.length === 0) return requiredTbd(required);
   return risks
     .map((risk) => {
       const parts = [`- ${risk.description}`];
-      if (risk.impact) parts.push(`(impact: ${risk.impact})`);
-      if (risk.mitigation) parts.push(`— mitigation: ${risk.mitigation}`);
+      if (risk.impact) parts.push(`(影響: ${risk.impact})`);
+      if (risk.mitigation) parts.push(`— 対策: ${risk.mitigation}`);
       return parts.join(" ");
     })
     .join("\n");
 }
 
-function teamOrTbd(team: TestPlanTeamMember[] | undefined): string {
-  if (!team || team.length === 0) return TBD;
+function teamOrTbd(team: TestPlanTeamMember[] | undefined, required = false): string {
+  if (!team || team.length === 0) return requiredTbd(required);
   return team
     .map((member) => {
       const namePart = member.name ? ` (${member.name})` : "";
@@ -79,15 +168,15 @@ function teamOrTbd(team: TestPlanTeamMember[] | undefined): string {
     .join("\n");
 }
 
-function scheduleOrTbd(schedule: TestPlanInput["scheduleConstraints"]): string {
+function scheduleOrTbd(schedule: TestPlanInput["scheduleConstraints"], required = false): string {
   if (!schedule || (!schedule.startDate && !schedule.endDate && !schedule.milestones?.length)) {
-    return TBD;
+    return requiredTbd(required);
   }
   const lines: string[] = [];
-  lines.push(`- Start date: ${schedule.startDate ?? TBD}`);
-  lines.push(`- End date: ${schedule.endDate ?? TBD}`);
+  lines.push(`- 開始: ${schedule.startDate ?? TBD}`);
+  lines.push(`- 終了: ${schedule.endDate ?? TBD}`);
   if (schedule.milestones && schedule.milestones.length > 0) {
-    lines.push("- Milestones:");
+    lines.push("- マイルストーン:");
     for (const milestone of schedule.milestones) {
       lines.push(`  - ${milestone.name}: ${milestone.date}`);
     }
@@ -95,58 +184,292 @@ function scheduleOrTbd(schedule: TestPlanInput["scheduleConstraints"]): string {
   return lines.join("\n");
 }
 
-function sectionContent(sectionId: string, input: TestPlanInput): string {
-  switch (sectionId) {
-    case "introduction":
-      return `**Purpose:** ${input.scope}\n\n**Objectives:**\n${listOrTbd(input.objectives)}`;
-    case "test-items":
-      return `**Project:** ${input.projectName}\n\n**Scope:** ${input.scope}`;
-    case "features-to-be-tested":
-      return listOrTbd(input.featuresToTest);
-    case "features-not-to-be-tested":
-      return listOrTbd(input.featuresNotToTest);
-    case "approach":
-      return TBD;
-    case "item-pass-fail-criteria":
-      return input.passFailCriteria ?? TBD;
-    case "suspension-resumption-criteria":
-      return input.suspensionCriteria ?? TBD;
-    case "test-deliverables":
-      return listOrTbd(input.deliverables);
-    case "testing-tasks":
-      return TBD;
-    case "environmental-needs":
-      return input.environment ?? TBD;
-    case "responsibilities":
-      return teamOrTbd(input.team);
-    case "staffing-and-training-needs":
-      return TBD;
-    case "schedule":
-      return scheduleOrTbd(input.scheduleConstraints);
-    case "risks-and-contingencies":
-      return risksOrTbd(input.risks);
-    case "approvals":
-      return listOrTbd(input.approvers);
-    default:
-      return TBD;
+function backgroundContent(input: TestPlanInput, required: boolean): string {
+  const bg = input.background;
+  if (!bg || (!bg.current && !bg.concerns)) return requiredTbd(required);
+  const lines: string[] = [];
+  if (bg.current) lines.push(`**現状:** ${bg.current}`);
+  if (bg.concerns) lines.push(`**懸念:** ${bg.concerns}`);
+  return lines.join("\n\n");
+}
+
+function referencesContent(input: TestPlanInput, required: boolean): string {
+  const refs = input.references;
+  if (!refs || refs.length === 0) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("| 名称 | 作成者 | バージョン | 受領日 | 備考 |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const ref of refs) {
+    lines.push(
+      `| ${ref.name} | ${ref.author ?? "-"} | ${ref.version ?? "-"} | ${ref.receivedDate ?? "-"} | ${ref.note ?? "-"} |`
+    );
   }
+  return lines.join("\n");
+}
+
+function scopeRangeContent(input: TestPlanInput, required: boolean): string {
+  const hasAny =
+    (input.featuresToTest && input.featuresToTest.length > 0) ||
+    (input.featuresNotToTest && input.featuresNotToTest.length > 0);
+  if (!hasAny) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("**テスト対象:**");
+  lines.push(listOrTbd(input.featuresToTest));
+  lines.push("");
+  lines.push("**テスト対象外:**");
+  lines.push(listOrTbd(input.featuresNotToTest));
+  return lines.join("\n");
+}
+
+function testItemsContent(input: TestPlanInput, required: boolean): string {
+  const items = input.testItems;
+  if (!items || items.length === 0) return requiredTbd(required);
+  return items
+    .map((item) => `- ${item.name}${item.summary ? `: ${item.summary}` : ""}`)
+    .join("\n");
+}
+
+function testTypesContent(input: TestPlanInput): string {
+  const selected = new Set(input.selectedTestTypes ?? []);
+  const lines: string[] = [];
+  lines.push("| 対象 | テストタイプ | 説明 |");
+  lines.push("| --- | --- | --- |");
+  for (const t of testTypeCatalog) {
+    const mark = selected.has(t.name) ? "〇" : "";
+    lines.push(`| ${mark} | ${t.name} | ${t.description} |`);
+  }
+  return lines.join("\n");
+}
+
+function testTechniquesContent(input: TestPlanInput, required: boolean): string {
+  const techs = input.testTechniques;
+  if (!techs || techs.length === 0) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("| テストタイプ | アプローチ | 技法 |");
+  lines.push("| --- | --- | --- |");
+  for (const t of techs) {
+    lines.push(`| ${t.testType} | ${t.approach ?? "-"} | ${t.technique ?? "-"} |`);
+  }
+  return lines.join("\n");
+}
+
+function startEndCriteriaContent(input: TestPlanInput, required: boolean): string {
+  if (!input.startCriteria && !input.endCriteria) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push(`**開始基準:** ${input.startCriteria ?? TBD}`);
+  lines.push(`**終了基準:** ${input.endCriteria ?? TBD}`);
+  return lines.join("\n\n");
+}
+
+function resultJudgmentContent(input: TestPlanInput): string {
+  const lines: string[] = [];
+  lines.push(input.passFailCriteria ?? TBD_REQUIRED);
+  lines.push("");
+  lines.push("**判定ステータス定義:**");
+  lines.push("");
+  lines.push("| ステータス | 説明 |");
+  lines.push("| --- | --- |");
+  for (const s of judgmentStatusDefinitions) {
+    lines.push(`| ${s.status} | ${s.description} |`);
+  }
+  return lines.join("\n");
+}
+
+function incidentCriteriaContent(): string {
+  const lines: string[] = [];
+  lines.push("| ランク | 説明 |");
+  lines.push("| --- | --- |");
+  for (const r of incidentRankDefinitions) {
+    lines.push(`| ${r.rank} | ${r.description} |`);
+  }
+  return lines.join("\n");
+}
+
+function questionPriorityContent(): string {
+  const lines: string[] = [];
+  lines.push("| 重要度 | 説明 |");
+  lines.push("| --- | --- |");
+  for (const q of questionPriorityDefinitions) {
+    lines.push(`| ${q.level} | ${q.description} |`);
+  }
+  return lines.join("\n");
+}
+
+function executionRecordContent(): string {
+  return executionRecordNotes.map((note, i) => `${i + 1}. ${note}`).join("\n");
+}
+
+function metricsContent(input: TestPlanInput): string {
+  const lines: string[] = [];
+  lines.push("| メトリクス | 収集項目 |");
+  lines.push("| --- | --- |");
+  for (const m of standardMetrics) {
+    lines.push(`| ${m.name} | ${m.items} |`);
+  }
+  if (input.metricsNote && input.metricsNote.trim()) {
+    lines.push("");
+    lines.push(input.metricsNote);
+  }
+  return lines.join("\n");
+}
+
+function testDataRequirementsContent(input: TestPlanInput, required: boolean): string {
+  const reqs = input.testDataRequirements;
+  if (!reqs || reqs.length === 0) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("| 内容 | 準備担当 | 期間 |");
+  lines.push("| --- | --- | --- |");
+  for (const r of reqs) {
+    lines.push(`| ${r.description} | ${r.owner ?? "-"} | ${r.period ?? "-"} |`);
+  }
+  return lines.join("\n");
+}
+
+function stakeholdersContent(input: TestPlanInput, required: boolean): string {
+  const sh = input.stakeholders;
+  if (!sh || sh.length === 0) return requiredTbd(required);
+  return sh
+    .map((s) => {
+      const namePart = s.name ? ` (${s.name})` : "";
+      const contactPart = s.contact ? ` — ${s.contact}` : "";
+      return `- ${s.role}${namePart}${contactPart}`;
+    })
+    .join("\n");
+}
+
+function assumptionsConstraintsContent(input: TestPlanInput, required: boolean): string {
+  const hasAny =
+    (input.assumptions && input.assumptions.length > 0) ||
+    (input.constraints && input.constraints.length > 0);
+  if (!hasAny) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("**前提条件:**");
+  lines.push(listOrTbd(input.assumptions));
+  lines.push("");
+  lines.push("**制限事項:**");
+  lines.push(listOrTbd(input.constraints));
+  return lines.join("\n");
+}
+
+function glossaryContent(input: TestPlanInput, required: boolean): string {
+  const g = input.glossary;
+  if (!g || g.length === 0) return requiredTbd(required);
+  return g.map((entry) => `- **${entry.term}**: ${entry.definition}`).join("\n");
+}
+
+function referenceDocsContent(input: TestPlanInput, required: boolean): string {
+  const docs = input.referenceDocs;
+  if (!docs || docs.length === 0) return requiredTbd(required);
+  return docs
+    .map((doc) => `- ${doc.name}${doc.description ? `: ${doc.description}` : ""}`)
+    .join("\n");
+}
+
+function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput): string {
+  const req = section.required;
+  switch (section.id) {
+    case "scope-target":
+      return textOrTbd(input.scope, req);
+    case "references-testbase":
+      return referencesContent(input, req);
+    case "background":
+      return backgroundContent(input, req);
+    case "objectives-goals":
+      return listOrTbd(input.objectives, req);
+    case "test-levels":
+      return listOrTbd(input.testLevels, req);
+    case "revision-content":
+      return listOrTbd(input.revisionContent, req);
+    case "test-items":
+      return testItemsContent(input, req);
+    case "test-types":
+      return testTypesContent(input);
+    case "scope-target-range":
+      return scopeRangeContent(input, req);
+    case "product-risk":
+      return risksOrTbd(input.risks, req);
+    case "test-techniques":
+      return testTechniquesContent(input, req);
+    case "test-period":
+      return textOrTbd(input.testPeriod, req);
+    case "schedule":
+      return scheduleOrTbd(input.scheduleConstraints, req);
+    case "deliverables":
+      return listOrTbd(input.deliverables, req);
+    case "start-end-criteria":
+      return startEndCriteriaContent(input, req);
+    case "suspension-resumption":
+      return textOrTbd(input.suspensionCriteria, req);
+    case "completion-criteria":
+      return listOrTbd(input.completionCriteria, req);
+    case "result-judgment":
+      return resultJudgmentContent(input);
+    case "incident-criteria":
+      return incidentCriteriaContent();
+    case "question-priority":
+      return questionPriorityContent();
+    case "execution-record":
+      return executionRecordContent();
+    case "collected-metrics":
+      return metricsContent(input);
+    case "env-requirements":
+      return textOrTbd(input.environment, req);
+    case "testdata-requirements":
+      return testDataRequirementsContent(input, req);
+    case "test-org":
+      return teamOrTbd(input.team, req);
+    case "stakeholders":
+      return stakeholdersContent(input, req);
+    case "assumptions-constraints":
+      return assumptionsConstraintsContent(input, req);
+    case "glossary":
+      return glossaryContent(input, req);
+    case "reference-docs":
+      return referenceDocsContent(input, req);
+    case "notes":
+      return textOrTbd(input.notes, req);
+    default:
+      return requiredTbd(req);
+  }
+}
+
+function revisionHistory(input: TestPlanInput): string[] {
+  const approver = input.approvers && input.approvers.length > 0 ? input.approvers.join("、") : TBD;
+  return [
+    "## 改訂履歴",
+    "",
+    "| 改訂日 | バージョン | 作成・改訂者 | 承認者 | 改訂内容 |",
+    "| --- | --- | --- | --- | --- |",
+    `| ${TBD} | ${TBD} | ${TBD} | ${approver} | 初版作成 |`,
+  ];
 }
 
 export function renderTestPlan(
   input: TestPlanInput,
-  structure: Iso29119TestPlanStructure = iso29119TestPlanStructure
+  template: TestPlanTemplate = testPlanTemplate
 ): string {
   const lines: string[] = [];
-  lines.push(`# Test Plan: ${input.projectName}`);
+  lines.push(`# テスト計画書: ${input.projectName}`);
   lines.push("");
-  lines.push(`*Conforms to the structure of ${structure.standard}*`);
+  lines.push(`*${template.templateName}*`);
+  lines.push("");
+  lines.push(...revisionHistory(input));
   lines.push("");
 
-  structure.sections.forEach((section, index) => {
-    lines.push(`## ${index + 1}. ${section.title}`);
+  const sections = template.sections;
+  sections.forEach((section, index) => {
+    const heading = section.level === 1 ? "##" : "###";
+    lines.push(`${heading} ${section.no} ${section.titleJa}`);
     lines.push("");
-    lines.push(sectionContent(section.id, input));
-    lines.push("");
+
+    // level 1 の章に子(level 2)がある場合は見出しのみ。
+    // それ以外（level 2、または子を持たない level 1）は本文を出力する。
+    const next = sections[index + 1];
+    const hasChildren = section.level === 1 && next?.level === 2;
+    if (!hasChildren) {
+      lines.push(sectionContent(section, input));
+      lines.push("");
+    }
   });
 
   return lines.join("\n").trimEnd() + "\n";
@@ -154,11 +477,11 @@ export function renderTestPlan(
 
 export function registerGenerateTestPlanTool(server: McpServer): void {
   server.registerTool(
-    "generate_test_plan_draft",
+    "gen_test_plan",
     {
       title: "Generate Test Plan Draft",
       description:
-        "Generates an ISO/IEC/IEEE 29119-3 conformant test plan document draft in markdown from project information. Fields not provided are marked as TBD.",
+        "Generates a QUINTEE-structured (17-section, ISO/IEC/IEEE 29119-3 aligned) test plan document draft in Japanese markdown from project information. Fields not provided are marked as 未記入.",
       inputSchema: generateTestPlanInputShape,
     },
     async (input) => {
