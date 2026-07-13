@@ -9,6 +9,10 @@
     "type": "git",
     "url": "git+https://github.com/Hashi-Kazu/ai-test-process-mcp.git"
   },
+  "homepage": "https://github.com/Hashi-Kazu/ai-test-process-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Hashi-Kazu/ai-test-process-mcp/issues"
+  },
   "keywords": [
     "mcp",
     "model-context-protocol",
