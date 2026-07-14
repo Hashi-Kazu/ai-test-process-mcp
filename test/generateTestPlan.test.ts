@@ -4,7 +4,7 @@ import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
 import type { TestPlanInput } from "../src/types.js";
 
 describe("renderTestPlan", () => {
-  it("includes every QUINTEE template section heading with the correct level", () => {
+  it("includes every template section heading with the correct level", () => {
     const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
     const markdown = renderTestPlan(input);
 

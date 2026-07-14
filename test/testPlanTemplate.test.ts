@@ -3,9 +3,9 @@ import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
 import { iso29119TestPlanStructure } from "../src/resources/iso29119.js";
 
 describe("testPlanTemplate", () => {
-  it("defines exactly 17 level-1 chapters", () => {
+  it("defines exactly 15 level-1 chapters matching ISO/IEC/IEEE 29119-3", () => {
     const chapters = testPlanTemplate.sections.filter((s) => s.level === 1);
-    expect(chapters).toHaveLength(17);
+    expect(chapters).toHaveLength(15);
     expect(chapters.map((c) => c.no)).toEqual([
       "1",
       "2",
@@ -22,9 +22,10 @@ describe("testPlanTemplate", () => {
       "13",
       "14",
       "15",
-      "16",
-      "17",
     ]);
+
+    const isoIds = iso29119TestPlanStructure.sections.map((s) => s.id);
+    expect(chapters.map((c) => c.id)).toEqual(isoIds);
   });
 
   it("has unique section numbers and ids", () => {
@@ -42,34 +43,20 @@ describe("testPlanTemplate", () => {
 
     expect(requiredNos).toEqual([
       "1.1",
-      "2.1",
-      "2.2",
-      "3.1",
-      "3.2",
-      "4.1",
-      "4.4",
-      "4.5",
+      "2",
+      "3",
+      "5.1",
+      "5.2",
       "6.2",
-      "7.1",
-      "8.5",
-      "9.1",
-      "9.2",
-      "9.3",
-      "9.4",
+      "7",
+      "8",
       "10.1",
       "10.2",
-      "10.3",
-      "10.4",
-      "10.5",
+      "11",
       "11.1",
-      "12.1",
-      "12.2",
-      "13.3",
-      "13.5",
-      "13.8",
-      "14.2",
-      "16.1",
-      "16.2",
+      "13.1",
+      "13.2",
+      "14.1",
     ]);
   });
 
