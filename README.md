@@ -2,7 +2,7 @@
 
 AIによるテストプロセス支援MCPサーバー。
 
-**Phase 1（実装済み）**: テスト計画書（QUINTEEテンプレート17セクション構成・ISO/IEC/IEEE 29119-3準拠）の日本語ドラフト生成、および質問形式でのコンテキスト収集ガイド。
+**Phase 1（実装済み）**: テスト計画書（ISO/IEC/IEEE 29119-3準拠15章構成）の日本語ドラフト生成、および質問形式でのコンテキスト収集ガイド。
 **将来構想**: テスト設計・レビュー・品質ゲート・テストメトリクス・改善提案を段階的に追加。
 
 ## セットアップ
@@ -18,13 +18,13 @@ npm run build
 
 ISO/IEC/IEEE 29119-3のテスト計画15章立て（Introduction〜Approvals）を構造化データ（JSON）として公開する。各セクションに日本語見出し（`titleJa`）を併記。
 
-### Resource: `testplan://template/quintee`
+### Resource: `testplan://template/standard`
 
-QUINTEEテスト計画書テンプレート（17セクション構成）の構造データ（JSON）を公開する。各セクションの見出し・必須フラグ・ISO29119対応（`isoRef`）・入力マッピング（`fieldKey`）に加え、固定リファレンス（テストタイプ・カタログ、インシデントランク、判定ステータス、標準メトリクス等）を含む。
+テスト計画書テンプレート（ISO/IEC/IEEE 29119-3準拠15章構成）の構造データ（JSON）を公開する。各セクションの見出し・必須フラグ・ISO29119対応（`isoRef`）・入力マッピング（`fieldKey`）に加え、固定リファレンス（テストタイプ・カタログ、インシデントランク、判定ステータス、標準メトリクス等）を含む。
 
 ### Tool: `gen_test_plan`
 
-プロジェクト情報（`projectName`, `scope` は必須。`objectives`, `risks`, `scheduleConstraints`, `team`, `testItems`, `stakeholders`, `glossary` など多数の任意項目）を入力すると、QUINTEEテンプレートの17セクション構成（ISO/IEC/IEEE 29119-3準拠）に沿った**日本語**Markdown形式のテスト計画書ドラフトを生成する。未入力の項目は `_未記入_`（必須項目は `_未記入（必須）_`）として明示される。テストタイプ説明・インシデントランク等の固定リファレンスは常に出力される。
+プロジェクト情報（`projectName`, `scope` は必須。`objectives`, `risks`, `scheduleConstraints`, `team`, `testItems`, `stakeholders`, `glossary` など多数の任意項目）を入力すると、ISO/IEC/IEEE 29119-3準拠の15章構成に沿った**日本語**Markdown形式のテスト計画書ドラフトを生成する。未入力の項目は `_未記入_`（必須項目は `_未記入（必須）_`）として明示される。テストタイプ説明・インシデントランク等の固定リファレンスは常に出力される。
 
 ### Prompt: `test_plan_interview`
 

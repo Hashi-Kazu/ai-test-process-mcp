@@ -31,10 +31,10 @@ src/
   resources/
     index.ts             # 全resourceを登録
     iso29119.ts           # ISO/IEC/IEEE 29119-3 テスト計画構造の参照データ（日本語見出しtitleJa付き）
-    testPlanTemplate.ts   # QUINTEEテスト計画テンプレート（17セクション構造＋固定ボイラープレート）
+    testPlanTemplate.ts   # テスト計画テンプレート（ISO/IEC/IEEE 29119-3準拠15章構造＋固定ボイラープレート）
   tools/
     index.ts             # 全toolを登録
-    generateTestPlan.ts   # gen_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語QUINTEE構成で出力）
+    generateTestPlan.ts   # gen_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）

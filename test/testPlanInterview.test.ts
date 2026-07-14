@@ -27,7 +27,7 @@ describe("buildInterviewPrompt", () => {
 
   it("marks required sections with the ★ priority marker", () => {
     const text = buildInterviewPrompt(testPlanTemplate);
-    // 6.2 テスト対象範囲 is a required, field-mapped section.
-    expect(text).toContain("★ [6 テストスコープ / 6.2 テスト対象範囲]");
+    // 1.1 スコープ・目的 is a required, field-mapped section.
+    expect(text).toContain("★ [1 はじめに / 1.1 スコープ・目的]");
   });
 });

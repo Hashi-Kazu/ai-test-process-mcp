@@ -9,15 +9,14 @@ import type { TestPlanTemplate } from "../types.js";
 
 // fieldKey → gen_test_plan の入力キーの対応メモ（設問に添えて収集漏れを防ぐ）。
 const fieldHint: Record<string, string> = {
-  scope: "scope（必須）",
-  references: "references[]",
+  scope: "scope（必須）/ objectives[]（任意）",
+  references: "references[]{name, author, version, receivedDate, note} / referenceDocs[]{name, description}",
   background: "background{current, concerns}",
-  objectives: "objectives[]",
   testLevels: "testLevels[]",
-  revisionContent: "revisionContent[]",
-  testItems: "testItems[]{name, summary}",
+  testItems: "testItems[]{name, summary} / systemOverview{name, users, purpose, detail, devType}",
   selectedTestTypes: "selectedTestTypes[]（テストタイプ名の配列）",
-  featuresToTest: "featuresToTest[] / featuresNotToTest[]",
+  featuresToTest: "featuresToTest[]",
+  featuresNotToTest: "featuresNotToTest[]",
   risks: "risks[]{description, impact, mitigation}",
   testTechniques: "testTechniques[]{testType, approach, technique}",
   testPeriod: "testPeriod",
@@ -34,7 +33,7 @@ const fieldHint: Record<string, string> = {
   stakeholders: "stakeholders[]{role, name, contact}",
   assumptions: "assumptions[] / constraints[]",
   glossary: "glossary[]{term, definition}",
-  referenceDocs: "referenceDocs[]{name, description}",
+  approvers: "approvers[]",
   notes: "notes",
 };
 

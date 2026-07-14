@@ -24,12 +24,12 @@ export function registerResources(server: McpServer): void {
   );
 
   server.registerResource(
-    "quintee-test-plan-template",
-    "testplan://template/quintee",
+    "test-plan-template",
+    "testplan://template/standard",
     {
-      title: "QUINTEE Test Plan Template",
+      title: "Test Plan Template",
       description:
-        "Structural reference for the QUINTEE test plan template: 17 chapters with sub-sections, required flags, ISO 29119 cross-references, and input field mappings.",
+        "Structural reference for the test plan template: ISO/IEC/IEEE 29119-3 conformant 15 chapters with sub-sections, required flags, ISO 29119 cross-references, and input field mappings.",
       mimeType: "application/json",
     },
     async (uri) => ({

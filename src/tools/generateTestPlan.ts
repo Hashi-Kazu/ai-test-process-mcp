@@ -207,26 +207,55 @@ function referencesContent(input: TestPlanInput, required: boolean): string {
   return lines.join("\n");
 }
 
-function scopeRangeContent(input: TestPlanInput, required: boolean): string {
-  const hasAny =
-    (input.featuresToTest && input.featuresToTest.length > 0) ||
-    (input.featuresNotToTest && input.featuresNotToTest.length > 0);
-  if (!hasAny) return requiredTbd(required);
+function referencesTestbaseContent(input: TestPlanInput, required: boolean): string {
+  const hasRefs = !!(input.references && input.references.length > 0);
+  const hasDocs = !!(input.referenceDocs && input.referenceDocs.length > 0);
+  if (!hasRefs && !hasDocs) return requiredTbd(required);
   const lines: string[] = [];
-  lines.push("**テスト対象:**");
-  lines.push(listOrTbd(input.featuresToTest));
-  lines.push("");
-  lines.push("**テスト対象外:**");
-  lines.push(listOrTbd(input.featuresNotToTest));
+  if (hasRefs) lines.push(referencesContent(input, false));
+  if (hasDocs) {
+    if (hasRefs) lines.push("");
+    lines.push("**参考文献:**");
+    lines.push(referenceDocsContent(input, false));
+  }
+  return lines.join("\n");
+}
+
+function scopeObjectivesContent(input: TestPlanInput, required: boolean): string {
+  const lines: string[] = [];
+  lines.push(`**スコープ:** ${textOrTbd(input.scope, required)}`);
+  if (input.objectives && input.objectives.length > 0) {
+    lines.push("");
+    lines.push("**目的・目標:**");
+    lines.push(listOrTbd(input.objectives));
+  }
   return lines.join("\n");
 }
 
 function testItemsContent(input: TestPlanInput, required: boolean): string {
   const items = input.testItems;
-  if (!items || items.length === 0) return requiredTbd(required);
-  return items
-    .map((item) => `- ${item.name}${item.summary ? `: ${item.summary}` : ""}`)
-    .join("\n");
+  const overview = input.systemOverview;
+  const overviewLines: string[] = [];
+  if (overview) {
+    if (overview.name) overviewLines.push(`- 名称: ${overview.name}`);
+    if (overview.purpose) overviewLines.push(`- 目的: ${overview.purpose}`);
+    if (overview.users) overviewLines.push(`- 利用者: ${overview.users}`);
+    if (overview.devType) overviewLines.push(`- 開発形態: ${overview.devType}`);
+    if (overview.detail) overviewLines.push(`- 詳細: ${overview.detail}`);
+  }
+  const itemsBody =
+    items && items.length > 0
+      ? items.map((item) => `- ${item.name}${item.summary ? `: ${item.summary}` : ""}`).join("\n")
+      : null;
+  if (!itemsBody && overviewLines.length === 0) return requiredTbd(required);
+  const lines: string[] = [];
+  if (overviewLines.length > 0) {
+    lines.push("**システム概要:**");
+    lines.push(...overviewLines);
+    if (itemsBody) lines.push("");
+  }
+  lines.push(itemsBody ?? requiredTbd(required));
+  return lines.join("\n");
 }
 
 function testTypesContent(input: TestPlanInput): string {
@@ -368,46 +397,42 @@ function referenceDocsContent(input: TestPlanInput, required: boolean): string {
 function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput): string {
   const req = section.required;
   switch (section.id) {
-    case "scope-target":
-      return textOrTbd(input.scope, req);
-    case "references-testbase":
-      return referencesContent(input, req);
+    case "scope-objectives":
+      return scopeObjectivesContent(input, req);
     case "background":
       return backgroundContent(input, req);
-    case "objectives-goals":
-      return listOrTbd(input.objectives, req);
-    case "test-levels":
-      return listOrTbd(input.testLevels, req);
-    case "revision-content":
-      return listOrTbd(input.revisionContent, req);
+    case "references-testbase":
+      return referencesTestbaseContent(input, req);
+    case "assumptions-constraints":
+      return assumptionsConstraintsContent(input, req);
+    case "glossary":
+      return glossaryContent(input, req);
     case "test-items":
       return testItemsContent(input, req);
+    case "features-to-be-tested":
+      return listOrTbd(input.featuresToTest, req);
+    case "features-not-to-be-tested":
+      return listOrTbd(input.featuresNotToTest, req);
+    case "test-levels":
+      return listOrTbd(input.testLevels, req);
     case "test-types":
       return testTypesContent(input);
-    case "scope-target-range":
-      return scopeRangeContent(input, req);
-    case "product-risk":
-      return risksOrTbd(input.risks, req);
     case "test-techniques":
       return testTechniquesContent(input, req);
-    case "test-period":
-      return textOrTbd(input.testPeriod, req);
-    case "schedule":
-      return scheduleOrTbd(input.scheduleConstraints, req);
-    case "deliverables":
-      return listOrTbd(input.deliverables, req);
     case "start-end-criteria":
       return startEndCriteriaContent(input, req);
-    case "suspension-resumption":
-      return textOrTbd(input.suspensionCriteria, req);
-    case "completion-criteria":
-      return listOrTbd(input.completionCriteria, req);
     case "result-judgment":
       return resultJudgmentContent(input);
+    case "completion-criteria":
+      return listOrTbd(input.completionCriteria, req);
     case "incident-criteria":
       return incidentCriteriaContent();
     case "question-priority":
       return questionPriorityContent();
+    case "suspension-resumption-criteria":
+      return textOrTbd(input.suspensionCriteria, req);
+    case "test-deliverables":
+      return listOrTbd(input.deliverables, req);
     case "execution-record":
       return executionRecordContent();
     case "collected-metrics":
@@ -420,12 +445,14 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
       return teamOrTbd(input.team, req);
     case "stakeholders":
       return stakeholdersContent(input, req);
-    case "assumptions-constraints":
-      return assumptionsConstraintsContent(input, req);
-    case "glossary":
-      return glossaryContent(input, req);
-    case "reference-docs":
-      return referenceDocsContent(input, req);
+    case "test-period":
+      return textOrTbd(input.testPeriod, req);
+    case "schedule-plan":
+      return scheduleOrTbd(input.scheduleConstraints, req);
+    case "product-risk":
+      return risksOrTbd(input.risks, req);
+    case "approvers":
+      return listOrTbd(input.approvers, req);
     case "notes":
       return textOrTbd(input.notes, req);
     default:
@@ -435,12 +462,16 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
 
 function revisionHistory(input: TestPlanInput): string[] {
   const approver = input.approvers && input.approvers.length > 0 ? input.approvers.join("、") : TBD;
+  const changeContent =
+    input.revisionContent && input.revisionContent.length > 0
+      ? input.revisionContent.join("；")
+      : "初版作成";
   return [
     "## 改訂履歴",
     "",
     "| 改訂日 | バージョン | 作成・改訂者 | 承認者 | 改訂内容 |",
     "| --- | --- | --- | --- | --- |",
-    `| ${TBD} | ${TBD} | ${TBD} | ${approver} | 初版作成 |`,
+    `| ${TBD} | ${TBD} | ${TBD} | ${approver} | ${changeContent} |`,
   ];
 }
 
@@ -481,7 +512,7 @@ export function registerGenerateTestPlanTool(server: McpServer): void {
     {
       title: "Generate Test Plan Draft",
       description:
-        "Generates a QUINTEE-structured (17-section, ISO/IEC/IEEE 29119-3 aligned) test plan document draft in Japanese markdown from project information. Fields not provided are marked as 未記入.",
+        "ISO/IEC/IEEE 29119-3 準拠・15章構成の日本語テスト計画書ドラフトを生成。未入力項目は 未記入 と明示。",
       inputSchema: generateTestPlanInputShape,
     },
     async (input) => {
