@@ -32,7 +32,7 @@ describe("renderTestPlanReview", () => {
     expect(Number(summaryMatch?.[1])).toBeGreaterThanOrEqual(1);
   });
 
-  it("accepts gen_test_plan output directly without error and finds no missing chapters", () => {
+  it("accepts create_test_plan output directly without error and finds no missing chapters", () => {
     const planMarkdown = renderTestPlan(minimalInput);
     const review = renderTestPlanReview(planMarkdown);
 

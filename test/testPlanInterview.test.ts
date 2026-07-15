@@ -6,7 +6,7 @@ describe("buildInterviewPrompt", () => {
   it("uses the given project name in the intro", () => {
     const text = buildInterviewPrompt(testPlanTemplate, "サンプルEC");
     expect(text).toContain("「サンプルEC」");
-    expect(text).toContain("gen_test_plan");
+    expect(text).toContain("create_test_plan");
   });
 
   it("falls back to a generic target when no project name is given", () => {

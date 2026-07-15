@@ -180,7 +180,7 @@ export function renderTestPlanReview(
 export const reviewTestPlanInputShape = {
   planMarkdown: z
     .string()
-    .describe("Markdown body of the test plan to review (e.g. gen_test_plan output)"),
+    .describe("Markdown body of the test plan to review (e.g. create_test_plan output)"),
 } as const;
 
 export function registerReviewTestPlanTool(server: McpServer): void {

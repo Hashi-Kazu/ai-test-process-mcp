@@ -1,76 +1,128 @@
 # 開発ロードマップ
 
-本プロジェクトを「テストプロセスの標準化MCP」として育てるための段階的な開発計画。優先領域は **計画・分析・レビュー** であり、直近は「テスト計画書作成のJSTQB準拠強化」と「テスト仕様書レビュー」から着手する。
+本プロジェクトを「**JSTQB/ISTQB Generic Test Process を AI で支援する MCP**」として育てるための段階的な開発計画。
 
 ## ビジョン
 
-JSTQB（ISTQB準拠）と ISO/IEC/IEEE 29119 をベースに、テストプロセスの主要活動（計画 → 分析 → レビュー、将来的には設計・報告）を MCP の tool / resource / prompt として段階的に提供する。AIエージェントがテスト成果物の作成・レビューを、業界標準の用語と観点に沿って支援できる状態を目指す。
+JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工程のテスト成果物の**作成・レビュー・分析**を MCP の tool / resource / prompt として段階的に提供する。テスト管理ツールの操作を目的とせず、AI による品質向上と効率化の支援に特化する。
+
+```text
+1. Test Planning
+2. Test Monitoring and Control
+3. Test Analysis
+4. Test Design
+5. Test Implementation
+6. Test Execution
+7. Test Completion
+```
+
+文書構成は ISO/IEC/IEEE 29119-3 に準拠する（JSTQB/ISTQB シラバス自体が文書構成については ISO 29119-3 を参照しており、両者は矛盾しない）。
+
+### 提供価値
+
+- **品質向上**: レビュー支援・観点漏れ防止・リスク分析・ベストプラクティス提示・JSTQB/ISTQB シラバスに基づくアドバイス
+- **効率化**: ドキュメント生成・テストケース生成・テストデータ生成・レポート生成・分析の自動化
+
+### 目指す姿
+
+- 初学者でも品質の高い成果物を作成できる
+- ベテランのレビュー負荷を削減できる
+- テスト資産を標準化できる
 
 ## 全フェーズ共通の方針
 
-- **スモールステップ**: 1フェーズ = 1 PRサイズ。既存の拡張パターン（`src/resources/<name>.ts` + `src/tools/<name>.ts` を新設し、各 `index.ts` に1行登録。`server.ts` は変更しない）を厳守する。
-- **JSTQB準拠の実現方式**: テスト計画書の章構成は ISO/IEC/IEEE 29119-3 の15章構成を維持し、JSTQB用語・シラバスの観点を知識リソースとして追加・整合させる。JSTQB（ISTQB）シラバス自体が文書構成については ISO 29119-3 を参照しており、両者は矛盾しない。既存機能を壊さずに積み上げる。
+- **スモールステップ**: 1ステップ = 1 PRサイズ。既存の拡張パターン（`src/resources/<name>.ts` + `src/tools/<name>.ts` を新設し、各 `index.ts` に1行登録。`server.ts` は変更しない）を厳守する。
+- **JSTQB準拠の実現方式**: 文書の章構成は ISO/IEC/IEEE 29119-3 を維持し、JSTQB 用語・シラバスの観点を知識リソース（`jstqb://glossary/core` 等）として追加・整合させる。既存機能を壊さずに積み上げる。
 - **レビュー系toolの二層構成**: 機械的チェック（章の欠落、必須項目の未記入、ID重複などの構造検査）は純関数で決定的に実施し vitest で単体テストする。意味的レビュー（内容の妥当性判断）は JSTQB 準拠チェックリストを tool 出力 / resource として返し、呼び出し側の LLM が適用する。
-- **著作権**: JSTQB用語集・シラバスも ISO 29119 と同様に逐語転載せず、パラフレーズのみを構造化データとして保持する（`src/resources/iso29119.ts` と同じルール）。
-- **進め方**: 各フェーズの着手時は `AGENTS.md` のルール通り、planner による調査・仕様策定・引き渡し票生成を経て実装担当（feature-dev）へ引き継ぐ。
+- **生成系toolの3点セット構成**: 生成系は resource（テンプレート構造データ）+ tool（zodスキーマ + 純関数レンダリング）+ interview prompt（対話的コンテキスト収集）で構成する（`create_test_plan` / `test_plan_interview` と同型）。
+- **著作権**: JSTQB用語集・シラバス・ISO 29119 とも逐語転載せず、パラフレーズのみを構造化データとして保持する（`src/resources/iso29119.ts` と同じルール）。
+- **進め方**: 各ステップの着手時は `AGENTS.md` のルール通り、planner による調査・仕様策定・引き渡し票生成を経て実装担当（feature-dev）へ引き継ぐ。
 
 ## フェーズ計画
 
-### Phase 2: JSTQB用語基盤（規模: 小）
+構想上の Tool 一覧（下記「将来構想: Tool 一覧」）のうち、**計画 → 分析 → 設計 → 全工程** の順に実装する。
 
-計画・レビュー機能の土台となる JSTQB 用語の知識リソースを追加する。
+### Phase 1: Test Planning（進行中）
 
-- **新規ファイル**: `src/resources/jstqbGlossary.ts`
-  - テスト計画・分析・レビューに関わる JSTQB 用語（テストレベル、テストタイプ、開始基準/終了基準、テスト条件、テスト観点、レビュータイプ等）を構造化データで保持する。
-  - 各用語: 用語ID・日本語名・英語名・パラフレーズ定義・関連する ISO 29119-3 章参照。
-  - resource `jstqb://glossary/core` として公開し、`src/resources/index.ts` に1行登録する。
-- **軽微改修**: `src/resources/testPlanTemplate.ts` の `guidance` 文言を JSTQB 用語に整合させる（章構成・fieldKey は変更しない）。
-- **完了条件**:
-  - resource 取得で用語一覧が JSON で返る。
-  - 用語データ構造の vitest 単体テストが PASS。既存テストも全 PASS。
+テスト計画書の作成・レビュー・修正支援。Phase 1 完了 = v1.0 の目安。
 
-### Phase 3: テスト計画書レビュー（規模: 中）
+| tool | 内容 | 状態 |
+| --- | --- | --- |
+| `create_test_plan` | ISO/IEC/IEEE 29119-3 準拠15章構成の日本語テスト計画書ドラフト生成（旧名 `gen_test_plan`） | 完了 |
+| `review_test_plan` | JSTQB観点でのテスト計画書レビュー（構造検査 + 意味的チェックリストの二層構成） | 完了 |
+| `revise_test_plan` | レビュー結果・修正指示を反映したテスト計画書の修正支援 | **未着手（次のステップ）** |
 
-`gen_test_plan` の出力や既存のテスト計画書を、JSTQB 観点でレビューする tool を追加する。
+`revise_test_plan` の設計方針（着手時に planner が詳細化）:
 
-- **新規ファイル**:
-  - `src/resources/testPlanReviewChecklist.ts`: JSTQB 観点 + 29119-3 構造に基づくテスト計画書レビューチェックリスト（観点ID・重要度・チェック内容・根拠となる用語/章参照）。
-  - `src/tools/reviewTestPlan.ts`: tool `review_test_plan`。入力はテスト計画書の Markdown 本文。純関数 `renderTestPlanReview()` が以下を統合した Markdown レポートを返す。
-    - (a) 構造検査結果: 15章の欠落、`_未記入（必須）_` の残存などの決定的検出
-    - (b) 意味的レビュー用チェックリスト: 呼び出し側 LLM への指示形式
-- **完了条件**:
-  - 章欠落・未記入検出の vitest 単体テストが PASS。
-  - `gen_test_plan` の出力をそのまま入力してレポートが返ること（MCP Inspector で確認）。
+- 入力: 既存のテスト計画書 Markdown + 修正指示（`review_test_plan` の指摘やユーザーの変更要望）。
+- 二層構成: 機械的に決定できる部分（章構成の補完、未記入マーカーの整理など）は純関数で処理し、内容の書き換えは呼び出し側 LLM への指示形式で返す。
 
-### Phase 4: テスト設計・テストケース仕様書レビュー（規模: 中）
+### Phase 2: Test Analysis
 
-ユーザーが日常的に作成するテスト仕様書（テスト設計仕様・テストケース仕様）を、**テストベース（要件・仕様）と突き合わせて**レビューする tool を追加する。テスト仕様書単体の形式チェックではなく、「テストベースに対して仕様書が十分か」を評価軸の中心に置く。
+要件・仕様（テストベース）の分析支援。
 
-**テストベースのフォーマットは任意**とする。実務上のテストベースは Excel・Word・Markdown・プレーンテキストなど多様であるため、tool は特定のフォーマットや章立てを仮定しない。MCP の tool 入力はテキストであるため、Excel や Word などのバイナリ形式は呼び出し側（MCPクライアント / LLM）がテキスト化して渡す責務とし、tool 側は「フォーマット不問の自由テキスト」として受け取って処理する。
+| tool | 内容 |
+| --- | --- |
+| `analyze_requirements` | 要件分析・品質特性抽出・曖昧さ検出 |
+| `extract_test_conditions` | テストベースからのテスト条件導出 |
+| `review_test_basis` | テストベース（要件・仕様）のレビュー |
 
-- **新規ファイル**:
-  - `src/resources/testSpecReviewChecklist.ts`: JSTQB のテスト分析・設計観点に基づくチェックリスト。
-    - テストベースに対するテスト条件の網羅性（要件の取りこぼし検出）、テストベースへのトレーサビリティ、期待結果の明確さとテストベースとの整合、テスト技法の適切さ、事前条件・手順の実行可能性 など。
-  - `src/tools/reviewTestSpec.ts`: tool `review_test_spec`。**入力はテストベースのテキストとテスト仕様書のテキストの2つ（いずれも必須）**。テストベースは元のファイル形式（Excel / Word / Markdown 等）を問わず、テキスト化されたものを受け取る。Phase 3 と同じ二層構成。
-    - 構造検査（決定的）の例: テストケースIDの重複、期待結果の空欄、要件ID（テストベース側にID表記がある場合）とテストケースの対応表を機械的に構築し、どのテストケースからも参照されていない要件IDを未カバー候補として列挙 など。要件IDの抽出はパターンマッチベースとし、特定フォーマットの章立てや表構造に依存しない（既定パターンで拾えない場合に備え、任意入力で要件IDパターンを指定できるようにする）。
-    - 意味的チェック: 要件IDが明示されていない・表記が揺れているテストベースについても、呼び出し側 LLM がチェックリストに沿って要件と仕様書を突き合わせ、カバレッジ漏れ・期待結果の不整合を指摘できる形式で返す。
-- **完了条件**:
-  - 構造検査（ID重複・期待結果空欄・未カバー要件IDの列挙）の vitest 単体テストが PASS。
-  - MCP Inspector 経由で、テストベースとテスト仕様書の2入力で `review_test_spec` が動作すること。
+### Phase 3: Test Design
 
-### Phase 5以降: バックログ（優先度低・着手時に再計画）
+テストケースの生成とテスト仕様書のレビュー。
 
-- テスト分析支援: テストベース（要件・仕様）からのテスト条件導出ガイド（tool / prompt）
-- テスト設計仕様書・テストケース仕様書の**生成**（29119-3準拠テンプレート。生成系は計画書と同じ resource + tool + interview prompt の3点セット構成）
+| tool | 内容 |
+| --- | --- |
+| `generate_test_cases` | テスト技法の推奨とテストケース生成 |
+| `review_test_specification` | テスト設計仕様・テストケース仕様のレビュー（テストベース突き合わせ） |
+
+`review_test_specification` の設計方針（旧ロードマップ Phase 4 から引き継ぎ）:
+
+- テスト仕様書単体の形式チェックではなく、「**テストベースに対して仕様書が十分か**」を評価軸の中心に置く。
+- **テストベースのフォーマットは任意**。実務上のテストベースは Excel・Word・Markdown・プレーンテキストなど多様であるため、特定のフォーマットや章立てを仮定しない。バイナリ形式は呼び出し側（MCPクライアント / LLM）がテキスト化して渡す責務とし、tool 側は「フォーマット不問の自由テキスト」として受け取る。
+- 入力はテストベースのテキストとテスト仕様書のテキストの2つ（いずれも必須）。二層構成:
+  - 構造検査（決定的）: テストケースIDの重複、期待結果の空欄、要件ID（テストベース側にID表記がある場合）とテストケースの対応表を機械的に構築し、どのテストケースからも参照されていない要件IDを未カバー候補として列挙。要件IDの抽出はパターンマッチベースとし、既定パターンで拾えない場合に備え任意入力で要件IDパターンを指定できるようにする。
+  - 意味的チェック: 要件IDが明示されていない・表記が揺れているテストベースについても、呼び出し側 LLM がチェックリストに沿って要件と仕様書を突き合わせ、カバレッジ漏れ・期待結果の不整合を指摘できる形式で返す。
+- チェックリスト resource: テストベースに対するテスト条件の網羅性、トレーサビリティ、期待結果の明確さと整合、テスト技法の適切さ、事前条件・手順の実行可能性など。
+
+### Phase 4: Generic Test Process 全体への拡張
+
+残る4工程（Monitoring and Control / Implementation / Execution / Completion）へ拡張する。着手時に再計画。
+
+## 将来構想: Tool 一覧
+
+Generic Test Process の各工程で最終的に提供したい tool 群。Phase 1〜3 のスコープ外は着手時に取捨選択・再計画する。
+
+| 工程 | tool |
+| --- | --- |
+| Test Planning | `create_test_plan` / `review_test_plan` / `revise_test_plan` / `estimate_test_effort` / `analyze_test_risk` |
+| Test Monitoring and Control | KPI分析 / 進捗分析 / リスク監視 / テスト完了率 |
+| Test Analysis | `analyze_requirements` / `extract_test_conditions` / `detect_requirement_ambiguity` / `review_test_basis` |
+| Test Design | `generate_test_cases` / `recommend_test_techniques` / `review_test_specification` / `analyze_coverage` |
+| Test Implementation | `generate_test_data` / `generate_test_procedure` / `generate_test_suite` |
+| Test Execution | `analyze_test_results` / `analyze_logs` / `classify_defects` |
+| Test Completion | `generate_test_summary` / `evaluate_quality` / `generate_retrospective` |
+
+## 将来構想: 連携・基盤
+
+- Jira・GitHub Issues・Azure DevOps との連携
+- Playwright/Cypress など自動テストとの連携
+- テストメトリクスの可視化
+- プロジェクト横断でのナレッジ蓄積
+- 組織標準やテンプレートのカスタマイズ対応
+- RAG による社内テスト標準・過去資産の参照
 - テスト状況報告書・テスト完了報告書の生成（29119-3 のテスト状況報告・完了報告に相当）
 - レビュー用 interview prompt（`test_plan_interview` のレビュー版。レビュー対象・観点を対話的に絞り込む）
 
-## フェーズ一覧（サマリ）
+## 実装履歴
 
-| フェーズ | 内容 | 規模 | 状態 |
-| --- | --- | --- | --- |
-| Phase 1 | テスト計画書ドラフト生成（29119-3準拠15章） | — | 完了（v0.3.0） |
-| Phase 2 | JSTQB用語基盤（glossary resource + テンプレート用語整合） | 小 | 完了（v0.4.0） |
-| Phase 3 | テスト計画書レビュー tool | 中 | 完了（v0.5.0） |
-| Phase 4 | テスト設計・テストケース仕様書レビュー tool（テストベース突き合わせ） | 中 | 未着手 |
-| Phase 5〜 | 分析支援・仕様書生成・報告書生成ほか（バックログ） | — | 未計画 |
+| ステップ | 内容 | 状態 |
+| --- | --- | --- |
+| 旧Phase 1 | テスト計画書ドラフト生成 `gen_test_plan`（29119-3準拠15章） | 完了（v0.3.0） |
+| 旧Phase 2 | JSTQB用語基盤（`jstqb://glossary/core` resource + テンプレート用語整合） | 完了（v0.4.0） |
+| 旧Phase 3 | テスト計画書レビュー tool `review_test_plan` | 完了（v0.5.0） |
+| 構想再編 | Generic Test Process 構想へのロードマップ再編 + `gen_test_plan` → `create_test_plan` リネーム | 完了（v0.6.0） |
+| Phase 1 残 | `revise_test_plan` | 未着手 |
+| Phase 2 | Test Analysis（analyze_requirements / extract_test_conditions / review_test_basis） | 未着手 |
+| Phase 3 | Test Design（generate_test_cases / review_test_specification） | 未着手 |
+| Phase 4 | 全工程への拡張 | 未計画 |

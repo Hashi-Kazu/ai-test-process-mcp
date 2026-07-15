@@ -5,7 +5,7 @@ import { registerResources } from "./resources/index.js";
 import { registerTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts/index.js";
 
-const server = new McpServer({ name: "ai-test-process-mcp", version: "0.3.0" });
+const server = new McpServer({ name: "ai-test-process-mcp", version: "0.6.0" });
 
 registerResources(server);
 registerTools(server);

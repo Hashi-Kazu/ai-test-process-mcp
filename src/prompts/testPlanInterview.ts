@@ -5,9 +5,9 @@ import type { TestPlanTemplate } from "../types.js";
 
 // 質問形式でのコンテキスト収集用プロンプト。
 // テンプレート構造データ（titleJa + guidance）から設問を自動生成し、
-// アシスタントがユーザーに順に質問して gen_test_plan を呼ぶよう誘導する。
+// アシスタントがユーザーに順に質問して create_test_plan を呼ぶよう誘導する。
 
-// fieldKey → gen_test_plan の入力キーの対応メモ（設問に添えて収集漏れを防ぐ）。
+// fieldKey → create_test_plan の入力キーの対応メモ（設問に添えて収集漏れを防ぐ）。
 const fieldHint: Record<string, string> = {
   scope: "scope（必須）/ objectives[]（任意）",
   references: "references[]{name, author, version, receivedDate, note} / referenceDocs[]{name, description}",
@@ -57,7 +57,7 @@ export function buildInterviewPrompt(
   lines.push("- 必須(★)の項目を優先し、一度に多く聞きすぎない。");
   lines.push("- ユーザーが「不明」「後で」と答えた項目はスキップしてよい（未記入として扱われる）。");
   lines.push(
-    "- ひととおり集まったら、収集した回答を gen_test_plan ツールの引数にマッピングして呼び出し、" +
+    "- ひととおり集まったら、収集した回答を create_test_plan ツールの引数にマッピングして呼び出し、" +
       "テスト計画書ドラフトを生成する。"
   );
   lines.push("- projectName と scope は必須。最低限この2つは必ず確認する。");
@@ -87,7 +87,7 @@ export function buildInterviewPrompt(
 
   lines.push("");
   lines.push(
-    "上記の質問が終わったら gen_test_plan を呼び出してください。未収集の必須項目は " +
+    "上記の質問が終わったら create_test_plan を呼び出してください。未収集の必須項目は " +
       "テスト計画書上で「未記入（必須）」と明示されます。"
   );
 
@@ -100,7 +100,7 @@ export function registerTestPlanInterviewPrompt(server: McpServer): void {
     {
       title: "Test Plan Interview",
       description:
-        "質問形式でテスト計画書のコンテキストを収集するためのガイド。テンプレートの必須項目を中心に、ユーザーへ順に質問し gen_test_plan を呼ぶよう誘導する。",
+        "質問形式でテスト計画書のコンテキストを収集するためのガイド。テンプレートの必須項目を中心に、ユーザーへ順に質問し create_test_plan を呼ぶよう誘導する。",
       argsSchema: {
         projectName: z
           .string()

@@ -508,7 +508,7 @@ export function renderTestPlan(
 
 export function registerGenerateTestPlanTool(server: McpServer): void {
   server.registerTool(
-    "gen_test_plan",
+    "create_test_plan",
     {
       title: "Generate Test Plan Draft",
       description:
