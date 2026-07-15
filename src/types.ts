@@ -128,6 +128,22 @@ export interface TestPlanReferenceDoc {
   description?: string;
 }
 
+export type ReviewSeverity = "high" | "medium" | "low";
+
+export interface TestPlanReviewCheckItem {
+  id: string; // 例: "CL-01"
+  severity: ReviewSeverity;
+  title: string; // 観点名（日本語）
+  check: string; // 何を確認するか（パラフレーズした指示文）
+  glossaryRefs?: string[]; // jstqbGlossary の term id（存在するもの）
+  chapterRefs?: string[]; // testPlanTemplate の section.no（例 "5.1"）または id
+}
+
+export interface TestPlanReviewChecklist {
+  name: string;
+  items: TestPlanReviewCheckItem[];
+}
+
 export interface TestPlanInput {
   projectName: string;
   scope: string;
