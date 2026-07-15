@@ -1,6 +1,6 @@
 {
   "name": "ai-test-process-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "MCP server providing AI-assisted test process tools, starting with ISO/IEC/IEEE 29119-3 conformant test plan draft generation.",
   "license": "MIT",

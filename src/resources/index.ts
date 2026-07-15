@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { iso29119TestPlanStructure } from "./iso29119.js";
 import { testPlanTemplate } from "./testPlanTemplate.js";
+import { jstqbGlossary } from "./jstqbGlossary.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -38,6 +39,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testPlanTemplate, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "jstqb-glossary-core",
+    "jstqb://glossary/core",
+    {
+      title: "JSTQB Glossary (Core)",
+      description:
+        "Paraphrased JSTQB (ISTQB-based) glossary terms relevant to test planning, analysis, and review: test levels, test types, entry/exit criteria, test conditions, test perspectives, and review types.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(jstqbGlossary, null, 2),
         },
       ],
     })

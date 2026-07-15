@@ -13,6 +13,28 @@ export interface Iso29119TestPlanStructure {
   sections: Iso29119Section[];
 }
 
+export type JstqbTermCategory =
+  | "test-level"
+  | "test-type"
+  | "criteria"
+  | "test-condition"
+  | "test-perspective"
+  | "review-type";
+
+export interface JstqbTerm {
+  id: string;
+  category: JstqbTermCategory;
+  nameJa: string;
+  nameEn: string;
+  definition: string;
+  isoRef?: string; // iso29119TestPlanStructure の section id への対応（該当する場合のみ）
+}
+
+export interface JstqbGlossary {
+  source: string;
+  terms: JstqbTerm[];
+}
+
 export interface TestPlanTemplateSection {
   id: string;
   no: string;
