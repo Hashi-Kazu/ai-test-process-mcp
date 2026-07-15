@@ -100,7 +100,7 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: true,
       isoRef: "approach",
       fieldKey: "testLevels",
-      guidance: "対象とするテストレベル（単体・結合・システム・受入等）を記述する。",
+      guidance: "対象とするテストレベル（コンポーネントテスト・統合テスト・システムテスト・受け入れテスト等）を記述する。",
     },
     {
       id: "test-types",
@@ -110,7 +110,7 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: true,
       isoRef: "approach",
       fieldKey: "selectedTestTypes",
-      guidance: "実施するテストタイプを選定する（カタログから対象を選ぶ）。",
+      guidance: "実施するテストタイプ（機能テスト・非機能テストなど）をカタログから選定する。",
     },
     {
       id: "test-techniques",
@@ -120,7 +120,7 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: false,
       isoRef: "approach",
       fieldKey: "testTechniques",
-      guidance: "テストタイプごとに用いるアプローチ・技法を記述する。",
+      guidance: "テストタイプごとに用いるアプローチ・技法（テスト条件・テスト観点の識別方針を含む）を記述する。",
     },
 
     { id: "item-pass-fail-criteria", no: "6", titleJa: "合否基準", level: 1, required: false },
@@ -132,7 +132,7 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: false,
       isoRef: "item-pass-fail-criteria",
       fieldKey: "startCriteria",
-      guidance: "テストの開始基準と終了基準を記述する。",
+      guidance: "テストの開始基準（エントリー基準）と終了基準（イグジット基準）を記述する。",
     },
     {
       id: "result-judgment",
@@ -180,7 +180,7 @@ export const testPlanTemplate: TestPlanTemplate = {
       level: 1,
       required: true,
       fieldKey: "suspensionCriteria",
-      guidance: "テストを中断する条件と、再開する条件を記述する。",
+      guidance: "テストを中断する基準（中断基準）と、再開する基準（再開基準）を記述する。",
     },
 
     {

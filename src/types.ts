@@ -13,6 +13,28 @@ export interface Iso29119TestPlanStructure {
   sections: Iso29119Section[];
 }
 
+export type JstqbTermCategory =
+  | "test-level"
+  | "test-type"
+  | "criteria"
+  | "test-condition"
+  | "test-perspective"
+  | "review-type";
+
+export interface JstqbTerm {
+  id: string;
+  category: JstqbTermCategory;
+  nameJa: string;
+  nameEn: string;
+  definition: string;
+  isoRef?: string; // iso29119TestPlanStructure の section id への対応（該当する場合のみ）
+}
+
+export interface JstqbGlossary {
+  source: string;
+  terms: JstqbTerm[];
+}
+
 export interface TestPlanTemplateSection {
   id: string;
   no: string;
@@ -104,6 +126,22 @@ export interface TestPlanGlossaryEntry {
 export interface TestPlanReferenceDoc {
   name: string;
   description?: string;
+}
+
+export type ReviewSeverity = "high" | "medium" | "low";
+
+export interface TestPlanReviewCheckItem {
+  id: string; // 例: "CL-01"
+  severity: ReviewSeverity;
+  title: string; // 観点名（日本語）
+  check: string; // 何を確認するか（パラフレーズした指示文）
+  glossaryRefs?: string[]; // jstqbGlossary の term id（存在するもの）
+  chapterRefs?: string[]; // testPlanTemplate の section.no（例 "5.1"）または id
+}
+
+export interface TestPlanReviewChecklist {
+  name: string;
+  items: TestPlanReviewCheckItem[];
 }
 
 export interface TestPlanInput {
