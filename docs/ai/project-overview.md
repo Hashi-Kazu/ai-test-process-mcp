@@ -38,12 +38,14 @@ src/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
     reviewTestPlan.ts     # review_test_plan ツール（構造検査 + 意味的チェックリストの二層構成、renderTestPlanReview純関数）
+    reviseTestPlan.ts     # revise_test_plan ツール（欠落章補完・マーカー正規化の機械的修正 + LLM向け書き換え指示、renderTestPlanRevision純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
+  reviseTestPlan.test.ts          # renderTestPlanRevision()の単体テスト
   testPlanTemplate.test.ts        # テンプレート構造データの単体テスト
   jstqbGlossary.test.ts           # 用語集構造データの単体テスト
   testPlanReviewChecklist.test.ts # チェックリスト構造データの単体テスト

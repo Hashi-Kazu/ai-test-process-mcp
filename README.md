@@ -4,7 +4,7 @@
 
 テスト管理ツールの操作を目的とせず、Generic Test Process の各工程（Test Planning 〜 Test Completion）において、テスト成果物の作成・レビュー・分析を AI で支援することを目的とする。文書構成は ISO/IEC/IEEE 29119-3 に準拠する。
 
-**現在のスコープ（Phase 1: Test Planning）**: テスト計画書（ISO/IEC/IEEE 29119-3準拠15章構成）の日本語ドラフト生成・JSTQB観点でのレビュー・質問形式でのコンテキスト収集ガイド。
+**現在のスコープ（Phase 1: Test Planning）**: テスト計画書（ISO/IEC/IEEE 29119-3準拠15章構成）の日本語ドラフト生成・JSTQB観点でのレビュー・修正支援・質問形式でのコンテキスト収集ガイド。
 **将来構想**: Test Analysis（要件分析・テスト条件抽出）、Test Design（テストケース生成・テスト仕様書レビュー）を経て、Generic Test Process 全7工程へ段階的に拡張する。詳細は [docs/roadmap.md](./docs/roadmap.md) を参照。
 
 ## セットアップ
@@ -23,6 +23,10 @@ npm run build
 ### Tool: `review_test_plan`
 
 テスト計画書のMarkdown本文を入力すると、JSTQB観点でレビューレポートを返す。二層構成: (1) 構造検査（15章の欠落・必須項目の未記入を決定的に検出）、(2) 意味的レビュー用チェックリスト（呼び出し側のLLMが内容の妥当性を判断するための指示形式）。
+
+### Tool: `revise_test_plan`
+
+既存のテスト計画書Markdownと修正指示（`instructions`、任意の文字列配列）を入力すると、修正結果レポートを返す。二層構成: (1) 機械的修正（欠落章の自動補完、`TBD`/`TODO`/`未定`等の未記入プレースホルダの `_未記入_` への正規化）を適用した修正後計画書、(2) 内容の書き換えを呼び出し側LLMに指示する箇条書き（ユーザー指定の修正指示、および修正後もなお残る必須未記入項目の一覧）。
 
 ### Prompt: `test_plan_interview`
 

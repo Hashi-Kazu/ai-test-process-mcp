@@ -9,20 +9,20 @@ import type {
   TestPlanTemplateSection,
 } from "../types.js";
 
-const TBD = "_未記入_";
-const TBD_REQUIRED = "_未記入（必須）_";
+export const TBD = "_未記入_";
+export const TBD_REQUIRED = "_未記入（必須）_";
 
 const HEADING_REGEX = /^#{1,6}\s+(.+?)\s*$/;
 const NUMBER_PREFIX_REGEX = /^(\d+(?:\.\d+)*)[.．\s　]/;
 
-interface ParsedHeading {
+export interface ParsedHeading {
   lineIndex: number;
   raw: string;
   no?: string;
   titleText: string;
 }
 
-function parseHeadings(markdown: string): ParsedHeading[] {
+export function parseHeadings(markdown: string): ParsedHeading[] {
   const lines = markdown.split("\n");
   const headings: ParsedHeading[] = [];
   lines.forEach((line, i) => {
@@ -45,7 +45,7 @@ function normalizeTitle(value: string): string {
   return value.replace(/[\s　]/g, "");
 }
 
-function sectionExists(section: TestPlanTemplateSection, headings: ParsedHeading[]): boolean {
+export function sectionExists(section: TestPlanTemplateSection, headings: ParsedHeading[]): boolean {
   if (headings.some((h) => h.no === section.no)) return true;
   const normSection = normalizeTitle(section.titleJa);
   if (!normSection) return false;
@@ -62,7 +62,7 @@ function missingSeverity(section: TestPlanTemplateSection): ReviewSeverity {
   return "low";
 }
 
-function escapeRegExp(value: string): string {
+export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
@@ -70,7 +70,7 @@ interface TbdOccurrence {
   heading: string;
 }
 
-function findMarkerOccurrences(markdown: string, marker: string): TbdOccurrence[] {
+export function findMarkerOccurrences(markdown: string, marker: string): TbdOccurrence[] {
   const lines = markdown.split("\n");
   const markerRegex = new RegExp(escapeRegExp(marker), "g");
   let currentHeading = "(見出しなし)";
@@ -90,7 +90,7 @@ function findMarkerOccurrences(markdown: string, marker: string): TbdOccurrence[
   return occurrences;
 }
 
-function groupByHeading(occurrences: TbdOccurrence[]): { heading: string; count: number }[] {
+export function groupByHeading(occurrences: TbdOccurrence[]): { heading: string; count: number }[] {
   const order: string[] = [];
   const counts = new Map<string, number>();
   for (const occ of occurrences) {
