@@ -52,6 +52,23 @@ describe("renderTestPlanReview", () => {
     expect(reviewWithoutNumber.split("### 1.2")[0]).not.toContain("5 テスト方針（欠落）");
   });
 
+  it("reports 5.2 テストタイプ as a required-未記入 section when no test type is selected", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const review = renderTestPlanReview(planMarkdown);
+
+    const section1_2 = review.split("### 1.2")[1]?.split("### 1.3")[0] ?? "";
+    expect(section1_2).toContain("5.2 テストタイプ");
+    expect(section1_2).toContain("未記入（必須）が残存");
+  });
+
+  it("does not report 5.2 テストタイプ as required-未記入 when a test type is selected", () => {
+    const planMarkdown = renderTestPlan({ ...minimalInput, selectedTestTypes: ["機能テスト"] });
+    const review = renderTestPlanReview(planMarkdown);
+
+    const section1_2 = review.split("### 1.2")[1]?.split("### 1.3")[0] ?? "";
+    expect(section1_2).not.toContain("5.2 テストタイプ");
+  });
+
   it("includes all checklist item ids in section 2", () => {
     const planMarkdown = renderTestPlan(minimalInput);
     const review = renderTestPlanReview(planMarkdown);

@@ -22,9 +22,14 @@ const TBD_REQUIRED = "_未記入（必須）_";
 
 export const generateTestPlanInputShape = {
   projectName: z.string().describe("Name of the project or system under test"),
-  scope: z.string().describe("What is in scope for testing (features, systems, boundaries)"),
+  scope: z
+    .string()
+    .describe("(required section 1.1 スコープ・目的) What is in scope for testing (features, systems, boundaries)"),
   objectives: z.array(z.string()).optional().describe("Test objectives / goals"),
-  featuresToTest: z.array(z.string()).optional(),
+  featuresToTest: z
+    .array(z.string())
+    .optional()
+    .describe("(required section 3 テスト対象機能) Features included in test scope"),
   featuresNotToTest: z.array(z.string()).optional(),
   risks: z
     .array(
@@ -34,14 +39,16 @@ export const generateTestPlanInputShape = {
         mitigation: z.string().optional(),
       })
     )
-    .optional(),
+    .optional()
+    .describe("(required section 14.1 プロダクトリスク) Product risks with impact and mitigation"),
   scheduleConstraints: z
     .object({
       startDate: z.string().optional(),
       endDate: z.string().optional(),
       milestones: z.array(z.object({ name: z.string(), date: z.string() })).optional(),
     })
-    .optional(),
+    .optional()
+    .describe("(required section 13.2 スケジュール) Start/end dates and milestones"),
   team: z
     .array(
       z.object({
@@ -50,11 +57,21 @@ export const generateTestPlanInputShape = {
         responsibilities: z.string().optional(),
       })
     )
-    .optional(),
-  environment: z.string().optional().describe("Test environment needs (hardware, software, data, tools)"),
-  deliverables: z.array(z.string()).optional(),
-  passFailCriteria: z.string().optional(),
-  suspensionCriteria: z.string().optional(),
+    .optional()
+    .describe("(required section 11.1 テスト体制) Test organization roles and responsibilities"),
+  environment: z.string().optional().describe("(required section 10.1 テスト環境要件) Test environment needs (hardware, software, data, tools)"),
+  deliverables: z
+    .array(z.string())
+    .optional()
+    .describe("(required section 8 成果物) Deliverables produced by testing"),
+  passFailCriteria: z
+    .string()
+    .optional()
+    .describe("(required section 6.2 合否判定基準) Pass/fail criteria for test results"),
+  suspensionCriteria: z
+    .string()
+    .optional()
+    .describe("(required section 7 中断・再開基準) Suspension and resumption criteria"),
   approvers: z.array(z.string()).optional(),
   systemOverview: z
     .object({
@@ -82,12 +99,21 @@ export const generateTestPlanInputShape = {
       concerns: z.string().optional(),
     })
     .optional(),
-  testLevels: z.array(z.string()).optional(),
+  testLevels: z
+    .array(z.string())
+    .optional()
+    .describe("(required section 5.1 テストレベル) Test levels to be covered (e.g. component, integration, system, acceptance)"),
   revisionContent: z.array(z.string()).optional(),
   testItems: z
     .array(z.object({ name: z.string(), summary: z.string().optional() }))
-    .optional(),
-  selectedTestTypes: z.array(z.string()).optional(),
+    .optional()
+    .describe("(required section 2 テスト対象) Items under test (features, modules, systems)"),
+  selectedTestTypes: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "(required section 5.2 テストタイプ) Test type names selected from the fixed catalog (e.g. 機能テスト, 性能テスト); at least one is required"
+    ),
   testTechniques: z
     .array(
       z.object({
@@ -97,7 +123,7 @@ export const generateTestPlanInputShape = {
       })
     )
     .optional(),
-  testPeriod: z.string().optional(),
+  testPeriod: z.string().optional().describe("(required section 13.1 テスト期間) Overall test execution period"),
   startCriteria: z.string().optional(),
   endCriteria: z.string().optional(),
   completionCriteria: z.array(z.string()).optional(),
@@ -110,7 +136,8 @@ export const generateTestPlanInputShape = {
         period: z.string().optional(),
       })
     )
-    .optional(),
+    .optional()
+    .describe("(required section 10.2 テストデータ要件) Test data requirements and preparation ownership/timing"),
   stakeholders: z
     .array(
       z.object({
@@ -119,7 +146,8 @@ export const generateTestPlanInputShape = {
         contact: z.string().optional(),
       })
     )
-    .optional(),
+    .optional()
+    .describe("(optional section 11.2 ステークホルダー) Stakeholders and their contact information"),
   assumptions: z.array(z.string()).optional(),
   constraints: z.array(z.string()).optional(),
   glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
@@ -258,14 +286,21 @@ function testItemsContent(input: TestPlanInput, required: boolean): string {
   return lines.join("\n");
 }
 
-function testTypesContent(input: TestPlanInput): string {
+function testTypesContent(input: TestPlanInput, required: boolean): string {
   const selected = new Set(input.selectedTestTypes ?? []);
+  let matchedCount = 0;
   const lines: string[] = [];
   lines.push("| 対象 | テストタイプ | 説明 |");
   lines.push("| --- | --- | --- |");
   for (const t of testTypeCatalog) {
-    const mark = selected.has(t.name) ? "〇" : "";
+    const isSelected = selected.has(t.name);
+    if (isSelected) matchedCount += 1;
+    const mark = isSelected ? "〇" : "";
     lines.push(`| ${mark} | ${t.name} | ${t.description} |`);
+  }
+  if (matchedCount === 0) {
+    lines.push("");
+    lines.push(requiredTbd(required));
   }
   return lines.join("\n");
 }
@@ -416,7 +451,7 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
     case "test-levels":
       return listOrTbd(input.testLevels, req);
     case "test-types":
-      return testTypesContent(input);
+      return testTypesContent(input, req);
     case "test-techniques":
       return testTechniquesContent(input, req);
     case "start-end-criteria":

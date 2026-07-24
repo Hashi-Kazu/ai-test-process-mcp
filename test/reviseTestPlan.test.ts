@@ -94,6 +94,22 @@ describe("renderTestPlanRevision", () => {
     }
   });
 
+  it("appends 参考例 template candidates for required-未記入 8 成果物 and 11.1 テスト体制, but not for other required-未記入 sections", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const result = renderTestPlanRevision(planMarkdown);
+
+    const section3_2 = result.split("### 3.2")[1] ?? "";
+    const deliverablesBlock = section3_2.split("8 成果物")[1]?.split(/\n- /)[0] ?? "";
+    expect(deliverablesBlock).toContain("参考例（プロジェクトに応じて修正してください）");
+
+    const testOrgBlock = section3_2.split("11.1 テスト体制")[1]?.split(/\n- /)[0] ?? "";
+    expect(testOrgBlock).toContain("参考例（プロジェクトに応じて修正してください）");
+
+    // A required section without a template example (e.g. 7 中断・再開基準) should not get the note.
+    const suspensionBlock = section3_2.split("7 中断・再開基準")[1]?.split(/\n- /)[0] ?? "";
+    expect(suspensionBlock).not.toContain("参考例");
+  });
+
   it("does not duplicate an appended section when the revision output is re-revised", () => {
     const planMarkdown = renderTestPlan(minimalInput);
     const withoutSuspensionChapter = planMarkdown

@@ -53,6 +53,35 @@ describe("renderTestPlan", () => {
     expect(markdown).toContain("| 〇 | 性能テスト |");
   });
 
+  it("marks the test type table with 未記入（必須） when no test type is selected", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 5.2 テストタイプ");
+    const sectionEnd = markdown.indexOf("### 5.3", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("_未記入（必須）_");
+    // full catalog table should still be rendered
+    expect(section).toContain("機能テスト");
+    expect(section).toContain("移植性テスト");
+  });
+
+  it("does not mark the test type table as 未記入（必須） when at least one test type is selected", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Login and checkout flows",
+      selectedTestTypes: ["機能テスト"],
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 5.2 テストタイプ");
+    const sectionEnd = markdown.indexOf("### 5.3", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).not.toContain("_未記入（必須）_");
+  });
+
   it("interpolates provided fields instead of 未記入", () => {
     const input: TestPlanInput = {
       projectName: "Full Project",
