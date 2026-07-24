@@ -1,6 +1,6 @@
 # ai-test-process-mcp
 
-AIによるテストプロセス支援MCPサーバー。Phase 1はテスト計画書（ISO/IEC/IEEE 29119-3準拠）のドラフト生成のみ。TypeScript + `@modelcontextprotocol/sdk`。
+AIによるテストプロセス支援MCPサーバー。Phase 1 はテスト計画書のドラフト生成・レビュー・修正と、Test Design 技法エンジン。TypeScript + `@modelcontextprotocol/sdk`。
 
 ## 必須ルール
 
@@ -16,7 +16,7 @@ AIによるテストプロセス支援MCPサーバー。Phase 1はテスト計�
 - 受け入れテストは明示指示時のみ `acceptance-test` を使い、planner票をそのまま渡す。
 - テストFAILが実装バグなら報告を添えて実装担当（feature-dev、または明示指定時はCodex）へ戻し、設計・仕様の問題だけplannerへ戻す。
 - 新しいresource/toolを追加する際は、`src/resources/<name>.ts` + `src/tools/<name>.ts` を新設し、それぞれの `index.ts` に1行登録を足すパターンに従う（`server.ts` 本体は変更しない）。プラグインローダーやレジストリのような抽象化は追加しない。
-- ISO29119関連の知識は `src/resources/iso29119.ts` に構造化データとして保持し、規格本文の逐語転載はしない（著作権上、パラフレーズのみ）。
+- JSTQB/実務ベースのテスト知識は `src/resources/` 配下に構造化データとして保持し、原典の逐語転載はしない（著作権上、パラフレーズのみ）。
 - ツールのレンダリングロジック（例: `renderTestPlan()`）はMCP登録から独立した純関数として実装し、`test/` でvitestにより単体テストする。
 - サブエージェント定義（`.claude/agents/*.md`, `.codex/agents/*.toml`）は同期成果物。直接編集せず、正本 `C:\Claude Code\_agent-templates\*.md` を編集して `sync-agents.ps1` を実行する。
 

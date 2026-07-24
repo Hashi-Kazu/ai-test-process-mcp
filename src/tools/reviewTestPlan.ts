@@ -168,9 +168,8 @@ export function renderTestPlanReview(
     lines.push("");
     lines.push(item.check);
     const glossaryPart = item.glossaryRefs && item.glossaryRefs.length > 0 ? item.glossaryRefs.join(", ") : "-";
-    const chapterPart = item.chapterRefs && item.chapterRefs.length > 0 ? item.chapterRefs.join(", ") : "-";
     lines.push("");
-    lines.push(`根拠: 用語 ${glossaryPart}, 章 ${chapterPart}`);
+    lines.push(`根拠: 用語 ${glossaryPart}`);
     lines.push("");
   }
 

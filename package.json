@@ -1,8 +1,8 @@
 {
   "name": "ai-test-process-mcp",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
-  "description": "MCP server providing AI-assisted test process tools, starting with ISO/IEC/IEEE 29119-3 conformant test plan draft generation.",
+  "description": "MCP server providing AI-assisted test process tools, starting with JSTQB-based test plan draft generation and test design techniques.",
   "license": "MIT",
   "author": "Hashi_Kazu <outsider.prs.0721@gmail.com>",
   "repository": {
@@ -17,7 +17,7 @@
     "mcp",
     "model-context-protocol",
     "test-plan",
-    "iso29119",
+    "jstqb",
     "testing"
   ],
   "files": [

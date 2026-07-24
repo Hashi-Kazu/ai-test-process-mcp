@@ -1,18 +1,3 @@
-export interface Iso29119Section {
-  id: string;
-  title: string;
-  titleJa: string;
-  standardRef: string;
-  description: string;
-  requiredFields: string[];
-}
-
-export interface Iso29119TestPlanStructure {
-  standard: string;
-  documentType: string;
-  sections: Iso29119Section[];
-}
-
 export type JstqbTermCategory =
   | "test-level"
   | "test-type"
@@ -27,7 +12,6 @@ export interface JstqbTerm {
   nameJa: string;
   nameEn: string;
   definition: string;
-  isoRef?: string; // iso29119TestPlanStructure の section id への対応（該当する場合のみ）
 }
 
 export interface JstqbGlossary {
@@ -41,7 +25,6 @@ export interface TestPlanTemplateSection {
   titleJa: string;
   level: 1 | 2;
   required: boolean;
-  isoRef?: string;
   fieldKey?: string;
   guidance?: string;
 }
@@ -136,7 +119,6 @@ export interface TestPlanReviewCheckItem {
   title: string; // 観点名（日本語）
   check: string; // 何を確認するか（パラフレーズした指示文）
   glossaryRefs?: string[]; // jstqbGlossary の term id（存在するもの）
-  chapterRefs?: string[]; // testPlanTemplate の section.no（例 "5.1"）または id
 }
 
 export interface TestPlanReviewChecklist {
@@ -178,4 +160,35 @@ export interface TestPlanInput {
   glossary?: TestPlanGlossaryEntry[];
   referenceDocs?: TestPlanReferenceDoc[];
   notes?: string;
+}
+
+// --- Test Design 技法 ---
+export type BoundaryValueMode = "two" | "three";
+export type BoundaryVariableType = "int" | "decimal";
+
+export interface BoundaryVariableSpec {
+  name: string;
+  min: number;
+  max: number;
+  valueType?: BoundaryVariableType; // 既定 "int"
+  step?: number;                    // 既定: int=1 / decimal=0.1
+}
+
+export interface BoundaryValueRow {
+  variable: string;
+  value: number;
+  label: string;                 // 例 "下限-刻み" "下限" "上限+刻み"
+  validity: "valid" | "invalid";
+}
+
+export interface EquivalenceClassSpec {
+  label: string;
+  representative: string;
+  description?: string;
+}
+
+export interface EquivalencePartitioningVariableSpec {
+  name: string;
+  validClasses: EquivalenceClassSpec[];
+  invalidClasses?: EquivalenceClassSpec[];
 }
