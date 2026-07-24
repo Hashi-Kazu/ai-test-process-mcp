@@ -1,11 +1,11 @@
 import type { TestPlanReviewChecklist } from "../types.js";
 
 // テスト計画書レビューのための意味的レビューチェックリスト。
-// JSTQB・ISO/IEC/IEEE 29119 の逐語転載はせず、確認観点を自作の日本語文で要約している。
+// JSTQBの逐語転載はせず、確認観点を自作の日本語文で要約している。
 // glossaryRefs は jstqbGlossary.terms の id、chapterRefs は testPlanTemplate.sections の no
 // （実在する値）のみを参照する。
 export const testPlanReviewChecklist: TestPlanReviewChecklist = {
-  name: "テスト計画書レビューチェックリスト（JSTQB/29119観点）",
+  name: "テスト計画書レビューチェックリスト（JSTQB観点）",
   items: [
     {
       id: "CL-01",

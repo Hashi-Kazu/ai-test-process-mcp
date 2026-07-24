@@ -16,7 +16,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 7. Test Completion
 ```
 
-文書構成は ISO/IEC/IEEE 29119-3 に準拠する（JSTQB/ISTQB シラバス自体が文書構成については ISO 29119-3 を参照しており、両者は矛盾しない）。
+文書構成は一般的なテスト計画書のベストプラクティスに準拠する。
 
 ### 提供価値
 
@@ -32,10 +32,10 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 ## 全フェーズ共通の方針
 
 - **スモールステップ**: 1ステップ = 1 PRサイズ。既存の拡張パターン（`src/resources/<name>.ts` + `src/tools/<name>.ts` を新設し、各 `index.ts` に1行登録。`server.ts` は変更しない）を厳守する。
-- **JSTQB準拠の実現方式**: 文書の章構成は ISO/IEC/IEEE 29119-3 を維持し、JSTQB 用語・シラバスの観点を知識リソース（`jstqb://glossary/core` 等）として追加・整合させる。既存機能を壊さずに積み上げる。
+- **JSTQB準拠の実現方式**: 文書の章構成は標準的なテスト計画書の構成を維持し、JSTQB 用語・シラバスの観点を知識リソース（`jstqb://glossary/core` 等）として追加・整合させる。既存機能を壊さずに積み上げる。
 - **レビュー系toolの二層構成**: 機械的チェック（章の欠落、必須項目の未記入、ID重複などの構造検査）は純関数で決定的に実施し vitest で単体テストする。意味的レビュー（内容の妥当性判断）は JSTQB 準拠チェックリストを tool 出力 / resource として返し、呼び出し側の LLM が適用する。
 - **生成系toolの3点セット構成**: 生成系は resource（テンプレート構造データ）+ tool（zodスキーマ + 純関数レンダリング）+ interview prompt（対話的コンテキスト収集）で構成する（`create_test_plan` / `test_plan_interview` と同型）。
-- **著作権**: JSTQB用語集・シラバス・ISO 29119 とも逐語転載せず、パラフレーズのみを構造化データとして保持する（`src/resources/iso29119.ts` と同じルール）。
+- **著作権**: JSTQB用語集・シラバス等は逐語転載せず、パラフレーズのみを構造化データとして保持する（`src/resources/iso29119.ts` と同じルール）。
 - **進め方**: 各ステップの着手時は `AGENTS.md` のルール通り、planner による調査・仕様策定・引き渡し票生成を経て実装担当（feature-dev）へ引き継ぐ。
 
 ## フェーズ計画
@@ -48,7 +48,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 
 | tool | 内容 | 状態 |
 | --- | --- | --- |
-| `create_test_plan` | ISO/IEC/IEEE 29119-3 準拠15章構成の日本語テスト計画書ドラフト生成（旧名 `gen_test_plan`） | 完了 |
+| `create_test_plan` | 標準15章構成の日本語テスト計画書ドラフト生成（旧名 `gen_test_plan`） | 完了 |
 | `review_test_plan` | JSTQB観点でのテスト計画書レビュー（構造検査 + 意味的チェックリストの二層構成） | 完了 |
 | `revise_test_plan` | レビュー結果・修正指示を反映したテスト計画書の修正支援 | 完了 |
 
@@ -110,14 +110,14 @@ Generic Test Process の各工程で最終的に提供したい tool 群。Phase
 - プロジェクト横断でのナレッジ蓄積
 - 組織標準やテンプレートのカスタマイズ対応
 - RAG による社内テスト標準・過去資産の参照
-- テスト状況報告書・テスト完了報告書の生成（29119-3 のテスト状況報告・完了報告に相当）
+- テスト状況報告書・テスト完了報告書の生成
 - レビュー用 interview prompt（`test_plan_interview` のレビュー版。レビュー対象・観点を対話的に絞り込む）
 
 ## 実装履歴
 
 | ステップ | 内容 | 状態 |
 | --- | --- | --- |
-| 旧Phase 1 | テスト計画書ドラフト生成 `gen_test_plan`（29119-3準拠15章） | 完了（v0.3.0） |
+| 旧Phase 1 | テスト計画書ドラフト生成 `gen_test_plan`（標準15章構成） | 完了（v0.3.0） |
 | 旧Phase 2 | JSTQB用語基盤（`jstqb://glossary/core` resource + テンプレート用語整合） | 完了（v0.4.0） |
 | 旧Phase 3 | テスト計画書レビュー tool `review_test_plan` | 完了（v0.5.0） |
 | 構想再編 | Generic Test Process 構想へのロードマップ再編 + `gen_test_plan` → `create_test_plan` リネーム | 完了（v0.6.0） |

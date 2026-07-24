@@ -1,13 +1,13 @@
 import type { TestPlanTemplate } from "../types.js";
 
 // テスト計画書テンプレートの構造データ。
-// 章(level 1)は ISO/IEC/IEEE 29119-3:2013 のテスト計画 15章構成（iso29119.ts の
+// 章(level 1)はテスト計画の標準的な15章構成（iso29119.ts の
 // sections と id を一致させる）に対応し、その配下に節(level 2)を持つ。
 // required は必須記入とする節（および子を持たない章）を表す。
-// isoRef は対応する ISO/IEC/IEEE 29119-3 セクション id（iso29119.ts の id）への対応付け。
+// isoRef は対応する参照セクション id（iso29119.ts の id）への対応付け。
 // fieldKey は generateTestPlan の入力オブジェクトの対応キー（対応する入力があれば）。
 export const testPlanTemplate: TestPlanTemplate = {
-  templateName: "テスト計画書テンプレート（ISO/IEC/IEEE 29119-3準拠）",
+  templateName: "テスト計画書テンプレート（標準15章構成）",
   sections: [
     { id: "introduction", no: "1", titleJa: "はじめに", level: 1, required: false },
     {

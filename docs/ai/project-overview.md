@@ -2,7 +2,7 @@
 
 ## 概要
 
-JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」を実装済み。文書構成は ISO/IEC/IEEE 29119-3 に準拠し、ISO29119・JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
+JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」を実装済み。文書構成は一般的なテスト計画書のベストプラクティスに準拠し、テスト計画構造・JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
 
 ## 技術スタック
 
@@ -30,8 +30,8 @@ src/
   types.ts             # 共有型（TestPlanInput, TestPlanTemplate, Iso29119Section, JstqbGlossary 等）
   resources/
     index.ts                    # 全resourceを登録
-    iso29119.ts                 # ISO/IEC/IEEE 29119-3 テスト計画構造の参照データ（日本語見出しtitleJa付き）
-    testPlanTemplate.ts         # テスト計画テンプレート（29119-3準拠15章構造＋固定ボイラープレート）
+    iso29119.ts                 # テスト計画構造の参照データ（日本語見出しtitleJa付き）
+    testPlanTemplate.ts         # テスト計画テンプレート（標準15章構造＋固定ボイラープレート）
     jstqbGlossary.ts            # JSTQB用語のパラフレーズ集（jstqb://glossary/core）
     testPlanReviewChecklist.ts  # テスト計画書レビューチェックリスト（testplan://review/checklist）
   tools/
