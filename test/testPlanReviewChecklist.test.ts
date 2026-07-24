@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { testPlanReviewChecklist } from "../src/resources/testPlanReviewChecklist.js";
 import { jstqbGlossary } from "../src/resources/jstqbGlossary.js";
-import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
 
 describe("testPlanReviewChecklist", () => {
   it("has unique item ids", () => {
@@ -23,15 +22,6 @@ describe("testPlanReviewChecklist", () => {
     for (const item of testPlanReviewChecklist.items) {
       for (const ref of item.glossaryRefs ?? []) {
         expect(glossaryIds.has(ref)).toBe(true);
-      }
-    }
-  });
-
-  it("references only valid test plan template section numbers", () => {
-    const sectionNos = new Set(testPlanTemplate.sections.map((s) => s.no));
-    for (const item of testPlanReviewChecklist.items) {
-      for (const ref of item.chapterRefs ?? []) {
-        expect(sectionNos.has(ref)).toBe(true);
       }
     }
   });

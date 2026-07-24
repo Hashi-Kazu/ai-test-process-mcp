@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { jstqbGlossary } from "../src/resources/jstqbGlossary.js";
-import { iso29119TestPlanStructure } from "../src/resources/iso29119.js";
 
 describe("jstqbGlossary", () => {
   it("has unique term ids", () => {
@@ -48,14 +47,5 @@ describe("jstqbGlossary", () => {
     expect(ids).toEqual(
       ["informal-review", "inspection", "technical-review", "walkthrough"].sort()
     );
-  });
-
-  it("references only valid ISO 29119 section ids", () => {
-    const isoIds = new Set(iso29119TestPlanStructure.sections.map((s) => s.id));
-    for (const term of jstqbGlossary.terms) {
-      if (term.isoRef) {
-        expect(isoIds.has(term.isoRef)).toBe(true);
-      }
-    }
   });
 });

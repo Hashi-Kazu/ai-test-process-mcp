@@ -2,9 +2,9 @@
 
 **JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。**
 
-テスト管理ツールの操作を目的とせず、Generic Test Process の各工程（Test Planning 〜 Test Completion）において、テスト成果物の作成・レビュー・分析を AI で支援することを目的とする。文書構成は ISO/IEC/IEEE 29119-3 に準拠する。
+テスト管理ツールの操作を目的とせず、Generic Test Process の各工程（Test Planning 〜 Test Completion）において、テスト成果物の作成・レビュー・分析を AI で支援することを目的とする。文書構成は JSTQB準拠の15章テンプレートに基づく。
 
-**現在のスコープ（Phase 1: Test Planning）**: テスト計画書（ISO/IEC/IEEE 29119-3準拠15章構成）の日本語ドラフト生成・JSTQB観点でのレビュー・修正支援・質問形式でのコンテキスト収集ガイド。
+**現在のスコープ（Phase 1: Test Planning + Test Design）**: テスト計画書（JSTQB準拠15章構成）の日本語ドラフト生成・JSTQB観点でのレビュー・修正支援・質問形式でのコンテキスト収集ガイド、および境界値分析・同値分割によるテスト設計技法。
 **将来構想**: Test Analysis（要件分析・テスト条件抽出）、Test Design（テストケース生成・テスト仕様書レビュー）を経て、Generic Test Process 全7工程へ段階的に拡張する。詳細は [docs/roadmap.md](./docs/roadmap.md) を参照。
 
 ## セットアップ
@@ -18,7 +18,7 @@ npm run build
 
 ### Tool: `create_test_plan`
 
-プロジェクト情報（`projectName`, `scope` は必須。`objectives`, `risks`, `scheduleConstraints`, `team`, `testItems`, `stakeholders`, `glossary` など多数の任意項目）を入力すると、ISO/IEC/IEEE 29119-3準拠の15章構成に沿った**日本語**Markdown形式のテスト計画書ドラフトを生成する。未入力の項目は `_未記入_`（必須項目は `_未記入（必須）_`）として明示される。テストタイプ説明・インシデントランク等の固定リファレンスは常に出力される。
+プロジェクト情報（`projectName`, `scope` は必須。`objectives`, `risks`, `scheduleConstraints`, `team`, `testItems`, `stakeholders`, `glossary` など多数の任意項目）を入力すると、JSTQB準拠の15章構成に沿った**日本語**Markdown形式のテスト計画書ドラフトを生成する。未入力の項目は `_未記入_`（必須項目は `_未記入（必須）_`）として明示される。テストタイプ説明・インシデントランク等の固定リファレンスは常に出力される。
 
 ### Tool: `review_test_plan`
 
@@ -32,21 +32,25 @@ npm run build
 
 質問形式でテスト計画書のコンテキストを収集するためのガイド。テンプレートの必須項目を中心に、ユーザーへ順に質問して回答を集め、`create_test_plan` を呼び出すようアシスタントを誘導する。任意引数 `projectName` を受け取る。
 
-### Resource: `iso29119://test-plan/structure`
+### Tool: `design_boundary_values`
 
-ISO/IEC/IEEE 29119-3のテスト計画15章立て（Introduction〜Approvals）を構造化データ（JSON）として公開する。各セクションに日本語見出し（`titleJa`）を併記。
+変数の有効範囲（下限・上限・刻み・型）から2値/3値の境界値を決定的に列挙し、有効/無効判定付きのMarkdown表で返す。
+
+### Tool: `design_equivalence_partitioning`
+
+変数ごとの有効/無効同値クラスから代表値ベースのテストケースを決定的に生成し、全クラス被覆チェック付きのMarkdown表で返す。
 
 ### Resource: `testplan://template/standard`
 
-テスト計画書テンプレート（ISO/IEC/IEEE 29119-3準拠15章構成）の構造データ（JSON）を公開する。各セクションの見出し・必須フラグ・ISO29119対応（`isoRef`）・入力マッピング（`fieldKey`）に加え、固定リファレンス（テストタイプ・カタログ、インシデントランク、判定ステータス、標準メトリクス等）を含む。
+テスト計画書テンプレート（JSTQB準拠15章構成）の構造データ（JSON）を公開する。各セクションの見出し・必須フラグ・入力マッピング（`fieldKey`）に加え、固定リファレンス（テストタイプ・カタログ、インシデントランク、判定ステータス、標準メトリクス等）を含む。
 
 ### Resource: `jstqb://glossary/core`
 
-JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テストタイプ・開始基準/終了基準・テスト条件/テスト観点・レビュータイプ等）を構造化データ（JSON）として公開する。各用語にISO 29119-3の章参照を併記。
+JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テストタイプ・開始基準/終了基準・テスト条件/テスト観点・レビュータイプ等）を構造化データ（JSON）として公開する。
 
 ### Resource: `testplan://review/checklist`
 
-テスト計画書の意味的レビュー用チェックリスト（JSTQB観点、用語集・テンプレート章への相互参照付き）を構造化データ（JSON）として公開する。
+テスト計画書の意味的レビュー用チェックリスト（JSTQB観点、用語集への相互参照付き）を構造化データ（JSON）として公開する。
 
 ## コマンド
 
