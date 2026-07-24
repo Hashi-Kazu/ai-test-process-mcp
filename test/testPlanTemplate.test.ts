@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
-import { iso29119TestPlanStructure } from "../src/resources/iso29119.js";
 
 describe("testPlanTemplate", () => {
-  it("defines exactly 15 level-1 chapters matching ISO/IEC/IEEE 29119-3", () => {
+  it("defines exactly 15 level-1 chapters", () => {
     const chapters = testPlanTemplate.sections.filter((s) => s.level === 1);
     expect(chapters).toHaveLength(15);
     expect(chapters.map((c) => c.no)).toEqual([
@@ -24,8 +23,23 @@ describe("testPlanTemplate", () => {
       "15",
     ]);
 
-    const isoIds = iso29119TestPlanStructure.sections.map((s) => s.id);
-    expect(chapters.map((c) => c.id)).toEqual(isoIds);
+    expect(chapters.map((c) => c.id)).toEqual([
+      "introduction",
+      "test-items",
+      "features-to-be-tested",
+      "features-not-to-be-tested",
+      "approach",
+      "item-pass-fail-criteria",
+      "suspension-resumption-criteria",
+      "test-deliverables",
+      "testing-tasks",
+      "environmental-needs",
+      "responsibilities",
+      "staffing-and-training-needs",
+      "schedule",
+      "risks-and-contingencies",
+      "approvals",
+    ]);
   });
 
   it("has unique section numbers and ids", () => {
@@ -58,14 +72,5 @@ describe("testPlanTemplate", () => {
       "13.2",
       "14.1",
     ]);
-  });
-
-  it("references only valid ISO 29119 section ids", () => {
-    const isoIds = new Set(iso29119TestPlanStructure.sections.map((s) => s.id));
-    for (const section of testPlanTemplate.sections) {
-      if (section.isoRef) {
-        expect(isoIds.has(section.isoRef)).toBe(true);
-      }
-    }
   });
 });

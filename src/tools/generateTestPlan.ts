@@ -511,8 +511,7 @@ export function registerGenerateTestPlanTool(server: McpServer): void {
     "create_test_plan",
     {
       title: "Generate Test Plan Draft",
-      description:
-        "15章構成の日本語テスト計画書ドラフトを生成。未入力項目は 未記入 と明示。",
+      description: "15章構成の日本語テスト計画書ドラフトを生成。未入力項目は 未記入 と明示。",
       inputSchema: generateTestPlanInputShape,
     },
     async (input) => {

@@ -1,13 +1,12 @@
 import type { TestPlanTemplate } from "../types.js";
 
 // テスト計画書テンプレートの構造データ。
-// 章(level 1)はテスト計画の標準的な15章構成（iso29119.ts の
-// sections と id を一致させる）に対応し、その配下に節(level 2)を持つ。
+// 章(level 1)は JSTQB/実務で広く使われるテスト計画書の15章構成に対応し、
+// その配下に節(level 2)を持つ。
 // required は必須記入とする節（および子を持たない章）を表す。
-// isoRef は対応する参照セクション id（iso29119.ts の id）への対応付け。
 // fieldKey は generateTestPlan の入力オブジェクトの対応キー（対応する入力があれば）。
 export const testPlanTemplate: TestPlanTemplate = {
-  templateName: "テスト計画書テンプレート（標準15章構成）",
+  templateName: "テスト計画書テンプレート（JSTQB準拠15章構成）",
   sections: [
     { id: "introduction", no: "1", titleJa: "はじめに", level: 1, required: false },
     {
@@ -16,7 +15,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "スコープ・目的",
       level: 2,
       required: true,
-      isoRef: "introduction",
       fieldKey: "scope",
       guidance: "本書がカバーするテストのスコープ（対象範囲）と、達成したい目的・目標を記述する。",
     },
@@ -26,7 +24,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "背景",
       level: 2,
       required: false,
-      isoRef: "introduction",
       fieldKey: "background",
       guidance: "テストに至った経緯や現状、懸念事項を記述する。",
     },
@@ -36,7 +33,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "参考資料・テストベース",
       level: 2,
       required: false,
-      isoRef: "introduction",
       fieldKey: "references",
       guidance: "テスト設計の根拠となる資料（仕様書・要件定義書等）および参考文献を列挙する。",
     },
@@ -46,7 +42,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "前提条件・制約",
       level: 2,
       required: false,
-      isoRef: "introduction",
       fieldKey: "assumptions",
       guidance: "テスト実施の前提条件と制限事項を記述する。",
     },
@@ -56,7 +51,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "用語集",
       level: 2,
       required: false,
-      isoRef: "introduction",
       fieldKey: "glossary",
       guidance: "本書で用いる用語とその定義を記述する。",
     },
@@ -98,7 +92,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テストレベル",
       level: 2,
       required: true,
-      isoRef: "approach",
       fieldKey: "testLevels",
       guidance: "対象とするテストレベル（コンポーネントテスト・統合テスト・システムテスト・受け入れテスト等）を記述する。",
     },
@@ -108,7 +101,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テストタイプ",
       level: 2,
       required: true,
-      isoRef: "approach",
       fieldKey: "selectedTestTypes",
       guidance: "実施するテストタイプ（機能テスト・非機能テストなど）をカタログから選定する。",
     },
@@ -118,7 +110,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テスト技法",
       level: 2,
       required: false,
-      isoRef: "approach",
       fieldKey: "testTechniques",
       guidance: "テストタイプごとに用いるアプローチ・技法（テスト条件・テスト観点の識別方針を含む）を記述する。",
     },
@@ -130,7 +121,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "開始・終了基準",
       level: 2,
       required: false,
-      isoRef: "item-pass-fail-criteria",
       fieldKey: "startCriteria",
       guidance: "テストの開始基準（エントリー基準）と終了基準（イグジット基準）を記述する。",
     },
@@ -140,7 +130,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "合否判定基準",
       level: 2,
       required: true,
-      isoRef: "item-pass-fail-criteria",
       fieldKey: "passFailCriteria",
       guidance: "テスト実施結果の合否判定基準を記述する。",
     },
@@ -150,7 +139,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "完了基準",
       level: 2,
       required: false,
-      isoRef: "item-pass-fail-criteria",
       fieldKey: "completionCriteria",
       guidance: "テストが完了したとみなす基準を記述する。",
     },
@@ -160,7 +148,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "インシデント判定基準",
       level: 2,
       required: false,
-      isoRef: "item-pass-fail-criteria",
       guidance: "検出したインシデントのランク判定基準を記述する。",
     },
     {
@@ -169,7 +156,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "質問事項重要度基準",
       level: 2,
       required: false,
-      isoRef: "item-pass-fail-criteria",
       guidance: "質問事項の重要度の判定基準を記述する。",
     },
 
@@ -200,7 +186,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テスト作業の流れ",
       level: 2,
       required: false,
-      isoRef: "testing-tasks",
       guidance: "テスト作業全体の流れ（準備〜実施〜完了）を記述する。",
     },
     {
@@ -209,7 +194,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テスト実行時の記録",
       level: 2,
       required: false,
-      isoRef: "testing-tasks",
       guidance: "テスト実行時に記録すべき情報を記述する。",
     },
     {
@@ -218,7 +202,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "収集メトリクス",
       level: 2,
       required: false,
-      isoRef: "testing-tasks",
       fieldKey: "metricsNote",
       guidance: "テスト中に収集・分析するメトリクスを記述する。",
     },
@@ -230,7 +213,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テスト環境要件",
       level: 2,
       required: true,
-      isoRef: "environmental-needs",
       fieldKey: "environment",
       guidance: "テストに必要な環境（ハード・ソフト・ツール等）を記述する。",
     },
@@ -240,7 +222,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テストデータ要件",
       level: 2,
       required: true,
-      isoRef: "environmental-needs",
       fieldKey: "testDataRequirements",
       guidance: "テストに必要なデータの要件・準備方針を記述する。",
     },
@@ -252,7 +233,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テスト体制",
       level: 2,
       required: true,
-      isoRef: "responsibilities",
       fieldKey: "team",
       guidance: "テスト実施体制（役割・担当）を記述する。",
     },
@@ -262,7 +242,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "ステークホルダー",
       level: 2,
       required: false,
-      isoRef: "responsibilities",
       fieldKey: "stakeholders",
       guidance: "関係するステークホルダーと連絡先を記述する。",
     },
@@ -283,7 +262,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "テスト期間",
       level: 2,
       required: true,
-      isoRef: "schedule",
       fieldKey: "testPeriod",
       guidance: "テスト全体の実施期間を記述する。",
     },
@@ -293,7 +271,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "スケジュール",
       level: 2,
       required: true,
-      isoRef: "schedule",
       fieldKey: "scheduleConstraints",
       guidance: "主要な日程・マイルストーンを記述する。",
     },
@@ -305,7 +282,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "プロダクトリスク",
       level: 2,
       required: true,
-      isoRef: "risks-and-contingencies",
       fieldKey: "risks",
       guidance: "プロダクト品質に関わるリスクと、その影響・対策を記述する。",
     },
@@ -315,7 +291,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "プロジェクトリスク",
       level: 2,
       required: false,
-      isoRef: "risks-and-contingencies",
       guidance: "プロジェクト遂行上のリスクと対策を記述する。",
     },
 
@@ -326,7 +301,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "承認者",
       level: 2,
       required: false,
-      isoRef: "approvals",
       fieldKey: "approvers",
       guidance: "本計画書の承認者を列挙する。",
     },
@@ -336,7 +310,6 @@ export const testPlanTemplate: TestPlanTemplate = {
       titleJa: "特記事項",
       level: 2,
       required: false,
-      isoRef: "approvals",
       fieldKey: "notes",
       guidance: "その他、特記すべき事項を記述する。",
     },

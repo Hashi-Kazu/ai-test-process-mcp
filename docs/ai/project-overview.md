@@ -2,7 +2,7 @@
 
 ## 概要
 
-JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」を実装済み。文書構成は一般的なテスト計画書のベストプラクティスに準拠し、テスト計画構造・JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
+JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
 
 ## 技術スタック
 
@@ -27,11 +27,10 @@ npm run inspect   # build後、MCP Inspectorで動作確認
 ```text
 src/
   server.ts            # McpServer作成・resource/tool/prompt登録・stdio接続
-  types.ts             # 共有型（TestPlanInput, TestPlanTemplate, Iso29119Section, JstqbGlossary 等）
+  types.ts             # 共有型（TestPlanInput, TestPlanTemplate, JstqbGlossary 等）
   resources/
     index.ts                    # 全resourceを登録
-    iso29119.ts                 # テスト計画構造の参照データ（日本語見出しtitleJa付き）
-    testPlanTemplate.ts         # テスト計画テンプレート（標準15章構造＋固定ボイラープレート）
+    testPlanTemplate.ts         # テスト計画テンプレート（JSTQB準拠15章構造＋固定ボイラープレート）
     jstqbGlossary.ts            # JSTQB用語のパラフレーズ集（jstqb://glossary/core）
     testPlanReviewChecklist.ts  # テスト計画書レビューチェックリスト（testplan://review/checklist）
   tools/
@@ -39,6 +38,8 @@ src/
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
     reviewTestPlan.ts     # review_test_plan ツール（構造検査 + 意味的チェックリストの二層構成、renderTestPlanReview純関数）
     reviseTestPlan.ts     # revise_test_plan ツール（欠落章補完・マーカー正規化の機械的修正 + LLM向け書き換え指示、renderTestPlanRevision純関数）
+    designBoundaryValues.ts          # design_boundary_values ツール（境界値分析、renderBoundaryValues純関数）
+    designEquivalencePartitioning.ts # design_equivalence_partitioning ツール（同値分割、renderEquivalencePartitioning純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -50,6 +51,8 @@ test/
   jstqbGlossary.test.ts           # 用語集構造データの単体テスト
   testPlanReviewChecklist.test.ts # チェックリスト構造データの単体テスト
   testPlanInterview.test.ts       # buildInterviewPrompt()の単体テスト
+  designBoundaryValues.test.ts          # renderBoundaryValues()の単体テスト
+  designEquivalencePartitioning.test.ts # renderEquivalencePartitioning()の単体テスト
 ```
 
 ## 拡張パターン（Test Analysis・Test Design ほか各工程の tool 追加）
