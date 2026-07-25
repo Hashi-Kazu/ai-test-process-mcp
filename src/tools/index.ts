@@ -6,6 +6,7 @@ import { registerDesignBoundaryValuesTool } from "./designBoundaryValues.js";
 import { registerDesignEquivalencePartitioningTool } from "./designEquivalencePartitioning.js";
 import { registerReviewTestBasisTool } from "./reviewTestBasis.js";
 import { registerAnalyzeRequirementsTool } from "./analyzeRequirements.js";
+import { registerExtractTestConditionsTool } from "./extractTestConditions.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -15,4 +16,5 @@ export function registerTools(server: McpServer): void {
   registerDesignEquivalencePartitioningTool(server);
   registerReviewTestBasisTool(server);
   registerAnalyzeRequirementsTool(server);
+  registerExtractTestConditionsTool(server);
 }

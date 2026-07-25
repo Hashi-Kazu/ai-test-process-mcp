@@ -5,6 +5,9 @@ import { testPlanReviewChecklist } from "./testPlanReviewChecklist.js";
 import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
 import { qualityCharacteristicModel } from "./qualityCharacteristics.js";
 import { requirementIdPatternCatalog } from "./requirementIdPatterns.js";
+import { testPerspectiveCatalog } from "./testPerspectiveCatalog.js";
+import { guidewordDictionary } from "./guidewordDictionary.js";
+import { riskAnalysisFrame } from "./riskAnalysisFrame.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -122,6 +125,66 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(requirementIdPatternCatalog, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-perspective-catalog",
+    "testcondition://perspectives/catalog",
+    {
+      title: "Test Perspective Catalog",
+      description:
+        "Paraphrased catalog of 18 test perspective categories with focus examples, related quality characteristics, and recommended techniques, used to detect missing test conditions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testPerspectiveCatalog, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "guideword-dictionary",
+    "testcondition://guidewords/dictionary",
+    {
+      title: "Guideword Dictionary",
+      description:
+        "Vocabulary of focus points and guidewords with question templates, plus the operating procedure for combining them to surface test conditions that the test basis does not state.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(guidewordDictionary, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "risk-analysis-frame",
+    "testcondition://risk/frame",
+    {
+      title: "Risk Analysis Frame",
+      description:
+        "Impact / likelihood / change-difference axes, stakeholder impact questions, the risk score formula, and the score-to-priority mapping used to prioritize test conditions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(riskAnalysisFrame, null, 2),
         },
       ],
     })

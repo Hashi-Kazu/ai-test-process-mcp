@@ -398,3 +398,119 @@ export interface AnalyzeRequirementsInput {
   changeItems?: RequirementsChangeItem[];
   qualityCharacteristicIds?: string[]; // 指定時は該当特性のみをマッピング指示に出す
 }
+
+// --- テスト観点カタログ ---
+export type TestTechniqueId =
+  | "equivalence-partitioning" | "boundary-value-analysis" | "decision-table"
+  | "state-transition" | "pairwise" | "scenario-based" | "use-case-based"
+  | "error-guessing" | "exploratory" | "checklist-based"
+  | "load-test" | "long-run-test" | "fault-injection" | "concurrency-test"
+  | "timing-order-test" | "data-lifecycle-test" | "config-matrix" | "regression-selection";
+
+export interface TestPerspective {
+  id: string;                            // "TPC-01-01" 形式
+  nameJa: string;
+  focusExamples: string[];               // 着眼点例（自作の日本語文、1件以上）
+  relatedQualityCharacteristicIds: string[]; // qualityCharacteristicModel の QC-XX / QC-XX-YY id のみ
+  recommendedTechniques: TestTechniqueId[];  // 1件以上
+}
+export interface TestPerspectiveCategory {
+  id: string;                            // "TPC-01" 形式
+  nameJa: string;
+  summary: string;
+  perspectives: TestPerspective[];       // 1件以上
+}
+export interface TestPerspectiveCatalog {
+  name: string;
+  note: string;                          // 自作整理であることの明示
+  categories: TestPerspectiveCategory[];
+}
+
+// --- ガイドワード辞書 ---
+export interface GuidewordFocusPoint {
+  id: string;        // "GWF-01" 形式
+  nameJa: string;
+  examples: string[];
+}
+export interface Guideword {
+  id: string;        // "GW-01" 形式
+  word: string;
+  meaning: string;
+  questionTemplates: string[]; // "{着目点1}の{着目点2}が無い場合どうなるか" 等
+}
+export interface GuidewordDictionary {
+  name: string;
+  note: string;
+  procedure: string[];              // 運用手順（出力文に必ず含める）
+  focusPoints: GuidewordFocusPoint[];
+  guidewords: Guideword[];
+}
+
+// --- リスク分析フレーム ---
+export interface RiskAxisLevel { value: number; label: string; criteria: string; }
+export interface RiskAxis { id: string; nameJa: string; description: string; levels: RiskAxisLevel[]; }
+export interface RiskStakeholderFrame { id: string; nameJa: string; impactQuestions: string[]; }
+export interface RiskLevelBand {
+  id: string;                       // "R1".."R4"
+  minScore: number; maxScore: number;
+  priority: "高" | "中" | "低";
+  guidance: string;
+}
+export interface RiskAnalysisFrame {
+  name: string; note: string;
+  impactAxis: RiskAxis;             // "RA-IMPACT" value 1..5
+  likelihoodAxis: RiskAxis;         // "RA-LIKELIHOOD" value 1..5
+  changeAxis: RiskAxis;             // "RA-CHANGE" 変更差分軸
+  stakeholderFrames: RiskStakeholderFrame[];
+  formula: string;                  // 算出式の説明文
+  bands: RiskLevelBand[];           // minScore 降順で定義、区間は連続かつ重複なし
+}
+
+// --- テスト条件抽出（extract_test_conditions） ---
+export type TestConditionSource = "testbase" | "stakeholder" | "risk" | "guideword";
+export type TestConditionPriority = "高" | "中" | "低";
+
+export interface TestConditionInput {
+  id: string;                        // "TC-001" 形式
+  target: string;                    // 対象（機能ID・画面ID）
+  perspectiveCategoryId: string;     // TPC-XX（必須）
+  perspectiveId?: string;            // TPC-XX-YY
+  statement: string;                 // 条件文
+  source: TestConditionSource;       // 必須
+  derivedFrom: string[];             // 必須・1件以上（要件ID / リスクID / ペルソナID）
+  priority?: TestConditionPriority;
+  impact?: number;                   // 1..5
+  likelihood?: number;               // 1..5
+  changeCategory?: RequirementsChangeCategory;
+  recommendedTechniques?: TestTechniqueId[];
+  rationale?: string;                // 導出根拠の補足
+  priorityDeviationReason?: string;  // 優先度基準からの逸脱理由
+}
+export interface TestConditionPersonaInput { id: string; role: string; name?: string; concerns?: string; }
+export interface TestConditionRiskInput {
+  id: string; description: string;
+  impact?: number; likelihood?: number; changeCategory?: RequirementsChangeCategory;
+}
+export interface ExtractTestConditionsInput {
+  requirementIds: string[];
+  testConditions: TestConditionInput[];
+  personas?: TestConditionPersonaInput[];
+  risks?: TestConditionRiskInput[];
+  coverageCriteria?: string[];
+  priorityCriteria?: string[];
+  perspectiveCategoryIds?: string[];
+  idPrefix?: string;                 // 既定 "TC-"
+}
+
+// 決定的検査の結果型
+export interface RequirementCoverageRow { requirementId: string; conditionIds: string[]; }
+export interface TestConditionDuplicateId { id: string; count: number; }
+export interface TestConditionSourceDistributionRow { source: TestConditionSource; count: number; conditionIds: string[]; }
+export interface TestConditionUnresolvedRef { conditionId: string; ref: string; expectedKind: string; }
+export interface TestConditionRiskEvaluation {
+  conditionId: string; score?: number; bandId?: string;
+  derivedPriority?: TestConditionPriority;
+  declaredPriority?: TestConditionPriority;
+  deviates: boolean;               // derivedPriority と declaredPriority が両方あり不一致
+  incomplete: boolean;             // impact / likelihood が欠けてスコア算出不可
+}
