@@ -514,3 +514,140 @@ export interface TestConditionRiskEvaluation {
   deviates: boolean;               // derivedPriority と declaredPriority が両方あり不一致
   incomplete: boolean;             // impact / likelihood が欠けてスコア算出不可
 }
+
+// --- 技法カタログ＋技法選定決定表 ---
+export interface TestTechniqueCoverageCriterion {
+  id: string;                 // "TTC-COV-01"
+  nameJa: string;             // 例 "境界被覆"
+  definition: string;         // 何を分母・分子として数えるかを述べた自作の説明文
+}
+export interface TestTechniqueCatalogEntry {
+  id: string;                 // "TTK-01"
+  techniqueId: TestTechniqueId;
+  nameJa: string;
+  basisCharacteristics: string[];   // テストベースの特徴（決定表の左列）1件以上
+  coverageCriteria: TestTechniqueCoverageCriterion[]; // 1件以上
+  requiredInputs: string[];         // 適用に必要な収集項目（因子・水準・範囲・状態遷移など）
+  engineToolName?: string;          // 決定的エンジンがある場合のツール名
+  deterministic: boolean;           // 本 MCP で網羅率を決定的にカウントできるか
+  selectionRationale: string;       // 選定根拠の書き方（自作の日本語文）
+  note?: string;
+}
+export interface TestTechniqueSelectionRow {
+  id: string;                       // "TTS-01"
+  basisCharacteristic: string;      // 決定表の左列
+  recommendedTechniqueIds: TestTechniqueId[]; // 1件以上
+  coverageCriterionIds: string[];   // entries[].coverageCriteria[].id のみ、1件以上
+}
+export interface TestTechniqueCatalog {
+  name: string;
+  note: string;                     // 自作整理でありパラフレーズのみであることの明示
+  entries: TestTechniqueCatalogEntry[];
+  selectionTable: TestTechniqueSelectionRow[];
+}
+
+// --- テストケース仕様（generate_test_cases / 将来の review_test_specification 共有） ---
+export type TestCaseVerdict = "合格" | "不合格" | "未実施" | "対象外";
+export interface TestCaseStateVariable { name: string; value: string; }   // 前提を文章1本にしない
+export interface TestCaseStep { no: number; action: string; expected: string; } // 1手順1操作・期待結果は手順ごと
+export interface TestCaseParameter {
+  name: string;                     // ケース本文から参照する名前（例 "MAX_TICKETS"）
+  value: string;                    // 直値
+  unit?: string;
+  source?: string;                  // 出典（要件ID・仕様箇所）
+  note?: string;
+}
+export interface TestCaseResultRecord {
+  executedDate?: string;
+  executedBy?: string;
+  verdict?: TestCaseVerdict;
+  defectNo?: string;
+}
+export interface TestCaseSpec {
+  caseId: string;                   // "TCS-001" 形式
+  title: string;
+  testConditionId: string;          // 由来（必須）
+  derivedFrom: string[];            // 要件ID/機能ID/画面ID/シナリオID/リスクID（必須・1件以上）
+  techniqueId: TestTechniqueId;     // 適用技法（必須）
+  coverageTargets: string[];        // 充足する網羅対象ID（必須・1件以上）
+  perspectiveCategoryId?: string;
+  testType?: string;                // テストタイプ
+  priority?: TestConditionPriority; // 高/中/低
+  preconditions: TestCaseStateVariable[]; // 必須・1件以上
+  steps: TestCaseStep[];            // 必須・1件以上
+  postconditions?: TestCaseStateVariable[];
+  result?: TestCaseResultRecord;
+  note?: string;
+}
+
+// --- 状態遷移入力（決定的層で 0/1 スイッチ被覆を数えるための最小仕様） ---
+export interface StateTransitionState { id: string; nameJa: string; initial?: boolean; }
+export interface StateTransitionEdge {
+  id: string;                       // "ST-01"（網羅対象IDの素になる）
+  from: string; to: string;
+  event: string; guard?: string;
+}
+export interface StateTransitionSpec {
+  states: StateTransitionState[];
+  transitions: StateTransitionEdge[];
+}
+
+// --- generate_test_cases 入力 ---
+export interface TestCaseSourceCondition {
+  id: string;                       // extract_test_conditions の条件ID
+  target: string;
+  statement: string;
+  derivedFrom: string[];            // 1件以上
+  priority?: TestConditionPriority;
+  perspectiveCategoryId?: string;
+  recommendedTechniques?: TestTechniqueId[];
+  basisCharacteristics?: string[];  // 決定表の左列に対応する記述（技法推奨に使う）
+}
+export interface GenerateTestCasesInput {
+  testConditions: TestCaseSourceCondition[];       // 1件以上
+  requirementIds?: string[];                       // derivedFrom の照合先
+  parameters?: TestCaseParameter[];                // 閾値表
+  boundaryVariables?: BoundaryVariableSpec[];      // design_boundary_values と同形
+  boundaryMode?: BoundaryValueMode;
+  equivalenceVariables?: EquivalencePartitioningVariableSpec[];
+  stateTransition?: StateTransitionSpec;
+  additionalCoverageTargets?: TestCaseCoverageTarget[]; // 決定的エンジンが無い技法の網羅対象を手で宣言
+  testCases?: TestCaseSpec[];                      // 未指定・空なら「生成指示のみ」モード
+  coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
+  additionalSubjectiveTerms?: string[];            // 主観語検査への追加語
+  idPrefix?: string;                               // 既定 "TCS-"
+}
+
+// --- 決定的検査の結果型（generate_test_cases） ---
+export interface TestCaseCoverageTarget {
+  id: string;                        // "BV:枚数:0" / "EP:年齢:成人" / "ST:ST-01"
+  techniqueId: TestTechniqueId;
+  description: string;               // 人が読める内容（値・クラス名・遷移内容）
+  origin: string;                    // 由来（変数名 / 遷移ID / "宣言"）
+}
+export interface TestCaseCoverageRow {
+  techniqueId: TestTechniqueId;
+  criterionLabel: string;            // 網羅基準名（カタログから引く。無ければ "未定義"）
+  total: number; covered: number; uncovered: number;
+  ratioPercent: number;              // 小数第1位まで（total=0 のときは 0）
+  uncoveredTargetIds: string[];
+}
+export interface TestCaseTraceRow { conditionId: string; caseIds: string[]; }
+export interface TestCaseDuplicateId { id: string; count: number; }
+export interface TestCaseUnresolvedRef { caseId: string; ref: string; expectedKind: string; }
+export interface TestCaseExpectedFinding {
+  caseId: string; stepNo: number;
+  severity: ReviewSeverity;
+  term?: string;                     // 検出した主観語（空欄検査では undefined）
+  detail: string;
+}
+export interface TestCaseStepFinding {
+  caseId: string; stepNo: number;
+  kind: "multi-action" | "number-gap" | "empty-action";
+  detail: string;
+}
+export interface TestCaseHardcodedFinding {
+  caseId: string; parameterName: string; value: string;
+  places: string[];                  // "steps[2].action" / "preconditions[0].value" 等
+}
+export interface TestCaseUnknownTargetRef { caseId: string; targetId: string; }

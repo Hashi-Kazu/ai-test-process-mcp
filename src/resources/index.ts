@@ -8,6 +8,7 @@ import { requirementIdPatternCatalog } from "./requirementIdPatterns.js";
 import { testPerspectiveCatalog } from "./testPerspectiveCatalog.js";
 import { guidewordDictionary } from "./guidewordDictionary.js";
 import { riskAnalysisFrame } from "./riskAnalysisFrame.js";
+import { testTechniqueCatalog } from "./testTechniqueCatalog.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -185,6 +186,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(riskAnalysisFrame, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-technique-catalog",
+    "testdesign://techniques/catalog",
+    {
+      title: "Test Technique Catalog",
+      description:
+        "Paraphrased catalog of test techniques with coverage criteria, required inputs, and a basis-characteristic-to-technique selection table, used by generate_test_cases to recommend techniques deterministically.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testTechniqueCatalog, null, 2),
         },
       ],
     })

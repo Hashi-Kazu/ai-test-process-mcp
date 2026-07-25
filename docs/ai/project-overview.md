@@ -2,7 +2,7 @@
 
 ## 概要
 
-JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
+JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
 
 ## 技術スタック
 
@@ -37,20 +37,25 @@ src/
     testPerspectiveCatalog.ts   # テスト観点カタログ18カテゴリ（testcondition://perspectives/catalog）＋技法ID→ツール名の対応表
     guidewordDictionary.ts      # ガイドワード辞書（testcondition://guidewords/dictionary）
     riskAnalysisFrame.ts        # リスク分析フレーム（testcondition://risk/frame）
+    testTechniqueCatalog.ts     # テスト技法カタログ＋技法選定決定表（testdesign://techniques/catalog）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
     reviewTestPlan.ts     # review_test_plan ツール（構造検査 + 意味的チェックリストの二層構成、renderTestPlanReview純関数）
     reviseTestPlan.ts     # revise_test_plan ツール（欠落章補完・マーカー正規化の機械的修正 + LLM向け書き換え指示、renderTestPlanRevision純関数）
-    designBoundaryValues.ts          # design_boundary_values ツール（境界値分析、renderBoundaryValues純関数）
-    designEquivalencePartitioning.ts # design_equivalence_partitioning ツール（同値分割、renderEquivalencePartitioning純関数）
+    designBoundaryValues.ts          # design_boundary_values ツール（境界値分析、renderBoundaryValues純関数 + 再利用用 computeBoundaryRows export）
+    designEquivalencePartitioning.ts # design_equivalence_partitioning ツール（同値分割、renderEquivalencePartitioning純関数 + 再利用用 listEquivalenceClasses export）
     reviewTestBasis.ts    # review_test_basis ツール（決定的検査 + 意味的チェックリスト/質問状/改善提案、renderTestBasisReview純関数）
     extractTestConditions.ts # extract_test_conditions ツール（4系統からのテスト条件導出・双方向カバレッジ検査、renderTestConditions純関数）
+    generateTestCases.ts  # generate_test_cases ツール（決定的層 + 意味的層の二層構成、renderTestCases純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
+    requirementsAnalysisInterview.ts # requirements_analysis_interview プロンプト（buildRequirementsInterviewPrompt純関数）
+    testDesignInterview.ts # test_design_interview プロンプト（buildTestDesignInterviewPrompt純関数）
   testBasisAnalysis.ts   # テストベース決定的検査の共有純関数群（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現）。analyze_requirements からも再利用予定
   testConditionAnalysis.ts # テスト条件の決定的検査の共有純関数群（カバレッジマトリクス・観点未使用・ID重複/欠番・derivedFrom未解決参照・リスクスコア算出）
+  testCaseAnalysis.ts    # テストケースの決定的検査の共有純関数群（網羅対象ユニバース構築・網羅率カウント・トレーサビリティ・ID重複/欠番・未解決参照・主観語/空欄/手順粒度/直値埋め込み検査・技法推奨）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
@@ -69,6 +74,10 @@ test/
   testPerspectiveCatalog.test.ts  # テスト観点カタログ構造データの単体テスト
   guidewordDictionary.test.ts     # ガイドワード辞書構造データの単体テスト
   riskAnalysisFrame.test.ts       # リスク分析フレーム構造データの単体テスト
+  generateTestCases.test.ts       # renderTestCases()の単体テスト
+  testCaseAnalysis.test.ts        # テストケース決定的検査の共有純関数群の単体テスト
+  testTechniqueCatalog.test.ts    # テスト技法カタログ構造データの単体テスト
+  testDesignInterview.test.ts     # buildTestDesignInterviewPrompt()の単体テスト
 ```
 
 ## 拡張パターン（Test Analysis・Test Design ほか各工程の tool 追加）
