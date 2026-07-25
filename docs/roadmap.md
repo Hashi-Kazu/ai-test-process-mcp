@@ -70,10 +70,10 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 
 テストケースの生成とテスト仕様書のレビュー。
 
-| tool | 内容 |
-| --- | --- |
-| `generate_test_cases` | テスト技法の推奨とテストケース生成 |
-| `review_test_specification` | テスト設計仕様・テストケース仕様のレビュー（テストベース突き合わせ） |
+| tool | 内容 | 状態 |
+| --- | --- | --- |
+| `generate_test_cases` | テスト技法の推奨とテストケース生成（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント/未通過網羅対象列挙/主観語・空欄・手順粒度・直値埋め込み検査 + 手順組み立ての意味的層の二層構成） | 完了 |
+| `review_test_specification` | テスト設計仕様・テストケース仕様のレビュー（テストベース突き合わせ） | 未着手 |
 
 `review_test_specification` の設計方針（旧ロードマップ Phase 4 から引き継ぎ）:
 
@@ -125,5 +125,6 @@ Generic Test Process の各工程で最終的に提供したい tool 群。Phase
 | Test Design 着手 | 規格準拠表記の除去 + Test Design 技法エンジン `design_boundary_values` / `design_equivalence_partitioning` | 完了（v0.8.0） |
 | Phase 2 着手 | テストベースレビュー `review_test_basis`（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現の決定的検査 + 意味的チェックリスト/質問状/改善提案、共有純関数 `src/testBasisAnalysis.ts`） | 完了 |
 | Phase 2 残り | Test Analysis（`extract_test_conditions` + 観点カタログ・ガイドワード辞書・リスク分析フレーム resource、共有純関数 `src/testConditionAnalysis.ts`） | 完了 |
-| Phase 3 | Test Design（generate_test_cases / review_test_specification） | 未着手 |
+| Phase 3 着手 | Test Design（`generate_test_cases` + テスト技法カタログ・技法選定決定表 resource `testdesign://techniques/catalog`、`test_design_interview` prompt、共有純関数 `src/testCaseAnalysis.ts`） | 完了 |
+| Phase 3 残り | Test Design（`review_test_specification`） | 未着手 |
 | Phase 4 | 全工程への拡張 | 未計画 |

@@ -25,6 +25,30 @@ export type DesignEquivalencePartitioningInput = z.infer<
   typeof designEquivalencePartitioningInputSchema
 >;
 
+export interface EquivalenceClassEntry {
+  variable: string;
+  kind: "valid" | "invalid";
+  label: string;
+  representative: string;
+}
+
+// designEquivalencePartitioning 以外（testCaseAnalysis 等）から同値クラス一覧を
+// 再利用するための export。クラス列挙ロジックはここに閉じ込め、他モジュールでは再実装しない。
+export function listEquivalenceClasses(
+  variables: EquivalencePartitioningVariableSpec[]
+): EquivalenceClassEntry[] {
+  const result: EquivalenceClassEntry[] = [];
+  for (const v of variables) {
+    for (const cls of v.validClasses) {
+      result.push({ variable: v.name, kind: "valid", label: cls.label, representative: cls.representative });
+    }
+    for (const cls of v.invalidClasses ?? []) {
+      result.push({ variable: v.name, kind: "invalid", label: cls.label, representative: cls.representative });
+    }
+  }
+  return result;
+}
+
 export function renderEquivalencePartitioning(input: {
   variables: EquivalencePartitioningVariableSpec[];
 }): string {

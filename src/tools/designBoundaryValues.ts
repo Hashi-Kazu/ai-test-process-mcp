@@ -104,6 +104,25 @@ function computeVariable(spec: BoundaryVariableSpec, mode: BoundaryValueMode): V
   return { name: spec.name, valueType, min: spec.min, max: spec.max, step, rows };
 }
 
+export interface BoundaryVariableComputedRows {
+  name: string;
+  valueType: "int" | "decimal";
+  min: number;
+  max: number;
+  step: number;
+  error?: string;
+  rows: BoundaryValueRow[];
+}
+
+// designBoundaryValues 以外（testCaseAnalysis 等）から境界値の行を再利用するための export。
+// 境界の刻み・丸め・ラベル決定ロジックはここに閉じ込め、他モジュールでは再実装しない。
+export function computeBoundaryRows(
+  variables: BoundaryVariableSpec[],
+  mode: BoundaryValueMode = "three"
+): BoundaryVariableComputedRows[] {
+  return variables.map((v) => computeVariable(v, mode));
+}
+
 export function renderBoundaryValues(input: {
   variables: BoundaryVariableSpec[];
   mode?: BoundaryValueMode;
