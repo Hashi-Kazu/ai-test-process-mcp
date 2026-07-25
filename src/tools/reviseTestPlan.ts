@@ -4,6 +4,19 @@ import {
   testPlanTemplate,
   deliverableTemplateExamples,
   testOrgRoleTemplateExamples,
+  scopeObjectivesTemplateExamples,
+  testItemsTemplateExamples,
+  featuresToBeTestedTemplateExamples,
+  testLevelsTemplateExamples,
+  testTypesTemplateExamples,
+  resultJudgmentTemplateExamples,
+  suspensionResumptionTemplateExamples,
+  envRequirementsTemplateExamples,
+  testDataRequirementsTemplateExamples,
+  responsibilitiesTemplateExamples,
+  testPeriodTemplateExamples,
+  schedulePlanTemplateExamples,
+  productRiskTemplateExamples,
 } from "../resources/testPlanTemplate.js";
 import type { TestPlanTemplate, TestPlanTemplateSection } from "../types.js";
 import {
@@ -32,8 +45,21 @@ function extractHeadingNumber(heading: string): string | undefined {
 
 // 参考候補の追加注記を出す章番号と、対応する例示リスト。
 const TEMPLATE_EXAMPLE_SECTIONS: Record<string, { label: string; examples: string[] }> = {
+  "1.1": { label: "スコープ・目的", examples: scopeObjectivesTemplateExamples },
+  "2": { label: "テスト対象", examples: testItemsTemplateExamples },
+  "3": { label: "テスト対象機能", examples: featuresToBeTestedTemplateExamples },
+  "5.1": { label: "テストレベル", examples: testLevelsTemplateExamples },
+  "5.2": { label: "テストタイプ", examples: testTypesTemplateExamples },
+  "6.2": { label: "合否判定基準", examples: resultJudgmentTemplateExamples },
+  "7": { label: "中断・再開基準", examples: suspensionResumptionTemplateExamples },
   "8": { label: "成果物", examples: deliverableTemplateExamples },
+  "10.1": { label: "テスト環境要件", examples: envRequirementsTemplateExamples },
+  "10.2": { label: "テストデータ要件", examples: testDataRequirementsTemplateExamples },
+  "11": { label: "責任分担", examples: responsibilitiesTemplateExamples },
   "11.1": { label: "テスト体制", examples: testOrgRoleTemplateExamples },
+  "13.1": { label: "テスト期間", examples: testPeriodTemplateExamples },
+  "13.2": { label: "スケジュール", examples: schedulePlanTemplateExamples },
+  "14.1": { label: "プロダクトリスク", examples: productRiskTemplateExamples },
 };
 
 interface AppendMissingSectionsResult {

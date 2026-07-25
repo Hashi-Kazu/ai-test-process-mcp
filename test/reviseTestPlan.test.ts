@@ -6,7 +6,11 @@ import {
   groupByHeading,
 } from "../src/tools/reviewTestPlan.js";
 import { renderTestPlanRevision } from "../src/tools/reviseTestPlan.js";
-import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
+import {
+  testPlanTemplate,
+  resultJudgmentTemplateExamples,
+  testPeriodTemplateExamples,
+} from "../src/resources/testPlanTemplate.js";
 import type { TestPlanInput } from "../src/types.js";
 
 const minimalInput: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
@@ -165,20 +169,35 @@ describe("renderTestPlanRevision", () => {
     }
   });
 
-  it("appends 参考例 template candidates for required-未記入 8 成果物 and 11.1 テスト体制, but not for other required-未記入 sections", () => {
+  it("appends 参考例 template candidates for every required-未記入 section (all 15 required chapters are covered by the template example map)", () => {
     const planMarkdown = renderTestPlan(minimalInput);
     const result = renderTestPlanRevision(planMarkdown);
 
     const section3_2 = result.split("### 3.2")[1] ?? "";
-    const deliverablesBlock = section3_2.split("8 成果物")[1]?.split(/\n- /)[0] ?? "";
-    expect(deliverablesBlock).toContain("参考例（プロジェクトに応じて修正してください）");
 
-    const testOrgBlock = section3_2.split("11.1 テスト体制")[1]?.split(/\n- /)[0] ?? "";
-    expect(testOrgBlock).toContain("参考例（プロジェクトに応じて修正してください）");
+    const remaining = groupByHeading(findMarkerOccurrences(planMarkdown, TBD_REQUIRED));
+    // Sanity check: this plan should leave multiple required sections未記入, including
+    // some newly covered by this change (not just the previous 8 / 11.1).
+    expect(remaining.length).toBeGreaterThan(2);
 
-    // A required section without a template example (e.g. 7 中断・再開基準) should not get the note.
-    const suspensionBlock = section3_2.split("7 中断・再開基準")[1]?.split(/\n- /)[0] ?? "";
-    expect(suspensionBlock).not.toContain("参考例");
+    for (const { heading } of remaining) {
+      const no = heading.replace(/^#{0,6}\s*/, "").split(/\s/)[0];
+      const titleJa = heading.replace(/^#{0,6}\s*/, "").split(/\s/).slice(1).join(" ");
+      const block = section3_2.split(`${no} ${titleJa}`)[1]?.split(/\n- /)[0] ?? "";
+      expect(block).toContain("参考例（プロジェクトに応じて修正してください）");
+    }
+  });
+
+  it("includes concrete 参考例 content for 6.2 result-judgment and 13.1 test-period", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const result = renderTestPlanRevision(planMarkdown);
+    const section3_2 = result.split("### 3.2")[1] ?? "";
+
+    const resultJudgmentBlock = section3_2.split("6.2 合否判定基準")[1]?.split(/\n- /)[0] ?? "";
+    expect(resultJudgmentBlock).toContain(resultJudgmentTemplateExamples[0]);
+
+    const testPeriodBlock = section3_2.split("13.1 テスト期間")[1]?.split(/\n- /)[0] ?? "";
+    expect(testPeriodBlock).toContain(testPeriodTemplateExamples[0]);
   });
 
   it("does not duplicate an appended section when the revision output is re-revised", () => {
