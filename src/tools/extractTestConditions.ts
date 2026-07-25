@@ -1,0 +1,618 @@
+import { z } from "zod";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  testPerspectiveCatalog,
+  testTechniqueToolMapping,
+} from "../resources/testPerspectiveCatalog.js";
+import { guidewordDictionary } from "../resources/guidewordDictionary.js";
+import { riskAnalysisFrame } from "../resources/riskAnalysisFrame.js";
+import {
+  DEFAULT_CONDITION_ID_PREFIX,
+  buildRequirementCoverageMatrix,
+  buildSourceDistribution,
+  evaluateRisks,
+  findConditionsWithoutPriority,
+  findDuplicateConditionIds,
+  findMissingConditionNumbers,
+  findPrefixMismatchConditionIds,
+  findUncoveredRequirementIds,
+  findUnresolvedDerivedFromRefs,
+  findUnusedPerspectiveCategories,
+  testConditionSourceLabels,
+} from "../testConditionAnalysis.js";
+import type {
+  ExtractTestConditionsInput,
+  GuidewordDictionary,
+  RiskAnalysisFrame,
+  TestConditionInput,
+  TestPerspectiveCatalog,
+} from "../types.js";
+
+function escapeCell(value: string): string {
+  return value.replace(/\|/g, "\\|");
+}
+
+const DEFAULT_COVERAGE_CRITERIA = [
+  "対象要件IDのすべてに、紐づくテスト条件が1件以上ある。",
+  "観点カタログの全カテゴリを検討済みであり、対象外としたカテゴリには理由がある。",
+  "テストベース／ステークホルダー／リスク／ガイドワードの4系統すべてから条件が導出されている。",
+  "すべてのテスト条件に優先度が付与されている。",
+];
+
+function knownTechniqueIds(catalog: TestPerspectiveCatalog): Set<string> {
+  const ids = new Set<string>();
+  for (const category of catalog.categories) {
+    for (const perspective of category.perspectives) {
+      for (const t of perspective.recommendedTechniques) ids.add(t);
+    }
+  }
+  return ids;
+}
+
+function categoryLabel(catalog: TestPerspectiveCatalog, categoryId: string): string {
+  const category = catalog.categories.find((c) => c.id === categoryId);
+  return category ? `${category.id} ${category.nameJa}` : `${categoryId}(カタログ外)`;
+}
+
+function derivationText(condition: TestConditionInput): string {
+  const base = `${condition.source} / ${condition.derivedFrom.join(", ")}`;
+  return condition.rationale ? `${base}（${condition.rationale}）` : base;
+}
+
+export function renderTestConditions(
+  input: ExtractTestConditionsInput,
+  catalog: TestPerspectiveCatalog = testPerspectiveCatalog,
+  dictionary: GuidewordDictionary = guidewordDictionary,
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): string {
+  const {
+    requirementIds,
+    testConditions,
+    personas,
+    risks,
+    coverageCriteria,
+    priorityCriteria,
+    perspectiveCategoryIds,
+  } = input;
+  const idPrefix = input.idPrefix ?? DEFAULT_CONDITION_ID_PREFIX;
+
+  const coverageMatrix = buildRequirementCoverageMatrix(requirementIds, testConditions);
+  const uncovered = findUncoveredRequirementIds(requirementIds, testConditions);
+  const unusedCategories = findUnusedPerspectiveCategories(testConditions, catalog, perspectiveCategoryIds);
+  const duplicates = findDuplicateConditionIds(testConditions);
+  const missingNumbers = findMissingConditionNumbers(testConditions, idPrefix);
+  const prefixMismatch = findPrefixMismatchConditionIds(testConditions, idPrefix);
+  const withoutPriority = findConditionsWithoutPriority(testConditions);
+  const unresolvedRefs = findUnresolvedDerivedFromRefs(input);
+  const distribution = buildSourceDistribution(testConditions);
+  const evaluations = evaluateRisks(testConditions, frame);
+  const evaluationById = new Map(evaluations.map((e) => [e.conditionId, e]));
+
+  const known = knownTechniqueIds(catalog);
+  const unknownTechniques: { conditionId: string; techniqueId: string }[] = [];
+  for (const c of testConditions) {
+    for (const t of c.recommendedTechniques ?? []) {
+      if (!known.has(t)) unknownTechniques.push({ conditionId: c.id, techniqueId: t });
+    }
+  }
+
+  const lines: string[] = [];
+  lines.push("# テスト条件抽出結果");
+  lines.push("");
+
+  // --- 1. 前提と宣言 ---
+  lines.push("## 1. 前提と宣言");
+  lines.push("");
+  lines.push("### 1.1 対象要件ID");
+  lines.push("");
+  lines.push(`- 件数: ${requirementIds.length}`);
+  for (const id of requirementIds) {
+    lines.push(`- ${id}`);
+  }
+  lines.push("");
+  lines.push("### 1.2 採用した網羅基準");
+  lines.push("");
+  const criteria =
+    coverageCriteria && coverageCriteria.length > 0 ? coverageCriteria : DEFAULT_COVERAGE_CRITERIA;
+  if (!coverageCriteria || coverageCriteria.length === 0) {
+    lines.push("網羅基準の指定がないため、以下の既定基準を採用する。");
+    lines.push("");
+  }
+  for (const c of criteria) {
+    lines.push(`- ${c}`);
+  }
+  lines.push("");
+  lines.push("### 1.3 導出系統(source)の定義");
+  lines.push("");
+  lines.push("| source | 名称 | 説明 |");
+  lines.push("| --- | --- | --- |");
+  for (const s of testConditionSourceLabels) {
+    lines.push(`| ${s.source} | ${escapeCell(s.nameJa)} | ${escapeCell(s.description)} |`);
+  }
+  lines.push("");
+  lines.push("source と derivedFrom は必須メタデータであり、どちらも空にしてはならない。");
+  lines.push("");
+
+  // --- 2. テスト条件表 ---
+  lines.push("## 2. テスト条件表");
+  lines.push("");
+  lines.push("| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
+  for (const c of testConditions) {
+    const evaluation = evaluationById.get(c.id);
+    const riskLevel = evaluation && evaluation.bandId ? evaluation.bandId : "未算出";
+    const techniques =
+      c.recommendedTechniques && c.recommendedTechniques.length > 0
+        ? c.recommendedTechniques.join(", ")
+        : "未設定";
+    lines.push(
+      `| ${escapeCell(c.id)} | ${escapeCell(c.target)} | ${escapeCell(
+        categoryLabel(catalog, c.perspectiveCategoryId)
+      )} | ${escapeCell(c.statement)} | ${c.priority ?? "未設定"} | ${riskLevel} | ${escapeCell(
+        derivationText(c)
+      )} | ${escapeCell(techniques)} |`
+    );
+  }
+  lines.push("");
+
+  // --- 3. 決定的検査(自動) ---
+  lines.push("## 3. 決定的検査(自動)");
+  lines.push("");
+
+  lines.push("### 3.1 要件ID × テスト条件 カバレッジマトリクス");
+  lines.push("");
+  lines.push("| 要件ID | 紐づくテスト条件ID | 件数 |");
+  lines.push("| --- | --- | --- |");
+  for (const row of coverageMatrix) {
+    lines.push(
+      `| ${escapeCell(row.requirementId)} | ${escapeCell(
+        row.conditionIds.length > 0 ? row.conditionIds.join(", ") : "-"
+      )} | ${row.conditionIds.length} |`
+    );
+  }
+  lines.push("");
+
+  lines.push("### 3.2 未カバー要件ID一覧");
+  lines.push("");
+  if (uncovered.length === 0) {
+    lines.push("- 未カバーなし");
+  } else {
+    for (const id of uncovered) {
+      lines.push(`- [high] ${id}: 紐づくテスト条件が0件。テスト条件を追加すること。`);
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.3 観点カテゴリの被覆状況");
+  lines.push("");
+  lines.push("| カテゴリ | 使用条件数 | 状態 |");
+  lines.push("| --- | --- | --- |");
+  const targetCategories =
+    perspectiveCategoryIds && perspectiveCategoryIds.length > 0
+      ? catalog.categories.filter((c) => perspectiveCategoryIds.includes(c.id))
+      : catalog.categories;
+  for (const category of targetCategories) {
+    const count = testConditions.filter((c) => c.perspectiveCategoryId === category.id).length;
+    lines.push(
+      `| ${escapeCell(`${category.id} ${category.nameJa}`)} | ${count} | ${count > 0 ? "使用" : "未使用"} |`
+    );
+  }
+  lines.push("");
+  if (unusedCategories.length === 0) {
+    lines.push("- 未使用の観点カテゴリ: なし");
+  } else {
+    lines.push("未使用の観点カテゴリ(抜け漏れ候補):");
+    lines.push("");
+    for (const category of unusedCategories) {
+      lines.push(
+        `- [medium] ${category.id} ${category.nameJa}: 該当するテスト条件が無い。対象外とする理由を明記するか、条件を追加すること。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.4 条件IDの重複・欠番");
+  lines.push("");
+  if (duplicates.length === 0) {
+    lines.push("- 重複: なし");
+  } else {
+    for (const dup of duplicates) {
+      lines.push(`- 重複: ${dup.id}(${dup.count}件)`);
+    }
+  }
+  if (missingNumbers.length === 0) {
+    lines.push("- 欠番: なし");
+  } else {
+    lines.push(`- 欠番: ${missingNumbers.join(", ")}`);
+  }
+  if (prefixMismatch.length === 0) {
+    lines.push(`- プレフィックス不一致ID(${idPrefix}): なし`);
+  } else {
+    lines.push(`- プレフィックス不一致ID(${idPrefix}): ${prefixMismatch.join(", ")}`);
+  }
+  lines.push("");
+
+  lines.push("### 3.5 優先度未設定のテスト条件");
+  lines.push("");
+  if (withoutPriority.length === 0) {
+    lines.push("- なし");
+  } else {
+    for (const c of withoutPriority) {
+      lines.push(`- [high] ${c.id}: ${escapeCell(c.statement)}(優先度が未設定)`);
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.6 導出系統の分布");
+  lines.push("");
+  lines.push("| 系統 | 件数 | 条件ID |");
+  lines.push("| --- | --- | --- |");
+  for (const row of distribution) {
+    lines.push(
+      `| ${row.source} | ${row.count} | ${escapeCell(
+        row.conditionIds.length > 0 ? row.conditionIds.join(", ") : "-"
+      )} |`
+    );
+  }
+  lines.push("");
+  const emptySources = distribution.filter((row) => row.count === 0);
+  if (emptySources.length === 0) {
+    lines.push("- 4系統すべてから条件が導出されている。");
+  } else {
+    for (const row of emptySources) {
+      lines.push(
+        `- [medium] 単一系統偏り: ${row.source} から導出された条件が0件。この系統からの洗い出しを実施すること。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.7 derivedFrom の未解決参照");
+  lines.push("");
+  if (unresolvedRefs.length === 0) {
+    lines.push("- なし");
+  } else {
+    lines.push("| 条件ID | 参照 | 照合対象 |");
+    lines.push("| --- | --- | --- |");
+    for (const ref of unresolvedRefs) {
+      lines.push(
+        `| ${escapeCell(ref.conditionId)} | ${escapeCell(ref.ref)} | ${escapeCell(ref.expectedKind)} |`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.8 未知の推奨技法ID");
+  lines.push("");
+  if (unknownTechniques.length === 0) {
+    lines.push("- なし");
+  } else {
+    for (const u of unknownTechniques) {
+      lines.push(
+        `- [medium] ${u.conditionId}: 「${escapeCell(u.techniqueId)}」は観点カタログに存在しない技法IDである。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.9 サマリ");
+  lines.push("");
+  lines.push(
+    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length}`
+  );
+  lines.push("");
+
+  // --- 4. 採用した優先度基準 ---
+  lines.push("## 4. 採用した優先度基準");
+  lines.push("");
+  lines.push("### 4.1 リスクレベル算出式");
+  lines.push("");
+  lines.push(frame.formula);
+  lines.push("");
+  for (const axis of [frame.impactAxis, frame.likelihoodAxis, frame.changeAxis]) {
+    lines.push(`#### ${axis.id} ${axis.nameJa}`);
+    lines.push("");
+    lines.push(escapeCell(axis.description));
+    lines.push("");
+    lines.push("| 値 | レベル | 判定基準 |");
+    lines.push("| --- | --- | --- |");
+    for (const level of axis.levels) {
+      lines.push(`| ${level.value} | ${escapeCell(level.label)} | ${escapeCell(level.criteria)} |`);
+    }
+    lines.push("");
+  }
+  lines.push("changeCategory が未指定の場合、changeWeight は既定値 2 として計算する。");
+  lines.push("");
+
+  lines.push("### 4.2 リスクスコア → 優先度の写像");
+  lines.push("");
+  lines.push("| リスクレベル | スコア範囲 | 優先度 | 指針 |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const band of frame.bands) {
+    lines.push(
+      `| ${band.id} | ${band.minScore}..${band.maxScore} | ${band.priority} | ${escapeCell(band.guidance)} |`
+    );
+  }
+  lines.push("");
+
+  lines.push("### 4.3 宣言された優先度基準");
+  lines.push("");
+  if (priorityCriteria && priorityCriteria.length > 0) {
+    for (const c of priorityCriteria) {
+      lines.push(`- ${c}`);
+    }
+  } else {
+    lines.push("優先度基準の指定がないため、4.1 の算出式と 4.2 の写像を既定基準として採用する。");
+  }
+  lines.push("");
+
+  lines.push("### 4.4 優先度の導出結果と逸脱");
+  lines.push("");
+  lines.push("| 条件ID | 影響度 | 発生可能性 | 変更区分 | スコア | 導出優先度 | 宣言優先度 | 判定 |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
+  for (const c of testConditions) {
+    const e = evaluationById.get(c.id);
+    const verdict = !e || e.incomplete ? "未算出" : e.deviates ? "逸脱" : "一致";
+    lines.push(
+      `| ${escapeCell(c.id)} | ${c.impact ?? "-"} | ${c.likelihood ?? "-"} | ${c.changeCategory ?? "-"} | ${
+        e?.score ?? "-"
+      } | ${e?.derivedPriority ?? "-"} | ${c.priority ?? "-"} | ${verdict} |`
+    );
+  }
+  lines.push("");
+  const deviating = testConditions.filter((c) => evaluationById.get(c.id)?.deviates);
+  if (deviating.length === 0) {
+    lines.push("- 優先度の逸脱: なし");
+  } else {
+    for (const c of deviating) {
+      const reason = c.priorityDeviationReason?.trim();
+      lines.push(
+        `- ${c.id}: ${reason ? `逸脱理由: ${escapeCell(reason)}` : "逸脱理由: 未記入(要記入)"}`
+      );
+    }
+  }
+  lines.push("");
+
+  // --- 5. 推奨技法 → Phase 3 連携 ---
+  lines.push("## 5. 推奨技法 → Phase 3 連携");
+  lines.push("");
+  const techniqueMap = new Map<string, string[]>();
+  const techniqueOrder: string[] = [];
+  for (const c of testConditions) {
+    for (const t of c.recommendedTechniques ?? []) {
+      if (!techniqueMap.has(t)) {
+        techniqueMap.set(t, []);
+        techniqueOrder.push(t);
+      }
+      (techniqueMap.get(t) as string[]).push(c.id);
+    }
+  }
+  if (techniqueOrder.length === 0) {
+    lines.push("- 推奨技法が指定されたテスト条件はない。観点カタログの推奨技法を参考に付与すること。");
+  } else {
+    lines.push("| 技法ID | 紐づく条件ID | 対応ツール |");
+    lines.push("| --- | --- | --- |");
+    for (const t of techniqueOrder) {
+      const mapping = testTechniqueToolMapping.find((m) => m.techniqueId === t);
+      lines.push(
+        `| ${escapeCell(t)} | ${escapeCell((techniqueMap.get(t) as string[]).join(", "))} | ${
+          mapping ? mapping.toolName : "-"
+        } |`
+      );
+    }
+  }
+  lines.push("");
+  lines.push("この一覧を generate_test_cases への入力として引き継ぐこと。");
+  lines.push("");
+
+  // --- 6. 観点カタログによる追加観点の洗い出し指示 ---
+  lines.push("## 6. 観点カタログによる追加観点の洗い出し指示(意味的層)");
+  lines.push("");
+  lines.push(
+    "以下のカテゴリごとに、対象要件に該当するテスト条件が漏れていないか検討し、不足があれば source と derivedFrom を付けて追加すること。3.3 で未使用と判定されたカテゴリを優先的に検討すること。"
+  );
+  lines.push("");
+  for (const category of catalog.categories) {
+    const unused = unusedCategories.some((u) => u.id === category.id);
+    lines.push(`### ${category.id} ${category.nameJa}${unused ? "(未使用・優先検討)" : ""}`);
+    lines.push("");
+    lines.push(category.summary);
+    lines.push("");
+    for (const p of category.perspectives) {
+      lines.push(
+        `- ${p.id} ${p.nameJa}: ${p.focusExamples.join(" / ")}(推奨技法: ${p.recommendedTechniques.join(", ")})`
+      );
+    }
+    lines.push("");
+  }
+
+  // --- 7. ガイドワード法 ---
+  lines.push("## 7. ガイドワード法による未記載リスクの洗い出し指示(意味的層)");
+  lines.push("");
+  lines.push("### 7.1 運用手順");
+  lines.push("");
+  dictionary.procedure.forEach((step, i) => {
+    lines.push(`${i + 1}. ${step}`);
+  });
+  lines.push("");
+  lines.push("### 7.2 着目点 × ガイドワードの適用表");
+  lines.push("");
+  lines.push("| 着目点ID | 着目点 | 例 |");
+  lines.push("| --- | --- | --- |");
+  for (const f of dictionary.focusPoints) {
+    lines.push(`| ${f.id} | ${escapeCell(f.nameJa)} | ${escapeCell(f.examples.join(" / "))} |`);
+  }
+  lines.push("");
+  lines.push("| ガイドワードID | 語 | 意味 | 質問テンプレート |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const g of dictionary.guidewords) {
+    lines.push(
+      `| ${g.id} | ${escapeCell(g.word)} | ${escapeCell(g.meaning)} | ${escapeCell(
+        g.questionTemplates.join(" / ")
+      )} |`
+    );
+  }
+  lines.push("");
+  lines.push(
+    "着目点1×着目点2×ガイドワードの組で候補を出し、既出と重複しないものだけを source=guideword としてマージせよ。"
+  );
+  lines.push("");
+
+  // --- 8. リスク分析フレームの適用指示 ---
+  lines.push("## 8. リスク分析フレームの適用指示(意味的層)");
+  lines.push("");
+  const incomplete = evaluations.filter((e) => e.incomplete);
+  if (incomplete.length === 0) {
+    lines.push("- すべてのテスト条件でリスクスコアが算出済み。");
+  } else {
+    lines.push(
+      "以下のテスト条件は影響度・発生可能性が未指定でリスクスコアを算出できない。4.1 の各軸レベル表に従って値を割り当て、変更区分も併せて指定すること。"
+    );
+    lines.push("");
+    for (const e of incomplete) {
+      lines.push(`- ${e.conditionId}: impact / likelihood が未指定`);
+    }
+  }
+  lines.push("");
+  lines.push("ステークホルダー別影響枠の問い:");
+  lines.push("");
+  for (const sf of frame.stakeholderFrames) {
+    lines.push(`- ${sf.id} ${sf.nameJa}: ${sf.impactQuestions.join(" / ")}`);
+  }
+  lines.push("");
+  if (risks && risks.length > 0) {
+    lines.push("| リスクID | 内容 | 影響度 | 発生可能性 | 変更区分 |");
+    lines.push("| --- | --- | --- | --- | --- |");
+    for (const r of risks) {
+      lines.push(
+        `| ${escapeCell(r.id)} | ${escapeCell(r.description)} | ${r.impact ?? "-"} | ${
+          r.likelihood ?? "-"
+        } | ${r.changeCategory ?? "-"} |`
+      );
+    }
+    lines.push("");
+  }
+
+  // --- 9. ステークホルダー／ペルソナ視点 ---
+  lines.push("## 9. ステークホルダー／ペルソナ視点の洗い出し指示(意味的層)");
+  lines.push("");
+  lines.push("| ペルソナID | 役割 | 氏名 | 懸念 | 導出済み条件ID |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const p of personas ?? []) {
+    const derived = testConditions.filter((c) => c.derivedFrom.includes(p.id)).map((c) => c.id);
+    lines.push(
+      `| ${escapeCell(p.id)} | ${escapeCell(p.role)} | ${escapeCell(p.name ?? "-")} | ${escapeCell(
+        p.concerns ?? "未記入(要確認)"
+      )} | ${escapeCell(derived.length > 0 ? derived.join(", ") : "-")} |`
+    );
+  }
+  lines.push("");
+  lines.push(
+    "導出済み条件が無いペルソナについては、その関心事から source=stakeholder のテスト条件を追加すること。未指定のステークホルダーがいれば表に追加すること。"
+  );
+  lines.push("");
+
+  return lines.join("\n").trimEnd() + "\n";
+}
+
+export const extractTestConditionsInputShape = {
+  requirementIds: z
+    .array(z.string())
+    .min(1)
+    .describe("Requirement/feature IDs that test conditions must cover (coverage matrix rows)"),
+  testConditions: z
+    .array(
+      z.object({
+        id: z.string().describe("Test condition ID, e.g. TC-001"),
+        target: z.string().describe("Target of the condition (feature ID / screen ID)"),
+        perspectiveCategoryId: z
+          .string()
+          .describe("Perspective category id from the catalog, e.g. TPC-03"),
+        perspectiveId: z.string().optional().describe("Perspective id, e.g. TPC-03-01"),
+        statement: z.string().describe("The test condition statement"),
+        source: z
+          .enum(["testbase", "stakeholder", "risk", "guideword"])
+          .describe("Derivation line this condition came from (required)"),
+        derivedFrom: z
+          .array(z.string())
+          .min(1)
+          .describe("Requirement IDs / risk IDs / persona IDs this condition was derived from (required)"),
+        priority: z.enum(["高", "中", "低"]).optional().describe("Declared priority of the condition"),
+        impact: z.number().int().min(1).max(5).optional().describe("Risk impact level (1..5)"),
+        likelihood: z.number().int().min(1).max(5).optional().describe("Risk likelihood level (1..5)"),
+        changeCategory: z
+          .enum(["new", "modified", "existing-impacted", "existing-unaffected"])
+          .optional()
+          .describe("Change category of the target, used as the change weight"),
+        recommendedTechniques: z
+          .array(z.string())
+          .optional()
+          .describe("Recommended technique ids to hand over to generate_test_cases"),
+        rationale: z.string().optional().describe("Additional note on how the condition was derived"),
+        priorityDeviationReason: z
+          .string()
+          .optional()
+          .describe("Reason if the declared priority deviates from the risk-based derived priority"),
+      })
+    )
+    .min(1)
+    .describe("Test conditions to inspect; source and derivedFrom are mandatory metadata"),
+  personas: z
+    .array(
+      z.object({
+        id: z.string().describe("Persona id referenced by derivedFrom"),
+        role: z.string().describe("Persona role"),
+        name: z.string().optional().describe("Persona name"),
+        concerns: z.string().optional().describe("Known concerns of this persona"),
+      })
+    )
+    .optional()
+    .describe("Stakeholders / personas referenced by derivedFrom when source is stakeholder"),
+  risks: z
+    .array(
+      z.object({
+        id: z.string().describe("Risk id referenced by derivedFrom"),
+        description: z.string().describe("Risk description"),
+        impact: z.number().int().min(1).max(5).optional().describe("Risk impact level (1..5)"),
+        likelihood: z.number().int().min(1).max(5).optional().describe("Risk likelihood level (1..5)"),
+        changeCategory: z
+          .enum(["new", "modified", "existing-impacted", "existing-unaffected"])
+          .optional()
+          .describe("Change category related to this risk"),
+      })
+    )
+    .optional()
+    .describe("Risks referenced by derivedFrom when source is risk"),
+  coverageCriteria: z
+    .array(z.string())
+    .optional()
+    .describe("Explicitly declared coverage criteria; a default set is emitted when omitted"),
+  priorityCriteria: z
+    .array(z.string())
+    .optional()
+    .describe("Explicitly declared priority criteria; the risk frame default is emitted when omitted"),
+  perspectiveCategoryIds: z
+    .array(z.string())
+    .optional()
+    .describe("If provided, restrict the perspective coverage check to these category ids"),
+  idPrefix: z
+    .string()
+    .optional()
+    .describe("Test condition ID prefix used for gap detection (default TC-)"),
+} as const;
+
+export function registerExtractTestConditionsTool(server: McpServer): void {
+  server.registerTool(
+    "extract_test_conditions",
+    {
+      title: "Extract Test Conditions",
+      description:
+        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。",
+      inputSchema: extractTestConditionsInputShape,
+    },
+    async (input) => {
+      const markdown = renderTestConditions(input as ExtractTestConditionsInput);
+      return { content: [{ type: "text" as const, text: markdown }] };
+    }
+  );
+}
