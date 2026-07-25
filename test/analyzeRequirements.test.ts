@@ -1,0 +1,129 @@
+import { describe, expect, it } from "vitest";
+import { z } from "zod";
+import { renderRequirementsAnalysis } from "../src/tools/analyzeRequirements.js";
+import { designBoundaryValuesInputShape } from "../src/tools/designBoundaryValues.js";
+import { qualityCharacteristicModel } from "../src/resources/qualityCharacteristics.js";
+import { questionPriorityDefinitions } from "../src/resources/testPlanTemplate.js";
+import type { AnalyzeRequirementsInput, TestBasisDocument } from "../src/types.js";
+
+const docA: TestBasisDocument = {
+  name: "doc-a.md",
+  content: [
+    "## 3. 購入条件",
+    "- W-001 Web購入は利用日の29日後まで可能とする。",
+    "- W-002 応答は3秒以内に返すこと。",
+    "本項は W-999 を参照する。",
+    "## 用語定義",
+    "| 用語 | 定義 |",
+    "| --- | --- |",
+    "| 入場券 | 当日利用可能なチケット |",
+    "| サーバ | 予約サービスを提供する機器 |",
+  ].join("\n"),
+};
+
+const docB: TestBasisDocument = {
+  name: "doc-b.md",
+  content: [
+    "## 2. 購入条件",
+    "- W-001 Web購入は利用日の30日後まで可能とする。",
+    "- W-003 必要な範囲で適切に通知する。",
+    "サーバーの応答は速やかに返す。",
+    "入場券の枚数上限は10枚。",
+  ].join("\n"),
+};
+
+const baseInput: AnalyzeRequirementsInput = {
+  documents: [docA, docB],
+};
+
+describe("renderRequirementsAnalysis", () => {
+  it("includes all fixed section headings", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    expect(markdown).toContain("# 要件分析結果");
+    expect(markdown).toContain("## 1. 対象文書");
+    expect(markdown).toContain("## 2. 決定的分析(自動)");
+    expect(markdown).toContain("### 2.1 要件ID体系");
+    expect(markdown).toContain("### 2.2 数量表現の全文書横断集約");
+    expect(markdown).toContain("### 2.3 境界値候補(design_boundary_values 連携)");
+    expect(markdown).toContain("### 2.4 用語定義と本文使用の照合");
+    expect(markdown).toContain("### 2.5 曖昧語・弱い語・未完成注記");
+    expect(markdown).toContain("### 2.6 サマリ");
+    expect(markdown).toContain("## 3. 指摘表");
+    expect(markdown).toContain("## 4. 品質特性 × 要件のマッピング指示");
+    expect(markdown).toContain("## 5. ステークホルダー別影響の抽出指示");
+    expect(markdown).toContain("## 6. 変更差分の4区分");
+    expect(markdown).toContain("## 7. 意味的分析の観点");
+  });
+
+  it("shows the 29/30 day contradiction in both the quantity table and the finding table", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    expect(markdown).toContain("29, 30");
+    expect(markdown).toContain("矛盾");
+  });
+
+  it("emits a json block under 2.3 that parses and validates against the design_boundary_values schema", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    const match = /```json\n([\s\S]*?)\n```/.exec(markdown);
+    expect(match).not.toBeNull();
+    const parsed = JSON.parse(match![1]);
+    const result = z.object(designBoundaryValuesInputShape).safeParse(parsed);
+    expect(result.success).toBe(true);
+  });
+
+  it("lists every quality characteristic id by default and restricts when qualityCharacteristicIds is given", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    for (const c of qualityCharacteristicModel.characteristics) {
+      expect(markdown).toContain(c.id);
+    }
+
+    const restricted = renderRequirementsAnalysis({ ...baseInput, qualityCharacteristicIds: ["QC-01"] });
+    const section4 = restricted.split("## 4. 品質特性")[1].split("## 5.")[0];
+    expect(section4).toContain("QC-01");
+    for (const c of qualityCharacteristicModel.characteristics) {
+      if (c.id === "QC-01") continue;
+      expect(section4).not.toContain(c.id);
+    }
+  });
+
+  it("places changeItems under the matching category heading and unclassified items under 未分類", () => {
+    const markdown = renderRequirementsAnalysis({
+      ...baseInput,
+      changeItems: [
+        { description: "新規機能A", category: "new" },
+        { description: "既存機能Bの変更", category: "modified" },
+        { description: "既存機能Cへの影響", category: "existing-impacted" },
+        { description: "既存機能Dは影響なし", category: "existing-unaffected" },
+        { description: "分類未定の項目E" },
+      ],
+    });
+    expect(markdown).toContain("### 新規実装");
+    expect(markdown).toContain("### 変更");
+    expect(markdown).toContain("### 既存・影響あり");
+    expect(markdown).toContain("### 既存・影響なし");
+    expect(markdown).toContain("### 未分類(LLM が分類する)");
+    expect(markdown).toContain("新規機能A");
+    expect(markdown).toContain("既存機能Bの変更");
+    expect(markdown).toContain("既存機能Cへの影響");
+    expect(markdown).toContain("既存機能Dは影響なし");
+    expect(markdown).toContain("分類未定の項目E");
+  });
+
+  it("does not throw when stakeholders are not provided and still shows the table and instruction", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    expect(markdown).toContain("| ステークホルダー | ニーズ・期待 | 懸念 | 導かれるテスト要求 |");
+    expect(markdown).toContain("ステークホルダーごとに");
+  });
+
+  it("includes every question priority level in section 3", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    for (const def of questionPriorityDefinitions) {
+      expect(markdown).toContain(def.level);
+    }
+  });
+
+  it("ends with a trailing newline", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    expect(markdown.endsWith("\n")).toBe(true);
+    expect(markdown.endsWith("\n\n")).toBe(false);
+  });
+});

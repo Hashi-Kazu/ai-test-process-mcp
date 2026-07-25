@@ -285,3 +285,116 @@ export interface TestBasisReviewChecklist {
   name: string;
   items: TestBasisReviewCheckItem[];
 }
+
+// --- 品質特性モデル ---
+export interface QualitySubCharacteristic {
+  id: string;               // "QC-01-02" 形式
+  nameJa: string;
+  nameEn: string;
+  focus: string[];          // 確認の着眼点（自作の日本語文）
+  relatedTestTypes: string[]; // jstqbGlossary.terms の既存 id のみ
+}
+export interface QualityCharacteristic {
+  id: string;               // "QC-01" 形式
+  nameJa: string;
+  nameEn: string;
+  summary: string;
+  subCharacteristics: QualitySubCharacteristic[];
+}
+export interface QualityCharacteristicModel {
+  name: string;
+  note: string;             // 自作整理であること／規格本文の転載でないことの明示
+  characteristics: QualityCharacteristic[];
+}
+
+// --- 要件ID抽出パターン集 ---
+export interface RequirementIdPattern {
+  id: string;               // "IDP-01"
+  name: string;
+  source: string;           // 正規表現 source
+  examples: string[];
+  nonExamples: string[];
+  note?: string;
+}
+export interface RequirementIdPatternCatalog {
+  name: string;
+  defaultPatternId: string;
+  patterns: RequirementIdPattern[];
+}
+
+// --- 要件分析（analyze_requirements） ---
+export type RequirementsQuantityUnit = string; // 単位。未検出時は "(単位なし)"
+
+export interface RequirementsQuantityAggregate {
+  unit: RequirementsQuantityUnit;
+  numbers: number[];                 // 昇順・重複排除
+  documents: string[];               // 出現文書（出現順・重複排除）
+  boundaryWords: string[];           // 以上/以下/未満/超/以内/まで の出現分（重複排除）
+  occurrences: TestBasisQuantityExpression[];
+  crossDocumentVariance: boolean;    // documents.length >= 2 && numbers.length >= 2
+}
+
+export interface RequirementsBoundaryCandidate {
+  unit: RequirementsQuantityUnit;
+  variable: BoundaryVariableSpec;    // design_boundary_values の variables[] 要素そのまま
+  incomplete: boolean;               // min または max が文書から確定できない
+  note?: string;
+  basis: string[];                   // 根拠スニペット "doc:行番号 「raw」"
+}
+
+export type RequirementsTermStatus =
+  | "ok"
+  | "unused"                  // 定義したが本文で未使用
+  | "variant-suspected"       // 正規化一致はあるが完全一致が不足（表記揺れ疑い）
+  | "duplicate-definition";   // 同一用語の定義が2箇所以上
+
+export interface RequirementsTermFinding {
+  term: string;
+  definitions: { document: string; lineIndex: number; heading: string; definition: string }[];
+  exactUsageCount: number;       // 定義行を除く完全一致出現数
+  normalizedUsageCount: number;  // 定義行を除く正規化一致出現数（>= exactUsageCount）
+  usageDocuments: string[];
+  status: RequirementsTermStatus;
+}
+
+export type RequirementsFindingKind =
+  | "曖昧" | "矛盾" | "欠落" | "未解決参照" | "ID重複" | "表記揺れ";
+
+export interface RequirementsFinding {
+  id: string;                 // "F-01" 形式（1始まり・2桁ゼロ埋め）
+  kind: RequirementsFindingKind;
+  severity: ReviewSeverity;   // 既存型を再利用
+  place: string;              // "文書名:行番号 見出し" 形式（行番号は1-based）
+  snippet: string;            // 引用スニペット（80文字で打ち切り、末尾 "…"）
+  problem: string;
+  question: string;           // 確認質問文
+  assumption: string;         // 暫定前提
+}
+
+export type RequirementsChangeCategory =
+  | "new" | "modified" | "existing-impacted" | "existing-unaffected";
+
+export interface RequirementsChangeItem {
+  description: string;
+  category?: RequirementsChangeCategory;  // 未指定なら LLM が分類する
+  note?: string;
+}
+
+export interface RequirementsStakeholderInput {
+  role: string;
+  name?: string;
+  concerns?: string;
+}
+
+export interface AnalyzeRequirementsInput {
+  documents: TestBasisDocument[];
+  idPatterns?: string[];
+  additionalAmbiguousTerms?: string[];
+  background?: string;
+  focusAreas?: string[];
+  outOfScope?: string[];
+  alreadyAssured?: string[];
+  stakeholders?: RequirementsStakeholderInput[];
+  changeItems?: RequirementsChangeItem[];
+  qualityCharacteristicIds?: string[]; // 指定時は該当特性のみをマッピング指示に出す
+}

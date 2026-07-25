@@ -52,6 +52,30 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 
 テスト計画書の意味的レビュー用チェックリスト（JSTQB観点、用語集への相互参照付き）を構造化データ（JSON）として公開する。
 
+### Tool: `review_test_basis`
+
+テストベース（要件・仕様）のMarkdown文書一式を入力すると、ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現を決定的に検査し、意味的チェックリスト・依頼元への質問状雛形・改善提案を併せて返す。
+
+### Resource: `testbasis://review/checklist`
+
+テストベース（要件・仕様）レビュー用の意味的チェックリスト（改善アクション・用語集への相互参照付き）を構造化データ（JSON）として公開する。
+
+### Tool: `analyze_requirements`
+
+複数のテストベース文書を横断分析し、要件ID体系・数量表現の全文書横断集約・境界値候補（`design_boundary_values` 連携）・用語定義と本文使用の照合・曖昧語検出を決定的に行い、根拠位置必須の指摘表付きMarkdownとして返す。品質特性マッピング・ステークホルダー別影響・変更差分4区分は呼び出し側LLMへの指示として出力される。
+
+### Prompt: `requirements_analysis_interview`
+
+質問形式で要件分析のコンテキストを収集するためのガイド。開発背景・分析対象文書・スコープ・ステークホルダー・変更差分等を確認し、`analyze_requirements` を呼び出すようアシスタントを誘導する。任意引数 `subjectName` を受け取る。
+
+### Resource: `quality://characteristics/product`
+
+製品品質特性モデル（自作パラフレーズ、機能適合性・性能効率性・互換性・使用性・信頼性・セキュリティ・保守性・移植性の8特性）を副特性・着眼点・関連テストタイプ付きの構造化データ（JSON）として公開する。
+
+### Resource: `testbasis://id-patterns`
+
+要件ID・機能IDの表記ゆれに対応する正規表現パターン集を構造化データ（JSON）として公開する。`analyze_requirements` / `review_test_basis` の `idPatterns` 引数にそのままコピーして使える。
+
 ## コマンド
 
 ```bash

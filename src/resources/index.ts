@@ -3,6 +3,8 @@ import { testPlanTemplate } from "./testPlanTemplate.js";
 import { jstqbGlossary } from "./jstqbGlossary.js";
 import { testPlanReviewChecklist } from "./testPlanReviewChecklist.js";
 import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
+import { qualityCharacteristicModel } from "./qualityCharacteristics.js";
+import { requirementIdPatternCatalog } from "./requirementIdPatterns.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -80,6 +82,46 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testBasisReviewChecklist, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "quality-characteristics-product",
+    "quality://characteristics/product",
+    {
+      title: "Product Quality Characteristics",
+      description:
+        "Paraphrased product quality characteristic model (functional suitability, performance efficiency, compatibility, usability, reliability, security, maintainability, portability) for mapping requirements to quality aspects.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(qualityCharacteristicModel, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "requirement-id-patterns",
+    "testbasis://id-patterns",
+    {
+      title: "Requirement ID Patterns",
+      description:
+        "Catalog of regular expression patterns for requirement/feature ID formats, copyable into the idPatterns argument of analyze_requirements / review_test_basis.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(requirementIdPatternCatalog, null, 2),
         },
       ],
     })
