@@ -651,3 +651,73 @@ export interface TestCaseHardcodedFinding {
   places: string[];                  // "steps[2].action" / "preconditions[0].value" 等
 }
 export interface TestCaseUnknownTargetRef { caseId: string; targetId: string; }
+
+// --- テスト仕様書レビュー（review_test_specification） ---
+export interface ReviewTestSpecificationInput {
+  testBasisDocuments: TestBasisDocument[];        // 1件以上・フォーマット不問の自由テキスト
+  testSpecificationText: string;                  // テスト仕様書本文（フォーマット不問）
+  testCases?: TestCaseSpec[];                     // 未指定なら ID 抽出ベースの簡易チェックのみ
+  requirementIds?: string[];                      // 未指定なら testBasisDocuments から自動抽出
+  testConditions?: TestCaseSourceCondition[];     // 未指定ならテスト条件軸のカバレッジ表を出力しない
+  risks?: TestSpecificationRisk[];                // 未指定ならリスク軸のカバレッジ表を出力しない
+  idPatterns?: string[];                          // 要件ID抽出の追加パターン
+  additionalAmbiguousTerms?: string[];
+  additionalSubjectiveTerms?: string[];
+  idPrefix?: string;                              // 既定 "TCS-"
+}
+
+export interface TestSpecificationRisk { id: string; description: string; }
+
+/** 要件ID / テスト条件ID / リスクID の3軸で共通利用するカバレッジ行 */
+export interface TestSpecificationCoverageRow { id: string; caseIds: string[]; }
+
+/** 逆方向カバレッジ: 既知IDに1件も一致しない参照を持つケース（根拠不明・過剰テスト候補） */
+export interface TestSpecificationUnfoundedCase {
+  caseId: string;
+  refs: string[];                                 // 照合に失敗した参照値
+  expectedKind: string;                           // 照合対象（"requirementIds[]" 等）
+}
+
+/** ID表記の同期: 完全一致しないが正規化後に一致する表記ゆれ */
+export interface TestSpecificationIdSyncMismatch {
+  caseId: string;
+  field: "derivedFrom" | "testConditionId";
+  ref: string;                                    // ケース側の表記（例 "EH100"）
+  normalized: string;                             // 正規化後の値（例 "EH100"）
+  matchedId: string;                              // テストベース側の定義済みID（例 "EH-100"）
+}
+
+export interface TestSpecificationPreconditionFinding {
+  caseId: string;
+  kind: "empty" | "placeholder-only";
+  detail: string;
+}
+
+export interface TestSpecificationStepBalanceFinding {
+  caseId: string;
+  stepCount: number;
+  uniqueExpectedCount: number;
+  detail: string;
+}
+
+/** 網羅基準・優先度基準などの宣言有無のキーワード検査結果 */
+export interface TestSpecificationDeclarationCheck {
+  found: boolean;
+  matches: { keyword: string; place: string; lineText: string }[]; // place は "document:lineIndex" 形式
+}
+
+export interface TestSpecificationPriorityCount { level: string; count: number; }
+
+export interface TestSpecificationReviewCheckItem {
+  id: string;                                     // "TS-01" 形式
+  severity: ReviewSeverity;
+  title: string;
+  check: string;                                  // 何を確認するか（自作のパラフレーズ文）
+  improvementActions: string[];
+  glossaryRefs?: string[];                        // jstqbGlossary.terms の既存 id のみ
+}
+
+export interface TestSpecificationReviewChecklist {
+  name: string;
+  items: TestSpecificationReviewCheckItem[];
+}

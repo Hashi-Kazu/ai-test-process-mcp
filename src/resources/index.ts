@@ -3,6 +3,7 @@ import { testPlanTemplate } from "./testPlanTemplate.js";
 import { jstqbGlossary } from "./jstqbGlossary.js";
 import { testPlanReviewChecklist } from "./testPlanReviewChecklist.js";
 import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
+import { testSpecificationReviewChecklist } from "./testSpecificationReviewChecklist.js";
 import { qualityCharacteristicModel } from "./qualityCharacteristics.js";
 import { requirementIdPatternCatalog } from "./requirementIdPatterns.js";
 import { testPerspectiveCatalog } from "./testPerspectiveCatalog.js";
@@ -86,6 +87,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testBasisReviewChecklist, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-specification-review-checklist",
+    "testspec://review/checklist",
+    {
+      title: "Test Specification Review Checklist",
+      description:
+        "Semantic review checklist for test specification / test case specification reviews against the test basis, with typical improvement actions and glossary cross-references.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testSpecificationReviewChecklist, null, 2),
         },
       ],
     })
