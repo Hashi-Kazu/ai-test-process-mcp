@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testPlanTemplate } from "./testPlanTemplate.js";
 import { jstqbGlossary } from "./jstqbGlossary.js";
 import { testPlanReviewChecklist } from "./testPlanReviewChecklist.js";
+import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -59,6 +60,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testPlanReviewChecklist, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-basis-review-checklist",
+    "testbasis://review/checklist",
+    {
+      title: "Test Basis Review Checklist",
+      description:
+        "Semantic review checklist for test basis (requirements/specifications) reviews, with typical improvement actions and glossary cross-references.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testBasisReviewChecklist, null, 2),
         },
       ],
     })

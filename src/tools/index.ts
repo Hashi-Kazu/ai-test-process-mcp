@@ -4,6 +4,7 @@ import { registerReviewTestPlanTool } from "./reviewTestPlan.js";
 import { registerReviseTestPlanTool } from "./reviseTestPlan.js";
 import { registerDesignBoundaryValuesTool } from "./designBoundaryValues.js";
 import { registerDesignEquivalencePartitioningTool } from "./designEquivalencePartitioning.js";
+import { registerReviewTestBasisTool } from "./reviewTestBasis.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -11,4 +12,5 @@ export function registerTools(server: McpServer): void {
   registerReviseTestPlanTool(server);
   registerDesignBoundaryValuesTool(server);
   registerDesignEquivalencePartitioningTool(server);
+  registerReviewTestBasisTool(server);
 }
