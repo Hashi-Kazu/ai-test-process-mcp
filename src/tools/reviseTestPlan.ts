@@ -15,7 +15,12 @@ import {
   groupByHeading,
 } from "./reviewTestPlan.js";
 
-const PLACEHOLDER_REGEX = /^(tbd|todo|未定)$/i;
+const PLACEHOLDER_PATTERNS: RegExp[] = [
+  // 完全一致（セル/行の中身が丸ごとこれらの語のみの場合）。既存 tbd/todo/未定 の後方互換を含む。
+  /^(tbd|todo|未定|検討中|未確定|要検討|要確認|後日|後日確定|後日決定)$/i,
+  // 部分一致（行頭のtbd/todo表記）: "TBD: 後日確定" "(todo)" 等を拾う
+  /^[(（]?\s*(tbd|todo)\b/i,
+];
 
 // 見出し文字列（例: "8 成果物", "### 11.1 テスト体制"）から章番号部分を抽出する。
 const HEADING_NUMBER_REGEX = /^#{0,6}\s*(\d+(?:\.\d+)*)[.．\s　]/;
@@ -91,7 +96,7 @@ function normalizePlaceholderMarkers(markdown: string): NormalizePlaceholderMark
       const cells = line.split("|");
       const newCells = cells.map((cell) => {
         const trimmed = cell.trim();
-        if (trimmed && PLACEHOLDER_REGEX.test(trimmed)) {
+        if (trimmed && PLACEHOLDER_PATTERNS.some((re) => re.test(trimmed))) {
           replacements.push({ heading: currentHeading, token: trimmed });
           const leading = cell.match(/^\s*/)?.[0] ?? "";
           const trailing = cell.match(/\s*$/)?.[0] ?? "";
@@ -103,7 +108,7 @@ function normalizePlaceholderMarkers(markdown: string): NormalizePlaceholderMark
     }
 
     const trimmedLine = line.trim();
-    if (trimmedLine && PLACEHOLDER_REGEX.test(trimmedLine)) {
+    if (trimmedLine && PLACEHOLDER_PATTERNS.some((re) => re.test(trimmedLine))) {
       replacements.push({ heading: currentHeading, token: trimmedLine });
       const leadingWs = line.match(/^\s*/)?.[0] ?? "";
       return `${leadingWs}${TBD}`;

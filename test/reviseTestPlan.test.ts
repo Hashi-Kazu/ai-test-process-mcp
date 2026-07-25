@@ -69,6 +69,77 @@ describe("renderTestPlanRevision", () => {
     expect(section2).toContain("| 環境 | _未記入_ |");
   });
 
+  it("normalizes new exact-match placeholder words to _未記入_", () => {
+    const words = ["検討中", "未確定", "要検討", "要確認", "後日", "後日確定"];
+    const planMarkdown = [
+      "# サンプル計画書",
+      "",
+      "## 10 環境",
+      "",
+      "| 項目 | 内容 |",
+      "| --- | --- |",
+      ...words.map((w) => `| 環境 | ${w} |`),
+    ].join("\n");
+
+    const result = renderTestPlanRevision(planMarkdown);
+
+    const section1_2 = result.split("### 1.2")[1]?.split("## 2.")[0] ?? "";
+    for (const w of words) {
+      expect(section1_2).toContain(`10 環境 の "${w}" を "_未記入_" に正規化（計1件）`);
+    }
+
+    const section2 = result.split("## 2.")[1]?.split("## 3.")[0] ?? "";
+    for (const w of words) {
+      expect(section2).not.toContain(`| 環境 | ${w} |`);
+    }
+    expect((section2.match(/\| 環境 \| _未記入_ \|/g) ?? []).length).toBe(words.length);
+  });
+
+  it("normalizes leading tbd/todo-style prefix placeholders to _未記入_", () => {
+    const planMarkdown = [
+      "# サンプル計画書",
+      "",
+      "## 10 環境",
+      "",
+      "| 項目 | 内容 |",
+      "| --- | --- |",
+      "| 環境 | TBD: 後日確定 |",
+      "| 担当 | (todo) |",
+    ].join("\n");
+
+    const result = renderTestPlanRevision(planMarkdown);
+
+    const section1_2 = result.split("### 1.2")[1]?.split("## 2.")[0] ?? "";
+    expect(section1_2).toContain('10 環境 の "TBD: 後日確定" を "_未記入_" に正規化（計1件）');
+    expect(section1_2).toContain('10 環境 の "(todo)" を "_未記入_" に正規化（計1件）');
+
+    const section2 = result.split("## 2.")[1]?.split("## 3.")[0] ?? "";
+    expect(section2).toContain("| 環境 | _未記入_ |");
+    expect(section2).toContain("| 担当 | _未記入_ |");
+  });
+
+  it("does not false-positive normalize phrases that merely contain placeholder words", () => {
+    const planMarkdown = [
+      "# サンプル計画書",
+      "",
+      "## 10 環境",
+      "",
+      "| 項目 | 内容 |",
+      "| --- | --- |",
+      "| 環境 | 後日レビュー会議で確認 |",
+      "| 担当 | 要検討事項は次回までにまとめる |",
+    ].join("\n");
+
+    const result = renderTestPlanRevision(planMarkdown);
+
+    const section1_2 = result.split("### 1.2")[1]?.split("## 2.")[0] ?? "";
+    expect(section1_2).toContain("- 正規化なし");
+
+    const section2 = result.split("## 2.")[1]?.split("## 3.")[0] ?? "";
+    expect(section2).toContain("| 環境 | 後日レビュー会議で確認 |");
+    expect(section2).toContain("| 担当 | 要検討事項は次回までにまとめる |");
+  });
+
   it("includes provided instructions verbatim in 3.1, or states none given when omitted", () => {
     const planMarkdown = renderTestPlan(minimalInput);
 
