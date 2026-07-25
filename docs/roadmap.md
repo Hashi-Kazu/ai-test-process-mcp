@@ -62,7 +62,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 
 | tool | 内容 | 状態 |
 | --- | --- | --- |
-| `analyze_requirements` | 要件分析・品質特性抽出・曖昧さ検出 | 未着手 |
+| `analyze_requirements` | 要件分析・品質特性抽出・曖昧さ検出 | 完了 |
 | `extract_test_conditions` | テストベースからのテスト条件導出 | 未着手 |
 | `review_test_basis` | テストベース（要件・仕様）のレビュー（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現の決定的検査 + 意味的チェックリスト/質問状/改善提案の二層構成） | 完了 |
 
@@ -124,6 +124,6 @@ Generic Test Process の各工程で最終的に提供したい tool 群。Phase
 | Phase 1 完了 | テスト計画書修正支援 `revise_test_plan`（欠落章補完・マーカー正規化 + LLM向け書き換え指示） | 完了（v0.7.0） |
 | Test Design 着手 | 規格準拠表記の除去 + Test Design 技法エンジン `design_boundary_values` / `design_equivalence_partitioning` | 完了（v0.8.0） |
 | Phase 2 着手 | テストベースレビュー `review_test_basis`（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現の決定的検査 + 意味的チェックリスト/質問状/改善提案、共有純関数 `src/testBasisAnalysis.ts`） | 完了 |
-| Phase 2 残り | Test Analysis（analyze_requirements / extract_test_conditions） | 未着手 |
+| Phase 2 残り | Test Analysis（extract_test_conditions） | 未着手 |
 | Phase 3 | Test Design（generate_test_cases / review_test_specification） | 未着手 |
 | Phase 4 | 全工程への拡張 | 未計画 |
