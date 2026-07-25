@@ -474,7 +474,7 @@ const testCaseResultShape = z.object({
   defectNo: z.string().optional().describe("Linked defect number"),
 });
 
-const testCaseSpecShape = z.object({
+export const testCaseSpecShape = z.object({
   caseId: z.string().describe("Test case id, e.g. TCS-001"),
   title: z.string().describe("Test case title"),
   testConditionId: z.string().describe("Origin test condition id (required)"),

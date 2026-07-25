@@ -8,6 +8,7 @@ import { registerReviewTestBasisTool } from "./reviewTestBasis.js";
 import { registerAnalyzeRequirementsTool } from "./analyzeRequirements.js";
 import { registerExtractTestConditionsTool } from "./extractTestConditions.js";
 import { registerGenerateTestCasesTool } from "./generateTestCases.js";
+import { registerReviewTestSpecificationTool } from "./reviewTestSpecification.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -19,4 +20,5 @@ export function registerTools(server: McpServer): void {
   registerAnalyzeRequirementsTool(server);
   registerExtractTestConditionsTool(server);
   registerGenerateTestCasesTool(server);
+  registerReviewTestSpecificationTool(server);
 }
