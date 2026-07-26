@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testPlanTemplate } from "./testPlanTemplate.js";
 import { jstqbGlossary } from "./jstqbGlossary.js";
 import { testPlanReviewChecklist } from "./testPlanReviewChecklist.js";
+import { testPlanAmbiguityLexicon } from "./ambiguityLexicon.js";
 import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
 import { testSpecificationReviewChecklist } from "./testSpecificationReviewChecklist.js";
 import { qualityCharacteristicModel } from "./qualityCharacteristics.js";
@@ -67,6 +68,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testPlanReviewChecklist, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-plan-ambiguity-lexicon",
+    "testplan://review/ambiguity-lexicon",
+    {
+      title: "Test Plan Ambiguity Lexicon",
+      description:
+        "Lexicon of ambiguous / non-measurable / weak-requirement Japanese expressions, plus the chapters where objectivity matters most, used by review_test_plan to detect ambiguous wording deterministically.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testPlanAmbiguityLexicon, null, 2),
         },
       ],
     })

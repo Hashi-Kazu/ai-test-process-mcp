@@ -721,3 +721,29 @@ export interface TestSpecificationReviewChecklist {
   name: string;
   items: TestSpecificationReviewCheckItem[];
 }
+
+// --- 曖昧語レキシコン（テスト計画書レビュー用） ---
+export type AmbiguityCategory = "ambiguous" | "weak-requirement" | "non-measurable";
+
+export interface AmbiguityTermEntry {
+  id: string;                 // "AMB-01" 形式
+  term: string;               // 表示用の語（例 "適切に"）
+  /** 検出用の正規表現 source。未指定時は term をエスケープした literal で検出する */
+  pattern?: string;
+  category: AmbiguityCategory;
+  reason: string;             // なぜ問題か（自作の日本語文）
+  suggestion: string;         // どう書き換えるか（改善提案文）
+}
+
+export interface AmbiguityPrioritySection {
+  no: string;                 // testPlanTemplate.sections の no と一致させる（例 "6.1"）
+  titleJa: string;            // 見出し照合用（例 "開始・終了基準"）
+  severity: ReviewSeverity;   // 既存 ReviewSeverity を再利用
+}
+
+export interface AmbiguityLexicon {
+  name: string;
+  note: string;
+  terms: AmbiguityTermEntry[];
+  prioritySections: AmbiguityPrioritySection[];
+}
