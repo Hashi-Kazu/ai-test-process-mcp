@@ -611,7 +611,8 @@ export function registerGenerateTestCasesTool(server: McpServer): void {
       description:
         "テストケース仕様を、決定的層(網羅率カウント・未通過網羅対象の列挙・期待結果の主観語/空欄検査・閾値の直値埋め込み検査)と、" +
         "手順列の組み立てのみを呼び出し側LLMへ委ねる意味的層の二層構成で扱う。testCases が未指定・空の場合は決定的エンジンへの入力から" +
-        "網羅対象一覧のみを算出し、生成指示を返す。",
+        "網羅対象一覧のみを算出し、生成指示を返す。既存のテストケース一式を testCases に渡せば、既存成果物のレビュー（網羅率・未通過網羅対象・" +
+        "主観語/空欄・直値埋め込みの検査）としても機能する。",
       inputSchema: generateTestCasesInputShape,
     },
     async (input) => {
