@@ -33,6 +33,7 @@ src/
     testPlanTemplate.ts         # テスト計画テンプレート（JSTQB準拠15章構造＋固定ボイラープレート）
     jstqbGlossary.ts            # JSTQB用語のパラフレーズ集（jstqb://glossary/core）
     testPlanReviewChecklist.ts  # テスト計画書レビューチェックリスト（testplan://review/checklist）
+    ambiguityLexicon.ts         # テスト計画書レビュー用曖昧語レキシコン（testplan://review/ambiguity-lexicon）
     testBasisReviewChecklist.ts # テストベースレビューチェックリスト（testbasis://review/checklist）
     testPerspectiveCatalog.ts   # テスト観点カタログ18カテゴリ（testcondition://perspectives/catalog）＋技法ID→ツール名の対応表
     guidewordDictionary.ts      # ガイドワード辞書（testcondition://guidewords/dictionary）
@@ -62,6 +63,7 @@ src/
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
+  ambiguityLexicon.test.ts        # 曖昧語レキシコン構造データの単体テスト
   reviseTestPlan.test.ts          # renderTestPlanRevision()の単体テスト
   testPlanTemplate.test.ts        # テンプレート構造データの単体テスト
   jstqbGlossary.test.ts           # 用語集構造データの単体テスト
