@@ -49,13 +49,24 @@ function normalizeTitle(value: string): string {
   return value.replace(/[\s　]/g, "");
 }
 
+const MIN_PARTIAL_MATCH_LENGTH = 3; // 短いタイトルでの誤マッチ防止
+
 export function sectionExists(section: TestPlanTemplateSection, headings: ParsedHeading[]): boolean {
   if (headings.some((h) => h.no === section.no)) return true;
   const normSection = normalizeTitle(section.titleJa);
   if (!normSection) return false;
   return headings.some((h) => {
+    // 番号を持つ見出しは直前の判定で既に不一致と確定した「別の章」なので、
+    // タイトル一致のフォールバック対象は番号なし見出し（表記ゆれ耐性の対象）に限定する。
+    if (h.no !== undefined) return false;
+
     const normHeading = normalizeTitle(h.titleText);
     if (!normHeading) return false;
+    if (normHeading === normSection) return true; // 完全一致は常に許可
+
+    if (normSection.length < MIN_PARTIAL_MATCH_LENGTH || normHeading.length < MIN_PARTIAL_MATCH_LENGTH) {
+      return false;
+    }
     return normHeading.includes(normSection) || normSection.includes(normHeading);
   });
 }

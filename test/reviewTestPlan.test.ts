@@ -52,6 +52,50 @@ describe("renderTestPlanReview", () => {
     expect(reviewWithoutNumber.split("### 1.2")[0]).not.toContain("5 テスト方針（欠落）");
   });
 
+  it("does not treat a subsection heading as satisfying its parent chapter (10 環境 / 10.1 テスト環境要件)", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const withoutParentChapter = planMarkdown
+      .split("\n")
+      .filter((line) => !line.startsWith("## 10 環境"))
+      .join("\n");
+    expect(withoutParentChapter).toContain("## 10.1 テスト環境要件");
+
+    const review = renderTestPlanReview(withoutParentChapter);
+    expect(review.split("### 1.2")[0]).toContain("10 環境（欠落）");
+  });
+
+  it("does not treat a subsection heading as satisfying its parent chapter (15 承認 / 15.1 承認者)", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const withoutParentChapter = planMarkdown
+      .split("\n")
+      .filter((line) => !line.startsWith("## 15 承認"))
+      .join("\n");
+    expect(withoutParentChapter).toContain("## 15.1 承認者");
+
+    const review = renderTestPlanReview(withoutParentChapter);
+    expect(review.split("### 1.2")[0]).toContain("15 承認（欠落）");
+  });
+
+  it("recognizes an unnumbered heading with an exact title match as the chapter (10 環境)", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const withUnnumberedHeading = planMarkdown.replace("## 10 環境", "## 環境");
+
+    const review = renderTestPlanReview(withUnnumberedHeading);
+    expect(review.split("### 1.2")[0]).not.toContain("10 環境（欠落）");
+  });
+
+  it("does not let an unrelated long heading falsely satisfy a short chapter title (10 環境)", () => {
+    const planMarkdown = renderTestPlan(minimalInput);
+    const withoutParentChapter = planMarkdown
+      .split("\n")
+      .filter((line) => !line.startsWith("## 10 環境"))
+      .join("\n");
+    const withUnrelatedHeading = `${withoutParentChapter}\n## 環境について\n`;
+
+    const review = renderTestPlanReview(withUnrelatedHeading);
+    expect(review.split("### 1.2")[0]).toContain("10 環境（欠落）");
+  });
+
   it("reports 5.2 テストタイプ as a required-未記入 section when no test type is selected", () => {
     const planMarkdown = renderTestPlan(minimalInput);
     const review = renderTestPlanReview(planMarkdown);
