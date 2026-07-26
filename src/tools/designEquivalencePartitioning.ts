@@ -168,7 +168,7 @@ export function registerDesignEquivalencePartitioningTool(server: McpServer): vo
     {
       title: "Design Equivalence Partitioning",
       description:
-        "変数ごとの有効/無効同値クラスから代表値ベースのテストケースを決定的に生成し、全クラス被覆チェック付きのMarkdown表で返す。",
+        "変数ごとの有効/無効同値クラスから代表値ベースのテストケースを決定的に生成し、全クラス被覆チェック付きのMarkdown表で返す。既存の同値クラス定義を variables に渡せば、既存テストケースの網羅状況をレビューする用途にも使える。",
       inputSchema: designEquivalencePartitioningInputShape,
     },
     async (input) => {

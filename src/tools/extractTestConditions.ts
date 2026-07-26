@@ -607,7 +607,7 @@ export function registerExtractTestConditionsTool(server: McpServer): void {
     {
       title: "Extract Test Conditions",
       description:
-        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。",
+        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。既存のテスト条件一覧を testConditions に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
       inputSchema: extractTestConditionsInputShape,
     },
     async (input) => {

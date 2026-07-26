@@ -182,7 +182,7 @@ export function registerDesignBoundaryValuesTool(server: McpServer): void {
     {
       title: "Design Boundary Values",
       description:
-        "変数の有効範囲（下限・上限・刻み・型）から2値/3値の境界値を決定的に列挙し、有効/無効判定付きのMarkdown表で返す。",
+        "変数の有効範囲（下限・上限・刻み・型）から2値/3値の境界値を決定的に列挙し、有効/無効判定付きのMarkdown表で返す。既存の変数定義を variables に渡せば、既存テストケースが境界値を網羅しているかのレビューにも使える。",
       inputSchema: designBoundaryValuesInputShape,
     },
     async (input) => {
