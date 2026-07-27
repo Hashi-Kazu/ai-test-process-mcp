@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderTestConditions } from "../src/tools/extractTestConditions.js";
 import { guidewordDictionary } from "../src/resources/guidewordDictionary.js";
+import { riskAnalysisFrame } from "../src/resources/riskAnalysisFrame.js";
 import type { ExtractTestConditionsInput } from "../src/types.js";
 
 const input: ExtractTestConditionsInput = {
@@ -154,5 +155,84 @@ describe("renderTestConditions", () => {
     const snapshot = JSON.stringify(input);
     expect(renderTestConditions(input)).toBe(markdown);
     expect(JSON.stringify(input)).toBe(snapshot);
+  });
+
+  it("renders section 3.9 and 3.10 exactly once each", () => {
+    expect(markdown.split("\n").filter((l) => l === "### 3.9 リスク区分の被覆状況")).toHaveLength(1);
+    expect(markdown.split("\n").filter((l) => l === "### 3.10 サマリ")).toHaveLength(1);
+  });
+});
+
+describe("renderTestConditions with riskCategoryId", () => {
+  const input2: ExtractTestConditionsInput = {
+    requirementIds: ["R-001"],
+    risks: [
+      { id: "RK-001", description: "既知区分のリスク", impact: 5, likelihood: 2, riskCategoryId: "RC-04" },
+      { id: "RK-002", description: "未知区分のリスク", riskCategoryId: "RC-99" },
+    ],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "F-001",
+        perspectiveCategoryId: "TPC-01",
+        statement: "条件文",
+        source: "testbase",
+        derivedFrom: ["R-001"],
+        priority: "高",
+        riskCategoryId: "RC-99",
+      },
+    ],
+  };
+  const markdown2 = renderTestConditions(input2);
+
+  it("renders all risk categories with 0-count categories flagged as [medium]", () => {
+    const section = markdown2.split("### 3.9 リスク区分の被覆状況")[1].split("### 3.10")[0];
+    for (const rc of riskAnalysisFrame.riskCategories) {
+      expect(section).toContain(rc.id);
+    }
+    const unusedIds = riskAnalysisFrame.riskCategories
+      .filter((rc) => rc.id !== "RC-04")
+      .map((rc) => rc.id);
+    for (const id of unusedIds) {
+      expect(section).toContain(`[medium] ${id}`);
+    }
+  });
+
+  it("flags the unknown risk category id", () => {
+    expect(markdown2).toContain("「RC-99」はリスク分析フレームに存在しないリスク区分IDである。");
+  });
+
+  it("includes the unused/unknown risk category counters in the 3.10 summary", () => {
+    const summaryLine = markdown2
+      .split("\n")
+      .find((l) => l.startsWith("- 対象要件ID数:"));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).toContain("未使用リスク区分数:");
+    expect(summaryLine).toContain("未知リスク区分ID数:");
+  });
+
+  it("renders all risk categories and control flaw patterns in section 8", () => {
+    const section = markdown2.split("## 8. リスク分析フレームの適用指示(意味的層)")[1].split("## 9.")[0];
+    for (const rc of riskAnalysisFrame.riskCategories) {
+      expect(section).toContain(rc.id);
+      expect(section).toContain(rc.nameJa);
+    }
+    for (const p of riskAnalysisFrame.controlFlawFrame.patterns) {
+      expect(section).toContain(p.id);
+      expect(section).toContain(p.nameJa);
+      for (const q of p.probeQuestions) {
+        expect(section).toContain(q);
+      }
+    }
+  });
+
+  it("renders the 6-column risk list table header with a category column", () => {
+    expect(markdown2).toContain("| リスクID | 内容 | 区分 | 影響度 | 発生可能性 | 変更区分 |");
+  });
+
+  it("is deterministic and does not mutate the input", () => {
+    const snapshot = JSON.stringify(input2);
+    expect(renderTestConditions(input2)).toBe(markdown2);
+    expect(JSON.stringify(input2)).toBe(snapshot);
   });
 });
