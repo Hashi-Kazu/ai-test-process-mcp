@@ -72,4 +72,16 @@ describe("testPerspectiveCatalog", () => {
       expect(mapping.toolName.length).toBeGreaterThan(0);
     }
   });
+
+  it("routes exploratory/error-guessing/checklist-based to generate_exploratory_charters", () => {
+    const experienceBasedIds: (typeof testTechniqueToolMapping)[number]["techniqueId"][] = [
+      "exploratory",
+      "error-guessing",
+      "checklist-based",
+    ];
+    for (const id of experienceBasedIds) {
+      const mapping = testTechniqueToolMapping.find((m) => m.techniqueId === id);
+      expect(mapping?.toolName).toBe("generate_exploratory_charters");
+    }
+  });
 });

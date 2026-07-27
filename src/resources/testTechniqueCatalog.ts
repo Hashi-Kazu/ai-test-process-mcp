@@ -181,6 +181,67 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
       selectionRationale: "処理順序の入れ替わりや時刻・タイムアウトの境界で振る舞いが変わり得る場合に選ぶ。",
       note: "順序パターン自動生成エンジンは未実装。additionalCoverageTargets でパターン単位の網羅対象を宣言する運用とする。",
     },
+    {
+      id: "TTK-11",
+      techniqueId: "exploratory",
+      nameJa: "探索的テスト",
+      basisCharacteristics: ["仕様が不完全・未確定"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-11",
+          nameJa: "チャーター区分被覆",
+          definition: "観点区分カタログのうち、いずれかのチャーターが割り当てられた区分の割合。",
+        },
+        {
+          id: "TTC-COV-12",
+          nameJa: "セッション消化率",
+          definition: "計画したチャーターのうち、タイムボックスを消化して実施済みとなったチャーターの割合。",
+        },
+      ],
+      requiredInputs: ["対象領域", "観点区分", "セッション時間予算", "実施者・スキル", "記録方法", "停止条件"],
+      engineToolName: "generate_exploratory_charters",
+      deterministic: false,
+      selectionRationale: "仕様が不完全・未確定で、事前に網羅対象を確定しづらいが探索的に確認したい範囲がある場合に選ぶ。",
+      note:
+        "チャーター表の作成・網羅チェックは generate_exploratory_charters が担い、区分被覆・由来参照・タイムボックス・" +
+        "主観語の検査を決定的層として数える。",
+    },
+    {
+      id: "TTK-12",
+      techniqueId: "error-guessing",
+      nameJa: "エラー推測",
+      basisCharacteristics: ["経験・勘に依存する不具合が多い"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-13",
+          nameJa: "想定不具合パターン被覆",
+          definition: "過去の経験から想定した不具合パターンのうち、チャーターとしてケース化されたパターンの割合。",
+        },
+      ],
+      requiredInputs: ["過去の不具合傾向", "経験上の勘所", "対象領域"],
+      engineToolName: "generate_exploratory_charters",
+      deterministic: false,
+      selectionRationale: "過去の類似不具合や経験則から狙いを定めて確認したい範囲がある場合に選ぶ。",
+      note: "想定不具合パターンはチャーターの derivedFrom・ミッション文として generate_exploratory_charters へ渡す運用とする。",
+    },
+    {
+      id: "TTK-13",
+      techniqueId: "checklist-based",
+      nameJa: "チェックリストベースドテスト",
+      basisCharacteristics: ["経験・勘に依存する不具合が多い"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-14",
+          nameJa: "チェックリスト項目被覆",
+          definition: "用意したチェックリスト項目のうち、チャーターとしてケース化された項目の割合。",
+        },
+      ],
+      requiredInputs: ["チェックリスト項目", "対象領域"],
+      engineToolName: "generate_exploratory_charters",
+      deterministic: false,
+      selectionRationale: "組織で蓄積したチェックリストを踏まえて確認漏れを防ぎたい場合に選ぶ。",
+      note: "チェックリスト項目はチャーターの確認観点・操作観点として generate_exploratory_charters へ渡す運用とする。",
+    },
   ],
   selectionTable: [
     {
@@ -230,6 +291,18 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
       basisCharacteristic: "並行・競合",
       recommendedTechniqueIds: ["concurrency-test", "timing-order-test"],
       coverageCriterionIds: ["TTC-COV-09", "TTC-COV-10"],
+    },
+    {
+      id: "TTS-09",
+      basisCharacteristic: "仕様が不完全・未確定",
+      recommendedTechniqueIds: ["exploratory"],
+      coverageCriterionIds: ["TTC-COV-11", "TTC-COV-12"],
+    },
+    {
+      id: "TTS-10",
+      basisCharacteristic: "経験・勘に依存する不具合が多い",
+      recommendedTechniqueIds: ["error-guessing", "checklist-based"],
+      coverageCriterionIds: ["TTC-COV-13", "TTC-COV-14"],
     },
   ],
 };
