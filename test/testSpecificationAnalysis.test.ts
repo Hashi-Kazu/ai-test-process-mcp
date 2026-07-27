@@ -133,6 +133,23 @@ describe("findUnfoundedCases", () => {
   });
 });
 
+describe("buildDerivedFromCoverage / findUnfoundedCases with explicit-kind derivedFrom", () => {
+  it("counts an explicit-kind entry toward coverage by id match alone", () => {
+    const cases = [makeCase({ caseId: "TCS-001", derivedFrom: [{ kind: "risk", id: "EH-100" }] })];
+    expect(buildDerivedFromCoverage(["EH-100"], cases)).toEqual([
+      { id: "EH-100", caseIds: ["TCS-001"] },
+    ]);
+    expect(findUnfoundedCases(["EH-100"], cases)).toEqual([]);
+  });
+
+  it("reports the plain id list in refs when unfounded, even for explicit-kind entries", () => {
+    const cases = [makeCase({ caseId: "TCS-001", derivedFrom: [{ kind: "risk", id: "XX-900" }] })];
+    expect(findUnfoundedCases(["EH-100"], cases)).toEqual([
+      { caseId: "TCS-001", refs: ["XX-900"], expectedKind: "requirementIds[]" },
+    ]);
+  });
+});
+
 describe("findUnknownConditionRefs", () => {
   const conditions: TestCaseSourceCondition[] = [
     { id: "TC-001", target: "購入", statement: "購入できる", derivedFrom: ["EH-100"] },
@@ -180,6 +197,20 @@ describe("findUnknownRiskRefs", () => {
     expect(findUnknownRiskRefs([], [makeCase({ caseId: "TCS-001", derivedFrom: ["R-009"] })])).toEqual(
       []
     );
+  });
+});
+
+describe("findUnknownRiskRefs with explicit-kind derivedFrom", () => {
+  const risks = [
+    { id: "R-001", description: "決済失敗" },
+    { id: "R-002", description: "二重購入" },
+  ];
+
+  it("detects an explicit risk-kind entry even without a matching risk id prefix", () => {
+    const cases = [makeCase({ caseId: "TCS-001", derivedFrom: [{ kind: "risk", id: "RK-999" }] })];
+    expect(findUnknownRiskRefs(risks, cases)).toEqual([
+      { caseId: "TCS-001", refs: ["RK-999"], expectedKind: "risks[].id" },
+    ]);
   });
 });
 
@@ -236,6 +267,17 @@ describe("findIdNotationMismatches", () => {
         normalized: "TC001",
         matchedId: "TC-001",
       },
+    ]);
+  });
+});
+
+describe("findIdNotationMismatches with explicit-kind derivedFrom", () => {
+  it("detects notation mismatches for explicit-kind entries", () => {
+    const cases = [
+      makeCase({ caseId: "TCS-001", derivedFrom: [{ kind: "risk", id: "EH100" }], testConditionId: "TC-001" }),
+    ];
+    expect(findIdNotationMismatches(["EH-100"], cases)).toEqual([
+      { caseId: "TCS-001", field: "derivedFrom", ref: "EH100", normalized: "EH100", matchedId: "EH-100" },
     ]);
   });
 });

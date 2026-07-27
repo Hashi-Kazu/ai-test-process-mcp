@@ -22,6 +22,7 @@ import {
 } from "../testCaseAnalysis.js";
 import { resolveSourceRefs } from "../testConditionAnalysis.js";
 import { formatSourceCitation } from "../testBasisAnalysis.js";
+import { derivedFromSchema, formatDerivedFromEntry, formatDerivedFromList } from "../derivedFromRefs.js";
 import type { GenerateTestCasesInput, TestCaseSpec, TestTechniqueCatalog } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -88,7 +89,7 @@ export function renderTestCases(
     lines.push(
       `| ${escapeCell(c.id)} | ${escapeCell(c.target)} | ${escapeCell(c.statement)} | ${
         c.priority ?? "未設定"
-      } | ${escapeCell(c.derivedFrom.join(", "))} | ${escapeCell(sourceCitation)} |`
+      } | ${escapeCell(formatDerivedFromList(c.derivedFrom))} | ${escapeCell(sourceCitation)} |`
     );
   }
   lines.push("");
@@ -337,8 +338,9 @@ export function renderTestCases(
       lines.push("| ケースID | 参照 | 照合対象 |");
       lines.push("| --- | --- | --- |");
       for (const ref of unresolvedRefs) {
+        const refDisplay = ref.kind ? formatDerivedFromEntry({ kind: ref.kind, id: ref.ref }) : ref.ref;
         lines.push(
-          `| ${escapeCell(ref.caseId)} | ${escapeCell(ref.ref)} | ${escapeCell(ref.expectedKind)} |`
+          `| ${escapeCell(ref.caseId)} | ${escapeCell(refDisplay)} | ${escapeCell(ref.expectedKind)} |`
         );
       }
     }
@@ -495,10 +497,9 @@ export const testCaseSpecShape = z.object({
   caseId: z.string().describe("Test case id, e.g. TCS-001"),
   title: z.string().describe("Test case title"),
   testConditionId: z.string().describe("Origin test condition id (required)"),
-  derivedFrom: z
-    .array(z.string())
-    .min(1)
-    .describe("Requirement/feature/screen/scenario/risk ids this case was derived from (required)"),
+  derivedFrom: derivedFromSchema.describe(
+    "Requirement/feature/screen/scenario/risk ids this case was derived from (required). Plain id string, or {kind, id} to disambiguate across requirement/risk/stakeholder/guideword namespaces"
+  ),
   techniqueId: z.string().describe("Applied technique id (required)"),
   coverageTargets: z
     .array(z.string())
@@ -533,7 +534,9 @@ export const generateTestCasesInputShape = {
         id: z.string().describe("Test condition id, e.g. TC-001"),
         target: z.string().describe("Target of the condition"),
         statement: z.string().describe("The test condition statement"),
-        derivedFrom: z.array(z.string()).min(1).describe("Requirement/risk/persona ids (required)"),
+        derivedFrom: derivedFromSchema.describe(
+          "Requirement/risk/persona ids (required). Plain id string, or {kind, id} to disambiguate across requirement/risk/stakeholder/guideword namespaces"
+        ),
         priority: z.enum(["高", "中", "低"]).optional(),
         perspectiveCategoryId: z.string().optional(),
         recommendedTechniques: z.array(z.string()).optional(),
@@ -558,6 +561,14 @@ export const generateTestCasesInputShape = {
     .min(1)
     .describe("Test conditions to turn into test cases"),
   requirementIds: z.array(z.string()).optional().describe("Requirement ids used to validate derivedFrom"),
+  riskIds: z
+    .array(z.string())
+    .optional()
+    .describe("Risk ids used to validate derivedFrom entries with kind:\"risk\""),
+  personaIds: z
+    .array(z.string())
+    .optional()
+    .describe("Persona ids used to validate derivedFrom entries with kind:\"stakeholder\""),
   parameters: z
     .array(
       z.object({

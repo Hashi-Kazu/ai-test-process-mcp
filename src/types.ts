@@ -505,6 +505,12 @@ export interface RiskAnalysisFrame {
   controlFlawFrame: ControlFlawFrame;
 }
 
+// --- derivedFrom 参照種別（要件/リスク/ステークホルダー/ガイドワード） ---
+export type DerivedFromKind = "requirement" | "risk" | "stakeholder" | "guideword";
+export interface DerivedFromRef { kind: DerivedFromKind; id: string; }
+/** 文字列は「種別未指定」の従来表記。オブジェクトは種別明示の参照。 */
+export type DerivedFromEntry = string | DerivedFromRef;
+
 // --- テスト条件抽出（extract_test_conditions） ---
 export type TestConditionSource = "testbase" | "stakeholder" | "risk" | "guideword";
 export type TestConditionPriority = "高" | "中" | "低";
@@ -516,7 +522,7 @@ export interface TestConditionInput {
   perspectiveId?: string;            // TPC-XX-YY
   statement: string;                 // 条件文
   source: TestConditionSource;       // 必須
-  derivedFrom: string[];             // 必須・1件以上（要件ID / リスクID / ペルソナID）
+  derivedFrom: DerivedFromEntry[];   // 必須・1件以上（要件ID / リスクID / ペルソナID。{kind,id} で種別明示可）
   priority?: TestConditionPriority;
   impact?: number;                   // 1..5
   likelihood?: number;               // 1..5
@@ -549,7 +555,7 @@ export interface ExtractTestConditionsInput {
 export interface RequirementCoverageRow { requirementId: string; conditionIds: string[]; }
 export interface TestConditionDuplicateId { id: string; count: number; }
 export interface TestConditionSourceDistributionRow { source: TestConditionSource; count: number; conditionIds: string[]; }
-export interface TestConditionUnresolvedRef { conditionId: string; ref: string; expectedKind: string; }
+export interface TestConditionUnresolvedRef { conditionId: string; ref: string; expectedKind: string; kind?: DerivedFromKind; }
 export interface TestConditionRiskEvaluation {
   conditionId: string; score?: number; bandId?: string;
   derivedPriority?: TestConditionPriority;
@@ -622,7 +628,7 @@ export interface TestCaseSpec {
   caseId: string;                   // "TCS-001" 形式
   title: string;
   testConditionId: string;          // 由来（必須）
-  derivedFrom: string[];            // 要件ID/機能ID/画面ID/シナリオID/リスクID（必須・1件以上）
+  derivedFrom: DerivedFromEntry[];   // 要件ID/機能ID/画面ID/シナリオID/リスクID（必須・1件以上。{kind,id} で種別明示可）
   techniqueId: TestTechniqueId;     // 適用技法（必須）
   coverageTargets: string[];        // 充足する網羅対象ID（必須・1件以上）
   perspectiveCategoryId?: string;
@@ -653,7 +659,7 @@ export interface TestCaseSourceCondition {
   id: string;                       // extract_test_conditions の条件ID
   target: string;
   statement: string;
-  derivedFrom: string[];            // 1件以上
+  derivedFrom: DerivedFromEntry[];   // 1件以上（{kind,id} で種別明示可）
   priority?: TestConditionPriority;
   perspectiveCategoryId?: string;
   recommendedTechniques?: TestTechniqueId[];
@@ -663,6 +669,8 @@ export interface TestCaseSourceCondition {
 export interface GenerateTestCasesInput {
   testConditions: TestCaseSourceCondition[];       // 1件以上
   requirementIds?: string[];                       // derivedFrom の照合先
+  riskIds?: string[];                              // derivedFrom の kind:"risk" 照合先
+  personaIds?: string[];                           // derivedFrom の kind:"stakeholder" 照合先
   parameters?: TestCaseParameter[];                // 閾値表
   boundaryVariables?: BoundaryVariableSpec[];      // design_boundary_values と同形
   boundaryMode?: BoundaryValueMode;
@@ -692,7 +700,7 @@ export interface TestCaseCoverageRow {
 }
 export interface TestCaseTraceRow { conditionId: string; caseIds: string[]; }
 export interface TestCaseDuplicateId { id: string; count: number; }
-export interface TestCaseUnresolvedRef { caseId: string; ref: string; expectedKind: string; }
+export interface TestCaseUnresolvedRef { caseId: string; ref: string; expectedKind: string; kind?: DerivedFromKind; }
 export interface TestCaseExpectedFinding {
   caseId: string; stepNo: number;
   severity: ReviewSeverity;
@@ -809,7 +817,7 @@ export interface ExploratoryCharterTestConditionInput {
   id: string;
   target: string;
   statement: string;
-  derivedFrom: string[];             // 1件以上
+  derivedFrom: DerivedFromEntry[];    // 1件以上（{kind,id} で種別明示可）
   priority?: TestConditionPriority;
   perspectiveCategoryId?: string;
 }
@@ -826,7 +834,7 @@ export interface ExploratoryCharterInput {
   mission: string;
   checkFocus: string[];               // 1件以上
   operationFocus: string[];           // 1件以上
-  derivedFrom: string[];              // 1件以上
+  derivedFrom: DerivedFromEntry[];     // 1件以上（{kind,id} で種別明示可）
   timeboxMinutes?: number;
   assignee?: string;
   skillLevel?: "熟練" | "中級" | "初級";

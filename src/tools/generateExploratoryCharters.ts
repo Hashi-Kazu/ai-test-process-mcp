@@ -17,6 +17,7 @@ import {
   findUnresolvedCharterRefs,
   findUnusedCharterAreas,
 } from "../exploratoryCharterAnalysis.js";
+import { derivedFromSchema, formatDerivedFromList } from "../derivedFromRefs.js";
 import type {
   ExploratoryCharterCatalog,
   ExploratoryCharterInput,
@@ -107,7 +108,7 @@ export function renderExploratoryCharters(
     lines.push(
       `| ${escapeCell(c.id)} | ${escapeCell(c.target)} | ${escapeCell(c.statement)} | ${
         c.priority ?? "未設定"
-      } | ${escapeCell(c.derivedFrom.join(", "))} |`
+      } | ${escapeCell(formatDerivedFromList(c.derivedFrom))} |`
     );
   }
   lines.push("");
@@ -365,10 +366,9 @@ const exploratoryCharterShape = z.object({
   mission: z.string().describe("Mission statement for the exploratory session"),
   checkFocus: z.array(z.string()).min(1).describe("Check focus points (what should hold true)"),
   operationFocus: z.array(z.string()).min(1).describe("Operation focus points (how to probe it)"),
-  derivedFrom: z
-    .array(z.string())
-    .min(1)
-    .describe("Test condition ids / risk ids this charter was derived from (required)"),
+  derivedFrom: derivedFromSchema.describe(
+    "Test condition ids / risk ids this charter was derived from (required). Plain id string, or {kind, id} to disambiguate across requirement/risk/stakeholder/guideword namespaces"
+  ),
   timeboxMinutes: z.number().optional(),
   assignee: z.string().optional(),
   skillLevel: z.enum(["熟練", "中級", "初級"]).optional(),
@@ -383,7 +383,9 @@ export const generateExploratoryChartersInputShape = {
         id: z.string().describe("Test condition id, e.g. TC-001"),
         target: z.string().describe("Target of the condition"),
         statement: z.string().describe("The test condition statement"),
-        derivedFrom: z.array(z.string()).min(1).describe("Requirement/risk/persona ids (required)"),
+        derivedFrom: derivedFromSchema.describe(
+          "Requirement/risk/persona ids (required). Plain id string, or {kind, id} to disambiguate across requirement/risk/stakeholder/guideword namespaces"
+        ),
         priority: z.enum(["高", "中", "低"]).optional(),
         perspectiveCategoryId: z.string().optional(),
       })

@@ -1,5 +1,6 @@
 import { extractIdOccurrences, type TestBasisAnalysisOptions } from "./testBasisAnalysis.js";
 import { escapeRegExp } from "./tools/reviewTestPlan.js";
+import { derivedFromIds, toDerivedFromRef } from "./derivedFromRefs.js";
 import type {
   TestBasisDocument,
   TestCaseSourceCondition,
@@ -82,7 +83,7 @@ export function buildDerivedFromCoverage(
 ): TestSpecificationCoverageRow[] {
   return ids.map((id) => ({
     id,
-    caseIds: testCases.filter((c) => c.derivedFrom.includes(id)).map((c) => c.caseId),
+    caseIds: testCases.filter((c) => derivedFromIds(c.derivedFrom).includes(id)).map((c) => c.caseId),
   }));
 }
 
@@ -101,8 +102,9 @@ export function findUnfoundedCases(
   const known = new Set(knownIds);
   const result: TestSpecificationUnfoundedCase[] = [];
   for (const c of testCases) {
-    if (c.derivedFrom.some((ref) => known.has(ref))) continue;
-    result.push({ caseId: c.caseId, refs: [...c.derivedFrom], expectedKind });
+    const ids = derivedFromIds(c.derivedFrom);
+    if (ids.some((ref) => known.has(ref))) continue;
+    result.push({ caseId: c.caseId, refs: ids, expectedKind });
   }
   return result;
 }
@@ -147,9 +149,14 @@ export function findUnknownRiskRefs(
   const prefixes = new Set(risks.map((r) => riskPrefixOf(r.id)));
   const result: TestSpecificationUnfoundedCase[] = [];
   for (const c of testCases) {
-    const refs = c.derivedFrom.filter(
-      (ref) => prefixes.has(riskPrefixOf(ref)) && !known.has(ref)
-    );
+    const refs: string[] = [];
+    for (const entry of c.derivedFrom) {
+      const parsed = toDerivedFromRef(entry);
+      if (known.has(parsed.id)) continue;
+      const isExplicitRisk = parsed.kind === "risk";
+      const isPrefixMatch = prefixes.has(riskPrefixOf(parsed.id));
+      if (isExplicitRisk || isPrefixMatch) refs.push(parsed.id);
+    }
     if (refs.length === 0) continue;
     result.push({ caseId: c.caseId, refs, expectedKind: "risks[].id" });
   }
@@ -188,7 +195,7 @@ export function findIdNotationMismatches(
   };
 
   for (const c of testCases) {
-    for (const ref of c.derivedFrom) push(c.caseId, "derivedFrom", ref);
+    for (const ref of derivedFromIds(c.derivedFrom)) push(c.caseId, "derivedFrom", ref);
     push(c.caseId, "testConditionId", c.testConditionId);
   }
   return result;

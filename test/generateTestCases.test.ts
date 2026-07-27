@@ -214,3 +214,57 @@ describe("renderTestCases", () => {
     expect(JSON.stringify(baseInput)).toBe(snapshot);
   });
 });
+
+describe("renderTestCases with explicit-kind derivedFrom entries", () => {
+  it("renders the 'リスク:' label in the 1.1 condition table cell", () => {
+    const input: GenerateTestCasesInput = {
+      ...baseInput,
+      testConditions: [
+        {
+          id: "TC-001",
+          target: "チケット購入",
+          statement: "枚数が上限|下限で切り替わる",
+          derivedFrom: [
+            { kind: "risk", id: "RK-001" },
+            { kind: "requirement", id: "R-001" },
+          ],
+          basisCharacteristics: ["入力が範囲を持つ"],
+        },
+      ],
+      riskIds: ["RK-001"],
+    };
+    const markdown = renderTestCases(input);
+    const conditionRow = markdown.split("\n").find((l) => l.startsWith("| TC-001 |"));
+    expect(conditionRow).toContain("リスク:RK-001");
+  });
+
+  it("shows a kind-labeled unresolved reference in 4.5 when riskIds does not contain the id", () => {
+    const input: GenerateTestCasesInput = {
+      ...baseInput,
+      riskIds: ["RK-001"],
+      testCases: [
+        {
+          caseId: "TCS-001",
+          title: "テスト",
+          testConditionId: "TC-001",
+          derivedFrom: [{ kind: "risk", id: "RK-999" }],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:0"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "0枚で購入する", expected: "購入できない" }],
+        },
+      ],
+    };
+    const markdown = renderTestCases(input);
+    const section45 = markdown.split("### 4.5 由来メタデータの未解決参照")[1].split("### 4.6")[0];
+    expect(section45).toContain("リスク:RK-999");
+    expect(section45).toContain("riskIds[]");
+  });
+
+  it("does not affect existing plain-string derivedFrom output", () => {
+    const markdown = renderTestCases(baseInput);
+    const conditionRow = markdown.split("\n").find((l) => l.startsWith("| TC-001 |"));
+    expect(conditionRow).toContain("R-001");
+    expect(conditionRow).not.toContain("要件:R-001");
+  });
+});

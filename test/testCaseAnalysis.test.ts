@@ -6,6 +6,7 @@ import {
   findMissingCaseNumbers,
   findStepGranularityIssues,
   findSubjectiveExpectedResults,
+  findUnresolvedCaseRefs,
   resolveCaseSourceRefs,
 } from "../src/testCaseAnalysis.js";
 import type {
@@ -232,6 +233,49 @@ describe("findMissingCaseNumbers", () => {
       baseCase({ caseId: "TCS-003" }),
     ];
     expect(findMissingCaseNumbers(testCases)).toEqual(["TCS-002"]);
+  });
+});
+
+describe("findUnresolvedCaseRefs with explicit-kind derivedFrom", () => {
+  function sourceCondition(
+    overrides: Partial<TestCaseSourceCondition> & { id: string }
+  ): TestCaseSourceCondition {
+    return {
+      target: "F-001",
+      statement: "条件文",
+      derivedFrom: ["R-001"],
+      ...overrides,
+    };
+  }
+
+  it("does not require riskIds to resolve an explicit risk-kind reference", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [sourceCondition({ id: "TC-001" })],
+      testCases: [baseCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: [{ kind: "risk", id: "RK-001" }] })],
+    };
+    expect(findUnresolvedCaseRefs(input)).toEqual([]);
+  });
+
+  it("detects an explicit risk-kind reference missing from riskIds", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [sourceCondition({ id: "TC-001" })],
+      riskIds: ["RK-001"],
+      testCases: [baseCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: [{ kind: "risk", id: "RK-999" }] })],
+    };
+    expect(findUnresolvedCaseRefs(input)).toEqual([
+      { caseId: "TCS-001", ref: "RK-999", expectedKind: "riskIds[]", kind: "risk" },
+    ]);
+  });
+
+  it("keeps the existing string + requirementIds behavior unchanged", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [sourceCondition({ id: "TC-001" })],
+      requirementIds: ["R-001"],
+      testCases: [baseCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: ["R-999"] })],
+    };
+    expect(findUnresolvedCaseRefs(input)).toEqual([
+      { caseId: "TCS-001", ref: "R-999", expectedKind: "requirementIds[]" },
+    ]);
   });
 });
 

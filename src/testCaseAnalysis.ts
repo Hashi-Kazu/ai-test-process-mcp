@@ -1,9 +1,12 @@
 import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
+import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
+import { toDerivedFromRef } from "./derivedFromRefs.js";
 import type {
   GenerateTestCasesInput,
+  GuidewordDictionary,
   RequirementSourceRef,
   StateTransitionSpec,
   TestBasisSourceRef,
@@ -266,20 +269,58 @@ export function findMissingCaseNumbers(
 
 // --- derivedFrom / testConditionId の未解決参照 ---
 
-export function findUnresolvedCaseRefs(input: GenerateTestCasesInput): TestCaseUnresolvedRef[] {
+export function findUnresolvedCaseRefs(
+  input: GenerateTestCasesInput,
+  dictionary: GuidewordDictionary = guidewordDictionary
+): TestCaseUnresolvedRef[] {
   const testCases = input.testCases ?? [];
   const conditionIds = new Set(input.testConditions.map((c) => c.id));
   const requirementIds = input.requirementIds;
+  const riskIds = input.riskIds;
+  const personaIds = input.personaIds;
+  const guidewordIds = [
+    ...dictionary.focusPoints.map((f) => f.id),
+    ...dictionary.guidewords.map((g) => g.id),
+  ];
 
   const result: TestCaseUnresolvedRef[] = [];
   for (const c of testCases) {
     if (!conditionIds.has(c.testConditionId)) {
       result.push({ caseId: c.caseId, ref: c.testConditionId, expectedKind: "testConditions[].id" });
     }
-    if (requirementIds && requirementIds.length > 0) {
-      for (const ref of c.derivedFrom) {
-        if (!requirementIds.includes(ref)) {
-          result.push({ caseId: c.caseId, ref, expectedKind: "requirementIds[]" });
+    for (const entry of c.derivedFrom) {
+      const parsed = toDerivedFromRef(entry);
+      if (parsed.kind !== undefined) {
+        let pool: string[] | undefined;
+        let expectedKind: string;
+        switch (parsed.kind) {
+          case "requirement":
+            pool = requirementIds;
+            expectedKind = "requirementIds[]";
+            break;
+          case "risk":
+            pool = riskIds;
+            expectedKind = "riskIds[]";
+            break;
+          case "stakeholder":
+            pool = personaIds;
+            expectedKind = "personaIds[]";
+            break;
+          case "guideword":
+            pool = guidewordIds;
+            expectedKind = "guidewordDictionary focusPoints[].id / guidewords[].id";
+            break;
+        }
+        if (parsed.kind !== "guideword" && (!pool || pool.length === 0)) continue;
+        if (!(pool as string[]).includes(parsed.id)) {
+          result.push({ caseId: c.caseId, ref: parsed.id, expectedKind, kind: parsed.kind });
+        }
+        continue;
+      }
+
+      if (requirementIds && requirementIds.length > 0) {
+        if (!requirementIds.includes(parsed.id)) {
+          result.push({ caseId: c.caseId, ref: parsed.id, expectedKind: "requirementIds[]" });
         }
       }
     }

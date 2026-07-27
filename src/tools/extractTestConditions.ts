@@ -26,6 +26,12 @@ import {
   testConditionSourceLabels,
 } from "../testConditionAnalysis.js";
 import { formatSourceCitation } from "../testBasisAnalysis.js";
+import {
+  derivedFromSchema,
+  formatDerivedFromEntry,
+  formatDerivedFromList,
+  hasDerivedFromRef,
+} from "../derivedFromRefs.js";
 import type {
   ExtractTestConditionsInput,
   GuidewordDictionary,
@@ -62,7 +68,7 @@ function categoryLabel(catalog: TestPerspectiveCatalog, categoryId: string): str
 }
 
 function derivationText(condition: TestConditionInput): string {
-  const base = `${condition.source} / ${condition.derivedFrom.join(", ")}`;
+  const base = `${condition.source} / ${formatDerivedFromList(condition.derivedFrom)}`;
   return condition.rationale ? `${base}（${condition.rationale}）` : base;
 }
 
@@ -289,8 +295,9 @@ export function renderTestConditions(
     lines.push("| 条件ID | 参照 | 照合対象 |");
     lines.push("| --- | --- | --- |");
     for (const ref of unresolvedRefs) {
+      const refDisplay = ref.kind ? formatDerivedFromEntry({ kind: ref.kind, id: ref.ref }) : ref.ref;
       lines.push(
-        `| ${escapeCell(ref.conditionId)} | ${escapeCell(ref.ref)} | ${escapeCell(ref.expectedKind)} |`
+        `| ${escapeCell(ref.conditionId)} | ${escapeCell(refDisplay)} | ${escapeCell(ref.expectedKind)} |`
       );
     }
   }
@@ -591,7 +598,9 @@ export function renderTestConditions(
   lines.push("| ペルソナID | 役割 | 氏名 | 懸念 | 導出済み条件ID |");
   lines.push("| --- | --- | --- | --- | --- |");
   for (const p of personas ?? []) {
-    const derived = testConditions.filter((c) => c.derivedFrom.includes(p.id)).map((c) => c.id);
+    const derived = testConditions
+      .filter((c) => hasDerivedFromRef(c.derivedFrom, p.id, "stakeholder"))
+      .map((c) => c.id);
     lines.push(
       `| ${escapeCell(p.id)} | ${escapeCell(p.role)} | ${escapeCell(p.name ?? "-")} | ${escapeCell(
         p.concerns ?? "未記入(要確認)"
@@ -625,10 +634,9 @@ export const extractTestConditionsInputShape = {
         source: z
           .enum(["testbase", "stakeholder", "risk", "guideword"])
           .describe("Derivation line this condition came from (required)"),
-        derivedFrom: z
-          .array(z.string())
-          .min(1)
-          .describe("Requirement IDs / risk IDs / persona IDs this condition was derived from (required)"),
+        derivedFrom: derivedFromSchema.describe(
+          "Requirement IDs / risk IDs / persona IDs this condition was derived from (required). Plain id string, or {kind, id} to disambiguate across requirement/risk/stakeholder/guideword namespaces"
+        ),
         priority: z.enum(["高", "中", "低"]).optional().describe("Declared priority of the condition"),
         impact: z.number().int().min(1).max(5).optional().describe("Risk impact level (1..5)"),
         likelihood: z.number().int().min(1).max(5).optional().describe("Risk likelihood level (1..5)"),
