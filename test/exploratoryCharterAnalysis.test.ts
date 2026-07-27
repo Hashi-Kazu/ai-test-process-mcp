@@ -5,10 +5,12 @@ import {
   findDuplicateCharterIds,
   findMissingCharterNumbers,
   findPrefixMismatchCharterIds,
+  findDeterministicallyCoveredHighPriorityConditionIds,
   findSubjectiveMissionStatements,
   findUncoveredHighPriorityConditionIds,
   findUncoveredRiskIds,
   findUnknownCharterAreaIds,
+  findUnknownDeterministicallyCoveredConditionIds,
   findUnresolvedCharterRefs,
   findUnusedCharterAreas,
 } from "../src/exploratoryCharterAnalysis.js";
@@ -160,6 +162,119 @@ describe("findUncoveredHighPriorityConditionIds", () => {
     const conditions = [condition({ id: "TC-001", priority: "高" })];
     const charters = [charter({ charterId: "EXC-001", derivedFrom: ["TC-001"] })];
     expect(findUncoveredHighPriorityConditionIds(conditions, charters)).toEqual([]);
+  });
+
+  it("excludes ids passed as the third argument (deterministically covered)", () => {
+    const conditions = [
+      condition({ id: "TC-001", priority: "高" }),
+      condition({ id: "TC-002", priority: "高" }),
+    ];
+    const charters: ExploratoryCharterInput[] = [];
+    expect(findUncoveredHighPriorityConditionIds(conditions, charters, ["TC-001"])).toEqual([
+      "TC-002",
+    ]);
+  });
+
+  it("behaves the same as before when the third argument is omitted or an empty array", () => {
+    const conditions = [
+      condition({ id: "TC-001", priority: "高" }),
+      condition({ id: "TC-002", priority: "低" }),
+    ];
+    const charters = [charter({ charterId: "EXC-001", derivedFrom: ["TC-002"] })];
+    expect(findUncoveredHighPriorityConditionIds(conditions, charters)).toEqual(["TC-001"]);
+    expect(findUncoveredHighPriorityConditionIds(conditions, charters, [])).toEqual(["TC-001"]);
+  });
+
+  it("has no side effect when the exclusion list mixes low/medium priority or unknown ids", () => {
+    const conditions = [
+      condition({ id: "TC-001", priority: "高" }),
+      condition({ id: "TC-002", priority: "低" }),
+    ];
+    const charters: ExploratoryCharterInput[] = [];
+    expect(
+      findUncoveredHighPriorityConditionIds(conditions, charters, ["TC-002", "TC-999"])
+    ).toEqual(["TC-001"]);
+  });
+
+  it("does not list a condition already referenced by derivedFrom even if also excluded", () => {
+    const conditions = [condition({ id: "TC-001", priority: "高" })];
+    const charters = [charter({ charterId: "EXC-001", derivedFrom: ["TC-001"] })];
+    expect(findUncoveredHighPriorityConditionIds(conditions, charters, ["TC-001"])).toEqual([]);
+  });
+
+  it("does not mutate its input arguments", () => {
+    const conditions = [condition({ id: "TC-001", priority: "高" })];
+    const charters = [charter({ charterId: "EXC-001", derivedFrom: ["TC-002"] })];
+    const excluded = ["TC-001"];
+    const conditionsCopy = JSON.parse(JSON.stringify(conditions));
+    const chartersCopy = JSON.parse(JSON.stringify(charters));
+    const excludedCopy = [...excluded];
+    findUncoveredHighPriorityConditionIds(conditions, charters, excluded);
+    expect(conditions).toEqual(conditionsCopy);
+    expect(charters).toEqual(chartersCopy);
+    expect(excluded).toEqual(excludedCopy);
+  });
+});
+
+describe("findDeterministicallyCoveredHighPriorityConditionIds", () => {
+  it("returns only the high priority condition ids actually excluded, in input order", () => {
+    const conditions = [
+      condition({ id: "TC-001", priority: "高" }),
+      condition({ id: "TC-002", priority: "低" }),
+      condition({ id: "TC-003", priority: "高" }),
+    ];
+    const charters: ExploratoryCharterInput[] = [];
+    expect(
+      findDeterministicallyCoveredHighPriorityConditionIds(conditions, charters, [
+        "TC-003",
+        "TC-001",
+        "TC-002",
+      ])
+    ).toEqual(["TC-001", "TC-003"]);
+  });
+
+  it("does not return a condition already referenced by derivedFrom", () => {
+    const conditions = [condition({ id: "TC-001", priority: "高" })];
+    const charters = [charter({ charterId: "EXC-001", derivedFrom: ["TC-001"] })];
+    expect(
+      findDeterministicallyCoveredHighPriorityConditionIds(conditions, charters, ["TC-001"])
+    ).toEqual([]);
+  });
+
+  it("returns an empty array when the third argument is omitted", () => {
+    const conditions = [condition({ id: "TC-001", priority: "高" })];
+    const charters: ExploratoryCharterInput[] = [];
+    expect(findDeterministicallyCoveredHighPriorityConditionIds(conditions, charters)).toEqual([]);
+  });
+});
+
+describe("findUnknownDeterministicallyCoveredConditionIds", () => {
+  it("returns only unknown ids, in input order, with duplicates collapsed", () => {
+    const conditions = [condition({ id: "TC-001" }), condition({ id: "TC-002" })];
+    expect(
+      findUnknownDeterministicallyCoveredConditionIds(conditions, [
+        "TC-999",
+        "TC-001",
+        "TC-999",
+        "TC-888",
+      ])
+    ).toEqual(["TC-999", "TC-888"]);
+  });
+
+  it("returns an empty array when all ids exist or the second argument is omitted", () => {
+    const conditions = [condition({ id: "TC-001" }), condition({ id: "TC-002" })];
+    expect(findUnknownDeterministicallyCoveredConditionIds(conditions, ["TC-001"])).toEqual([]);
+    expect(findUnknownDeterministicallyCoveredConditionIds(conditions)).toEqual([]);
+  });
+
+  it("does not mutate its input arguments", () => {
+    const conditions = [condition({ id: "TC-001" })];
+    const ids = ["TC-999", "TC-001"];
+    const conditionsCopy = JSON.parse(JSON.stringify(conditions));
+    const idsCopy = [...ids];
+    findUnknownDeterministicallyCoveredConditionIds(conditions, ids);
+    expect(conditions).toEqual(conditionsCopy);
+    expect(ids).toEqual(idsCopy);
   });
 });
 

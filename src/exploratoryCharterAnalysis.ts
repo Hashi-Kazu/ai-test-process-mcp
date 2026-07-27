@@ -129,15 +129,44 @@ export function findUnusedCharterAreas(
 
 export function findUncoveredHighPriorityConditionIds(
   testConditions: { id: string; priority?: string }[],
-  charters: ExploratoryCharterInput[]
+  charters: ExploratoryCharterInput[],
+  deterministicallyCoveredConditionIds?: string[]
 ): string[] {
   const referenced = new Set<string>();
   for (const c of charters) {
     for (const ref of c.derivedFrom) referenced.add(ref);
   }
+  const covered = new Set(deterministicallyCoveredConditionIds ?? []);
   return testConditions
-    .filter((c) => c.priority === "高" && !referenced.has(c.id))
+    .filter((c) => c.priority === "高" && !referenced.has(c.id) && !covered.has(c.id))
     .map((c) => c.id);
+}
+
+export function findDeterministicallyCoveredHighPriorityConditionIds(
+  testConditions: { id: string; priority?: string }[],
+  charters: ExploratoryCharterInput[],
+  deterministicallyCoveredConditionIds?: string[]
+): string[] {
+  const referenced = new Set<string>();
+  for (const c of charters) {
+    for (const ref of c.derivedFrom) referenced.add(ref);
+  }
+  const covered = new Set(deterministicallyCoveredConditionIds ?? []);
+  return testConditions
+    .filter((c) => c.priority === "高" && !referenced.has(c.id) && covered.has(c.id))
+    .map((c) => c.id);
+}
+
+export function findUnknownDeterministicallyCoveredConditionIds(
+  testConditions: { id: string }[],
+  deterministicallyCoveredConditionIds?: string[]
+): string[] {
+  const known = new Set(testConditions.map((c) => c.id));
+  const result: string[] = [];
+  for (const id of deterministicallyCoveredConditionIds ?? []) {
+    if (!known.has(id) && !result.includes(id)) result.push(id);
+  }
+  return result;
 }
 
 export function findUncoveredRiskIds(

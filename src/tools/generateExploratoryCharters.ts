@@ -8,10 +8,12 @@ import {
   findDuplicateCharterIds,
   findMissingCharterNumbers,
   findPrefixMismatchCharterIds,
+  findDeterministicallyCoveredHighPriorityConditionIds,
   findSubjectiveMissionStatements,
   findUncoveredHighPriorityConditionIds,
   findUncoveredRiskIds,
   findUnknownCharterAreaIds,
+  findUnknownDeterministicallyCoveredConditionIds,
   findUnresolvedCharterRefs,
   findUnusedCharterAreas,
 } from "../exploratoryCharterAnalysis.js";
@@ -54,6 +56,7 @@ export function renderExploratoryCharters(
     recordingMethod,
     stopConditionDeclaration,
     additionalSubjectiveTerms,
+    deterministicallyCoveredConditionIds,
   } = input;
   const charters: ExploratoryCharterInput[] = input.charters ?? [];
   const idPrefix = input.idPrefix ?? DEFAULT_EXPLORATORY_CHARTER_ID_PREFIX;
@@ -64,7 +67,20 @@ export function renderExploratoryCharters(
   const unknownAreaRefs = findUnknownCharterAreaIds(charters, catalog);
   const unresolvedRefs = findUnresolvedCharterRefs(input);
   const unusedAreas = findUnusedCharterAreas(charters, catalog, areaIds);
-  const uncoveredConditionIds = findUncoveredHighPriorityConditionIds(testConditions, charters);
+  const uncoveredConditionIds = findUncoveredHighPriorityConditionIds(
+    testConditions,
+    charters,
+    deterministicallyCoveredConditionIds
+  );
+  const excludedCoveredConditionIds = findDeterministicallyCoveredHighPriorityConditionIds(
+    testConditions,
+    charters,
+    deterministicallyCoveredConditionIds
+  );
+  const unknownCoveredConditionIds = findUnknownDeterministicallyCoveredConditionIds(
+    testConditions,
+    deterministicallyCoveredConditionIds
+  );
   const uncoveredRiskIds = findUncoveredRiskIds(risks, charters);
   const timeboxMissing = findChartersWithoutTimebox(charters);
   const timeboxSummary = computeTimeboxSummary(charters, sessionBudgetMinutes);
@@ -234,6 +250,16 @@ export function renderExploratoryCharters(
       lines.push(`- [high] ${id}: リスクだが、どのチャーターの derivedFrom からも参照されていない。`);
     }
   }
+  if (excludedCoveredConditionIds.length > 0) {
+    lines.push(`- 決定的技法で充足済みのため未カバー検査から除外: ${excludedCoveredConditionIds.join(", ")}`);
+  }
+  if (unknownCoveredConditionIds.length > 0) {
+    for (const id of unknownCoveredConditionIds) {
+      lines.push(
+        `- [medium] ${id}: deterministicallyCoveredConditionIds に指定されたが testConditions[].id に存在しない。`
+      );
+    }
+  }
   lines.push("");
 
   lines.push("### 4.6 タイムボックスと時間予算");
@@ -272,6 +298,7 @@ export function renderExploratoryCharters(
   lines.push(
     `- チャーター数: ${charters.length} / 対象区分数: ${targetAreas.length} / 未使用区分数: ${unusedAreas.length} / ` +
       `未カバー高優先度条件数: ${uncoveredConditionIds.length} / 未カバーリスク数: ${uncoveredRiskIds.length} / ` +
+      `決定的技法充足による除外条件数: ${excludedCoveredConditionIds.length} / ` +
       `重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 未解決参照数: ${unresolvedRefs.length} / ` +
       `主観語指摘数: ${subjectiveFindings.length} / タイムボックス未設定数: ${timeboxMissing.length} / ` +
       `合計時間/予算: ${timeboxSummary.totalMinutes}分/${
@@ -305,6 +332,9 @@ export function renderExploratoryCharters(
     }
     if (uncoveredConditionIds.length > 0 || uncoveredRiskIds.length > 0) {
       instructions.push("4.5 の未カバーの高優先度テスト条件・リスクを対象とするチャーターを追加すること。");
+    }
+    if (unknownCoveredConditionIds.length > 0) {
+      instructions.push("4.5 の deterministicallyCoveredConditionIds の未知IDを、実在するテスト条件IDへ修正すること。");
     }
     if (timeboxMissing.length > 0 || timeboxSummary.overBudget) {
       instructions.push("4.6 のタイムボックス未設定・予算超過を解消すること。");
@@ -387,6 +417,12 @@ export const generateExploratoryChartersInputShape = {
     .optional()
     .describe("Declared stop conditions; omitted uses the catalog's stopHeuristics as defaults"),
   additionalSubjectiveTerms: z.array(z.string()).optional(),
+  deterministicallyCoveredConditionIds: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Test condition ids already covered by deterministic techniques (boundary value analysis, equivalence partitioning, etc.); excluded from the uncovered-high-priority-condition check"
+    ),
   idPrefix: z.string().optional().describe("Charter id prefix used for gap detection (default EXC-)"),
 } as const;
 
@@ -398,7 +434,7 @@ export function registerGenerateExploratoryChartersTool(server: McpServer): void
       description:
         "探索的テスト（エラー推測・チェックリストベースドテストを含む経験ベース技法）のチャーター表を、決定的層" +
         "(チャーターIDの重複/欠番/プレフィックス不一致・未知の観点区分ID・由来メタデータの未解決参照・観点区分の未使用・" +
-        "高優先度テスト条件/リスクの未カバー・タイムボックスと時間予算・ミッション文の主観語検査)と、ミッション文の言語化のみを" +
+        "高優先度テスト条件/リスクの未カバー・決定的技法で充足済みの条件IDの除外・タイムボックスと時間予算・ミッション文の主観語検査)と、ミッション文の言語化のみを" +
         "呼び出し側LLMへ委ねる意味的層の二層構成で扱う。charters が未指定・空の場合は観点区分カタログと対象テスト条件・リスクから" +
         "生成指示のみを返す。既存のチャーター表を charters に渡せば、既存成果物のレビュー（観点区分被覆・由来参照・タイムボックス・" +
         "主観語の検査）としても機能する。",

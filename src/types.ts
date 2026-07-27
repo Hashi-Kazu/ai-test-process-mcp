@@ -843,6 +843,9 @@ export interface GenerateExploratoryChartersInput {
   recordingMethod?: string;
   stopConditionDeclaration?: string[];
   additionalSubjectiveTerms?: string[];
+  // 境界値分析・同値分割等の決定的技法で既にテストケース化済みの条件ID。
+  // 4.5 の高優先度未カバー検査から除外される（探索的テストは決定的技法の補完という位置づけ）。
+  deterministicallyCoveredConditionIds?: string[];
   idPrefix?: string;                         // 既定 "EXC-"
 }
 

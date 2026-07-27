@@ -133,6 +133,141 @@ describe("renderExploratoryCharters", () => {
     expect(JSON.stringify(baseInput)).toBe(snapshot);
   });
 
+  it("excludes deterministically covered high priority conditions from 4.5's [high] lines", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-001"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section45 = markdown.split("### 4.5")[1].split("### 4.6")[0];
+    expect(section45).not.toContain("[high] TC-001");
+  });
+
+  it("emits the exclusion line for a deterministically covered condition", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-001"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section45 = markdown.split("### 4.5")[1].split("### 4.6")[0];
+    expect(section45).toContain("- 決定的技法で充足済みのため未カバー検査から除外: TC-001");
+  });
+
+  it("does not add the 追加すること instruction in section 5 once excluded conditions leave zero uncovered", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      charters: [
+        {
+          charterId: "EXC-001",
+          areaId: "ECA-01",
+          mission: "境界を揺さぶる",
+          checkFocus: ["確認観点"],
+          operationFocus: ["操作観点"],
+          derivedFrom: ["RK-999"],
+          timeboxMinutes: 30,
+        },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-001"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section5 = markdown.split("## 5. チャーター設計指示(意味的層)")[1];
+    expect(section5).not.toContain("4.5 の未カバーの高優先度テスト条件・リスクを対象とするチャーターを追加すること。");
+  });
+
+  it("still flags [high] for remaining uncovered conditions when only some are excluded", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+        { id: "TC-002", target: "キャンセル", statement: "取消確認", derivedFrom: ["R-002"], priority: "高" },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-001"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section45 = markdown.split("### 4.5")[1].split("### 4.6")[0];
+    expect(section45).toContain("[high] TC-002");
+    expect(section45).not.toContain("[high] TC-001");
+  });
+
+  it("includes the excluded-condition count in the 4.8 summary", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-001"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section48 = markdown.split("### 4.8")[1].split("## 5.")[0];
+    expect(section48).toContain("決定的技法充足による除外条件数: 1");
+  });
+
+  it("matches the current output (no exclusion line) when deterministicallyCoveredConditionIds is omitted", () => {
+    const markdown = renderExploratoryCharters(baseInput);
+    expect(markdown).not.toContain("決定的技法で充足済みのため未カバー検査から除外");
+    expect(markdown).toContain("決定的技法充足による除外条件数: 0");
+  });
+
+  it("flags an unknown deterministically covered condition id as [medium] and adds a 5節 fix instruction", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      charters: [
+        {
+          charterId: "EXC-001",
+          areaId: "ECA-01",
+          mission: "境界を揺さぶる",
+          checkFocus: ["確認観点"],
+          operationFocus: ["操作観点"],
+          derivedFrom: ["TC-001"],
+          timeboxMinutes: 30,
+        },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-999"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section45 = markdown.split("### 4.5")[1].split("### 4.6")[0];
+    expect(section45).toContain(
+      "- [medium] TC-999: deterministicallyCoveredConditionIds に指定されたが testConditions[].id に存在しない。"
+    );
+    const section5 = markdown.split("## 5. チャーター設計指示(意味的層)")[1];
+    expect(section5).toContain(
+      "4.5 の deterministicallyCoveredConditionIds の未知IDを、実在するテスト条件IDへ修正すること。"
+    );
+  });
+
+  it("is deterministic and does not mutate the input when using deterministicallyCoveredConditionIds", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      deterministicallyCoveredConditionIds: ["TC-001"],
+    };
+    const snapshot = JSON.stringify(input);
+    const first = renderExploratoryCharters(input);
+    const second = renderExploratoryCharters(input);
+    expect(second).toBe(first);
+    expect(JSON.stringify(input)).toBe(snapshot);
+  });
+
+  it("does not affect the uncovered-risk check", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [
+        { id: "TC-001", target: "チケット購入", statement: "上限確認", derivedFrom: ["R-001"], priority: "高" },
+      ],
+      risks: [{ id: "RK-001", description: "二重決済リスク" }],
+      deterministicallyCoveredConditionIds: ["TC-001", "RK-001"],
+    };
+    const markdown = renderExploratoryCharters(input);
+    const section45 = markdown.split("### 4.5")[1].split("### 4.6")[0];
+    expect(section45).toContain("[high] RK-001");
+  });
+
   it("registers the generate_exploratory_charters tool", () => {
     const registeredNames: string[] = [];
     const stub = {
