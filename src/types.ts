@@ -463,6 +463,23 @@ export interface RiskCategory {
   probeQuestions: string[];                // 自作の日本語文、2件以上
   relatedPerspectiveCategoryIds: string[]; // testPerspectiveCatalog の TPC-XX（カテゴリID）のみ、1件以上
 }
+export interface ControlLoopElement {
+  id: string;                 // "RCL-01" 形式
+  nameJa: string;
+  description: string;
+}
+export interface ControlFlawPattern {
+  id: string;                 // "RCF-01" 形式
+  nameJa: string;
+  description: string;
+  probeQuestions: string[];   // 自作の日本語文、2件以上
+}
+export interface ControlFlawFrame {
+  name: string;
+  note: string;                     // 自作整理である旨の明示
+  loopElements: ControlLoopElement[];  // 制御ループ構成要素4件
+  patterns: ControlFlawPattern[];      // "RCF-01".."RCF-04"
+}
 export interface RiskAnalysisFrame {
   name: string; note: string;
   impactAxis: RiskAxis;             // "RA-IMPACT" value 1..5
@@ -472,6 +489,7 @@ export interface RiskAnalysisFrame {
   formula: string;                  // 算出式の説明文
   bands: RiskLevelBand[];           // minScore 降順で定義、区間は連続かつ重複なし
   riskCategories: RiskCategory[];   // "RC-01".. 5区分程度、非破壊拡張
+  controlFlawFrame: ControlFlawFrame;
 }
 
 // --- テスト条件抽出（extract_test_conditions） ---
