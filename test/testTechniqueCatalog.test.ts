@@ -56,8 +56,8 @@ describe("testTechniqueCatalog", () => {
     expect(testTechniqueCatalog.note).not.toContain("準拠");
   });
 
-  it("has 13 entries", () => {
-    expect(testTechniqueCatalog.entries).toHaveLength(13);
+  it("has 17 entries", () => {
+    expect(testTechniqueCatalog.entries).toHaveLength(17);
   });
 
   it("routes the experience-based techniques (TTK-11..13) to generate_exploratory_charters", () => {
