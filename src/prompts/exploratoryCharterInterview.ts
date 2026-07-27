@@ -24,8 +24,9 @@ export const exploratoryCharterInterviewTopics: ExploratoryCharterInterviewTopic
     id: "EXC-02",
     titleJa: "既存テストケースで薄い箇所",
     required: true,
-    guidance: "既存のテストケースでは確認しきれていない、または手薄になっている操作・確認内容を確認する。",
-    collectTo: "charters[].mission",
+    guidance:
+      "既存のテストケースでは確認しきれていない、または手薄になっている操作・確認内容を確認する。あわせて、境界値分析・同値分割等の決定的技法で既にテストケース化済みのテスト条件IDを確認し、探索的テストの未カバー検査から除外する。",
+    collectTo: "charters[].mission / deterministicallyCoveredConditionIds",
   },
   {
     id: "EXC-03",
