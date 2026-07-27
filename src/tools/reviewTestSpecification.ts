@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testSpecificationReviewChecklist } from "../resources/testSpecificationReviewChecklist.js";
 import { testCaseSpecShape } from "./generateTestCases.js";
+import { derivedFromSchema } from "../derivedFromRefs.js";
 import {
   buildConditionTraceability,
   findDuplicateCaseIds,
@@ -435,7 +436,9 @@ export const reviewTestSpecificationInputShape = {
         id: z.string().describe("Test condition id, e.g. TC-001"),
         target: z.string().describe("Target of the condition"),
         statement: z.string().describe("The test condition statement"),
-        derivedFrom: z.array(z.string()).min(1).describe("Requirement/risk/persona ids (required)"),
+        derivedFrom: derivedFromSchema.describe(
+          "Requirement/risk/persona ids (required). Plain id string, or {kind, id} to disambiguate across requirement/risk/stakeholder/guideword namespaces"
+        ),
         priority: z.enum(["高", "中", "低"]).optional(),
       })
     )

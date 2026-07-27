@@ -290,3 +290,51 @@ describe("renderTestConditions with riskCategoryId", () => {
     expect(JSON.stringify(input2)).toBe(snapshot);
   });
 });
+
+describe("renderTestConditions with explicit-kind derivedFrom entries", () => {
+  const input3: ExtractTestConditionsInput = {
+    requirementIds: ["R-001"],
+    risks: [{ id: "RK-001", description: "入場時に二重課金が起きる" }],
+    personas: [{ id: "P-001", role: "来園者" }],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "F-001",
+        perspectiveCategoryId: "TPC-01",
+        statement: "多系統から導出された条件",
+        source: "risk",
+        derivedFrom: [
+          { kind: "risk", id: "RK-001" },
+          { kind: "requirement", id: "R-001" },
+        ],
+        priority: "高",
+      },
+      {
+        id: "TC-002",
+        target: "F-002",
+        perspectiveCategoryId: "TPC-02",
+        statement: "存在しないリスクIDを種別明示で参照",
+        source: "risk",
+        derivedFrom: [{ kind: "risk", id: "RK-999" }],
+        priority: "中",
+      },
+    ],
+  };
+  const markdown3 = renderTestConditions(input3);
+
+  it("renders the explicit-kind reference with a 'リスク:' label in the derivation cell", () => {
+    const row = markdown3.split("\n").find((l) => l.startsWith("| TC-001 |"));
+    expect(row).toContain("リスク:RK-001");
+  });
+
+  it("does not report the requirement-kind entry as an unresolved reference (main objective)", () => {
+    const section = markdown3.split("### 3.7 derivedFrom の未解決参照")[1].split("### 3.8")[0];
+    expect(section).not.toContain("R-001");
+  });
+
+  it("shows the kind-labeled reference for a genuinely unresolved explicit-kind entry", () => {
+    const section = markdown3.split("### 3.7 derivedFrom の未解決参照")[1].split("### 3.8")[0];
+    expect(section).toContain("リスク:RK-999");
+    expect(section).toContain("risks[].id");
+  });
+});

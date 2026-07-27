@@ -158,6 +158,111 @@ describe("findUnresolvedDerivedFromRefs", () => {
   });
 });
 
+describe("findUnresolvedDerivedFromRefs with explicit-kind derivedFrom entries", () => {
+  it("resolves a risk-sourced condition whose derivedFrom also references a requirement id via explicit kind", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["R-001"],
+      risks: [risk({ id: "RK-001" })],
+      testConditions: [
+        condition({
+          id: "TC-001",
+          source: "risk",
+          derivedFrom: [
+            { kind: "risk", id: "RK-001" },
+            { kind: "requirement", id: "R-001" },
+          ],
+        }),
+      ],
+    };
+    expect(findUnresolvedDerivedFromRefs(input)).toEqual([]);
+  });
+
+  it("detects an explicit requirement-kind reference missing from requirementIds", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["R-001"],
+      testConditions: [
+        condition({
+          id: "TC-001",
+          source: "testbase",
+          derivedFrom: [{ kind: "requirement", id: "R-999" }],
+        }),
+      ],
+    };
+    expect(findUnresolvedDerivedFromRefs(input)).toEqual([
+      { conditionId: "TC-001", ref: "R-999", expectedKind: "requirementIds", kind: "requirement" },
+    ]);
+  });
+
+  it("skips explicit risk-kind references when risks is unspecified", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["R-001"],
+      testConditions: [
+        condition({
+          id: "TC-001",
+          source: "risk",
+          derivedFrom: [{ kind: "risk", id: "RK-001" }],
+        }),
+      ],
+    };
+    expect(findUnresolvedDerivedFromRefs(input)).toEqual([]);
+  });
+
+  it("always checks explicit guideword-kind references even without risks/personas", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["R-001"],
+      testConditions: [
+        condition({
+          id: "TC-001",
+          source: "guideword",
+          derivedFrom: [
+            { kind: "guideword", id: "GWF-01" },
+            { kind: "guideword", id: "GW-01" },
+            { kind: "guideword", id: "GW-999" },
+          ],
+        }),
+      ],
+    };
+    const result = findUnresolvedDerivedFromRefs(input);
+    expect(result).toEqual([
+      {
+        conditionId: "TC-001",
+        ref: "GW-999",
+        expectedKind: "guidewordDictionary focusPoints[].id / guidewords[].id",
+        kind: "guideword",
+      },
+    ]);
+  });
+});
+
+describe("resolveSourceRefs with explicit-kind derivedFrom", () => {
+  const requirementSources: RequirementSourceRef[] = [
+    { requirementId: "R-001", document: "doc.md", startLine: 10, endLine: 12 },
+  ];
+
+  it("does not resolve an explicit risk-kind entry against requirementSources", () => {
+    expect(resolveSourceRefs({ derivedFrom: [{ kind: "risk", id: "R-001" }] }, requirementSources)).toEqual([]);
+  });
+
+  it("resolves an explicit requirement-kind entry and a plain string entry", () => {
+    expect(
+      resolveSourceRefs({ derivedFrom: [{ kind: "requirement", id: "R-001" }] }, requirementSources)
+    ).toEqual([{ document: "doc.md", startLine: 10, endLine: 12 }]);
+    expect(resolveSourceRefs({ derivedFrom: ["R-001"] }, requirementSources)).toEqual([
+      { document: "doc.md", startLine: 10, endLine: 12 },
+    ]);
+  });
+});
+
+describe("buildRequirementCoverageMatrix with explicit-kind derivedFrom", () => {
+  it("does not count an explicit risk-kind reference toward requirement coverage", () => {
+    const conditions = [
+      condition({ id: "TC-001", derivedFrom: [{ kind: "risk", id: "R-001" }] }),
+    ];
+    const matrix = buildRequirementCoverageMatrix(["R-001"], conditions);
+    expect(matrix).toEqual([{ requirementId: "R-001", conditionIds: [] }]);
+  });
+});
+
 describe("buildSourceDistribution", () => {
   it("returns all four sources including empty ones", () => {
     const rows = buildSourceDistribution([condition({ id: "TC-001", source: "testbase" })]);

@@ -1,5 +1,6 @@
 import { exploratoryCharterCatalog } from "./resources/exploratoryCharterCatalog.js";
 import { SUBJECTIVE_EXPECTED_TERMS } from "./testCaseAnalysis.js";
+import { derivedFromIds } from "./derivedFromRefs.js";
 import type {
   ExploratoryCharterCatalog,
   ExploratoryCharterDuplicateId,
@@ -103,7 +104,7 @@ export function findUnresolvedCharterRefs(
 
   const result: ExploratoryCharterUnresolvedRef[] = [];
   for (const c of charters) {
-    for (const ref of c.derivedFrom) {
+    for (const ref of derivedFromIds(c.derivedFrom)) {
       if (!conditionIds.has(ref) && !riskIds.has(ref)) {
         result.push({ charterId: c.charterId, ref, expectedKind });
       }
@@ -134,7 +135,7 @@ export function findUncoveredHighPriorityConditionIds(
 ): string[] {
   const referenced = new Set<string>();
   for (const c of charters) {
-    for (const ref of c.derivedFrom) referenced.add(ref);
+    for (const ref of derivedFromIds(c.derivedFrom)) referenced.add(ref);
   }
   const covered = new Set(deterministicallyCoveredConditionIds ?? []);
   return testConditions
@@ -149,7 +150,7 @@ export function findDeterministicallyCoveredHighPriorityConditionIds(
 ): string[] {
   const referenced = new Set<string>();
   for (const c of charters) {
-    for (const ref of c.derivedFrom) referenced.add(ref);
+    for (const ref of derivedFromIds(c.derivedFrom)) referenced.add(ref);
   }
   const covered = new Set(deterministicallyCoveredConditionIds ?? []);
   return testConditions
@@ -175,7 +176,7 @@ export function findUncoveredRiskIds(
 ): string[] {
   const referenced = new Set<string>();
   for (const c of charters) {
-    for (const ref of c.derivedFrom) referenced.add(ref);
+    for (const ref of derivedFromIds(c.derivedFrom)) referenced.add(ref);
   }
   return risks.filter((r) => !referenced.has(r.id)).map((r) => r.id);
 }

@@ -292,6 +292,25 @@ describe("findUncoveredRiskIds", () => {
   });
 });
 
+describe("findUncoveredRiskIds with explicit-kind derivedFrom", () => {
+  it("counts an explicit risk-kind reference as covering the matching risk id", () => {
+    const risks = [risk({ id: "RK-001" })];
+    const charters = [charter({ charterId: "EXC-001", derivedFrom: [{ kind: "risk", id: "RK-001" }] })];
+    expect(findUncoveredRiskIds(risks, charters)).toEqual([]);
+  });
+});
+
+describe("findUnresolvedCharterRefs with explicit-kind derivedFrom", () => {
+  it("resolves an explicit risk-kind reference present in risks[]", () => {
+    const input: GenerateExploratoryChartersInput = {
+      testConditions: [condition({ id: "TC-001" })],
+      risks: [risk({ id: "RK-001" })],
+      charters: [charter({ charterId: "EXC-001", derivedFrom: [{ kind: "risk", id: "RK-001" }] })],
+    };
+    expect(findUnresolvedCharterRefs(input)).toEqual([]);
+  });
+});
+
 describe("findChartersWithoutTimebox", () => {
   it("detects charters missing timeboxMinutes", () => {
     const charters = [

@@ -1,7 +1,11 @@
 import { testPerspectiveCatalog } from "./resources/testPerspectiveCatalog.js";
 import { riskAnalysisFrame } from "./resources/riskAnalysisFrame.js";
+import { guidewordDictionary } from "./resources/guidewordDictionary.js";
+import { derivedFromIds, hasDerivedFromRef, toDerivedFromRef } from "./derivedFromRefs.js";
 import type {
+  DerivedFromEntry,
   ExtractTestConditionsInput,
+  GuidewordDictionary,
   RequirementCoverageRow,
   RequirementSourceRef,
   RequirementsChangeCategory,
@@ -52,7 +56,8 @@ export const testConditionSourceLabels: { source: TestConditionSource; nameJa: s
   {
     source: "guideword",
     nameJa: "ガイドワード由来",
-    description: "着目点×ガイドワードの掛け合わせで見つけた条件。derivedFrom には着想元の要件ID/リスクID/ペルソナIDを書く。",
+    description:
+      "着目点×ガイドワードの掛け合わせで見つけた条件。derivedFrom には着想元の要件ID/リスクID/ペルソナIDを書く。複数系統にまたがる場合は `{kind, id}` 形式で種別を明示できる。",
   },
 ];
 
@@ -62,7 +67,9 @@ export function buildRequirementCoverageMatrix(
 ): RequirementCoverageRow[] {
   return requirementIds.map((requirementId) => ({
     requirementId,
-    conditionIds: conditions.filter((c) => c.derivedFrom.includes(requirementId)).map((c) => c.id),
+    conditionIds: conditions
+      .filter((c) => hasDerivedFromRef(c.derivedFrom, requirementId, "requirement"))
+      .map((c) => c.id),
   }));
 }
 
@@ -157,11 +164,16 @@ export function findConditionsWithoutPriority(conditions: TestConditionInput[]):
 }
 
 export function findUnresolvedDerivedFromRefs(
-  input: ExtractTestConditionsInput
+  input: ExtractTestConditionsInput,
+  dictionary: GuidewordDictionary = guidewordDictionary
 ): TestConditionUnresolvedRef[] {
   const requirementIds = input.requirementIds ?? [];
   const personaIds = (input.personas ?? []).map((p) => p.id);
   const riskIds = (input.risks ?? []).map((r) => r.id);
+  const guidewordIds = [
+    ...dictionary.focusPoints.map((f) => f.id),
+    ...dictionary.guidewords.map((g) => g.id),
+  ];
 
   const result: TestConditionUnresolvedRef[] = [];
   for (const condition of input.testConditions) {
@@ -186,11 +198,42 @@ export function findUnresolvedDerivedFromRefs(
         expectedKind = "requirementIds / risks[].id / personas[].id";
         break;
     }
-    // 参照先が未指定（空）の系統は未解決判定をスキップする。
-    if (pool.length === 0) continue;
-    for (const ref of condition.derivedFrom) {
-      if (!pool.includes(ref)) {
-        result.push({ conditionId: condition.id, ref, expectedKind });
+
+    for (const entry of condition.derivedFrom) {
+      const parsed = toDerivedFromRef(entry);
+      if (parsed.kind !== undefined) {
+        // 種別明示エントリ: kind に対応する母集団のみと照合する（source の影響を受けない）。
+        let kindPool: string[];
+        let kindExpectedKind: string;
+        switch (parsed.kind) {
+          case "requirement":
+            kindPool = requirementIds;
+            kindExpectedKind = "requirementIds";
+            break;
+          case "stakeholder":
+            kindPool = personaIds;
+            kindExpectedKind = "personas[].id";
+            break;
+          case "risk":
+            kindPool = riskIds;
+            kindExpectedKind = "risks[].id";
+            break;
+          case "guideword":
+            kindPool = guidewordIds;
+            kindExpectedKind = "guidewordDictionary focusPoints[].id / guidewords[].id";
+            break;
+        }
+        if (parsed.kind !== "guideword" && kindPool.length === 0) continue;
+        if (!kindPool.includes(parsed.id)) {
+          result.push({ conditionId: condition.id, ref: parsed.id, expectedKind: kindExpectedKind, kind: parsed.kind });
+        }
+        continue;
+      }
+
+      // 種別未指定エントリ（文字列）: 現行ロジックを維持する。
+      if (pool.length === 0) continue;
+      if (!pool.includes(parsed.id)) {
+        result.push({ conditionId: condition.id, ref: parsed.id, expectedKind });
       }
     }
   }
@@ -204,18 +247,17 @@ export function findUnresolvedDerivedFromRefs(
  * 入力は破壊しない・出力順は決定的な純関数。
  */
 export function resolveSourceRefs(
-  owner: { derivedFrom: string[]; sourceRefs?: TestBasisSourceRef[] },
+  owner: { derivedFrom: DerivedFromEntry[]; sourceRefs?: TestBasisSourceRef[] },
   requirementSources: RequirementSourceRef[] = []
 ): TestBasisSourceRef[] {
   if (owner.sourceRefs && owner.sourceRefs.length > 0) {
     return owner.sourceRefs.map((r) => ({ ...r }));
   }
 
-  const derivedFromSet = new Set(owner.derivedFrom);
   const result: TestBasisSourceRef[] = [];
   const seen = new Set<string>();
   for (const src of requirementSources) {
-    if (!derivedFromSet.has(src.requirementId)) continue;
+    if (!hasDerivedFromRef(owner.derivedFrom, src.requirementId, "requirement")) continue;
     const key = `${src.document}|${src.startLine}|${src.endLine ?? src.startLine}`;
     if (seen.has(key)) continue;
     seen.add(key);
