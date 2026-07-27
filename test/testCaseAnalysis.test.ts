@@ -6,11 +6,14 @@ import {
   findMissingCaseNumbers,
   findStepGranularityIssues,
   findSubjectiveExpectedResults,
+  resolveCaseSourceRefs,
 } from "../src/testCaseAnalysis.js";
 import type {
   GenerateTestCasesInput,
+  RequirementSourceRef,
   TestCaseCoverageTarget,
   TestCaseParameter,
+  TestCaseSourceCondition,
   TestCaseSpec,
 } from "../src/types.js";
 
@@ -173,5 +176,54 @@ describe("findMissingCaseNumbers", () => {
       baseCase({ caseId: "TCS-003" }),
     ];
     expect(findMissingCaseNumbers(testCases)).toEqual(["TCS-002"]);
+  });
+});
+
+describe("resolveCaseSourceRefs", () => {
+  const requirementSources: RequirementSourceRef[] = [
+    { requirementId: "EH-100", document: "doc.md", startLine: 652, endLine: 677, label: "EH-100 発券機起動" },
+  ];
+
+  function sourceCondition(
+    overrides: Partial<TestCaseSourceCondition> & { id: string }
+  ): TestCaseSourceCondition {
+    return {
+      target: "F-001",
+      statement: "条件文",
+      derivedFrom: ["EH-100"],
+      ...overrides,
+    };
+  }
+
+  it("prefers testCase.sourceRefs over everything else", () => {
+    const testCase = baseCase({
+      caseId: "TCS-001",
+      testConditionId: "TC-001",
+      derivedFrom: ["EH-100"],
+      sourceRefs: [{ document: "case-explicit.md", startLine: 1 }],
+    });
+    const conditions = [sourceCondition({ id: "TC-001" })];
+    const refs = resolveCaseSourceRefs(testCase, conditions, requirementSources);
+    expect(refs).toEqual([{ document: "case-explicit.md", startLine: 1 }]);
+  });
+
+  it("falls back to the matching test condition's resolved source refs", () => {
+    const testCase = baseCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: ["UNKNOWN"] });
+    const conditions = [sourceCondition({ id: "TC-001", derivedFrom: ["EH-100"] })];
+    const refs = resolveCaseSourceRefs(testCase, conditions, requirementSources);
+    expect(refs).toEqual([{ document: "doc.md", startLine: 652, endLine: 677, label: "EH-100 発券機起動" }]);
+  });
+
+  it("falls back to the test case's own derivedFrom when no condition matches", () => {
+    const testCase = baseCase({ caseId: "TCS-001", testConditionId: "TC-999", derivedFrom: ["EH-100"] });
+    const conditions = [sourceCondition({ id: "TC-001", derivedFrom: ["OTHER"] })];
+    const refs = resolveCaseSourceRefs(testCase, conditions, requirementSources);
+    expect(refs).toEqual([{ document: "doc.md", startLine: 652, endLine: 677, label: "EH-100 発券機起動" }]);
+  });
+
+  it("returns an empty array when nothing resolves", () => {
+    const testCase = baseCase({ caseId: "TCS-001", testConditionId: "TC-999", derivedFrom: ["UNKNOWN"] });
+    const conditions = [sourceCondition({ id: "TC-001", derivedFrom: ["OTHER"] })];
+    expect(resolveCaseSourceRefs(testCase, conditions, requirementSources)).toEqual([]);
   });
 });

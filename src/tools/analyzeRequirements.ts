@@ -4,6 +4,7 @@ import { qualityCharacteristicModel } from "../resources/qualityCharacteristics.
 import { questionPriorityDefinitions } from "../resources/testPlanTemplate.js";
 import {
   analyzePrefixes,
+  buildRequirementSourceRefs,
   extractIdOccurrences,
   findAmbiguousTerms,
   findDuplicateIds,
@@ -61,6 +62,7 @@ export function renderRequirementsAnalysis(
   const ambiguousTerms = findAmbiguousTerms(documents, options);
 
   const findings = buildDeterministicFindings(documents, options);
+  const requirementSources = buildRequirementSourceRefs(occurrences, documents);
 
   const lines: string[] = [];
   lines.push("# 要件分析結果");
@@ -200,12 +202,45 @@ export function renderRequirementsAnalysis(
   }
   lines.push("");
 
-  lines.push("### 2.6 サマリ");
+  lines.push("### 2.6 要件ID → テストベース根拠位置");
+  lines.push("");
+  if (requirementSources.length === 0) {
+    lines.push("- 定義された要件IDが無い");
+    lines.push("");
+    lines.push("```json");
+    lines.push(JSON.stringify({ requirementSources: [] }, null, 2));
+    lines.push("```");
+  } else {
+    lines.push("| 要件ID | 文書 | 行範囲 | 章節 | 引用ラベル |");
+    lines.push("| --- | --- | --- | --- | --- |");
+    for (const ref of requirementSources) {
+      const lineRange =
+        ref.endLine === undefined || ref.endLine === ref.startLine
+          ? `${ref.startLine}`
+          : `${ref.startLine}-${ref.endLine}`;
+      lines.push(
+        `| ${escapeCell(ref.requirementId)} | ${escapeCell(ref.document)} | ${lineRange} | ${escapeCell(
+          ref.heading ?? "-"
+        )} | ${escapeCell(ref.label ?? "-")} |`
+      );
+    }
+    lines.push("");
+    lines.push("```json");
+    lines.push(JSON.stringify({ requirementSources }, null, 2));
+    lines.push("```");
+  }
+  lines.push("");
+  lines.push(
+    "このJSONの requirementSources を extract_test_conditions / generate_test_cases にそのまま渡せる。"
+  );
+  lines.push("");
+
+  lines.push("### 2.7 サマリ");
   lines.push("");
   lines.push(
     `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / 数量矛盾候補: ${aggregates.filter(
       (a) => a.crossDocumentVariance
-    ).length} / 境界値候補: ${boundaryCandidates.length} / 用語照合数: ${termFindings.length} / 指摘件数: ${findings.length}`
+    ).length} / 境界値候補: ${boundaryCandidates.length} / 用語照合数: ${termFindings.length} / 指摘件数: ${findings.length} / 根拠位置数: ${requirementSources.length}`
   );
   lines.push("");
 

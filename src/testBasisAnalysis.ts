@@ -1,6 +1,7 @@
 import { parseHeadings, escapeRegExp, groupByHeading } from "./tools/reviewTestPlan.js";
 import type { ParsedHeading } from "./tools/reviewTestPlan.js";
 import type {
+  RequirementSourceRef,
   TestBasisAmbiguousTermFinding,
   TestBasisDocument,
   TestBasisDuplicateId,
@@ -9,6 +10,7 @@ import type {
   TestBasisPrefixStat,
   TestBasisQuantityExpression,
   TestBasisQuantityKind,
+  TestBasisSourceRef,
   TestBasisUnresolvedReference,
 } from "./types.js";
 
@@ -141,6 +143,88 @@ export function extractIdOccurrences(
   }
 
   return occurrences;
+}
+
+function extractDefinitionTitle(occurrence: TestBasisIdOccurrence): string {
+  let text = occurrence.lineText.replace(LEADING_MARKER_REGEX, "");
+  const idRegex = new RegExp(`^${escapeRegExp(occurrence.id)}\\s*[:：\\-–—]?\\s*`, "i");
+  text = text.replace(idRegex, "").trim();
+  if (text.length > 40) return `${text.slice(0, 40)}…`;
+  return text;
+}
+
+/**
+ * 要件ID(定義occurrence)ごとに、テストベース文書内の根拠位置（行範囲・見出し・引用ラベル）を組み立てる。
+ * 入力の出現順を保つ決定的な純関数。
+ */
+export function buildRequirementSourceRefs(
+  occurrences: TestBasisIdOccurrence[],
+  documents: TestBasisDocument[]
+): RequirementSourceRef[] {
+  const definitions = occurrences.filter((o) => o.role === "definition");
+
+  const docLastLine = new Map<string, number>();
+  for (const doc of documents) {
+    docLastLine.set(doc.name, doc.content.trimEnd().split("\n").length);
+  }
+
+  const byDoc = new Map<string, TestBasisIdOccurrence[]>();
+  for (const def of definitions) {
+    if (!byDoc.has(def.document)) byDoc.set(def.document, []);
+    byDoc.get(def.document)!.push(def);
+  }
+  for (const list of byDoc.values()) {
+    list.sort((a, b) => a.lineIndex - b.lineIndex);
+  }
+
+  const result: RequirementSourceRef[] = [];
+  for (const def of definitions) {
+    const docDefs = byDoc.get(def.document) ?? [def];
+    const next = docDefs.find((d) => d.lineIndex > def.lineIndex);
+    const startLine = def.lineIndex + 1;
+    let endLine: number;
+    if (next) {
+      endLine = next.lineIndex; // 次定義行(0-based)＝次定義の1行前(1-based)
+    } else {
+      endLine = docLastLine.get(def.document) ?? startLine;
+    }
+    if (endLine < startLine) endLine = startLine;
+
+    const title = extractDefinitionTitle(def);
+    let label: string;
+    if (title) {
+      label = `${def.id} ${title}`;
+    } else if (def.heading) {
+      label = def.heading;
+    } else {
+      label = def.id;
+    }
+
+    result.push({
+      requirementId: def.id,
+      document: def.document,
+      startLine,
+      endLine,
+      heading: def.heading,
+      label,
+    });
+  }
+  return result;
+}
+
+export function formatSourceRef(ref: TestBasisSourceRef): string {
+  if (ref.endLine === undefined || ref.endLine === ref.startLine) {
+    return `${ref.document}:${ref.startLine}`;
+  }
+  return `${ref.document}:${ref.startLine}-${ref.endLine}`;
+}
+
+export function formatSourceCitation(ref: TestBasisSourceRef): string {
+  const label = ref.label ?? ref.document;
+  if (ref.endLine === undefined || ref.endLine === ref.startLine) {
+    return `(${label}, line ${ref.startLine})`;
+  }
+  return `(${label}, line ${ref.startLine}-${ref.endLine})`;
 }
 
 export function findDuplicateIds(occurrences: TestBasisIdOccurrence[]): TestBasisDuplicateId[] {

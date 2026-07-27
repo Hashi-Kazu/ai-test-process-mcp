@@ -3,10 +3,12 @@ import { riskAnalysisFrame } from "./resources/riskAnalysisFrame.js";
 import type {
   ExtractTestConditionsInput,
   RequirementCoverageRow,
+  RequirementSourceRef,
   RequirementsChangeCategory,
   RiskAnalysisFrame,
   RiskCategoryDistributionRow,
   RiskLevelBand,
+  TestBasisSourceRef,
   TestConditionDuplicateId,
   TestConditionInput,
   TestConditionPriority,
@@ -190,6 +192,52 @@ export function findUnresolvedDerivedFromRefs(
       if (!pool.includes(ref)) {
         result.push({ conditionId: condition.id, ref, expectedKind });
       }
+    }
+  }
+  return result;
+}
+
+/**
+ * テスト条件（またはテストケース）の根拠位置を解決する。
+ * owner.sourceRefs が明示されていればそれを優先し、無ければ derivedFrom を
+ * requirementSources で引き当てて連結する（同一 document/startLine/endLine は重複排除）。
+ * 入力は破壊しない・出力順は決定的な純関数。
+ */
+export function resolveSourceRefs(
+  owner: { derivedFrom: string[]; sourceRefs?: TestBasisSourceRef[] },
+  requirementSources: RequirementSourceRef[] = []
+): TestBasisSourceRef[] {
+  if (owner.sourceRefs && owner.sourceRefs.length > 0) {
+    return owner.sourceRefs.map((r) => ({ ...r }));
+  }
+
+  const derivedFromSet = new Set(owner.derivedFrom);
+  const result: TestBasisSourceRef[] = [];
+  const seen = new Set<string>();
+  for (const src of requirementSources) {
+    if (!derivedFromSet.has(src.requirementId)) continue;
+    const key = `${src.document}|${src.startLine}|${src.endLine ?? src.startLine}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const { requirementId: _requirementId, ...ref } = src;
+    result.push(ref);
+  }
+  return result;
+}
+
+/**
+ * requirementSources が指定されているにもかかわらず根拠位置を解決できないテスト条件を検出する。
+ * requirementSources が未指定/空なら検出をスキップし空配列を返す（既存の未解決参照検査と同じ方針）。
+ */
+export function findConditionsWithoutSourceRefs(
+  input: ExtractTestConditionsInput
+): { conditionId: string; source: TestConditionSource }[] {
+  if (!input.requirementSources || input.requirementSources.length === 0) return [];
+  const result: { conditionId: string; source: TestConditionSource }[] = [];
+  for (const c of input.testConditions) {
+    const refs = resolveSourceRefs(c, input.requirementSources);
+    if (refs.length === 0) {
+      result.push({ conditionId: c.id, source: c.source });
     }
   }
   return result;

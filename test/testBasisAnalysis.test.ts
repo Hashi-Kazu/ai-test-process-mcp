@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ID_PATTERN_SOURCE,
   analyzePrefixes,
+  buildRequirementSourceRefs,
   extractIdOccurrences,
   extractQuantityExpressions,
   findAmbiguousTerms,
   findDuplicateIds,
   findUnresolvedReferences,
+  formatSourceCitation,
+  formatSourceRef,
 } from "../src/testBasisAnalysis.js";
 import type { TestBasisDocument } from "../src/types.js";
 
@@ -202,5 +205,83 @@ describe("extractQuantityExpressions", () => {
     const fiveTimes = expressions.find((e) => e.raw.includes("5回"));
     expect(fiveTimes?.kind).toBe("comparison");
     expect(fiveTimes?.hasBoundaryWord).toBe(false);
+  });
+});
+
+describe("buildRequirementSourceRefs", () => {
+  it("sets endLine to one line before the next definition in the same document", () => {
+    const lines: string[] = [];
+    lines[0] = "## EH-100 発券機起動";
+    for (let i = 1; i < 5; i++) lines[i] = `本文${i}`;
+    lines[5] = "## EH-200 発券機停止";
+    lines[6] = "本文6";
+    const documents: TestBasisDocument[] = [{ name: "doc1.md", content: lines.join("\n") }];
+    const occurrences = extractIdOccurrences(documents);
+    const refs = buildRequirementSourceRefs(occurrences, documents);
+
+    const eh100 = refs.find((r) => r.requirementId === "EH-100");
+    expect(eh100?.startLine).toBe(1);
+    expect(eh100?.endLine).toBe(5); // 次定義行(0-based lineIndex=5)＝1行前(1-based)
+  });
+
+  it("sets endLine to the document's last line for the final definition", () => {
+    const lines = ["## EH-100 発券機起動", "本文1", "本文2"];
+    const documents: TestBasisDocument[] = [{ name: "doc1.md", content: lines.join("\n") }];
+    const occurrences = extractIdOccurrences(documents);
+    const refs = buildRequirementSourceRefs(occurrences, documents);
+
+    const eh100 = refs.find((r) => r.requirementId === "EH-100");
+    expect(eh100?.startLine).toBe(1);
+    expect(eh100?.endLine).toBe(3);
+  });
+
+  it("builds label from id + heading text derived from the definition line", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "## EH-100 発券機起動\n本文" },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const refs = buildRequirementSourceRefs(occurrences, documents);
+    const eh100 = refs.find((r) => r.requirementId === "EH-100");
+    expect(eh100?.label).toBe("EH-100 発券機起動");
+    expect(eh100?.heading).toBe("EH-100 発券機起動");
+  });
+
+  it("keeps input occurrence order and separates refs across multiple documents", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "## E-001 説明A\n本文" },
+      { name: "doc2.md", content: "## E-002 説明B\n本文" },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const refs = buildRequirementSourceRefs(occurrences, documents);
+    expect(refs.map((r) => r.requirementId)).toEqual(["E-001", "E-002"]);
+    expect(refs[0].document).toBe("doc1.md");
+    expect(refs[1].document).toBe("doc2.md");
+  });
+});
+
+describe("formatSourceRef", () => {
+  it("formats a single-line ref without a range", () => {
+    expect(formatSourceRef({ document: "doc.md", startLine: 652 })).toBe("doc.md:652");
+    expect(formatSourceRef({ document: "doc.md", startLine: 652, endLine: 652 })).toBe("doc.md:652");
+  });
+
+  it("formats a range ref", () => {
+    expect(formatSourceRef({ document: "doc.md", startLine: 652, endLine: 677 })).toBe("doc.md:652-677");
+  });
+});
+
+describe("formatSourceCitation", () => {
+  it("formats a range citation matching the issue example", () => {
+    const citation = formatSourceCitation({
+      document: "doc.md",
+      startLine: 652,
+      endLine: 677,
+      label: "EH-100 発券機起動",
+    });
+    expect(citation).toBe("(EH-100 発券機起動, line 652-677)");
+  });
+
+  it("formats a single-line citation and falls back to document when label is missing", () => {
+    expect(formatSourceCitation({ document: "doc.md", startLine: 10 })).toBe("(doc.md, line 10)");
   });
 });

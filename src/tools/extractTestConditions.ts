@@ -13,6 +13,7 @@ import {
   buildSourceDistribution,
   evaluateRisks,
   findConditionsWithoutPriority,
+  findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
@@ -21,8 +22,10 @@ import {
   findUnresolvedDerivedFromRefs,
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
+  resolveSourceRefs,
   testConditionSourceLabels,
 } from "../testConditionAnalysis.js";
+import { formatSourceCitation } from "../testBasisAnalysis.js";
 import type {
   ExtractTestConditionsInput,
   GuidewordDictionary,
@@ -88,6 +91,7 @@ export function renderTestConditions(
   const prefixMismatch = findPrefixMismatchConditionIds(testConditions, idPrefix);
   const withoutPriority = findConditionsWithoutPriority(testConditions);
   const unresolvedRefs = findUnresolvedDerivedFromRefs(input);
+  const conditionsWithoutSourceRefs = findConditionsWithoutSourceRefs(input);
   const distribution = buildSourceDistribution(testConditions);
   const evaluations = evaluateRisks(testConditions, frame);
   const evaluationById = new Map(evaluations.map((e) => [e.conditionId, e]));
@@ -143,8 +147,8 @@ export function renderTestConditions(
   // --- 2. テスト条件表 ---
   lines.push("## 2. テスト条件表");
   lines.push("");
-  lines.push("| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push("| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 | 根拠位置 |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const c of testConditions) {
     const evaluation = evaluationById.get(c.id);
     const riskLevel = evaluation && evaluation.bandId ? evaluation.bandId : "未算出";
@@ -152,12 +156,15 @@ export function renderTestConditions(
       c.recommendedTechniques && c.recommendedTechniques.length > 0
         ? c.recommendedTechniques.join(", ")
         : "未設定";
+    const sourceRefs = resolveSourceRefs(c, input.requirementSources ?? []);
+    const sourceCitation =
+      sourceRefs.length > 0 ? sourceRefs.map((r) => formatSourceCitation(r)).join("; ") : "未特定";
     lines.push(
       `| ${escapeCell(c.id)} | ${escapeCell(c.target)} | ${escapeCell(
         categoryLabel(catalog, c.perspectiveCategoryId)
       )} | ${escapeCell(c.statement)} | ${c.priority ?? "未設定"} | ${riskLevel} | ${escapeCell(
         derivationText(c)
-      )} | ${escapeCell(techniques)} |`
+      )} | ${escapeCell(techniques)} | ${escapeCell(sourceCitation)} |`
     );
   }
   lines.push("");
@@ -334,10 +341,23 @@ export function renderTestConditions(
   }
   lines.push("");
 
-  lines.push("### 3.10 サマリ");
+  lines.push("### 3.10 根拠位置が未特定のテスト条件");
+  lines.push("");
+  if (conditionsWithoutSourceRefs.length === 0) {
+    lines.push("- なし");
+  } else {
+    for (const c of conditionsWithoutSourceRefs) {
+      lines.push(
+        `- [medium] ${c.conditionId}: 根拠位置(文書名・行番号)が未特定。analyze_requirements の requirementSources を渡すか sourceRefs を指定すること。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.11 サマリ");
   lines.push("");
   lines.push(
-    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length}`
+    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length}`
   );
   lines.push("");
 
@@ -629,6 +649,18 @@ export const extractTestConditionsInputShape = {
           .string()
           .optional()
           .describe("Reason if the declared priority deviates from the risk-based derived priority"),
+        sourceRefs: z
+          .array(
+            z.object({
+              document: z.string().describe("Test basis document name"),
+              startLine: z.number().int().min(1).describe("1-based start line in the document"),
+              endLine: z.number().int().min(1).optional().describe("1-based end line in the document"),
+              heading: z.string().optional().describe("Nearest heading in the document"),
+              label: z.string().optional().describe("Display label, e.g. 'EH-100 Ticket gate startup'"),
+            })
+          )
+          .optional()
+          .describe("Explicit source locations in the test basis; takes precedence over requirementSources lookup"),
       })
     )
     .min(1)
@@ -679,6 +711,21 @@ export const extractTestConditionsInputShape = {
     .string()
     .optional()
     .describe("Test condition ID prefix used for gap detection (default TC-)"),
+  requirementSources: z
+    .array(
+      z.object({
+        requirementId: z.string().describe("Requirement id this source location belongs to"),
+        document: z.string().describe("Test basis document name"),
+        startLine: z.number().int().min(1).describe("1-based start line in the document"),
+        endLine: z.number().int().min(1).optional().describe("1-based end line in the document"),
+        heading: z.string().optional().describe("Nearest heading in the document"),
+        label: z.string().optional().describe("Display label, e.g. 'EH-100 Ticket gate startup'"),
+      })
+    )
+    .optional()
+    .describe(
+      "Requirement id -> test basis source location map, typically taken from analyze_requirements section 2.6"
+    ),
 } as const;
 
 export function registerExtractTestConditionsTool(server: McpServer): void {
