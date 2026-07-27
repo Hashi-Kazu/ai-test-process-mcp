@@ -456,6 +456,13 @@ export interface RiskLevelBand {
   priority: "高" | "中" | "低";
   guidance: string;
 }
+export interface RiskCategory {
+  id: string;                              // "RC-01" 形式
+  nameJa: string;
+  description: string;
+  probeQuestions: string[];                // 自作の日本語文、2件以上
+  relatedPerspectiveCategoryIds: string[]; // testPerspectiveCatalog の TPC-XX（カテゴリID）のみ、1件以上
+}
 export interface RiskAnalysisFrame {
   name: string; note: string;
   impactAxis: RiskAxis;             // "RA-IMPACT" value 1..5
@@ -464,6 +471,7 @@ export interface RiskAnalysisFrame {
   stakeholderFrames: RiskStakeholderFrame[];
   formula: string;                  // 算出式の説明文
   bands: RiskLevelBand[];           // minScore 降順で定義、区間は連続かつ重複なし
+  riskCategories: RiskCategory[];   // "RC-01".. 5区分程度、非破壊拡張
 }
 
 // --- テスト条件抽出（extract_test_conditions） ---
