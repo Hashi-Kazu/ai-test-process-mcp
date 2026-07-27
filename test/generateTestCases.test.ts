@@ -57,6 +57,85 @@ describe("renderTestCases", () => {
     expect(markdown).toContain("| ケースID | タイトル | 由来条件ID | 技法 | 優先度 | テストタイプ | 網羅対象 |");
   });
 
+  it("renders the 1.1 table header with the source location column", () => {
+    const markdown = renderTestCases(baseInput);
+    expect(markdown).toContain("| 条件ID | 対象 | 条件文 | 優先度 | 由来 | 根拠位置 |");
+  });
+
+  it("renders the 4.3 table header with the source location column", () => {
+    const markdown = renderTestCases(baseInput);
+    expect(markdown).toContain("| 条件ID | 紐づくケースID | 件数 | 根拠位置 |");
+  });
+
+  it("marks the source location as 未特定 when requirementSources is not provided", () => {
+    const markdown = renderTestCases(baseInput);
+    const conditionRow = markdown.split("\n").find((l) => l.startsWith("| TC-001 |"));
+    expect(conditionRow).toContain("未特定");
+  });
+
+  it("resolves and shows the source citation when requirementSources is provided", () => {
+    const input: GenerateTestCasesInput = {
+      ...baseInput,
+      requirementSources: [
+        {
+          requirementId: "R-001",
+          document: "spec.md",
+          startLine: 652,
+          endLine: 677,
+          label: "EH-100 発券機起動",
+        },
+      ],
+    };
+    const markdown = renderTestCases(input);
+    const conditionRow = markdown.split("\n").find((l) => l.startsWith("| TC-001 |"));
+    expect(conditionRow).toContain("(EH-100 発券機起動, line 652-677)");
+  });
+
+  it("outputs a 根拠: line right after each case heading in 3.2", () => {
+    const input: GenerateTestCasesInput = {
+      ...baseInput,
+      requirementSources: [
+        { requirementId: "R-001", document: "spec.md", startLine: 10, endLine: 20 },
+      ],
+      testCases: [
+        {
+          caseId: "TCS-001",
+          title: "下限で購入できる",
+          testConditionId: "TC-001",
+          derivedFrom: ["R-001"],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:0"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "0枚で購入する", expected: "購入できない" }],
+        },
+      ],
+    };
+    const markdown = renderTestCases(input);
+    const idx = markdown.indexOf("#### TCS-001 下限で購入できる");
+    expect(idx).toBeGreaterThan(-1);
+    const after = markdown.slice(idx).split("\n");
+    expect(after[2]).toBe("根拠: (spec.md, line 10-20)");
+  });
+
+  it("shows 未特定(要記入) for cases with no resolvable source", () => {
+    const markdown = renderTestCases({
+      ...baseInput,
+      testCases: [
+        {
+          caseId: "TCS-001",
+          title: "テスト",
+          testConditionId: "TC-001",
+          derivedFrom: ["R-001"],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:0"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "操作", expected: "結果" }],
+        },
+      ],
+    });
+    expect(markdown).toContain("根拠: 未特定(要記入)");
+  });
+
   it("returns generation-instruction-only output when testCases is omitted", () => {
     const markdown = renderTestCases(baseInput);
     const section6 = markdown.split("## 6. テストケース組み立て指示(意味的層)")[1];

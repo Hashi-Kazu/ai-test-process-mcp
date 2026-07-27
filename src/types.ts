@@ -212,6 +212,19 @@ export interface TestBasisIdOccurrence {
   role: TestBasisIdRole;
 }
 
+/** テストベース文書内の根拠位置（行番号・章節） */
+export interface TestBasisSourceRef {
+  document: string;   // TestBasisDocument.name
+  startLine: number;  // 1-based
+  endLine?: number;   // 1-based。未指定/startLine と同値なら単一行
+  heading?: string;   // 直近の見出し
+  label?: string;     // 表示ラベル（例 "EH-100 発券機起動"）
+}
+/** 要件ID → 根拠位置 */
+export interface RequirementSourceRef extends TestBasisSourceRef {
+  requirementId: string;
+}
+
 export interface TestBasisDuplicateId {
   id: string;
   count: number;
@@ -512,6 +525,7 @@ export interface TestConditionInput {
   recommendedTechniques?: TestTechniqueId[];
   rationale?: string;                // 導出根拠の補足
   priorityDeviationReason?: string;  // 優先度基準からの逸脱理由
+  sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
 }
 export interface TestConditionPersonaInput { id: string; role: string; name?: string; concerns?: string; }
 export interface TestConditionRiskInput {
@@ -528,6 +542,7 @@ export interface ExtractTestConditionsInput {
   priorityCriteria?: string[];
   perspectiveCategoryIds?: string[];
   idPrefix?: string;                 // 既定 "TC-"
+  requirementSources?: RequirementSourceRef[]; // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
 }
 
 // 決定的検査の結果型
@@ -618,6 +633,7 @@ export interface TestCaseSpec {
   postconditions?: TestCaseStateVariable[];
   result?: TestCaseResultRecord;
   note?: string;
+  sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
 }
 
 // --- 状態遷移入力（決定的層で 0/1 スイッチ被覆を数えるための最小仕様） ---
@@ -642,6 +658,7 @@ export interface TestCaseSourceCondition {
   perspectiveCategoryId?: string;
   recommendedTechniques?: TestTechniqueId[];
   basisCharacteristics?: string[];  // 決定表の左列に対応する記述（技法推奨に使う）
+  sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
 }
 export interface GenerateTestCasesInput {
   testConditions: TestCaseSourceCondition[];       // 1件以上
@@ -656,6 +673,7 @@ export interface GenerateTestCasesInput {
   coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
   additionalSubjectiveTerms?: string[];            // 主観語検査への追加語
   idPrefix?: string;                               // 既定 "TCS-"
+  requirementSources?: RequirementSourceRef[];     // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
 }
 
 // --- 決定的検査の結果型（generate_test_cases） ---

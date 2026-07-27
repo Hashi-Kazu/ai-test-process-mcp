@@ -6,6 +6,7 @@ import {
   computeRiskScore,
   evaluateRisks,
   findConditionsWithoutPriority,
+  findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
@@ -15,10 +16,12 @@ import {
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
   mapRiskScoreToBand,
+  resolveSourceRefs,
 } from "../src/testConditionAnalysis.js";
 import { riskAnalysisFrame } from "../src/resources/riskAnalysisFrame.js";
 import type {
   ExtractTestConditionsInput,
+  RequirementSourceRef,
   TestConditionInput,
   TestConditionRiskInput,
 } from "../src/types.js";
@@ -268,5 +271,82 @@ describe("buildRiskCategoryDistribution / findUnusedRiskCategories / findUnknown
     expect(dist2).toEqual(dist1);
     expect(unused2).toEqual(unused1);
     expect(unknown2).toEqual(unknown1);
+  });
+});
+
+describe("resolveSourceRefs", () => {
+  const requirementSources: RequirementSourceRef[] = [
+    { requirementId: "EH-100", document: "doc.md", startLine: 652, endLine: 677, label: "EH-100 発券機起動" },
+    { requirementId: "EH-200", document: "doc.md", startLine: 700, endLine: 710, label: "EH-200 発券機停止" },
+  ];
+
+  it("prefers explicit sourceRefs over derivedFrom lookup", () => {
+    const owner = {
+      derivedFrom: ["EH-100"],
+      sourceRefs: [{ document: "other.md", startLine: 1 }],
+    };
+    const refs = resolveSourceRefs(owner, requirementSources);
+    expect(refs).toEqual([{ document: "other.md", startLine: 1 }]);
+  });
+
+  it("resolves via derivedFrom against requirementSources, preserving requirementSources order", () => {
+    const owner = { derivedFrom: ["EH-200", "EH-100"] };
+    const refs = resolveSourceRefs(owner, requirementSources);
+    expect(refs.map((r) => r.document + ":" + r.startLine)).toEqual(["doc.md:652", "doc.md:700"]);
+  });
+
+  it("deduplicates identical document/startLine/endLine refs", () => {
+    const owner = { derivedFrom: ["EH-100", "EH-100"] };
+    const refs = resolveSourceRefs(owner, requirementSources);
+    expect(refs.length).toBe(1);
+  });
+
+  it("does not mutate the input owner or requirementSources", () => {
+    const owner = { derivedFrom: ["EH-100"] };
+    const ownerSnapshot = JSON.stringify(owner);
+    const sourcesSnapshot = JSON.stringify(requirementSources);
+    resolveSourceRefs(owner, requirementSources);
+    expect(JSON.stringify(owner)).toBe(ownerSnapshot);
+    expect(JSON.stringify(requirementSources)).toBe(sourcesSnapshot);
+  });
+
+  it("returns an empty array when there is no match", () => {
+    const owner = { derivedFrom: ["UNKNOWN"] };
+    expect(resolveSourceRefs(owner, requirementSources)).toEqual([]);
+    expect(resolveSourceRefs(owner)).toEqual([]);
+  });
+});
+
+describe("findConditionsWithoutSourceRefs", () => {
+  it("returns an empty array when requirementSources is not provided", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["EH-100"],
+      testConditions: [condition({ id: "TC-001", derivedFrom: ["EH-100"] })],
+    };
+    expect(findConditionsWithoutSourceRefs(input)).toEqual([]);
+  });
+
+  it("returns an empty array when requirementSources is an empty array", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["EH-100"],
+      testConditions: [condition({ id: "TC-001", derivedFrom: ["EH-100"] })],
+      requirementSources: [],
+    };
+    expect(findConditionsWithoutSourceRefs(input)).toEqual([]);
+  });
+
+  it("lists conditions whose source refs cannot be resolved", () => {
+    const input: ExtractTestConditionsInput = {
+      requirementIds: ["EH-100", "EH-999"],
+      testConditions: [
+        condition({ id: "TC-001", derivedFrom: ["EH-100"] }),
+        condition({ id: "TC-002", derivedFrom: ["EH-999"] }),
+      ],
+      requirementSources: [
+        { requirementId: "EH-100", document: "doc.md", startLine: 652, endLine: 677 },
+      ],
+    };
+    const result = findConditionsWithoutSourceRefs(input);
+    expect(result).toEqual([{ conditionId: "TC-002", source: "testbase" }]);
   });
 });

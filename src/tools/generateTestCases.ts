@@ -18,7 +18,10 @@ import {
   findUnknownCoverageTargetRefs,
   findUnresolvedCaseRefs,
   recommendTechniques,
+  resolveCaseSourceRefs,
 } from "../testCaseAnalysis.js";
+import { resolveSourceRefs } from "../testConditionAnalysis.js";
+import { formatSourceCitation } from "../testBasisAnalysis.js";
 import type { GenerateTestCasesInput, TestCaseSpec, TestTechniqueCatalog } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -76,13 +79,16 @@ export function renderTestCases(
 
   lines.push("### 1.1 対象テスト条件");
   lines.push("");
-  lines.push("| 条件ID | 対象 | 条件文 | 優先度 | 由来 |");
-  lines.push("| --- | --- | --- | --- | --- |");
+  lines.push("| 条件ID | 対象 | 条件文 | 優先度 | 由来 | 根拠位置 |");
+  lines.push("| --- | --- | --- | --- | --- | --- |");
   for (const c of testConditions) {
+    const sourceRefs = resolveSourceRefs(c, input.requirementSources ?? []);
+    const sourceCitation =
+      sourceRefs.length > 0 ? sourceRefs.map((r) => formatSourceCitation(r)).join("; ") : "未特定";
     lines.push(
       `| ${escapeCell(c.id)} | ${escapeCell(c.target)} | ${escapeCell(c.statement)} | ${
         c.priority ?? "未設定"
-      } | ${escapeCell(c.derivedFrom.join(", "))} |`
+      } | ${escapeCell(c.derivedFrom.join(", "))} | ${escapeCell(sourceCitation)} |`
     );
   }
   lines.push("");
@@ -193,6 +199,13 @@ export function renderTestCases(
     for (const c of testCases) {
       lines.push(`#### ${c.caseId} ${c.title}`);
       lines.push("");
+      const caseSourceRefs = resolveCaseSourceRefs(c, testConditions, input.requirementSources ?? []);
+      const caseSourceCitation =
+        caseSourceRefs.length > 0
+          ? caseSourceRefs.map((r) => formatSourceCitation(r)).join("; ")
+          : "未特定(要記入)";
+      lines.push(`根拠: ${caseSourceCitation}`);
+      lines.push("");
       lines.push("前提条件:");
       lines.push("");
       lines.push("| 変数 | 値 |");
@@ -271,13 +284,17 @@ export function renderTestCases(
 
   lines.push("### 4.3 テスト条件 × テストケース トレーサビリティ");
   lines.push("");
-  lines.push("| 条件ID | 紐づくケースID | 件数 |");
-  lines.push("| --- | --- | --- |");
+  lines.push("| 条件ID | 紐づくケースID | 件数 | 根拠位置 |");
+  lines.push("| --- | --- | --- | --- |");
   for (const row of traceRows) {
+    const condition = testConditions.find((c) => c.id === row.conditionId);
+    const sourceRefs = condition ? resolveSourceRefs(condition, input.requirementSources ?? []) : [];
+    const sourceCitation =
+      sourceRefs.length > 0 ? sourceRefs.map((r) => formatSourceCitation(r)).join("; ") : "未特定";
     lines.push(
       `| ${escapeCell(row.conditionId)} | ${escapeCell(
         row.caseIds.length > 0 ? row.caseIds.join(", ") : "-"
-      )} | ${row.caseIds.length} |`
+      )} | ${row.caseIds.length} | ${escapeCell(sourceCitation)} |`
     );
   }
   lines.push("");
@@ -495,6 +512,18 @@ export const testCaseSpecShape = z.object({
   postconditions: z.array(stateVariableShape).optional(),
   result: testCaseResultShape.optional(),
   note: z.string().optional(),
+  sourceRefs: z
+    .array(
+      z.object({
+        document: z.string().describe("Test basis document name"),
+        startLine: z.number().int().min(1).describe("1-based start line in the document"),
+        endLine: z.number().int().min(1).optional().describe("1-based end line in the document"),
+        heading: z.string().optional().describe("Nearest heading in the document"),
+        label: z.string().optional().describe("Display label, e.g. 'EH-100 Ticket gate startup'"),
+      })
+    )
+    .optional()
+    .describe("Explicit source locations in the test basis; takes precedence over other resolution"),
 });
 
 export const generateTestCasesInputShape = {
@@ -512,6 +541,18 @@ export const generateTestCasesInputShape = {
           .array(z.string())
           .optional()
           .describe("Test basis characteristics used to recommend techniques from the selection table"),
+        sourceRefs: z
+          .array(
+            z.object({
+              document: z.string().describe("Test basis document name"),
+              startLine: z.number().int().min(1).describe("1-based start line in the document"),
+              endLine: z.number().int().min(1).optional().describe("1-based end line in the document"),
+              heading: z.string().optional().describe("Nearest heading in the document"),
+              label: z.string().optional().describe("Display label, e.g. 'EH-100 Ticket gate startup'"),
+            })
+          )
+          .optional()
+          .describe("Explicit source locations in the test basis; takes precedence over requirementSources lookup"),
       })
     )
     .min(1)
@@ -601,6 +642,21 @@ export const generateTestCasesInputShape = {
   coverageCriteriaDeclaration: z.array(z.string()).optional(),
   additionalSubjectiveTerms: z.array(z.string()).optional(),
   idPrefix: z.string().optional().describe("Test case id prefix used for gap detection (default TCS-)"),
+  requirementSources: z
+    .array(
+      z.object({
+        requirementId: z.string().describe("Requirement id this source location belongs to"),
+        document: z.string().describe("Test basis document name"),
+        startLine: z.number().int().min(1).describe("1-based start line in the document"),
+        endLine: z.number().int().min(1).optional().describe("1-based end line in the document"),
+        heading: z.string().optional().describe("Nearest heading in the document"),
+        label: z.string().optional().describe("Display label, e.g. 'EH-100 Ticket gate startup'"),
+      })
+    )
+    .optional()
+    .describe(
+      "Requirement id -> test basis source location map, typically taken from analyze_requirements section 2.6"
+    ),
 } as const;
 
 export function registerGenerateTestCasesTool(server: McpServer): void {

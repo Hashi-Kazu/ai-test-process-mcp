@@ -1,9 +1,12 @@
 import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
+import { resolveSourceRefs } from "./testConditionAnalysis.js";
 import type {
   GenerateTestCasesInput,
+  RequirementSourceRef,
   StateTransitionSpec,
+  TestBasisSourceRef,
   TestCaseCoverageRow,
   TestCaseCoverageTarget,
   TestCaseDuplicateId,
@@ -325,6 +328,33 @@ export function findEmptyExpectedResults(testCases: TestCaseSpec[]): TestCaseExp
     }
   }
   return findings;
+}
+
+// --- 根拠位置の解決 ---
+
+/**
+ * テストケースの根拠位置を優先順で解決する純関数。
+ * 1. testCase.sourceRefs
+ * 2. testConditionId が一致する条件の resolveSourceRefs(condition, requirementSources)
+ * 3. resolveSourceRefs(testCase, requirementSources)（testCase.derivedFrom 経由）
+ * 最初に非空になったものを返す。
+ */
+export function resolveCaseSourceRefs(
+  testCase: TestCaseSpec,
+  conditions: TestCaseSourceCondition[],
+  requirementSources: RequirementSourceRef[] = []
+): TestBasisSourceRef[] {
+  if (testCase.sourceRefs && testCase.sourceRefs.length > 0) {
+    return testCase.sourceRefs.map((r) => ({ ...r }));
+  }
+
+  const condition = conditions.find((c) => c.id === testCase.testConditionId);
+  if (condition) {
+    const fromCondition = resolveSourceRefs(condition, requirementSources);
+    if (fromCondition.length > 0) return fromCondition;
+  }
+
+  return resolveSourceRefs(testCase, requirementSources);
 }
 
 // --- 手順の粒度検査 ---

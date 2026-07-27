@@ -81,9 +81,9 @@ describe("renderTestConditions", () => {
     }
   });
 
-  it("renders the 8-column test condition table header", () => {
+  it("renders the 9-column test condition table header", () => {
     expect(markdown).toContain(
-      "| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 |"
+      "| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 | 根拠位置 |"
     );
   });
 
@@ -157,9 +157,63 @@ describe("renderTestConditions", () => {
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 
-  it("renders section 3.9 and 3.10 exactly once each", () => {
+  it("renders section 3.9, 3.10 and 3.11 exactly once each", () => {
     expect(markdown.split("\n").filter((l) => l === "### 3.9 リスク区分の被覆状況")).toHaveLength(1);
-    expect(markdown.split("\n").filter((l) => l === "### 3.10 サマリ")).toHaveLength(1);
+    expect(
+      markdown.split("\n").filter((l) => l === "### 3.10 根拠位置が未特定のテスト条件")
+    ).toHaveLength(1);
+    expect(markdown.split("\n").filter((l) => l === "### 3.11 サマリ")).toHaveLength(1);
+  });
+
+  it("marks source location as 未特定 and skips detection when requirementSources is not provided", () => {
+    const section = markdown.split("### 3.10 根拠位置が未特定のテスト条件")[1].split("### 3.11")[0];
+    expect(section).toContain("- なし");
+
+    const conditionRow = markdown
+      .split("\n")
+      .find((l) => l.startsWith("| TC-001 |"));
+    expect(conditionRow).toContain("未特定");
+  });
+});
+
+describe("renderTestConditions with requirementSources", () => {
+  const inputWithSources: ExtractTestConditionsInput = {
+    requirementIds: ["EH-100"],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "F-001",
+        perspectiveCategoryId: "TPC-01",
+        statement: "発券機が起動する",
+        source: "testbase",
+        derivedFrom: ["EH-100"],
+        priority: "高",
+      },
+    ],
+    requirementSources: [
+      {
+        requirementId: "EH-100",
+        document: "spec.md",
+        startLine: 652,
+        endLine: 677,
+        label: "EH-100 発券機起動",
+      },
+    ],
+  };
+  const markdownWithSources = renderTestConditions(inputWithSources);
+
+  it("shows the resolved source citation in the condition table", () => {
+    const conditionRow = markdownWithSources
+      .split("\n")
+      .find((l) => l.startsWith("| TC-001 |"));
+    expect(conditionRow).toContain("(EH-100 発券機起動, line 652-677)");
+  });
+
+  it("does not flag TC-001 as missing a source ref when requirementSources resolves it", () => {
+    const section = markdownWithSources
+      .split("### 3.10 根拠位置が未特定のテスト条件")[1]
+      .split("### 3.11")[0];
+    expect(section).toContain("- なし");
   });
 });
 
@@ -202,7 +256,7 @@ describe("renderTestConditions with riskCategoryId", () => {
     expect(markdown2).toContain("「RC-99」はリスク分析フレームに存在しないリスク区分IDである。");
   });
 
-  it("includes the unused/unknown risk category counters in the 3.10 summary", () => {
+  it("includes the unused/unknown risk category counters in the 3.11 summary", () => {
     const summaryLine = markdown2
       .split("\n")
       .find((l) => l.startsWith("- 対象要件ID数:"));

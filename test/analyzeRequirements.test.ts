@@ -47,7 +47,8 @@ describe("renderRequirementsAnalysis", () => {
     expect(markdown).toContain("### 2.3 境界値候補(design_boundary_values 連携)");
     expect(markdown).toContain("### 2.4 用語定義と本文使用の照合");
     expect(markdown).toContain("### 2.5 曖昧語・弱い語・未完成注記");
-    expect(markdown).toContain("### 2.6 サマリ");
+    expect(markdown).toContain("### 2.6 要件ID → テストベース根拠位置");
+    expect(markdown).toContain("### 2.7 サマリ");
     expect(markdown).toContain("## 3. 指摘表");
     expect(markdown).toContain("## 4. 品質特性 × 要件のマッピング指示");
     expect(markdown).toContain("## 5. ステークホルダー別影響の抽出指示");
@@ -68,6 +69,21 @@ describe("renderRequirementsAnalysis", () => {
     const parsed = JSON.parse(match![1]);
     const result = z.object(designBoundaryValuesInputShape).safeParse(parsed);
     expect(result.success).toBe(true);
+  });
+
+  it("emits a json block under 2.6 with a valid requirementSources array", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    const match = /```json\n([\s\S]*?)\n```/.exec(section26);
+    expect(match).not.toBeNull();
+    const parsed = JSON.parse(match![1]);
+    expect(Array.isArray(parsed.requirementSources)).toBe(true);
+    expect(parsed.requirementSources.length).toBeGreaterThan(0);
+    for (const ref of parsed.requirementSources) {
+      expect(typeof ref.requirementId).toBe("string");
+      expect(typeof ref.document).toBe("string");
+      expect(typeof ref.startLine).toBe("number");
+    }
   });
 
   it("lists every quality characteristic id by default and restricts when qualityCharacteristicIds is given", () => {
