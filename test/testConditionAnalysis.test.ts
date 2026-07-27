@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildRequirementCoverageMatrix,
+  buildRiskCategoryDistribution,
   buildSourceDistribution,
   computeRiskScore,
   evaluateRisks,
@@ -9,11 +10,25 @@ import {
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
   findUncoveredRequirementIds,
+  findUnknownRiskCategoryIds,
   findUnresolvedDerivedFromRefs,
   findUnusedPerspectiveCategories,
+  findUnusedRiskCategories,
   mapRiskScoreToBand,
 } from "../src/testConditionAnalysis.js";
-import type { ExtractTestConditionsInput, TestConditionInput } from "../src/types.js";
+import { riskAnalysisFrame } from "../src/resources/riskAnalysisFrame.js";
+import type {
+  ExtractTestConditionsInput,
+  TestConditionInput,
+  TestConditionRiskInput,
+} from "../src/types.js";
+
+function risk(overrides: Partial<TestConditionRiskInput> & { id: string }): TestConditionRiskInput {
+  return {
+    description: "リスク内容",
+    ...overrides,
+  };
+}
 
 function condition(overrides: Partial<TestConditionInput> & { id: string }): TestConditionInput {
   return {
@@ -169,5 +184,89 @@ describe("evaluateRisks", () => {
     const snapshot = JSON.stringify(conditions);
     evaluateRisks(conditions);
     expect(JSON.stringify(conditions)).toBe(snapshot);
+  });
+
+  it("produces identical output before and after riskCategoryId was introduced", () => {
+    const conditions = [
+      condition({ id: "TC-001", impact: 5, likelihood: 5, changeCategory: "new", priority: "高" }),
+      condition({ id: "TC-002", impact: 1, likelihood: 1, changeCategory: "existing-unaffected", priority: "高" }),
+      condition({ id: "TC-003", impact: 3, priority: "中" }),
+    ];
+    const withoutRiskCategory = evaluateRisks(conditions);
+    const withRiskCategory = evaluateRisks(
+      conditions.map((c) => ({ ...c, riskCategoryId: "RC-01" }))
+    );
+    expect(withRiskCategory).toEqual(withoutRiskCategory);
+  });
+});
+
+describe("buildRiskCategoryDistribution / findUnusedRiskCategories / findUnknownRiskCategoryIds", () => {
+  it("returns a row for every risk category in definition order, tallying matches by riskCategoryId", () => {
+    const risks = [
+      risk({ id: "RK-001", riskCategoryId: "RC-04" }),
+      risk({ id: "RK-002" }),
+    ];
+    const conditions = [
+      condition({ id: "TC-001", riskCategoryId: "RC-04" }),
+      condition({ id: "TC-002", riskCategoryId: "RC-01" }),
+      condition({ id: "TC-003" }),
+    ];
+    const rows = buildRiskCategoryDistribution(risks, conditions);
+    expect(rows.map((r) => r.categoryId)).toEqual(
+      riskAnalysisFrame.riskCategories.map((rc) => rc.id)
+    );
+    const rc01 = rows.find((r) => r.categoryId === "RC-01");
+    const rc04 = rows.find((r) => r.categoryId === "RC-04");
+    expect(rc01).toMatchObject({ riskIds: [], conditionIds: ["TC-002"], count: 1 });
+    expect(rc04).toMatchObject({ riskIds: ["RK-001"], conditionIds: ["TC-001"], count: 2 });
+  });
+
+  it("returns all-zero counts when no one specifies riskCategoryId", () => {
+    const risks = [risk({ id: "RK-001" })];
+    const conditions = [condition({ id: "TC-001" })];
+    const rows = buildRiskCategoryDistribution(risks, conditions);
+    expect(rows.every((r) => r.count === 0)).toBe(true);
+  });
+
+  it("returns only unused categories in definition order", () => {
+    const risks = [risk({ id: "RK-001", riskCategoryId: "RC-04" })];
+    const conditions = [condition({ id: "TC-001", riskCategoryId: "RC-01" })];
+    const unused = findUnusedRiskCategories(risks, conditions);
+    const expectedIds = riskAnalysisFrame.riskCategories
+      .filter((rc) => rc.id !== "RC-01" && rc.id !== "RC-04")
+      .map((rc) => rc.id);
+    expect(unused.map((u) => u.id)).toEqual(expectedIds);
+  });
+
+  it("finds unknown risk category ids, risks before conditions, in input order", () => {
+    const risks = [risk({ id: "RK-001", riskCategoryId: "RC-99" })];
+    const conditions = [condition({ id: "TC-001", riskCategoryId: "RC-99" })];
+    const unknown = findUnknownRiskCategoryIds(risks, conditions);
+    expect(unknown).toEqual([
+      { ownerKind: "risk", ownerId: "RK-001", riskCategoryId: "RC-99" },
+      { ownerKind: "condition", ownerId: "TC-001", riskCategoryId: "RC-99" },
+    ]);
+  });
+
+  it("does not mutate inputs and is deterministic across repeated calls", () => {
+    const risks = [risk({ id: "RK-001", riskCategoryId: "RC-04" })];
+    const conditions = [condition({ id: "TC-001", riskCategoryId: "RC-01" })];
+    const risksSnapshot = JSON.stringify(risks);
+    const conditionsSnapshot = JSON.stringify(conditions);
+
+    const dist1 = buildRiskCategoryDistribution(risks, conditions);
+    const unused1 = findUnusedRiskCategories(risks, conditions);
+    const unknown1 = findUnknownRiskCategoryIds(risks, conditions);
+
+    expect(JSON.stringify(risks)).toBe(risksSnapshot);
+    expect(JSON.stringify(conditions)).toBe(conditionsSnapshot);
+
+    const dist2 = buildRiskCategoryDistribution(risks, conditions);
+    const unused2 = findUnusedRiskCategories(risks, conditions);
+    const unknown2 = findUnknownRiskCategoryIds(risks, conditions);
+
+    expect(dist2).toEqual(dist1);
+    expect(unused2).toEqual(unused1);
+    expect(unknown2).toEqual(unknown1);
   });
 });

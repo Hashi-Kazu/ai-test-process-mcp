@@ -43,6 +43,7 @@ describe("guidewordDictionary", () => {
       expect(g.questionTemplates.length).toBeGreaterThan(0);
       for (const template of g.questionTemplates) {
         expect(template).toContain("{着目点1}");
+        expect(template).toContain("{着目点2}");
       }
     }
   });
@@ -53,7 +54,33 @@ describe("guidewordDictionary", () => {
 
   it("does not name specific external methods or standards", () => {
     const allText = JSON.stringify(guidewordDictionary);
-    expect(allText).not.toContain("HAZOP");
-    expect(allText).not.toContain("JSTQB");
+    for (const term of ["HAZOP", "JSTQB", "STAMP", "STPA", "FMEA", "FTA", "ISO", "IEC", "IEEE"]) {
+      expect(allText).not.toContain(term);
+    }
+  });
+
+  it("contains the newly added deviation guidewords and security focus points", () => {
+    const words = guidewordDictionary.guidewords.map((g) => g.word);
+    for (const required of ["総量", "部分実行", "すり替え・偽装", "想定外の別事象"]) {
+      expect(words).toContain(required);
+    }
+    const focusNames = guidewordDictionary.focusPoints.map((f) => f.nameJa);
+    for (const required of ["認証情報・本人性", "権限境界", "改ざん耐性のある媒体"]) {
+      expect(focusNames).toContain(required);
+    }
+  });
+
+  it("still has unique GW-xx/GWF-xx ids after the additions", () => {
+    const seen = new Set<string>();
+    for (const f of guidewordDictionary.focusPoints) {
+      expect(f.id).toMatch(/^GWF-\d{2}$/);
+      expect(seen.has(f.id)).toBe(false);
+      seen.add(f.id);
+    }
+    for (const g of guidewordDictionary.guidewords) {
+      expect(g.id).toMatch(/^GW-\d{2}$/);
+      expect(seen.has(g.id)).toBe(false);
+      seen.add(g.id);
+    }
   });
 });

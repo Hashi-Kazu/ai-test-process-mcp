@@ -9,6 +9,7 @@ import { riskAnalysisFrame } from "../resources/riskAnalysisFrame.js";
 import {
   DEFAULT_CONDITION_ID_PREFIX,
   buildRequirementCoverageMatrix,
+  buildRiskCategoryDistribution,
   buildSourceDistribution,
   evaluateRisks,
   findConditionsWithoutPriority,
@@ -16,8 +17,10 @@ import {
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
   findUncoveredRequirementIds,
+  findUnknownRiskCategoryIds,
   findUnresolvedDerivedFromRefs,
   findUnusedPerspectiveCategories,
+  findUnusedRiskCategories,
   testConditionSourceLabels,
 } from "../testConditionAnalysis.js";
 import type {
@@ -37,6 +40,7 @@ const DEFAULT_COVERAGE_CRITERIA = [
   "観点カタログの全カテゴリを検討済みであり、対象外としたカテゴリには理由がある。",
   "テストベース／ステークホルダー／リスク／ガイドワードの4系統すべてから条件が導出されている。",
   "すべてのテスト条件に優先度が付与されている。",
+  "リスク分析フレームの全リスク区分を検討済みであり、対象外とした区分には理由がある。",
 ];
 
 function knownTechniqueIds(catalog: TestPerspectiveCatalog): Set<string> {
@@ -87,6 +91,9 @@ export function renderTestConditions(
   const distribution = buildSourceDistribution(testConditions);
   const evaluations = evaluateRisks(testConditions, frame);
   const evaluationById = new Map(evaluations.map((e) => [e.conditionId, e]));
+  const riskCategoryDistribution = buildRiskCategoryDistribution(risks ?? [], testConditions, frame);
+  const unusedRiskCategories = findUnusedRiskCategories(risks ?? [], testConditions, frame);
+  const unknownRiskCategoryRefs = findUnknownRiskCategoryIds(risks ?? [], testConditions, frame);
 
   const known = knownTechniqueIds(catalog);
   const unknownTechniques: { conditionId: string; techniqueId: string }[] = [];
@@ -295,10 +302,42 @@ export function renderTestConditions(
   }
   lines.push("");
 
-  lines.push("### 3.9 サマリ");
+  lines.push("### 3.9 リスク区分の被覆状況");
+  lines.push("");
+  lines.push("| リスク区分 | リスク件数 | 条件件数 | 合計 | 状態 |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const row of riskCategoryDistribution) {
+    lines.push(
+      `| ${escapeCell(`${row.categoryId} ${row.nameJa}`)} | ${row.riskIds.length} | ${
+        row.conditionIds.length
+      } | ${row.count} | ${row.count > 0 ? "使用" : "未使用"} |`
+    );
+  }
+  lines.push("");
+  if (unusedRiskCategories.length === 0) {
+    lines.push("- 未使用のリスク区分: なし");
+  } else {
+    lines.push("未使用のリスク区分(検討漏れ候補):");
+    lines.push("");
+    for (const category of unusedRiskCategories) {
+      lines.push(
+        `- [medium] ${category.id} ${category.nameJa}: 該当するリスク・テスト条件が無い。この区分を検討し、対象外とする理由を明記するか条件を追加すること。`
+      );
+    }
+  }
+  if (unknownRiskCategoryRefs.length > 0) {
+    for (const ref of unknownRiskCategoryRefs) {
+      lines.push(
+        `- [medium] ${ref.ownerId}: 「${ref.riskCategoryId}」はリスク分析フレームに存在しないリスク区分IDである。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.10 サマリ");
   lines.push("");
   lines.push(
-    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length}`
+    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length}`
   );
   lines.push("");
 
@@ -480,14 +519,47 @@ export function renderTestConditions(
     lines.push(`- ${sf.id} ${sf.nameJa}: ${sf.impactQuestions.join(" / ")}`);
   }
   lines.push("");
+
+  lines.push("リスク区分ごとの検討の問い:");
+  lines.push("");
+  lines.push("| 区分ID | 区分 | 説明 | 検討の問い | 関連観点カテゴリ |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const rc of frame.riskCategories) {
+    lines.push(
+      `| ${escapeCell(rc.id)} | ${escapeCell(rc.nameJa)} | ${escapeCell(rc.description)} | ${escapeCell(
+        rc.probeQuestions.join(" / ")
+      )} | ${escapeCell(rc.relatedPerspectiveCategoryIds.join(", "))} |`
+    );
+  }
+  lines.push("");
+
+  lines.push(`制御不全の観点(${frame.controlFlawFrame.name}):`);
+  lines.push("");
+  lines.push(frame.controlFlawFrame.note);
+  lines.push("");
+  for (const el of frame.controlFlawFrame.loopElements) {
+    lines.push(`- ${el.id} ${el.nameJa}: ${el.description}`);
+  }
+  lines.push("");
+  lines.push("| パターンID | パターン | 説明 | 検討の問い |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const p of frame.controlFlawFrame.patterns) {
+    lines.push(
+      `| ${escapeCell(p.id)} | ${escapeCell(p.nameJa)} | ${escapeCell(p.description)} | ${escapeCell(
+        p.probeQuestions.join(" / ")
+      )} |`
+    );
+  }
+  lines.push("");
+
   if (risks && risks.length > 0) {
-    lines.push("| リスクID | 内容 | 影響度 | 発生可能性 | 変更区分 |");
-    lines.push("| --- | --- | --- | --- | --- |");
+    lines.push("| リスクID | 内容 | 区分 | 影響度 | 発生可能性 | 変更区分 |");
+    lines.push("| --- | --- | --- | --- | --- | --- |");
     for (const r of risks) {
       lines.push(
-        `| ${escapeCell(r.id)} | ${escapeCell(r.description)} | ${r.impact ?? "-"} | ${
-          r.likelihood ?? "-"
-        } | ${r.changeCategory ?? "-"} |`
+        `| ${escapeCell(r.id)} | ${escapeCell(r.description)} | ${escapeCell(
+          r.riskCategoryId ?? "-"
+        )} | ${r.impact ?? "-"} | ${r.likelihood ?? "-"} | ${r.changeCategory ?? "-"} |`
       );
     }
     lines.push("");
@@ -544,6 +616,10 @@ export const extractTestConditionsInputShape = {
           .enum(["new", "modified", "existing-impacted", "existing-unaffected"])
           .optional()
           .describe("Change category of the target, used as the change weight"),
+        riskCategoryId: z
+          .string()
+          .optional()
+          .describe("Risk category id from the risk analysis frame, e.g. RC-04"),
         recommendedTechniques: z
           .array(z.string())
           .optional()
@@ -579,6 +655,10 @@ export const extractTestConditionsInputShape = {
           .enum(["new", "modified", "existing-impacted", "existing-unaffected"])
           .optional()
           .describe("Change category related to this risk"),
+        riskCategoryId: z
+          .string()
+          .optional()
+          .describe("Risk category id from the risk analysis frame, e.g. RC-04"),
       })
     )
     .optional()

@@ -81,4 +81,36 @@ describe("riskAnalysisFrame", () => {
     );
     expect(hasSecurity).toBe(true);
   });
+
+  it("has a control flaw frame with 4 unique RCF-xx patterns and 2+ probe questions each", () => {
+    const frame = riskAnalysisFrame.controlFlawFrame;
+    expect(frame.patterns.length).toBe(4);
+    const seen = new Set<string>();
+    for (const p of frame.patterns) {
+      expect(p.id).toMatch(/^RCF-\d{2}$/);
+      expect(seen.has(p.id)).toBe(false);
+      seen.add(p.id);
+      expect(p.probeQuestions.length).toBeGreaterThanOrEqual(2);
+      expect(p.nameJa.trim().length).toBeGreaterThan(0);
+      expect(p.description.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("has a control flaw frame with 4 unique RCL-xx loop elements", () => {
+    const frame = riskAnalysisFrame.controlFlawFrame;
+    expect(frame.loopElements.length).toBe(4);
+    const seen = new Set<string>();
+    for (const el of frame.loopElements) {
+      expect(el.id).toMatch(/^RCL-\d{2}$/);
+      expect(seen.has(el.id)).toBe(false);
+      seen.add(el.id);
+    }
+  });
+
+  it("does not name specific external methods or standards", () => {
+    const allText = JSON.stringify(riskAnalysisFrame);
+    for (const term of ["STAMP", "STPA", "HAZOP", "FMEA", "FTA", "JSTQB", "ISO", "IEC", "IEEE"]) {
+      expect(allText).not.toContain(term);
+    }
+  });
 });
