@@ -544,6 +544,10 @@ export const extractTestConditionsInputShape = {
           .enum(["new", "modified", "existing-impacted", "existing-unaffected"])
           .optional()
           .describe("Change category of the target, used as the change weight"),
+        riskCategoryId: z
+          .string()
+          .optional()
+          .describe("Risk category id from the risk analysis frame, e.g. RC-04"),
         recommendedTechniques: z
           .array(z.string())
           .optional()
@@ -579,6 +583,10 @@ export const extractTestConditionsInputShape = {
           .enum(["new", "modified", "existing-impacted", "existing-unaffected"])
           .optional()
           .describe("Change category related to this risk"),
+        riskCategoryId: z
+          .string()
+          .optional()
+          .describe("Risk category id from the risk analysis frame, e.g. RC-04"),
       })
     )
     .optional()

@@ -5,15 +5,18 @@ import type {
   RequirementCoverageRow,
   RequirementsChangeCategory,
   RiskAnalysisFrame,
+  RiskCategoryDistributionRow,
   RiskLevelBand,
   TestConditionDuplicateId,
   TestConditionInput,
   TestConditionPriority,
   TestConditionRiskEvaluation,
+  TestConditionRiskInput,
   TestConditionSource,
   TestConditionSourceDistributionRow,
   TestConditionUnresolvedRef,
   TestPerspectiveCatalog,
+  UnknownRiskCategoryRef,
 } from "./types.js";
 
 // extract_test_conditions 固有の決定的検査ロジック。
@@ -254,4 +257,52 @@ export function evaluateRisks(
       incomplete: false,
     };
   });
+}
+
+export function buildRiskCategoryDistribution(
+  risks: TestConditionRiskInput[],
+  conditions: TestConditionInput[],
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): RiskCategoryDistributionRow[] {
+  return frame.riskCategories.map((rc) => {
+    const riskIds = risks.filter((r) => r.riskCategoryId === rc.id).map((r) => r.id);
+    const conditionIds = conditions.filter((c) => c.riskCategoryId === rc.id).map((c) => c.id);
+    return {
+      categoryId: rc.id,
+      nameJa: rc.nameJa,
+      riskIds,
+      conditionIds,
+      count: riskIds.length + conditionIds.length,
+    };
+  });
+}
+
+export function findUnusedRiskCategories(
+  risks: TestConditionRiskInput[],
+  conditions: TestConditionInput[],
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): { id: string; nameJa: string }[] {
+  return buildRiskCategoryDistribution(risks, conditions, frame)
+    .filter((row) => row.count === 0)
+    .map((row) => ({ id: row.categoryId, nameJa: row.nameJa }));
+}
+
+export function findUnknownRiskCategoryIds(
+  risks: TestConditionRiskInput[],
+  conditions: TestConditionInput[],
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): UnknownRiskCategoryRef[] {
+  const knownIds = new Set(frame.riskCategories.map((rc) => rc.id));
+  const result: UnknownRiskCategoryRef[] = [];
+  for (const r of risks) {
+    if (r.riskCategoryId && !knownIds.has(r.riskCategoryId)) {
+      result.push({ ownerKind: "risk", ownerId: r.id, riskCategoryId: r.riskCategoryId });
+    }
+  }
+  for (const c of conditions) {
+    if (c.riskCategoryId && !knownIds.has(c.riskCategoryId)) {
+      result.push({ ownerKind: "condition", ownerId: c.id, riskCategoryId: c.riskCategoryId });
+    }
+  }
+  return result;
 }

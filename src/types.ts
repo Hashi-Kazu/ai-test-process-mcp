@@ -508,6 +508,7 @@ export interface TestConditionInput {
   impact?: number;                   // 1..5
   likelihood?: number;               // 1..5
   changeCategory?: RequirementsChangeCategory;
+  riskCategoryId?: string;           // RC-XX（リスク区分）
   recommendedTechniques?: TestTechniqueId[];
   rationale?: string;                // 導出根拠の補足
   priorityDeviationReason?: string;  // 優先度基準からの逸脱理由
@@ -516,6 +517,7 @@ export interface TestConditionPersonaInput { id: string; role: string; name?: st
 export interface TestConditionRiskInput {
   id: string; description: string;
   impact?: number; likelihood?: number; changeCategory?: RequirementsChangeCategory;
+  riskCategoryId?: string;
 }
 export interface ExtractTestConditionsInput {
   requirementIds: string[];
@@ -539,6 +541,18 @@ export interface TestConditionRiskEvaluation {
   declaredPriority?: TestConditionPriority;
   deviates: boolean;               // derivedPriority と declaredPriority が両方あり不一致
   incomplete: boolean;             // impact / likelihood が欠けてスコア算出不可
+}
+export interface RiskCategoryDistributionRow {
+  categoryId: string;      // RC-XX
+  nameJa: string;
+  riskIds: string[];       // riskCategoryId が一致する risks[].id（入力順）
+  conditionIds: string[];  // riskCategoryId が一致する testConditions[].id（入力順）
+  count: number;           // riskIds.length + conditionIds.length
+}
+export interface UnknownRiskCategoryRef {
+  ownerKind: "risk" | "condition";
+  ownerId: string;
+  riskCategoryId: string;
 }
 
 // --- 技法カタログ＋技法選定決定表 ---
