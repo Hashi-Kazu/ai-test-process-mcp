@@ -401,6 +401,29 @@ export function findStepGranularityIssues(testCases: TestCaseSpec[]): TestCaseSt
 
 // --- 閾値の直値埋め込み検査 ---
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const DIGITS_ONLY = /^\d+$/;
+
+// 数値のみからなるパラメータ値については、前後が数字文字でない位置での完全一致のみを
+// 直値埋め込みとみなす（"10" が "1000" の一部として誤検出されないようにするため）。
+// p.unit が設定されている場合は、値の直後に unit が続く表記（例 "10人"）または
+// 値の直後にコロンが続く時刻風表記（例 "10:00"）に限定してマッチさせる。
+function hasHardcodedMatch(text: string, p: TestCaseParameter): boolean {
+  if (!DIGITS_ONLY.test(p.value)) {
+    return text.includes(p.value);
+  }
+  const escaped = escapeRegExp(p.value);
+  if (p.unit) {
+    const withUnit = new RegExp(`(?<!\\d)${escaped}(?:${escapeRegExp(p.unit)}|:)`);
+    return withUnit.test(text);
+  }
+  const boundary = new RegExp(`(?<!\\d)${escaped}(?!\\d)`);
+  return boundary.test(text);
+}
+
 function collectHardcodedPlaces(
   caseId: string,
   text: string | undefined,
@@ -411,7 +434,7 @@ function collectHardcodedPlaces(
   if (!text) return;
   for (const p of parameters) {
     if (p.value.trim().length <= 1) continue; // 誤検出が多いため検査対象外
-    if (!text.includes(p.value)) continue;
+    if (!hasHardcodedMatch(text, p)) continue;
     if (text.includes(p.name)) continue; // 参照名付きの補足表記は許容
     findings.push({ caseId, parameterName: p.name, value: p.value, places: [place] });
   }

@@ -150,6 +150,47 @@ describe("findHardcodedParameterValues", () => {
     expect(findings.some((f) => f.caseId === "TCS-001" && f.parameterName === "MAX_TICKETS")).toBe(true);
     expect(findings.some((f) => f.caseId === "TCS-002")).toBe(false);
   });
+
+  it("does not conflate two different parameters that share the same literal value", () => {
+    const parameters: TestCaseParameter[] = [
+      { name: "GATE_NOPASS_TIMEOUT", value: "10" },
+      { name: "GROUP_MIN_PERSONS", value: "10" },
+    ];
+    const testCases: TestCaseSpec[] = [
+      baseCase({
+        caseId: "TCS-001",
+        steps: [{ no: 1, action: "10秒経過するとゲートが閉まる", expected: "通過できない" }],
+      }),
+    ];
+    const findings = findHardcodedParameterValues(testCases, parameters);
+    expect(findings.some((f) => f.parameterName === "GATE_NOPASS_TIMEOUT")).toBe(true);
+    expect(findings.some((f) => f.parameterName === "GROUP_MIN_PERSONS")).toBe(true);
+    expect(findings.filter((f) => f.caseId === "TCS-001").length).toBe(2);
+  });
+
+  it("does not detect '1000' as a hardcoded occurrence of the value '10'", () => {
+    const parameters: TestCaseParameter[] = [{ name: "MAX_TICKETS", value: "10" }];
+    const testCases: TestCaseSpec[] = [
+      baseCase({
+        caseId: "TCS-001",
+        steps: [{ no: 1, action: "1000円を支払う", expected: "支払える" }],
+      }),
+    ];
+    const findings = findHardcodedParameterValues(testCases, parameters);
+    expect(findings.some((f) => f.caseId === "TCS-001")).toBe(false);
+  });
+
+  it("still detects '10' within a time-like notation such as '10:00' as a regression guard", () => {
+    const parameters: TestCaseParameter[] = [{ name: "OPEN_HOUR", value: "10" }];
+    const testCases: TestCaseSpec[] = [
+      baseCase({
+        caseId: "TCS-001",
+        steps: [{ no: 1, action: "10:00に開場する", expected: "入場できる" }],
+      }),
+    ];
+    const findings = findHardcodedParameterValues(testCases, parameters);
+    expect(findings.some((f) => f.caseId === "TCS-001" && f.parameterName === "OPEN_HOUR")).toBe(true);
+  });
 });
 
 describe("findStepGranularityIssues", () => {
