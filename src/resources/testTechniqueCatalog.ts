@@ -242,6 +242,74 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
       selectionRationale: "組織で蓄積したチェックリストを踏まえて確認漏れを防ぎたい場合に選ぶ。",
       note: "チェックリスト項目はチャーターの確認観点・操作観点として generate_exploratory_charters へ渡す運用とする。",
     },
+    {
+      id: "TTK-14",
+      techniqueId: "fault-injection",
+      nameJa: "障害注入テスト",
+      basisCharacteristics: ["外部依存・障害時の振る舞いを確認したい"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-15",
+          nameJa: "注入障害パターン被覆",
+          definition: "宣言した障害注入パターン(応答なし・エラー応答・不正応答・通信断など)のうち、ケース化されたパターンの割合。",
+        },
+      ],
+      requiredInputs: ["対象の外部依存・障害点", "注入する障害パターン一覧", "期待する縮退・復旧挙動"],
+      deterministic: false,
+      selectionRationale: "外部システムや依存コンポーネントの障害時に、想定どおりの縮退・エラー通知・復旧が行われるか確認したい場合に選ぶ。",
+      note: "障害パターン自動生成エンジンは未実装。additionalCoverageTargets でパターン単位の網羅対象を宣言する運用とする。",
+    },
+    {
+      id: "TTK-15",
+      techniqueId: "long-run-test",
+      nameJa: "長時間稼働テスト",
+      basisCharacteristics: ["長時間・長期間の連続稼働で劣化が起こり得る"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-16",
+          nameJa: "劣化観点被覆",
+          definition: "宣言した長時間稼働観点(資源の単調増加・累積データ量による性能劣化・日跨ぎ処理など)のうち、ケース化された観点の割合。",
+        },
+      ],
+      requiredInputs: ["連続稼働時間・監視間隔", "監視対象の資源・指標", "日跨ぎ等の定期処理有無"],
+      deterministic: false,
+      selectionRationale: "資源の単調増加や累積データによる劣化など、短時間の実行では現れない問題を確認したい場合に選ぶ。",
+      note: "劣化観点の自動生成エンジンは未実装。additionalCoverageTargets で観点単位の網羅対象を宣言する運用とする。",
+    },
+    {
+      id: "TTK-16",
+      techniqueId: "config-matrix",
+      nameJa: "構成マトリクステスト",
+      basisCharacteristics: ["利用環境・設定値の組み合わせで差異が出る"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-17",
+          nameJa: "構成組合せ被覆",
+          definition: "宣言した環境・設定値の組み合わせ(端末・OS・ブラウザ・画面サイズ・ネットワーク条件・設定パラメータ等)のうち、ケース化された組み合わせの割合。",
+        },
+      ],
+      requiredInputs: ["対象とする環境・設定項目一覧", "各項目の水準", "優先して確認する組み合わせ"],
+      deterministic: false,
+      selectionRationale: "対応対象の端末・OS・ブラウザ・画面サイズ・設定値の組み合わせにより挙動差が出得る場合に選ぶ。",
+      note: "構成組合せの自動生成エンジンは未実装。additionalCoverageTargets で組み合わせ単位の網羅対象を宣言する運用とする。",
+    },
+    {
+      id: "TTK-17",
+      techniqueId: "regression-selection",
+      nameJa: "リグレッション選定テスト",
+      basisCharacteristics: ["変更の影響範囲を絞ってリグレッションを確認したい"],
+      coverageCriteria: [
+        {
+          id: "TTC-COV-18",
+          nameJa: "影響範囲被覆",
+          definition: "宣言した変更の影響範囲(変更箇所に依存する機能・データ・画面)のうち、ケース化された範囲の割合。",
+        },
+      ],
+      requiredInputs: ["変更箇所", "影響範囲の分析結果(依存する機能・データ)", "既存ケースからの再利用対象"],
+      deterministic: false,
+      selectionRationale: "変更差分から影響範囲を特定し、全件再実行ではなく絞り込んで確認したい場合に選ぶ。",
+      note: "影響範囲の自動生成エンジンは未実装。additionalCoverageTargets で影響範囲単位の網羅対象を宣言する運用とする。",
+    },
   ],
   selectionTable: [
     {

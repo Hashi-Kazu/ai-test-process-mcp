@@ -113,6 +113,21 @@ describe("computeCoverageRows", () => {
     expect(rows[0].ratioPercent).toBe(75);
     expect(rows[0].uncoveredTargetIds).toEqual(["BV:x:4"]);
   });
+
+  it.each([
+    ["fault-injection", "注入障害パターン被覆"],
+    ["long-run-test", "劣化観点被覆"],
+    ["config-matrix", "構成組合せ被覆"],
+    ["regression-selection", "影響範囲被覆"],
+  ] as const)("resolves criterionLabel for %s instead of 未定義", (techniqueId, expectedLabel) => {
+    const universe: TestCaseCoverageTarget[] = [
+      { id: `X:${techniqueId}:1`, techniqueId, description: "d1", origin: "宣言" },
+    ];
+    const rows = computeCoverageRows(universe, []);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].criterionLabel).toBe(expectedLabel);
+    expect(rows[0].criterionLabel).not.toBe("未定義");
+  });
 });
 
 describe("findSubjectiveExpectedResults", () => {
