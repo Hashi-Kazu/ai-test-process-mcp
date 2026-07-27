@@ -762,6 +762,89 @@ export interface TestSpecificationReviewChecklist {
   items: TestSpecificationReviewCheckItem[];
 }
 
+// --- 探索的テストチャーターカタログ ---
+export interface ExploratoryCharterArea {
+  id: string;                                // "ECA-01" 形式
+  nameJa: string;
+  summary: string;
+  checkFocusExamples: string[];              // 確認観点（何を確かめるか）1件以上
+  operationFocusExamples: string[];          // 操作観点（どう揺さぶるか）1件以上
+  relatedPerspectiveCategoryIds: string[];   // testPerspectiveCatalog の TPC-XX（カテゴリID）のみ、1件以上
+  recommendedTimeboxMinutes: number;         // 1セッションの推奨タイムボックス（分）
+  stopHeuristics: string[];                  // セッション停止の目安、1件以上
+}
+export interface ExploratoryCharterColumn {
+  id: string;                                // "ECC-01" 形式
+  nameJa: string;
+  description: string;
+}
+export interface ExploratoryCharterCatalog {
+  name: string;
+  note: string;                              // 自作パラフレーズであることの明示
+  charterAreas: ExploratoryCharterArea[];
+  tableColumns: ExploratoryCharterColumn[];  // チャーター表の固定列定義
+  allocationProcedure: string[];             // リスク軸・優先度からチャーター数/時間を配分する運用手順
+}
+
+// --- 探索的テストチャーター生成（generate_exploratory_charters） ---
+export interface ExploratoryCharterTestConditionInput {
+  id: string;
+  target: string;
+  statement: string;
+  derivedFrom: string[];             // 1件以上
+  priority?: TestConditionPriority;
+  perspectiveCategoryId?: string;
+}
+
+export interface ExploratoryCharterDefectRecord {
+  no?: string;
+  summary?: string;
+  severity?: string;
+}
+
+export interface ExploratoryCharterInput {
+  charterId: string;
+  areaId: string;
+  mission: string;
+  checkFocus: string[];               // 1件以上
+  operationFocus: string[];           // 1件以上
+  derivedFrom: string[];              // 1件以上
+  timeboxMinutes?: number;
+  assignee?: string;
+  skillLevel?: "熟練" | "中級" | "初級";
+  defectRecords?: ExploratoryCharterDefectRecord[];
+  note?: string;
+}
+
+export interface GenerateExploratoryChartersInput {
+  testConditions: ExploratoryCharterTestConditionInput[]; // 1件以上
+  risks?: TestConditionRiskInput[];
+  charters?: ExploratoryCharterInput[];      // 未指定・空なら「生成指示のみ」モード
+  areaIds?: string[];
+  sessionBudgetMinutes?: number;
+  recordingMethod?: string;
+  stopConditionDeclaration?: string[];
+  additionalSubjectiveTerms?: string[];
+  idPrefix?: string;                         // 既定 "EXC-"
+}
+
+// --- 決定的検査の結果型（generate_exploratory_charters） ---
+export interface ExploratoryCharterDuplicateId { id: string; count: number; }
+export interface ExploratoryCharterUnknownAreaRef { charterId: string; areaId: string; }
+export interface ExploratoryCharterUnresolvedRef { charterId: string; ref: string; expectedKind: string; }
+export interface ExploratoryCharterTimeboxSummary {
+  totalMinutes: number;
+  budgetMinutes?: number;
+  overBudget: boolean;
+  excessMinutes: number;
+}
+export interface ExploratoryCharterSubjectiveFinding {
+  charterId: string;
+  severity: "medium";
+  term: string;
+  detail: string;
+}
+
 // --- 曖昧語レキシコン（テスト計画書レビュー用） ---
 export type AmbiguityCategory = "ambiguous" | "weak-requirement" | "non-measurable";
 

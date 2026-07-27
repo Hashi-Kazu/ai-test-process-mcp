@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { testTechniqueCatalog } from "../src/resources/testTechniqueCatalog.js";
 
 describe("testTechniqueCatalog", () => {
-  it("has 8 selection table rows", () => {
-    expect(testTechniqueCatalog.selectionTable).toHaveLength(8);
+  it("has 10 selection table rows", () => {
+    expect(testTechniqueCatalog.selectionTable).toHaveLength(10);
   });
 
   it("has recommendedTechniqueIds that all exist in entries[].techniqueId", () => {
@@ -54,5 +54,30 @@ describe("testTechniqueCatalog", () => {
   it("does not include verbatim external standard wording", () => {
     expect(testTechniqueCatalog.note).not.toContain("JSTQB");
     expect(testTechniqueCatalog.note).not.toContain("準拠");
+  });
+
+  it("has 13 entries", () => {
+    expect(testTechniqueCatalog.entries).toHaveLength(13);
+  });
+
+  it("routes the experience-based techniques (TTK-11..13) to generate_exploratory_charters", () => {
+    const experienceBased = testTechniqueCatalog.entries.filter((e) =>
+      ["TTK-11", "TTK-12", "TTK-13"].includes(e.id)
+    );
+    expect(experienceBased).toHaveLength(3);
+    for (const entry of experienceBased) {
+      expect(entry.engineToolName).toBe("generate_exploratory_charters");
+      expect(entry.deterministic).toBe(false);
+    }
+  });
+
+  it("has unique TTC-COV-11..14 coverage criterion ids", () => {
+    const ids: string[] = [];
+    for (const entry of testTechniqueCatalog.entries) {
+      for (const c of entry.coverageCriteria) ids.push(c.id);
+    }
+    for (const id of ["TTC-COV-11", "TTC-COV-12", "TTC-COV-13", "TTC-COV-14"]) {
+      expect(ids.filter((i) => i === id)).toHaveLength(1);
+    }
   });
 });

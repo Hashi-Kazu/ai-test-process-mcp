@@ -11,6 +11,7 @@ import { testPerspectiveCatalog } from "./testPerspectiveCatalog.js";
 import { guidewordDictionary } from "./guidewordDictionary.js";
 import { riskAnalysisFrame } from "./riskAnalysisFrame.js";
 import { testTechniqueCatalog } from "./testTechniqueCatalog.js";
+import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -248,6 +249,27 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testTechniqueCatalog, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "exploratory-charter-catalog",
+    "testdesign://exploratory/charters",
+    {
+      title: "Exploratory Charter Catalog",
+      description:
+        "Paraphrased catalog of exploratory-testing charter areas with check/operation focus examples, recommended timeboxes, " +
+        "stop heuristics, and a fixed charter table column layout, used by generate_exploratory_charters.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(exploratoryCharterCatalog, null, 2),
         },
       ],
     })
