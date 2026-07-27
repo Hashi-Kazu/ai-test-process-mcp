@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { riskAnalysisFrame } from "../src/resources/riskAnalysisFrame.js";
+import { testPerspectiveCatalog } from "../src/resources/testPerspectiveCatalog.js";
 
 describe("riskAnalysisFrame", () => {
   it("has impact and likelihood axes with values 1..5 without duplicates", () => {
@@ -52,5 +53,32 @@ describe("riskAnalysisFrame", () => {
       expect(sf.id).toMatch(/^RSF-\d{2}$/);
       expect(sf.impactQuestions.length).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it("has risk categories with unique RC-xx ids and 2+ probe questions each", () => {
+    const seen = new Set<string>();
+    for (const rc of riskAnalysisFrame.riskCategories) {
+      expect(rc.id).toMatch(/^RC-\d{2}$/);
+      expect(seen.has(rc.id)).toBe(false);
+      seen.add(rc.id);
+      expect(rc.probeQuestions.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("only references existing TPC-xx category ids in riskCategories", () => {
+    const tpcIds = new Set(testPerspectiveCatalog.categories.map((c) => c.id));
+    for (const rc of riskAnalysisFrame.riskCategories) {
+      expect(rc.relatedPerspectiveCategoryIds.length).toBeGreaterThan(0);
+      for (const id of rc.relatedPerspectiveCategoryIds) {
+        expect(tpcIds.has(id)).toBe(true);
+      }
+    }
+  });
+
+  it("includes a security risk category", () => {
+    const hasSecurity = riskAnalysisFrame.riskCategories.some(
+      (rc) => rc.nameJa.includes("セキュリティ")
+    );
+    expect(hasSecurity).toBe(true);
   });
 });

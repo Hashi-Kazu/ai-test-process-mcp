@@ -91,4 +91,57 @@ export const riskAnalysisFrame: RiskAnalysisFrame = {
     { id: "R3", minScore: 6, maxScore: 14, priority: "低", guidance: "代表条件のみに絞り、工数が不足する場合は縮小候補とする。" },
     { id: "R4", minScore: 1, maxScore: 5, priority: "低", guidance: "実施対象外候補。除外してよいか関係者と要相談のうえ判断する。" },
   ],
+  riskCategories: [
+    {
+      id: "RC-01",
+      nameJa: "事業",
+      description: "売上・契約・対外的な信用など、事業の継続や評価に直接影響するリスク。",
+      probeQuestions: [
+        "この不具合が収益・請求・契約条件に誤りを生じさせないか",
+        "競合や取引先に対する優位性・信頼を損なう見え方にならないか",
+      ],
+      relatedPerspectiveCategoryIds: ["TPC-01", "TPC-13"],
+    },
+    {
+      id: "RC-02",
+      nameJa: "運用",
+      description: "稼働後の監視・障害対応・保守作業の中で顕在化する運用負荷や復旧困難性のリスク。",
+      probeQuestions: [
+        "障害発生時に原因追跡や復旧に必要な手がかり（ログ・通知）が残るか",
+        "定常運用の作業量が想定を超えて増大しないか",
+      ],
+      relatedPerspectiveCategoryIds: ["TPC-11", "TPC-14"],
+    },
+    {
+      id: "RC-03",
+      nameJa: "利用（ユーザビリティ/公平性）",
+      description: "利用者が迷わず使えるか、また特定の利用者層だけが不利益を受ける扱いになっていないかというリスク。",
+      probeQuestions: [
+        "特定の利用環境・障害特性を持つ利用者だけが機能を使えない状態にならないか",
+        "表示や操作導線の分かりにくさが誤操作や利用者間の不公平な結果につながらないか",
+      ],
+      relatedPerspectiveCategoryIds: ["TPC-16"],
+    },
+    {
+      id: "RC-04",
+      nameJa: "セキュリティ",
+      description: "認証・認可・入力検証・機密情報の取り扱いに関する脆弱性や不正利用のリスク。",
+      probeQuestions: [
+        "権限のない利用者が他人のデータや管理機能へ到達できる経路が残っていないか",
+        "入力値の検証不足によって不正なデータや操作が受理されないか",
+        "機密情報がログ・通信・画面表示のいずれかで保護されずに露出しないか",
+      ],
+      relatedPerspectiveCategoryIds: ["TPC-15"],
+    },
+    {
+      id: "RC-05",
+      nameJa: "データ／技術",
+      description: "データの整合性・移行・技術的な構成差異に起因する不整合や障害のリスク。",
+      probeQuestions: [
+        "データの生成・更新・削除の各段階で関連データとの整合が崩れないか",
+        "利用環境や設定値の組み合わせによって想定外の挙動が生じないか",
+      ],
+      relatedPerspectiveCategoryIds: ["TPC-09", "TPC-10"],
+    },
+  ],
 };
