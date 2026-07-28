@@ -40,6 +40,19 @@ export interface TestPlanRisk {
   mitigation?: string;
 }
 
+export interface TestPlanRevisionRow {
+  version?: string;
+  date?: string;
+  author?: string;
+  approver?: string;
+  changeContent?: string;
+}
+
+export interface TestPlanStaffingTraining {
+  additionalStaffing?: string;
+  trainingItems?: string[];
+}
+
 export interface TestPlanMilestone {
   name: string;
   date: string;
@@ -160,6 +173,10 @@ export interface TestPlanInput {
   glossary?: TestPlanGlossaryEntry[];
   referenceDocs?: TestPlanReferenceDoc[];
   notes?: string;
+  testingTasksFlow?: string[];
+  staffingAndTraining?: TestPlanStaffingTraining;
+  projectRisks?: TestPlanRisk[];
+  revisions?: TestPlanRevisionRow[];
 }
 
 // --- Test Design 技法 ---

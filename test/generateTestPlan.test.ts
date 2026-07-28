@@ -131,6 +131,139 @@ describe("renderTestPlan", () => {
   });
 });
 
+describe("HSKZ-103: testingTasksFlow / staffingAndTraining / projectRisks / revisions", () => {
+  it("renders testingTasksFlow as a bulleted list in section 9.1", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      testingTasksFlow: ["テスト計画レビュー", "テスト設計", "テスト実行", "完了報告"],
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 9.1 テスト作業の流れ");
+    const sectionEnd = markdown.indexOf("### 9.2", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("- テスト計画レビュー");
+    expect(section).toContain("- テスト設計");
+    expect(section).toContain("- テスト実行");
+    expect(section).toContain("- 完了報告");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("renders staffingAndTraining with both fields present in section 12", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      staffingAndTraining: {
+        additionalStaffing: "テスト実行要員を2名追加",
+        trainingItems: ["テスト管理ツールの使い方研修", "業務知識研修"],
+      },
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("## 12 要員・教育");
+    const sectionEnd = markdown.indexOf("## 13", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("テスト実行要員を2名追加");
+    expect(section).toContain("- テスト管理ツールの使い方研修");
+    expect(section).toContain("- 業務知識研修");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("renders staffingAndTraining with only additionalStaffing present", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      staffingAndTraining: { additionalStaffing: "外部ベンダーへ委託" },
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("## 12 要員・教育");
+    const sectionEnd = markdown.indexOf("## 13", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("外部ベンダーへ委託");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("renders staffingAndTraining with only trainingItems present", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      staffingAndTraining: { trainingItems: ["新人研修"] },
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("## 12 要員・教育");
+    const sectionEnd = markdown.indexOf("## 13", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("- 新人研修");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("renders projectRisks in section 14.2 consistent with the existing risk rendering format", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      projectRisks: [
+        { description: "要員の急な離脱", impact: "medium", mitigation: "バックアップ要員を確保" },
+      ],
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 14.2 プロジェクトリスク");
+    const sectionEnd = markdown.indexOf("## 15", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("- 要員の急な離脱 (影響: medium) — 対策: バックアップ要員を確保");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("renders each revisions row with omitted columns falling back to 未記入", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      revisions: [
+        {
+          version: "1.0",
+          date: "2026-01-10",
+          author: "田中",
+          approver: "佐藤",
+          changeContent: "初版作成",
+        },
+        {
+          version: "1.1",
+          date: "2026-02-01",
+          changeContent: "レビュー指摘反映",
+        },
+      ],
+    };
+    const markdown = renderTestPlan(input);
+
+    expect(markdown).toContain(
+      "| 2026-01-10 | 1.0 | 田中 | 佐藤 | 初版作成 |"
+    );
+    expect(markdown).toContain(
+      "| 2026-02-01 | 1.1 | _未記入_ | _未記入_ | レビュー指摘反映 |"
+    );
+  });
+
+  it("keeps the legacy single-row revision history output when revisions is omitted (regression)", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      approvers: ["QA Manager"],
+      revisionContent: ["初版作成"],
+    };
+    const markdown = renderTestPlan(input);
+
+    expect(markdown).toContain("| _未記入_ | _未記入_ | _未記入_ | QA Manager | 初版作成 |");
+  });
+});
+
 describe("sectionContent coverage (issue #17 / HSKZ-84)", () => {
   // renderTestPlan() 内の hasChildren 判定と同一ロジック。
   // level 1 の章に子(level 2)がある場合のみ見出しのみで本文なし＝非leaf。

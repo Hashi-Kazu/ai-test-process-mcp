@@ -412,7 +412,7 @@ export function findAmbiguousTerms(
 
   const results: TestBasisAmbiguousTermFinding[] = [];
   for (const { term, category } of terms) {
-    const regex = new RegExp(escapeRegExp(term), "g");
+    const regex = new RegExp(`(?<![不非未無])${escapeRegExp(term)}`, "g");
     let total = 0;
     const byHeading: { document: string; heading: string; count: number }[] = [];
     for (const doc of documents) {

@@ -177,6 +177,60 @@ describe("findAmbiguousTerms", () => {
     expect(byTerm.get("望ましい")?.total).toBe(1);
     expect(byTerm.get("一部概要のみ記載")?.total).toBe(1);
   });
+
+  it("excludes ambiguous terms preceded by a negation prefix", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: ["不適切な制御が行われる。", "不十分な検証を行う。"].join("\n"),
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const byTerm = new Map(findings.map((f) => [f.term, f]));
+
+    expect(byTerm.get("適切な")).toBeUndefined();
+    expect(byTerm.get("十分な")).toBeUndefined();
+  });
+
+  it("still detects ambiguous terms without a negation prefix", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: ["適切な制御が行われることを確認する。", "十分な検証を実施する。"].join("\n"),
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const byTerm = new Map(findings.map((f) => [f.term, f]));
+
+    expect(byTerm.get("適切な")?.total).toBe(1);
+    expect(byTerm.get("十分な")?.total).toBe(1);
+  });
+
+  it("excludes other negation prefixes (非/未/無) from matching ambiguous terms", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "不十分に検証されている。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const byTerm = new Map(findings.map((f) => [f.term, f]));
+
+    expect(byTerm.get("十分に")).toBeUndefined();
+  });
+
+  it("still detects ambiguous terms when a negation prefix appears elsewhere in the line", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "不具合が発生した場合、適切な処置を行う。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const byTerm = new Map(findings.map((f) => [f.term, f]));
+
+    expect(byTerm.get("適切な")?.total).toBe(1);
+  });
 });
 
 describe("extractQuantityExpressions", () => {
