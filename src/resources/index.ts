@@ -13,6 +13,7 @@ import { riskAnalysisFrame } from "./riskAnalysisFrame.js";
 import { testTechniqueCatalog } from "./testTechniqueCatalog.js";
 import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
+import { personaJourneyFrame } from "./personaJourneyFrame.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -291,6 +292,29 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(idPopulationAuditCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "persona-journey-frame",
+    "testcondition://persona/journey-frame",
+    {
+      title: "Persona / User Story Map Frame",
+      description:
+        "Paraphrased upstream usage-modeling frame: domain analysis aspects, the four persona quadrants " +
+        "(demographics / says&thinks / goals / pain points), the five user story map levels " +
+        "(persona / product goal / activity / task / user story), and the before/after/test-requirement " +
+        "derivation columns with the handover convention to extract_test_conditions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(personaJourneyFrame, null, 2),
         },
       ],
     })

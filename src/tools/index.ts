@@ -11,6 +11,7 @@ import { registerGenerateTestCasesTool } from "./generateTestCases.js";
 import { registerReviewTestSpecificationTool } from "./reviewTestSpecification.js";
 import { registerGenerateExploratoryChartersTool } from "./generateExploratoryCharters.js";
 import { registerAuditIdPopulationTool } from "./auditIdPopulation.js";
+import { registerGenerateUserStoryMapTool } from "./generateUserStoryMap.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -25,4 +26,5 @@ export function registerTools(server: McpServer): void {
   registerReviewTestSpecificationTool(server);
   registerGenerateExploratoryChartersTool(server);
   registerAuditIdPopulationTool(server);
+  registerGenerateUserStoryMapTool(server);
 }
