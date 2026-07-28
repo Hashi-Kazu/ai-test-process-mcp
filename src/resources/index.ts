@@ -15,6 +15,7 @@ import { testSizeClassificationCriteria } from "./testSizeClassificationCriteria
 import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
 import { personaJourneyFrame } from "./personaJourneyFrame.js";
+import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -338,6 +339,28 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(personaJourneyFrame, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "threshold-change-impact-criteria",
+    "testdesign://threshold/change-impact-criteria",
+    {
+      title: "Threshold Change Impact Criteria",
+      description:
+        "Judgment category catalog for reexpand_threshold_changes: stale literal values, dangling coverage target ids, " +
+        "name-reference-only impact, unit changes, removed-parameter references, unreferenced changed/added parameters, " +
+        "and unresolvable boundary/equivalence bindings, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(thresholdChangeImpactCriteria, null, 2),
         },
       ],
     })

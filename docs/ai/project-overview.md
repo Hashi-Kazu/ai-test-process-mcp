@@ -2,7 +2,7 @@
 
 ## 概要
 
-JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）、テスト仕様書レビュー `review_test_specification`（テストベースに対する要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ・ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
+JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）、テスト仕様書レビュー `review_test_specification`（テストベースに対する要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ・ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成）、閾値変更の影響再展開 `reexpand_threshold_changes`（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存・失効した網羅対象ID参照・名前参照経由の再確認要否を8区分で決定的に検出する）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
 
 ## 技術スタック
 
@@ -41,6 +41,7 @@ src/
     testTechniqueCatalog.ts     # テスト技法カタログ＋技法選定決定表（testdesign://techniques/catalog）
     testSpecificationReviewChecklist.ts # テスト仕様書レビューチェックリスト14項目（testspec://review/checklist）
     idPopulationAuditCriteria.ts # ID母集団監査の判定区分カタログ6区分（testbasis://population/audit-criteria）
+    thresholdChangeImpactCriteria.ts # 閾値変更影響の判定区分カタログ8区分（testdesign://threshold/change-impact-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -53,6 +54,7 @@ src/
     generateTestCases.ts  # generate_test_cases ツール（決定的層 + 意味的層の二層構成、renderTestCases純関数 + 再利用用 testCaseSpecShape export）
     reviewTestSpecification.ts # review_test_specification ツール（3系統×双方向カバレッジの決定的検査 + 意味的チェックリスト/改善提案、renderTestSpecificationReview純関数）
     auditIdPopulation.ts  # audit_id_population ツール（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを検出、renderIdPopulationAudit純関数）
+    reexpandThresholdChanges.ts # reexpand_threshold_changes ツール（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割を新旧再展開して影響を決定的に洗い出す、renderThresholdChangeReexpansion純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -64,6 +66,7 @@ src/
   testSpecificationAnalysis.ts # テスト仕様書の決定的検査の共有純関数群（要件ID母集合抽出・derivedFrom双方向カバレッジ・未知リスク/条件参照・ID表記ゆれ・優先度分布・前提条件プレースホルダー・手順と期待結果のバランス・宣言キーワード検査）
   derivedFromRefs.ts     # derivedFrom（要件/リスク/ステークホルダー/ガイドワードの参照種別付き構造化参照）の正規化・照合・表示整形の共有純関数群とzodスキーマ
   idPopulationAnalysis.ts # ID母集団監査の決定的検査の共有純関数群（定義済みID抽出・母集団突き合わせ・未宣言/除外/母集団未定義ID・文書別反映率・母集団間差分）
+  thresholdChangeAnalysis.ts # 閾値変更影響再展開の決定的検査の共有純関数群（パラメータ差分・境界値/同値クラスの新旧再展開・参照インデックス・失効網羅対象検出・成果物別影響判定・サマリ集計）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
@@ -93,6 +96,9 @@ test/
   idPopulationAnalysis.test.ts    # ID母集団監査決定的検査の共有純関数群の単体テスト
   auditIdPopulation.test.ts       # renderIdPopulationAudit()の単体テスト
   idPopulationAuditCriteria.test.ts # ID母集団監査判定区分カタログ構造データの単体テスト
+  thresholdChangeAnalysis.test.ts # 閾値変更影響再展開の決定的検査の共有純関数群の単体テスト
+  reexpandThresholdChanges.test.ts # renderThresholdChangeReexpansion()の単体テスト
+  thresholdChangeImpactCriteria.test.ts # 閾値変更影響判定区分カタログ構造データの単体テスト
 ```
 
 ## 拡張パターン（Test Analysis・Test Design ほか各工程の tool 追加）

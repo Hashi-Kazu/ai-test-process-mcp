@@ -12,6 +12,7 @@ import { registerReviewTestSpecificationTool } from "./reviewTestSpecification.j
 import { registerGenerateExploratoryChartersTool } from "./generateExploratoryCharters.js";
 import { registerAuditIdPopulationTool } from "./auditIdPopulation.js";
 import { registerGenerateUserStoryMapTool } from "./generateUserStoryMap.js";
+import { registerReexpandThresholdChangesTool } from "./reexpandThresholdChanges.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -27,4 +28,5 @@ export function registerTools(server: McpServer): void {
   registerGenerateExploratoryChartersTool(server);
   registerAuditIdPopulationTool(server);
   registerGenerateUserStoryMapTool(server);
+  registerReexpandThresholdChangesTool(server);
 }
