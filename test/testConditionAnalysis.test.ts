@@ -8,6 +8,7 @@ import {
   findConditionsWithoutPriority,
   findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
+  findIncompletePersonaQuadrants,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
   findUncoveredRequirementIds,
@@ -15,6 +16,7 @@ import {
   findUnresolvedDerivedFromRefs,
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
+  formatPersonaQuadrantCell,
   mapRiskScoreToBand,
   resolveSourceRefs,
 } from "../src/testConditionAnalysis.js";
@@ -453,5 +455,66 @@ describe("findConditionsWithoutSourceRefs", () => {
     };
     const result = findConditionsWithoutSourceRefs(input);
     expect(result).toEqual([{ conditionId: "TC-002", source: "testbase" }]);
+  });
+});
+
+describe("findIncompletePersonaQuadrants", () => {
+  it("returns an empty array when no personas are given", () => {
+    expect(findIncompletePersonaQuadrants()).toEqual([]);
+    expect(findIncompletePersonaQuadrants([])).toEqual([]);
+  });
+
+  it("omits personas whose four quadrants are all filled", () => {
+    expect(
+      findIncompletePersonaQuadrants([
+        {
+          id: "P-001",
+          role: "来園者",
+          demographics: ["30代"],
+          saysAndThinks: ["待ちたくない"],
+          goals: ["すぐ入場したい"],
+          painPoints: ["列が長い"],
+        },
+      ])
+    ).toEqual([]);
+  });
+
+  it("treats the legacy concerns field as a filled pain point quadrant", () => {
+    expect(
+      findIncompletePersonaQuadrants([{ id: "P-002", role: "運用担当", concerns: "障害対応が煩雑" }])
+    ).toEqual([{ personaId: "P-002", missingQuadrants: ["属性", "発言・思考", "目標"] }]);
+  });
+
+  it("lists all four quadrants for a minimal legacy persona and keeps the input order", () => {
+    expect(
+      findIncompletePersonaQuadrants([
+        { id: "P-003", role: "経理担当" },
+        { id: "P-004", role: "受付", demographics: [], goals: ["受付を早く終えたい"] },
+      ])
+    ).toEqual([
+      { personaId: "P-003", missingQuadrants: ["属性", "発言・思考", "目標", "不満点"] },
+      { personaId: "P-004", missingQuadrants: ["属性", "発言・思考", "不満点"] },
+    ]);
+  });
+
+  it("does not mutate the input", () => {
+    const personas = [{ id: "P-001", role: "来園者", goals: ["入場したい"] }];
+    const snapshot = JSON.stringify(personas);
+    findIncompletePersonaQuadrants(personas);
+    expect(JSON.stringify(personas)).toBe(snapshot);
+  });
+});
+
+describe("formatPersonaQuadrantCell", () => {
+  it("joins array values with '; '", () => {
+    expect(
+      formatPersonaQuadrantCell({ id: "P-001", role: "来園者", demographics: ["30代", "会社員"] }, "demographics")
+    ).toBe("30代; 会社員");
+  });
+
+  it("falls back to concerns for painPoints and marks other quadrants as unfilled", () => {
+    const persona = { id: "P-002", role: "運用担当", concerns: "障害対応が煩雑" };
+    expect(formatPersonaQuadrantCell(persona, "painPoints")).toBe("障害対応が煩雑");
+    expect(formatPersonaQuadrantCell(persona, "goals")).toBe("未記入(要確認)");
   });
 });

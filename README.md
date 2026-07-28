@@ -78,7 +78,7 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 
 ### Tool: `extract_test_conditions`
 
-テスト条件を「テストベース／ステークホルダー／リスク／ガイドワード」の4系統から導出させ、導出元（`source` + `derivedFrom`）を必須メタデータとして検査する。要件ID×テスト条件の双方向カバレッジマトリクス・未カバー要件ID・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・`derivedFrom` の未解決参照・未知の推奨技法IDを決定的に検出し、リスクスコア（影響度×発生可能性×変更差分重み）からの優先度導出と宣言優先度の逸脱判定を添えたMarkdownを返す。`derivedFrom` は ID 文字列に加えて `{kind, id}` 形式（`requirement` / `risk` / `stakeholder` / `guideword`）で種別を明示でき、種別ごとに対応する母集団と照合する。`analyze_requirements` の `requirementSources` を渡すか条件ごとに `sourceRefs` を指定すると、条件表に文書名・行番号の根拠位置が表示され、未特定の条件も検出される。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として出力される。
+テスト条件を「テストベース／ステークホルダー／リスク／ガイドワード」の4系統から導出させ、導出元（`source` + `derivedFrom`）を必須メタデータとして検査する。要件ID×テスト条件の双方向カバレッジマトリクス・未カバー要件ID・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・`derivedFrom` の未解決参照・未知の推奨技法IDを決定的に検出し、リスクスコア（影響度×発生可能性×変更差分重み）からの優先度導出と宣言優先度の逸脱判定を添えたMarkdownを返す。`derivedFrom` は ID 文字列に加えて `{kind, id}` 形式（`requirement` / `risk` / `stakeholder` / `guideword`）で種別を明示でき、種別ごとに対応する母集団と照合する。`analyze_requirements` の `requirementSources` を渡すか条件ごとに `sourceRefs` を指定すると、条件表に文書名・行番号の根拠位置が表示され、未特定の条件も検出される。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として出力される。`personas` は「属性（`demographics`）／発言・思考（`saysAndThinks`）／目標（`goals`）／不満点（`painPoints`）」の4象限で記述でき、ペルソナ表は4象限の列で出力され、未記入の象限があるペルソナは決定的に検出される（旧形式の `concerns` は不満点のフォールバックとして引き続き有効）。
 
 ### Resource: `testcondition://perspectives/catalog`
 
@@ -131,6 +131,18 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 ### Resource: `testbasis://population/audit-criteria`
 
 ID母集団監査の判定区分カタログ（自作パラフレーズ、未宣言ID・除外宣言ID・テストベース未定義ID・未投入文書・工程間の母集団縮退・文書単位の反映率低下の6区分）を、重大度・説明・対処指針付きの構造化データ（JSON）として公開する。`audit_id_population` が判定表の生成に利用する。
+
+### Tool: `generate_user_story_map`
+
+上流の利用状況モデリング（ドメイン分析 → ペルソナ立案 → ユーザーストーリーマップ5階層 → テスト要求導出）を支援する。二層構成: (1) 決定的層は、アクティビティ/タスク/ユーザーストーリー/テスト要求のID重複・欠番・プレフィックス不一致、階層参照（`personaIds` / `activityId` / `taskId` / `storyIds`）の未解決、ユーザーストーリーが1件も紐づかないペルソナ、テスト要求0件のペルソナ、ペルソナ4象限の未記入、テスト要求行（現状(Before)/将来(After)/テスト要求）の欠落、ドメイン分析観点の被覆状況を決定的に検査する。(2) 意味的層は、フレームの質問例に基づく深掘り指示のみを呼び出し側LLMへ返す。`activities` / `tasks` / `stories` / `testRequirements` が未指定・空の場合は「生成指示のみ」の出力になり、既存成果物を渡せばレビューとして機能する。導出したテスト要求は `source="stakeholder"` のテスト条件として `extract_test_conditions` へ引き渡す対応表付きで出力される。
+
+### Prompt: `persona_journey_interview`
+
+質問形式で上流の利用状況モデリングのコンテキストを収集するためのガイド。ドメイン分析（提供サービス・利用者/従業員の構成・業務フロー・IT化傾向・法規制・季節性）→ ペルソナ4象限（属性・発言・思考・目標・不満点）→ プロダクトゴール → アクティビティ・タスク → ユーザーストーリー → テスト要求（Before/After）を順に確認し、`generate_user_story_map` を呼び出すようアシスタントを誘導する。任意引数 `subjectName` を受け取る。
+
+### Resource: `testcondition://persona/journey-frame`
+
+上流の利用状況モデリング用フレーム（自作パラフレーズ）を構造化データ（JSON）として公開する。ドメイン分析の観点（`DOM-xx`、提供サービス・利用者/従業員構成・業務フロー・IT化傾向・法規制・季節性）、ペルソナ4象限の定義（`PQ-01`〜`PQ-04`、質問例・避ける書き方付き）、ユーザーストーリーマップの5階層（`USM-01`〜`USM-05`、粒度の目安付き）、現状(Before)/将来(After)/テスト要求の3列定義と `extract_test_conditions` への引き渡し規約を含む。`generate_user_story_map` が利用する。
 
 ## コマンド
 

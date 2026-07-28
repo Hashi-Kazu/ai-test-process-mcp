@@ -132,3 +132,4 @@ Generic Test Process の各工程で最終的に提供したい tool 群。Phase
 | Phase 3 追加 | 経験ベース技法（`generate_exploratory_charters` + `testdesign://exploratory/charters`、`exploratory_charter_interview` prompt、共有純関数 `src/exploratoryCharterAnalysis.ts`、技法カタログ `TTK-11`〜`13` / `TTS-09`〜`10`） | 完了 |
 | Phase 4 | 全工程への拡張 | 未計画 |
 | Phase 2 追加 | ID母集団監査 `audit_id_population`（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを決定的に検出、判定区分カタログ `testbasis://population/audit-criteria`、共有純関数 `src/idPopulationAnalysis.ts`。GitHub Issue #45 / Jira `HSKZ-99`） | 完了 |
+| Phase 2 追加 | 上流の利用状況モデリング（ペルソナの4象限化 = 属性/発言・思考/目標/不満点、`generate_user_story_map` + フレーム resource `testcondition://persona/journey-frame` + `persona_journey_interview` prompt、共有純関数 `src/userStoryMapAnalysis.ts`。ドメイン分析→ペルソナ立案→ユーザーストーリーマップ5階層→テスト要求(Before/After)導出を支援し、テスト要求を `extract_test_conditions` の `source="stakeholder"` 条件へ引き渡す。GitHub Issue #50 / #57 / Jira `HSKZ-104` / `HSKZ-111`） | 完了 |

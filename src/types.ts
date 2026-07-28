@@ -550,7 +550,22 @@ export interface TestConditionInput {
   priorityDeviationReason?: string;  // 優先度基準からの逸脱理由
   sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
 }
-export interface TestConditionPersonaInput { id: string; role: string; name?: string; concerns?: string; }
+/**
+ * ペルソナ入力。Demographics / Says&Thinks / Goals / PainPoint の4象限で表現する。
+ * 既存フィールド（id / role / name / concerns）は後方互換のため維持する。
+ */
+export interface TestConditionPersonaInput {
+  id: string;
+  role: string;
+  name?: string;
+  concerns?: string;          // 旧フィールド。painPoints 未指定時のフォールバックとして残す
+  demographics?: string[];    // 属性（年齢層・職業・利用環境・IT習熟度など）
+  saysAndThinks?: string[];   // 発言・思考
+  goals?: string[];           // 目標
+  painPoints?: string[];      // 不満点
+}
+/** 4象限の記入状況（未記入の象限名を列挙する） */
+export interface PersonaQuadrantCompleteness { personaId: string; missingQuadrants: string[]; }
 export interface TestConditionRiskInput {
   id: string; description: string;
   impact?: number; likelihood?: number; changeCategory?: RequirementsChangeCategory;
@@ -916,6 +931,96 @@ export interface AmbiguityLexicon {
   terms: AmbiguityTermEntry[];
   prioritySections: AmbiguityPrioritySection[];
 }
+
+// --- 上流の利用状況モデリング（persona-journey-frame / generate_user_story_map） ---
+export type PersonaQuadrantKey = "demographics" | "saysAndThinks" | "goals" | "painPoints";
+export type StoryMapLevelKey = "persona" | "productGoal" | "activity" | "task" | "userStory";
+
+export interface DomainAnalysisAspect {
+  id: string;                  // "DOM-01" 形式
+  nameJa: string;
+  summary: string;
+  questionExamples: string[];  // 自作の日本語文、1件以上
+}
+export interface PersonaQuadrantDefinition {
+  id: string;                  // "PQ-01".."PQ-04"
+  key: PersonaQuadrantKey;
+  nameJa: string;
+  definition: string;
+  questionExamples: string[];
+  badExamples: string[];       // 書いてはいけない例（曖昧・属性と目標の混同など）
+}
+export interface StoryMapLevelDefinition {
+  id: string;                  // "USM-01".."USM-05"
+  key: StoryMapLevelKey;
+  nameJa: string;
+  definition: string;
+  granularityGuidance: string;
+}
+export interface TestRequirementFrameColumn {
+  id: string;                  // "TRF-01".."TRF-03"
+  nameJa: string;              // "現状(Before)" / "将来(After)" / "テスト要求"
+  definition: string;
+}
+export interface TestRequirementFrame {
+  columns: TestRequirementFrameColumn[];
+  handoverConvention: string[]; // extract_test_conditions への引き渡し規約
+}
+export interface PersonaJourneyFrame {
+  name: string;
+  note: string;                // 自作整理であり外部文献の逐語転載・特定基準への適合を主張しない旨
+  domainAnalysisAspects: DomainAnalysisAspect[];
+  personaQuadrants: PersonaQuadrantDefinition[];
+  storyMapLevels: StoryMapLevelDefinition[];
+  testRequirementFrame: TestRequirementFrame;
+}
+
+export interface DomainAnalysisFindingInput { aspectId: string; findings: string[]; }
+export interface UserStoryMapActivityInput {
+  id: string;
+  personaIds: string[];
+  productGoal: string;
+  activity: string;
+}
+export interface UserStoryMapTaskInput { id: string; activityId: string; task: string; }
+export interface UserStoryMapStoryInput {
+  id: string;
+  taskId: string;
+  story: string;
+  personaIds?: string[];
+  priority?: TestConditionPriority;
+}
+export interface TestRequirementInput {
+  id: string;
+  personaId: string;
+  storyIds?: string[];
+  before: string;
+  after: string;
+  testRequirement: string;
+}
+export interface UserStoryMapIdPrefixes {
+  activity?: string;
+  task?: string;
+  story?: string;
+  testRequirement?: string;
+}
+export interface GenerateUserStoryMapInput {
+  subjectName?: string;
+  domainAnalysis?: DomainAnalysisFindingInput[];
+  personas: TestConditionPersonaInput[];
+  activities?: UserStoryMapActivityInput[];
+  tasks?: UserStoryMapTaskInput[];
+  stories?: UserStoryMapStoryInput[];
+  testRequirements?: TestRequirementInput[];
+  idPrefixes?: UserStoryMapIdPrefixes;
+}
+
+// 決定的検査の結果型（generate_user_story_map）
+export type StoryMapEntityKind = "activity" | "task" | "story" | "testRequirement";
+export interface StoryMapDuplicateId { kind: StoryMapEntityKind; id: string; count: number; }
+export interface StoryMapIdIssue { kind: StoryMapEntityKind; id: string; expectedPrefix: string; }
+export interface StoryMapUnresolvedRef { ownerId: string; ref: string; expectedKind: string; }
+export interface IncompleteTestRequirementRow { id: string; missingFields: string[]; }
 
 // --- ID母集団監査（audit_id_population） ---
 export interface DeclaredIdPopulation {
