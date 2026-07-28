@@ -94,6 +94,11 @@ describe("renderTestConditions", () => {
     expect(section).not.toContain("R-001");
   });
 
+  it("always notes that section 3.2 coverage is limited to the declared population, even with uncovered ids", () => {
+    const section = markdown.split("### 3.2 未カバー要件ID一覧")[1].split("### 3.3")[0];
+    expect(section).toContain("audit_id_population で検証すること");
+  });
+
   it("lists unused perspective categories under section 3.3", () => {
     const section = markdown.split("### 3.3 観点カテゴリの被覆状況")[1].split("### 3.4")[0];
     expect(section).toContain("未使用の観点カテゴリ(抜け漏れ候補):");
@@ -214,6 +219,12 @@ describe("renderTestConditions with requirementSources", () => {
       .split("### 3.10 根拠位置が未特定のテスト条件")[1]
       .split("### 3.11")[0];
     expect(section).toContain("- なし");
+  });
+
+  it("also notes the population-limited caveat under section 3.2 when there are no uncovered ids", () => {
+    const section = markdownWithSources.split("### 3.2 未カバー要件ID一覧")[1].split("### 3.3")[0];
+    expect(section).toContain("- 未カバーなし");
+    expect(section).toContain("audit_id_population で検証すること");
   });
 });
 

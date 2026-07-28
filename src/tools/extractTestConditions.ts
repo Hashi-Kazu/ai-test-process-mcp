@@ -201,6 +201,9 @@ export function renderTestConditions(
       lines.push(`- [high] ${id}: 紐づくテスト条件が0件。テスト条件を追加すること。`);
     }
   }
+  lines.push(
+    "- 注意: この判定は入力された requirementIds の母集団に対してのみ成立する。テストベース全体に対する母集団の充足性は audit_id_population で検証すること。"
+  );
   lines.push("");
 
   lines.push("### 3.3 観点カテゴリの被覆状況");

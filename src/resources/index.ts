@@ -12,6 +12,7 @@ import { guidewordDictionary } from "./guidewordDictionary.js";
 import { riskAnalysisFrame } from "./riskAnalysisFrame.js";
 import { testTechniqueCatalog } from "./testTechniqueCatalog.js";
 import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
+import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -270,6 +271,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(exploratoryCharterCatalog, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "id-population-audit-criteria",
+    "testbasis://population/audit-criteria",
+    {
+      title: "ID Population Audit Criteria",
+      description:
+        "Judgment category catalog for audit_id_population: never-declared IDs, excluded IDs, test-basis-undefined population IDs, missing documents, cross-process population shrinkage, and per-document declaration rate drops, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(idPopulationAuditCriteria, null, 2),
         },
       ],
     })
