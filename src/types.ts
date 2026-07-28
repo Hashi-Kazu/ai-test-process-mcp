@@ -1170,3 +1170,172 @@ export interface IdPopulationAuditCriteria {
   categories: IdPopulationAuditCategory[];
   notes: string[];
 }
+
+// --- 閾値変更の影響再展開（reexpand_threshold_changes） ---
+export type ThresholdParameterChangeKind =
+  | "added"
+  | "removed"
+  | "value-changed"
+  | "unit-changed"
+  | "value-unit-changed"
+  | "unchanged";
+
+export interface ThresholdParameterDiffRow {
+  name: string;
+  kind: ThresholdParameterChangeKind;
+  beforeValue?: string;
+  afterValue?: string;
+  beforeUnit?: string;
+  afterUnit?: string;
+  source?: string;
+}
+
+export type ThresholdArtifactKind = "testCondition" | "testCase";
+export type ThresholdReferenceForm = "name" | "stale-literal" | "current-literal";
+
+export interface ThresholdReferenceRow {
+  parameterName: string;
+  ownerKind: ThresholdArtifactKind;
+  ownerId: string;
+  place: string;
+  form: ThresholdReferenceForm;
+  matchedText?: string;
+}
+
+export type ThresholdReexpansionVerdict = "changed" | "added" | "removed" | "unchanged";
+
+export interface ThresholdBoundaryReexpansionRow {
+  variable: string;
+  label: string;
+  validity: "valid" | "invalid";
+  beforeValue?: number;
+  afterValue?: number;
+  beforeTargetId?: string;
+  afterTargetId?: string;
+  verdict: ThresholdReexpansionVerdict;
+}
+
+export interface ThresholdEquivalenceReexpansionRow {
+  variable: string;
+  label: string;
+  kind: "valid" | "invalid";
+  targetId: string;
+  beforeRepresentative?: string;
+  afterRepresentative?: string;
+  verdict: ThresholdReexpansionVerdict;
+}
+
+export type ThresholdBindingIssueKind =
+  | "parameter-not-found"
+  | "non-numeric-parameter"
+  | "missing-bound";
+
+export interface ThresholdBindingIssue {
+  snapshot: "before" | "after";
+  variable: string;
+  bound: "min" | "max" | "representative";
+  parameterName?: string;
+  kind: ThresholdBindingIssueKind;
+  detail: string;
+}
+
+export interface ThresholdChangeFinding {
+  categoryId: string;
+  severity: "high" | "medium" | "info";
+  parameterName?: string;
+  ownerKind?: ThresholdArtifactKind;
+  ownerId?: string;
+  places: string[];
+  detail: string;
+  suggestion?: string;
+}
+
+export type ThresholdArtifactVerdict = "要修正" | "要再確認" | "影響なし";
+
+export interface ThresholdImpactedArtifactRow {
+  ownerKind: ThresholdArtifactKind;
+  ownerId: string;
+  title: string;
+  parameterNames: string[];
+  categoryIds: string[];
+  verdict: ThresholdArtifactVerdict;
+}
+
+export interface ThresholdChangeSummary {
+  changedParameterCount: number;
+  addedParameterCount: number;
+  removedParameterCount: number;
+  reexpandedTargetCount: number;
+  staleLiteralCount: number;
+  danglingTargetRefCount: number;
+  mustFixArtifactCount: number;
+  recheckArtifactCount: number;
+  bindingIssueCount: number;
+}
+
+export interface ThresholdBoundaryBinding {
+  name: string;
+  minParameterName?: string;
+  min?: number;
+  maxParameterName?: string;
+  max?: number;
+  valueType?: BoundaryVariableType;
+  step?: number;
+}
+
+export interface ThresholdEquivalenceClassBinding {
+  label: string;
+  kind: "valid" | "invalid";
+  representativeParameterName?: string;
+  representative?: string;
+  description?: string;
+}
+
+export interface ThresholdEquivalenceBinding {
+  name: string;
+  classes: ThresholdEquivalenceClassBinding[];
+}
+
+export interface ThresholdChangeTestCondition {
+  id: string;
+  statement: string;
+  target?: string;
+}
+
+// TestCaseSpec を再利用しない理由: TestCaseSpec は generate_test_cases 用に
+// derivedFrom / techniqueId / coverageTargets 等の必須フィールドが多く、
+// 「既存成果物の一部だけを渡して差分確認する」という本ツールのユースケースを弾いてしまう。
+// そのため、参照検査・網羅対象失効検出に必要な最小限のフィールドだけを持つ緩い専用型とする。
+export interface ThresholdChangeTestCase {
+  caseId: string;
+  title: string;
+  testConditionId?: string;
+  coverageTargets?: string[];
+  preconditions?: { name: string; value: string }[];
+  steps?: { no: number; action: string; expected: string }[];
+  postconditions?: { name: string; value: string }[];
+  note?: string;
+}
+
+export interface ReexpandThresholdChangesInput {
+  parametersBefore: TestCaseParameter[];
+  parametersAfter: TestCaseParameter[];
+  testConditions?: ThresholdChangeTestCondition[];
+  testCases?: ThresholdChangeTestCase[];
+  boundaryBindings?: ThresholdBoundaryBinding[];
+  boundaryMode?: BoundaryValueMode;
+  equivalenceBindings?: ThresholdEquivalenceBinding[];
+}
+
+export interface ThresholdChangeImpactCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    description: string;
+    action: string;
+  }[];
+  notes: string[];
+}

@@ -452,7 +452,10 @@ const DIGITS_ONLY = /^\d+$/;
 // 直値埋め込みとみなす（"10" が "1000" の一部として誤検出されないようにするため）。
 // p.unit が設定されている場合は、値の直後に unit が続く表記（例 "10人"）または
 // 値の直後にコロンが続く時刻風表記（例 "10:00"）に限定してマッチさせる。
-function hasHardcodedMatch(text: string, p: TestCaseParameter): boolean {
+export function matchesParameterLiteral(
+  text: string,
+  p: Pick<TestCaseParameter, "value" | "unit">
+): boolean {
   if (!DIGITS_ONLY.test(p.value)) {
     return text.includes(p.value);
   }
@@ -475,7 +478,7 @@ function collectHardcodedPlaces(
   if (!text) return;
   for (const p of parameters) {
     if (p.value.trim().length <= 1) continue; // 誤検出が多いため検査対象外
-    if (!hasHardcodedMatch(text, p)) continue;
+    if (!matchesParameterLiteral(text, p)) continue;
     if (text.includes(p.name)) continue; // 参照名付きの補足表記は許容
     findings.push({ caseId, parameterName: p.name, value: p.value, places: [place] });
   }
