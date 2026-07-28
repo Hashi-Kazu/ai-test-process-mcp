@@ -94,7 +94,7 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 
 ### Tool: `generate_test_cases`
 
-テスト条件からテストケース仕様を導出する。二層構成: (1) 決定的層は、境界値分析・同値分割・状態遷移の各入力から網羅対象一覧を機械的に構築し、網羅率カウント・未充足の網羅対象・テスト条件×テストケーストレーサビリティ・ケースIDの重複/欠番/プレフィックス不一致・由来メタデータの未解決参照・期待結果の主観語/空欄・手順の粒度・閾値の直値埋め込みを決定的に検査する。(2) 意味的層は、テストケース本文（前提条件・手順・期待結果）の組み立てのみを呼び出し側LLMへの指示として返す。`testCases` が未指定・空の場合は「生成指示のみ」の出力になる。`derivedFrom` は ID 文字列に加えて `{kind, id}` 形式（`requirement` / `risk` / `stakeholder` / `guideword`）で種別を明示でき、`riskIds` / `personaIds` を渡すと種別ごとに対応する母集団と照合する。`requirementSources` / `testConditions[].sourceRefs` / `testCases[].sourceRefs` を渡すと、対象テスト条件表・ケース詳細・トレーサビリティ表に根拠位置（文書名・行番号）が引き継がれる。
+テスト条件からテストケース仕様を導出する。二層構成: (1) 決定的層は、境界値分析・同値分割・状態遷移の各入力から網羅対象一覧を機械的に構築し、網羅率カウント・未充足の網羅対象・テスト条件×テストケーストレーサビリティ・ケースIDの重複/欠番/プレフィックス不一致・由来メタデータの未解決参照・期待結果の主観語/空欄・手順の粒度・閾値の直値埋め込みを決定的に検査する。加えて、`testCases[].testLevel` / `externalDependencyIds` / `estimatedDurationSeconds` / `declaredTestSize`（いずれも任意）を渡すと、`testdesign://testsize/classification-criteria` の客観的基準（外部依存の有無・実行時間上限）でテストサイズを分類し、宣言サイズとの不一致・テストレベルとサイズの不整合・サイズ構成比の偏り・テストレベル間の網羅対象重複を検査する（判定入力が無い場合は「判定不可」を明示する）。(2) 意味的層は、テストケース本文（前提条件・手順・期待結果）の組み立てのみを呼び出し側LLMへの指示として返す。`testCases` が未指定・空の場合は「生成指示のみ」の出力になる。`derivedFrom` は ID 文字列に加えて `{kind, id}` 形式（`requirement` / `risk` / `stakeholder` / `guideword`）で種別を明示でき、`riskIds` / `personaIds` を渡すと種別ごとに対応する母集団と照合する。`requirementSources` / `testConditions[].sourceRefs` / `testCases[].sourceRefs` を渡すと、対象テスト条件表・ケース詳細・トレーサビリティ表に根拠位置（文書名・行番号）が引き継がれる。
 
 ### Prompt: `test_design_interview`
 
@@ -103,6 +103,10 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 ### Resource: `testdesign://techniques/catalog`
 
 テスト技法カタログ（自作パラフレーズ、境界値分析・同値分割・デシジョンテーブル・状態遷移・ペアワイズ・ユースケース/シナリオ・CRUD/データライフサイクル・競合/タイミング・探索的テスト/エラー推測/チェックリストベースドテストの13技法）と、テストベースの特徴からの技法選定決定表（10行）を構造化データ（JSON）として公開する。`generate_test_cases` / `generate_exploratory_charters` が技法推奨と網羅基準表示に利用する。
+
+### Resource: `testdesign://testsize/classification-criteria`
+
+テストサイズ分類基準（自作整理、Google Test Sizes の考え方を参考にした独自パラフレーズ）を構造化データ（JSON）として公開する。外部依存の判定軸8件（外部ホストへのネットワークアクセス・永続データストア・ファイルシステム・別プロセス起動・並行実行・実機/周辺機器・画面操作・実時間待ち）と、スモール/ミディアム/ラージの3サイズ（実行時間上限 60/300/1800秒、許容する判定軸、妥当なテストレベル、推奨構成比）を定義する。`generate_test_cases` がテストレベル配分の妥当性検査に利用する。外部基準への適合を主張するものではない。
 
 ### Tool: `review_test_specification`
 

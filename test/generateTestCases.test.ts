@@ -21,7 +21,8 @@ const HEADINGS = [
   "### 4.6 期待結果の主観語・空欄検査",
   "### 4.7 手順の粒度検査",
   "### 4.8 閾値の直値埋め込み検査",
-  "### 4.9 サマリ",
+  "### 4.9 テストレベル配分の妥当性",
+  "### 4.10 サマリ",
   "## 5. 技法選定決定表(カタログ)",
   "## 6. テストケース組み立て指示(意味的層)",
 ];
@@ -266,5 +267,115 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
     const conditionRow = markdown.split("\n").find((l) => l.startsWith("| TC-001 |"));
     expect(conditionRow).toContain("R-001");
     expect(conditionRow).not.toContain("要件:R-001");
+  });
+
+  it("renders 4.9 as not-judgeable when no test size inputs are given", () => {
+    const markdown = renderTestCases({
+      ...baseInput,
+      testCases: [
+        {
+          caseId: "TCS-001",
+          title: "下限で購入できる",
+          testConditionId: "TC-001",
+          derivedFrom: ["R-001"],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:1"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "1枚で購入する", expected: "購入できる" }],
+        },
+      ],
+    });
+    const section49 = markdown.split("### 4.9 テストレベル配分の妥当性")[1].split("### 4.10")[0];
+    expect(section49).toContain(
+      "- 判定入力(testLevel / externalDependencyIds / estimatedDurationSeconds)が未指定のため判定不可"
+    );
+    expect(section49).not.toContain("| ケースID | 宣言レベル |");
+    // 4.1〜4.8 は従来どおり
+    expect(markdown).toContain("| 技法 | 網羅基準 | 総数 | 充足 | 未充足 | 充足率 |");
+    expect(markdown).toContain("### 4.8 閾値の直値埋め込み検査");
+  });
+
+  it("renders the classification / size distribution / test level distribution tables and findings when inputs are given", () => {
+    const markdown = renderTestCases({
+      ...baseInput,
+      testCases: [
+        {
+          caseId: "TCS-001",
+          title: "下限で購入できる",
+          testConditionId: "TC-001",
+          derivedFrom: ["R-001"],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:1"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "MAX_TICKETS の下限で購入する", expected: "購入できる" }],
+          testLevel: "component-testing",
+          externalDependencyIds: [],
+          estimatedDurationSeconds: 5,
+          declaredTestSize: "small",
+        },
+        {
+          caseId: "TCS-002",
+          title: "画面から上限で購入できる",
+          testConditionId: "TC-001",
+          derivedFrom: ["R-001"],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:10"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "MAX_TICKETS の上限で購入する", expected: "購入できる" }],
+          testLevel: "system-testing",
+          externalDependencyIds: ["TSD-07"],
+          estimatedDurationSeconds: 240,
+        },
+      ],
+    });
+    const section49 = markdown.split("### 4.9 テストレベル配分の妥当性")[1].split("### 4.10")[0];
+    expect(section49).toContain(
+      "| ケースID | 宣言レベル | 該当判定軸 | 想定実行時間(秒) | 判定サイズ | 決定要因 | 宣言サイズ | 判定 |"
+    );
+    expect(section49).toContain("| サイズ | 件数 | 構成比 | 推奨範囲 | 判定 |");
+    expect(section49).toContain("| テストレベル | 件数 | 構成比 |");
+    const caseRow = section49.split("\n").find((l) => l.startsWith("| TCS-001 |"));
+    expect(caseRow).toContain("コンポーネントテスト（単体テスト）");
+    expect(caseRow).toContain("スモール");
+    expect(caseRow).toContain("一致");
+    const caseRow2 = section49.split("\n").find((l) => l.startsWith("| TCS-002 |"));
+    expect(caseRow2).toContain("TSD-07");
+    expect(caseRow2).toContain("ラージ");
+    expect(caseRow2).toContain("240");
+    expect(section49).toContain("| 未指定 | 0 | 0.0% |");
+    expect(section49).toContain("- 指摘なし");
+  });
+
+  it("adds a test level allocation instruction to section 6 when level-size-mismatch exists", () => {
+    const markdown = renderTestCases({
+      ...baseInput,
+      testCases: [
+        {
+          caseId: "TCS-001",
+          title: "下限で購入できる",
+          testConditionId: "TC-001",
+          derivedFrom: ["R-001"],
+          techniqueId: "boundary-value-analysis",
+          coverageTargets: ["BV:枚数:1"],
+          preconditions: [{ name: "state", value: "初期状態" }],
+          steps: [{ no: 1, action: "MAX_TICKETS の下限で購入する", expected: "購入できる" }],
+          testLevel: "component-testing",
+          externalDependencyIds: ["TSD-01"],
+          estimatedDurationSeconds: 30,
+        },
+      ],
+    });
+    const section49 = markdown.split("### 4.9 テストレベル配分の妥当性")[1].split("### 4.10")[0];
+    expect(section49).toContain("- [medium] TCS-001:");
+    const section6 = markdown.split("## 6. テストケース組み立て指示(意味的層)")[1];
+    expect(section6).toContain("以下のテストレベル配分を見直すこと:");
+    expect(section6).toContain("- TCS-001:");
+    expect(section6).not.toContain("追加の修正指示なし。");
+  });
+
+  it("includes テストレベル配分指摘数 in the 4.10 summary line", () => {
+    const markdown = renderTestCases(baseInput);
+    const summary = markdown.split("### 4.10 サマリ")[1].split("## 5.")[0];
+    expect(summary).toContain("テストレベル配分指摘数: 0");
   });
 });

@@ -11,6 +11,7 @@ import { testPerspectiveCatalog } from "./testPerspectiveCatalog.js";
 import { guidewordDictionary } from "./guidewordDictionary.js";
 import { riskAnalysisFrame } from "./riskAnalysisFrame.js";
 import { testTechniqueCatalog } from "./testTechniqueCatalog.js";
+import { testSizeClassificationCriteria } from "./testSizeClassificationCriteria.js";
 import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
 import { personaJourneyFrame } from "./personaJourneyFrame.js";
@@ -251,6 +252,28 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testTechniqueCatalog, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-size-classification-criteria",
+    "testdesign://testsize/classification-criteria",
+    {
+      title: "Test Size Classification Criteria",
+      description:
+        "Self-authored test size classification criteria (small / medium / large) based on objective axes: presence of external dependencies " +
+        "(network, database, file system, separate processes, concurrency, real hardware, UI, real-time waits) and per-case execution time limits, " +
+        "with the acceptable test levels and recommended share range for each size, used by generate_test_cases to check test level allocation.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testSizeClassificationCriteria, null, 2),
         },
       ],
     })

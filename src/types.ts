@@ -639,6 +639,39 @@ export interface TestTechniqueCatalog {
   selectionTable: TestTechniqueSelectionRow[];
 }
 
+// --- テストサイズ分類基準（Test size 相当・自作整理） ---
+export type TestSizeId = "small" | "medium" | "large";
+export type TestLevelId =
+  | "component-testing"
+  | "integration-testing"
+  | "system-testing"
+  | "acceptance-testing";
+
+export interface TestSizeDimension {
+  id: string;            // "TSD-01" 形式
+  nameJa: string;
+  question: string;      // 判定用の問い（自作の日本語文）
+  note?: string;
+}
+export interface TestSizeDefinition {
+  id: string;                        // "TSZ-01" 形式
+  sizeId: TestSizeId;
+  nameJa: string;
+  timeLimitSeconds: number;          // 実行時間上限（small=60 / medium=300 / large=1800）
+  allowedDimensionIds: string[];     // このサイズで許容する判定軸（small は空配列）
+  description: string;
+  primaryTestLevelIds: TestLevelId[];    // 1件以上
+  acceptableTestLevelIds: TestLevelId[]; // primary を含む、1件以上
+  recommendedSharePercent: { min: number; max: number };
+}
+export interface TestSizeClassificationCriteria {
+  name: string;
+  note: string;                      // 自作整理・パラフレーズのみであることの明示
+  dimensions: TestSizeDimension[];
+  sizes: TestSizeDefinition[];       // small → medium → large の昇順で固定
+  notes: string[];
+}
+
 // --- テストケース仕様（generate_test_cases / 将来の review_test_specification 共有） ---
 export type TestCaseVerdict = "合格" | "不合格" | "未実施" | "対象外";
 export interface TestCaseStateVariable { name: string; value: string; }   // 前提を文章1本にしない
@@ -672,6 +705,10 @@ export interface TestCaseSpec {
   result?: TestCaseResultRecord;
   note?: string;
   sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
+  testLevel?: TestLevelId;              // 宣言したテストレベル
+  externalDependencyIds?: string[];     // 該当する TSD-xx（無依存なら空配列を明示可）
+  estimatedDurationSeconds?: number;    // 想定実行時間（秒）
+  declaredTestSize?: TestSizeId;        // 呼び出し側が宣言したサイズ（判定との突き合わせ用）
 }
 
 // --- 状態遷移入力（決定的層で 0/1 スイッチ被覆を数えるための最小仕様） ---
@@ -749,6 +786,44 @@ export interface TestCaseHardcodedFinding {
   places: string[];                  // "steps[2].action" / "preconditions[0].value" 等
 }
 export interface TestCaseUnknownTargetRef { caseId: string; targetId: string; }
+
+// --- テストレベル配分の妥当性検査（generate_test_cases 4.9） ---
+export type TestSizeDecidingFactor = "dependency" | "duration" | "both" | "none";
+export type TestSizeFindingSeverity = "high" | "medium" | "info";
+export interface TestSizeClassificationRow {
+  caseId: string;
+  classifiedSize: TestSizeId;
+  declaredSize?: TestSizeId;
+  testLevel?: TestLevelId;
+  matchedDimensionIds: string[];        // 既知の TSD-xx のみ（入力順）
+  durationSeconds?: number;
+  decidingFactor: TestSizeDecidingFactor; // "none" は判定入力なし
+  classifiable: boolean;                // 依存・時間のいずれかが指定されていれば true
+}
+export interface TestSizeDistributionRow {
+  sizeId: TestSizeId;
+  count: number;
+  sharePercent: number;                 // 小数第1位まで（分母0なら0）
+  recommendedSharePercent: { min: number; max: number };
+  verdict: "within" | "below" | "above";
+}
+export interface TestLevelDistributionRow {
+  testLevel: TestLevelId | "未指定";
+  count: number;
+  sharePercent: number;
+}
+export interface TestLevelAllocationFinding {
+  caseId: string;
+  kind:
+    | "missing-classification-input"   // 依存・時間の双方が未指定
+    | "unknown-dimension"              // TSD-xx に存在しない依存ID
+    | "size-declaration-mismatch"      // declaredTestSize ≠ classifiedSize
+    | "level-size-mismatch"            // testLevel が acceptableTestLevelIds に無い
+    | "missing-test-level"             // testLevel 未指定
+    | "cross-level-duplicate";         // 同一網羅対象が複数レベルで重複
+  severity: TestSizeFindingSeverity;
+  detail: string;
+}
 
 // --- テスト仕様書レビュー（review_test_specification） ---
 export interface ReviewTestSpecificationInput {
