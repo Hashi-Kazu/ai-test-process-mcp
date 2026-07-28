@@ -65,6 +65,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 | `analyze_requirements` | 要件分析・品質特性抽出・曖昧さ検出 | 完了 |
 | `extract_test_conditions` | テストベースからのテスト条件導出（4系統からの導出・双方向カバレッジ/観点未使用/ID重複欠番/優先度未設定の決定的検査 + 観点カタログ・ガイドワード辞書・リスク分析フレームによる意味的洗い出し指示） | 完了 |
 | `review_test_basis` | テストベース（要件・仕様）のレビュー（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現の決定的検査 + 意味的チェックリスト/質問状/改善提案の二層構成） | 完了 |
+| `audit_id_population` | テストベース定義済みID全量×各ツール呼び出しの宣言母集団の突き合わせ（未宣言ID/除外宣言ID/母集団未定義ID/文書別反映率/未投入文書/母集団間の縮退の決定的検査 + 判定区分カタログ `testbasis://population/audit-criteria`） | 完了（GitHub Issue #45 / Jira `HSKZ-99`） |
 
 ### Phase 3: Test Design
 
@@ -130,3 +131,4 @@ Generic Test Process の各工程で最終的に提供したい tool 群。Phase
 | Phase 3 残り | Test Design（`review_test_specification` + テスト仕様書レビューチェックリスト resource `testspec://review/checklist`、共有純関数 `src/testSpecificationAnalysis.ts`） | 完了 |
 | Phase 3 追加 | 経験ベース技法（`generate_exploratory_charters` + `testdesign://exploratory/charters`、`exploratory_charter_interview` prompt、共有純関数 `src/exploratoryCharterAnalysis.ts`、技法カタログ `TTK-11`〜`13` / `TTS-09`〜`10`） | 完了 |
 | Phase 4 | 全工程への拡張 | 未計画 |
+| Phase 2 追加 | ID母集団監査 `audit_id_population`（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを決定的に検出、判定区分カタログ `testbasis://population/audit-criteria`、共有純関数 `src/idPopulationAnalysis.ts`。GitHub Issue #45 / Jira `HSKZ-99`） | 完了 |

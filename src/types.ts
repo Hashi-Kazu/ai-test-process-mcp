@@ -899,3 +899,77 @@ export interface AmbiguityLexicon {
   terms: AmbiguityTermEntry[];
   prioritySections: AmbiguityPrioritySection[];
 }
+
+// --- ID母集団監査（audit_id_population） ---
+export interface DeclaredIdPopulation {
+  toolName: string; // 例: "extract_test_conditions"
+  label?: string; // 例: "V04 テスト分析 requirementIds"
+  ids: string[];
+}
+export interface IdPopulationExclusion {
+  id: string;
+  reason: string;
+}
+
+export interface AuditIdPopulationInput {
+  documents: TestBasisDocument[];
+  declaredPopulations: DeclaredIdPopulation[];
+  exclusions?: IdPopulationExclusion[];
+  expectedDocumentNames?: string[];
+  idPatterns?: string[];
+}
+
+export interface DefinedIdEntry {
+  id: string;
+  document: string;
+  lineIndex: number;
+  heading: string;
+}
+export interface IdPopulationRow {
+  id: string;
+  document: string;
+  lineIndex: number;
+  heading: string;
+  declaredIn: string[]; // 含まれていた母集団のラベル（入力順）
+  status: "declared" | "excluded" | "never-declared";
+  exclusionReason?: string;
+}
+export interface UndefinedPopulationId {
+  id: string;
+  populations: string[];
+}
+export interface DocumentPopulationStat {
+  document: string;
+  definedCount: number;
+  declaredCount: number;
+  declarationRate: number; // 0..100、小数第1位で丸め
+  neverDeclaredIds: string[];
+}
+export interface PopulationDiffRow {
+  population: string;
+  idCount: number;
+  missingIds: string[]; // 最大母集団に対する欠落
+}
+export interface IdPopulationSummary {
+  definedTotal: number;
+  declaredTotal: number;
+  excludedTotal: number;
+  neverDeclaredTotal: number;
+  declarationRate: number;
+  undefinedPopulationIdTotal: number;
+  missingDocumentTotal: number;
+}
+
+export interface IdPopulationAuditCategory {
+  id: string;
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  description: string;
+  action: string;
+}
+export interface IdPopulationAuditCriteria {
+  name: string;
+  summary: string;
+  categories: IdPopulationAuditCategory[];
+  notes: string[];
+}

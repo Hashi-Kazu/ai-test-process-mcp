@@ -40,6 +40,7 @@ src/
     riskAnalysisFrame.ts        # リスク分析フレーム（testcondition://risk/frame）
     testTechniqueCatalog.ts     # テスト技法カタログ＋技法選定決定表（testdesign://techniques/catalog）
     testSpecificationReviewChecklist.ts # テスト仕様書レビューチェックリスト14項目（testspec://review/checklist）
+    idPopulationAuditCriteria.ts # ID母集団監査の判定区分カタログ6区分（testbasis://population/audit-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -51,6 +52,7 @@ src/
     extractTestConditions.ts # extract_test_conditions ツール（4系統からのテスト条件導出・双方向カバレッジ検査、renderTestConditions純関数）
     generateTestCases.ts  # generate_test_cases ツール（決定的層 + 意味的層の二層構成、renderTestCases純関数 + 再利用用 testCaseSpecShape export）
     reviewTestSpecification.ts # review_test_specification ツール（3系統×双方向カバレッジの決定的検査 + 意味的チェックリスト/改善提案、renderTestSpecificationReview純関数）
+    auditIdPopulation.ts  # audit_id_population ツール（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを検出、renderIdPopulationAudit純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -61,6 +63,7 @@ src/
   testCaseAnalysis.ts    # テストケースの決定的検査の共有純関数群（網羅対象ユニバース構築・網羅率カウント・トレーサビリティ・ID重複/欠番・未解決参照・主観語/空欄/手順粒度/直値埋め込み検査・技法推奨）
   testSpecificationAnalysis.ts # テスト仕様書の決定的検査の共有純関数群（要件ID母集合抽出・derivedFrom双方向カバレッジ・未知リスク/条件参照・ID表記ゆれ・優先度分布・前提条件プレースホルダー・手順と期待結果のバランス・宣言キーワード検査）
   derivedFromRefs.ts     # derivedFrom（要件/リスク/ステークホルダー/ガイドワードの参照種別付き構造化参照）の正規化・照合・表示整形の共有純関数群とzodスキーマ
+  idPopulationAnalysis.ts # ID母集団監査の決定的検査の共有純関数群（定義済みID抽出・母集団突き合わせ・未宣言/除外/母集団未定義ID・文書別反映率・母集団間差分）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
@@ -87,6 +90,9 @@ test/
   reviewTestSpecification.test.ts # renderTestSpecificationReview()の単体テスト
   testSpecificationAnalysis.test.ts # テスト仕様書決定的検査の共有純関数群の単体テスト
   testSpecificationReviewChecklist.test.ts # テスト仕様書レビューチェックリスト構造データの単体テスト
+  idPopulationAnalysis.test.ts    # ID母集団監査決定的検査の共有純関数群の単体テスト
+  auditIdPopulation.test.ts       # renderIdPopulationAudit()の単体テスト
+  idPopulationAuditCriteria.test.ts # ID母集団監査判定区分カタログ構造データの単体テスト
 ```
 
 ## 拡張パターン（Test Analysis・Test Design ほか各工程の tool 追加）
