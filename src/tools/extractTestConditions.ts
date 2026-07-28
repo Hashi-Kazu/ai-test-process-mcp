@@ -15,6 +15,9 @@ import {
   findConditionsWithoutPriority,
   findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
+  findIncompletePersonaQuadrants,
+  formatPersonaQuadrantCell,
+  personaQuadrantColumns,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
   findUncoveredRequirementIds,
@@ -104,6 +107,7 @@ export function renderTestConditions(
   const riskCategoryDistribution = buildRiskCategoryDistribution(risks ?? [], testConditions, frame);
   const unusedRiskCategories = findUnusedRiskCategories(risks ?? [], testConditions, frame);
   const unknownRiskCategoryRefs = findUnknownRiskCategoryIds(risks ?? [], testConditions, frame);
+  const incompletePersonaQuadrants = findIncompletePersonaQuadrants(personas ?? []);
 
   const known = knownTechniqueIds(catalog);
   const unknownTechniques: { conditionId: string; techniqueId: string }[] = [];
@@ -364,10 +368,27 @@ export function renderTestConditions(
   }
   lines.push("");
 
-  lines.push("### 3.11 サマリ");
+  lines.push("### 3.11 ペルソナ4象限の記入状況");
+  lines.push("");
+  if ((personas ?? []).length === 0) {
+    lines.push("- ペルソナの指定なし");
+  } else if (incompletePersonaQuadrants.length === 0) {
+    lines.push("- 未記入の象限があるペルソナ: なし");
+  } else {
+    for (const row of incompletePersonaQuadrants) {
+      lines.push(
+        `- [medium] ${escapeCell(row.personaId)}: 未記入の象限 ${escapeCell(
+          row.missingQuadrants.join(", ")
+        )}。persona_journey_interview で解像度を上げること。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.12 サマリ");
   lines.push("");
   lines.push(
-    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length}`
+    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length} / 4象限未記入ペルソナ件数: ${incompletePersonaQuadrants.length}`
   );
   lines.push("");
 
@@ -598,21 +619,27 @@ export function renderTestConditions(
   // --- 9. ステークホルダー／ペルソナ視点 ---
   lines.push("## 9. ステークホルダー／ペルソナ視点の洗い出し指示(意味的層)");
   lines.push("");
-  lines.push("| ペルソナID | 役割 | 氏名 | 懸念 | 導出済み条件ID |");
-  lines.push("| --- | --- | --- | --- | --- |");
+  lines.push("| ペルソナID | 役割 | 氏名 | 属性 | 発言・思考 | 目標 | 不満点 | 導出済み条件ID |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const p of personas ?? []) {
     const derived = testConditions
       .filter((c) => hasDerivedFromRef(c.derivedFrom, p.id, "stakeholder"))
       .map((c) => c.id);
+    const quadrantCells = personaQuadrantColumns
+      .map((column) => escapeCell(formatPersonaQuadrantCell(p, column.key)))
+      .join(" | ");
     lines.push(
-      `| ${escapeCell(p.id)} | ${escapeCell(p.role)} | ${escapeCell(p.name ?? "-")} | ${escapeCell(
-        p.concerns ?? "未記入(要確認)"
-      )} | ${escapeCell(derived.length > 0 ? derived.join(", ") : "-")} |`
+      `| ${escapeCell(p.id)} | ${escapeCell(p.role)} | ${escapeCell(
+        p.name ?? "-"
+      )} | ${quadrantCells} | ${escapeCell(derived.length > 0 ? derived.join(", ") : "-")} |`
     );
   }
   lines.push("");
   lines.push(
     "導出済み条件が無いペルソナについては、その関心事から source=stakeholder のテスト条件を追加すること。未指定のステークホルダーがいれば表に追加すること。"
+  );
+  lines.push(
+    "4象限（属性・発言・思考・目標・不満点）が未記入のペルソナは、persona_journey_interview で解像度を上げてから条件を導出すること。"
   );
   lines.push("");
 
@@ -682,11 +709,29 @@ export const extractTestConditionsInputShape = {
         id: z.string().describe("Persona id referenced by derivedFrom"),
         role: z.string().describe("Persona role"),
         name: z.string().optional().describe("Persona name"),
-        concerns: z.string().optional().describe("Known concerns of this persona"),
+        concerns: z
+          .string()
+          .optional()
+          .describe("Known concerns of this persona (legacy field; prefer painPoints)"),
+        demographics: z
+          .array(z.string())
+          .optional()
+          .describe("Demographics quadrant: age range, occupation, usage environment, IT literacy, etc."),
+        saysAndThinks: z
+          .array(z.string())
+          .optional()
+          .describe("Says & Thinks quadrant: what this persona says and thinks in the target context"),
+        goals: z.array(z.string()).optional().describe("Goals quadrant: what this persona wants to achieve"),
+        painPoints: z
+          .array(z.string())
+          .optional()
+          .describe("Pain Point quadrant: frustrations and obstacles this persona faces"),
       })
     )
     .optional()
-    .describe("Stakeholders / personas referenced by derivedFrom when source is stakeholder"),
+    .describe(
+      "Stakeholders / personas referenced by derivedFrom when source is stakeholder; described with the Demographics / Says&Thinks / Goals / PainPoint quadrants"
+    ),
   risks: z
     .array(
       z.object({

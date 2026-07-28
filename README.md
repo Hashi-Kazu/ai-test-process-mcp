@@ -78,7 +78,7 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 
 ### Tool: `extract_test_conditions`
 
-テスト条件を「テストベース／ステークホルダー／リスク／ガイドワード」の4系統から導出させ、導出元（`source` + `derivedFrom`）を必須メタデータとして検査する。要件ID×テスト条件の双方向カバレッジマトリクス・未カバー要件ID・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・`derivedFrom` の未解決参照・未知の推奨技法IDを決定的に検出し、リスクスコア（影響度×発生可能性×変更差分重み）からの優先度導出と宣言優先度の逸脱判定を添えたMarkdownを返す。`derivedFrom` は ID 文字列に加えて `{kind, id}` 形式（`requirement` / `risk` / `stakeholder` / `guideword`）で種別を明示でき、種別ごとに対応する母集団と照合する。`analyze_requirements` の `requirementSources` を渡すか条件ごとに `sourceRefs` を指定すると、条件表に文書名・行番号の根拠位置が表示され、未特定の条件も検出される。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として出力される。
+テスト条件を「テストベース／ステークホルダー／リスク／ガイドワード」の4系統から導出させ、導出元（`source` + `derivedFrom`）を必須メタデータとして検査する。要件ID×テスト条件の双方向カバレッジマトリクス・未カバー要件ID・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・`derivedFrom` の未解決参照・未知の推奨技法IDを決定的に検出し、リスクスコア（影響度×発生可能性×変更差分重み）からの優先度導出と宣言優先度の逸脱判定を添えたMarkdownを返す。`derivedFrom` は ID 文字列に加えて `{kind, id}` 形式（`requirement` / `risk` / `stakeholder` / `guideword`）で種別を明示でき、種別ごとに対応する母集団と照合する。`analyze_requirements` の `requirementSources` を渡すか条件ごとに `sourceRefs` を指定すると、条件表に文書名・行番号の根拠位置が表示され、未特定の条件も検出される。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として出力される。`personas` は「属性（`demographics`）／発言・思考（`saysAndThinks`）／目標（`goals`）／不満点（`painPoints`）」の4象限で記述でき、ペルソナ表は4象限の列で出力され、未記入の象限があるペルソナは決定的に検出される（旧形式の `concerns` は不満点のフォールバックとして引き続き有効）。
 
 ### Resource: `testcondition://perspectives/catalog`
 

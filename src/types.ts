@@ -550,7 +550,22 @@ export interface TestConditionInput {
   priorityDeviationReason?: string;  // 優先度基準からの逸脱理由
   sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
 }
-export interface TestConditionPersonaInput { id: string; role: string; name?: string; concerns?: string; }
+/**
+ * ペルソナ入力。Demographics / Says&Thinks / Goals / PainPoint の4象限で表現する。
+ * 既存フィールド（id / role / name / concerns）は後方互換のため維持する。
+ */
+export interface TestConditionPersonaInput {
+  id: string;
+  role: string;
+  name?: string;
+  concerns?: string;          // 旧フィールド。painPoints 未指定時のフォールバックとして残す
+  demographics?: string[];    // 属性（年齢層・職業・利用環境・IT習熟度など）
+  saysAndThinks?: string[];   // 発言・思考
+  goals?: string[];           // 目標
+  painPoints?: string[];      // 不満点
+}
+/** 4象限の記入状況（未記入の象限名を列挙する） */
+export interface PersonaQuadrantCompleteness { personaId: string; missingQuadrants: string[]; }
 export interface TestConditionRiskInput {
   id: string; description: string;
   impact?: number; likelihood?: number; changeCategory?: RequirementsChangeCategory;

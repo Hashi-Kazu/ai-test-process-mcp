@@ -162,12 +162,15 @@ describe("renderTestConditions", () => {
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 
-  it("renders section 3.9, 3.10 and 3.11 exactly once each", () => {
+  it("renders section 3.9, 3.10, 3.11 and 3.12 exactly once each", () => {
     expect(markdown.split("\n").filter((l) => l === "### 3.9 リスク区分の被覆状況")).toHaveLength(1);
     expect(
       markdown.split("\n").filter((l) => l === "### 3.10 根拠位置が未特定のテスト条件")
     ).toHaveLength(1);
-    expect(markdown.split("\n").filter((l) => l === "### 3.11 サマリ")).toHaveLength(1);
+    expect(
+      markdown.split("\n").filter((l) => l === "### 3.11 ペルソナ4象限の記入状況")
+    ).toHaveLength(1);
+    expect(markdown.split("\n").filter((l) => l === "### 3.12 サマリ")).toHaveLength(1);
   });
 
   it("marks source location as 未特定 and skips detection when requirementSources is not provided", () => {
@@ -267,7 +270,7 @@ describe("renderTestConditions with riskCategoryId", () => {
     expect(markdown2).toContain("「RC-99」はリスク分析フレームに存在しないリスク区分IDである。");
   });
 
-  it("includes the unused/unknown risk category counters in the 3.11 summary", () => {
+  it("includes the unused/unknown risk category counters in the 3.12 summary", () => {
     const summaryLine = markdown2
       .split("\n")
       .find((l) => l.startsWith("- 対象要件ID数:"));
@@ -299,6 +302,106 @@ describe("renderTestConditions with riskCategoryId", () => {
     const snapshot = JSON.stringify(input2);
     expect(renderTestConditions(input2)).toBe(markdown2);
     expect(JSON.stringify(input2)).toBe(snapshot);
+  });
+});
+
+describe("renderTestConditions with persona quadrants", () => {
+  const inputPersona: ExtractTestConditionsInput = {
+    requirementIds: ["R-001"],
+    personas: [
+      {
+        id: "P-001",
+        role: "来園者",
+        name: "田中",
+        demographics: ["30代", "会社員", "スマートフォン利用"],
+        saysAndThinks: ["並ぶ時間がもったいない"],
+        goals: ["入場までの待ち時間を短くしたい"],
+        painPoints: ["当日券の列が長い"],
+      },
+      { id: "P-002", role: "運用担当", concerns: "発券機の障害対応|手順が煩雑" },
+      { id: "P-003", role: "経理担当" },
+    ],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "F-001",
+        perspectiveCategoryId: "TPC-01",
+        statement: "条件文",
+        source: "stakeholder",
+        derivedFrom: ["P-001"],
+        priority: "高",
+      },
+    ],
+  };
+  const markdownPersona = renderTestConditions(inputPersona);
+
+  it("renders the 8-column persona table header with the four quadrants", () => {
+    expect(markdownPersona).toContain(
+      "| ペルソナID | 役割 | 氏名 | 属性 | 発言・思考 | 目標 | 不満点 | 導出済み条件ID |"
+    );
+  });
+
+  it("joins quadrant arrays with '; ' and shows derived condition ids", () => {
+    const row = markdownPersona.split("\n").find((l) => l.startsWith("| P-001 |"));
+    expect(row).toContain("30代; 会社員; スマートフォン利用");
+    expect(row).toContain("並ぶ時間がもったいない");
+    expect(row).toContain("入場までの待ち時間を短くしたい");
+    expect(row).toContain("当日券の列が長い");
+    expect(row).toContain("TC-001");
+  });
+
+  it("falls back to the legacy concerns field for the pain point column", () => {
+    const row = markdownPersona.split("\n").find((l) => l.startsWith("| P-002 |"));
+    expect(row).toContain("発券機の障害対応\\|手順が煩雑");
+    expect(row).toContain("未記入(要確認)");
+  });
+
+  it("lists missing quadrants per persona under section 3.11", () => {
+    const section = markdownPersona
+      .split("### 3.11 ペルソナ4象限の記入状況")[1]
+      .split("### 3.12")[0];
+    expect(section).not.toContain("P-001");
+    expect(section).toContain("[medium] P-002: 未記入の象限 属性, 発言・思考, 目標。");
+    expect(section).toContain("[medium] P-003: 未記入の象限 属性, 発言・思考, 目標, 不満点。");
+    expect(section).toContain("persona_journey_interview");
+  });
+
+  it("includes the incomplete-quadrant counter in the 3.12 summary", () => {
+    const summaryLine = markdownPersona.split("\n").find((l) => l.startsWith("- 対象要件ID数:"));
+    expect(summaryLine).toContain("4象限未記入ペルソナ件数: 2");
+  });
+
+  it("instructs to raise persona resolution in section 9", () => {
+    const section = markdownPersona.split("## 9. ステークホルダー／ペルソナ視点の洗い出し指示(意味的層)")[1];
+    expect(section).toContain(
+      "4象限（属性・発言・思考・目標・不満点）が未記入のペルソナは、persona_journey_interview で解像度を上げてから条件を導出すること。"
+    );
+  });
+
+  it("renders without throwing for legacy minimal persona input and reports no personas when omitted", () => {
+    const minimal: ExtractTestConditionsInput = {
+      requirementIds: ["R-001"],
+      testConditions: [
+        {
+          id: "TC-001",
+          target: "F-001",
+          perspectiveCategoryId: "TPC-01",
+          statement: "条件文",
+          source: "testbase",
+          derivedFrom: ["R-001"],
+          priority: "高",
+        },
+      ],
+    };
+    const md = renderTestConditions(minimal);
+    const section = md.split("### 3.11 ペルソナ4象限の記入状況")[1].split("### 3.12")[0];
+    expect(section).toContain("- ペルソナの指定なし");
+  });
+
+  it("is deterministic and does not mutate the input", () => {
+    const snapshot = JSON.stringify(inputPersona);
+    expect(renderTestConditions(inputPersona)).toBe(markdownPersona);
+    expect(JSON.stringify(inputPersona)).toBe(snapshot);
   });
 });
 

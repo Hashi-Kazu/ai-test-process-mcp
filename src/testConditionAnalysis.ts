@@ -6,6 +6,7 @@ import type {
   DerivedFromEntry,
   ExtractTestConditionsInput,
   GuidewordDictionary,
+  PersonaQuadrantCompleteness,
   RequirementCoverageRow,
   RequirementSourceRef,
   RequirementsChangeCategory,
@@ -20,6 +21,7 @@ import type {
   TestConditionRiskInput,
   TestConditionSource,
   TestConditionSourceDistributionRow,
+  TestConditionPersonaInput,
   TestConditionUnresolvedRef,
   TestPerspectiveCatalog,
   UnknownRiskCategoryRef,
@@ -161,6 +163,56 @@ export function findMissingConditionNumbers(
 
 export function findConditionsWithoutPriority(conditions: TestConditionInput[]): TestConditionInput[] {
   return conditions.filter((c) => !c.priority);
+}
+
+/** ペルソナ4象限の列定義（表の列順・未記入検査の列挙順の正本） */
+export const personaQuadrantColumns: {
+  key: "demographics" | "saysAndThinks" | "goals" | "painPoints";
+  nameJa: string;
+}[] = [
+  { key: "demographics", nameJa: "属性" },
+  { key: "saysAndThinks", nameJa: "発言・思考" },
+  { key: "goals", nameJa: "目標" },
+  { key: "painPoints", nameJa: "不満点" },
+];
+
+export const PERSONA_QUADRANT_UNFILLED = "未記入(要確認)";
+
+/**
+ * ペルソナ4象限のセル値を表示用に整形する。
+ * 配列は "; " で連結し、未記入は "未記入(要確認)" を返す。
+ * painPoints が空の場合は旧フィールド concerns をフォールバックとして使う。
+ */
+export function formatPersonaQuadrantCell(
+  persona: TestConditionPersonaInput,
+  key: "demographics" | "saysAndThinks" | "goals" | "painPoints"
+): string {
+  const values = persona[key];
+  if (values && values.length > 0) return values.join("; ");
+  if (key === "painPoints" && persona.concerns && persona.concerns.trim() !== "") {
+    return persona.concerns;
+  }
+  return PERSONA_QUADRANT_UNFILLED;
+}
+
+/**
+ * 4象限（属性 / 発言・思考 / 目標 / 不満点）のうち未指定または空配列の象限名を列挙する。
+ * painPoints は旧フィールド concerns があれば充足扱い。出力順は入力順で決定的。
+ */
+export function findIncompletePersonaQuadrants(
+  personas: TestConditionPersonaInput[] = []
+): PersonaQuadrantCompleteness[] {
+  const result: PersonaQuadrantCompleteness[] = [];
+  for (const persona of personas) {
+    const missingQuadrants: string[] = [];
+    for (const column of personaQuadrantColumns) {
+      if (formatPersonaQuadrantCell(persona, column.key) === PERSONA_QUADRANT_UNFILLED) {
+        missingQuadrants.push(column.nameJa);
+      }
+    }
+    if (missingQuadrants.length > 0) result.push({ personaId: persona.id, missingQuadrants });
+  }
+  return result;
 }
 
 export function findUnresolvedDerivedFromRefs(
