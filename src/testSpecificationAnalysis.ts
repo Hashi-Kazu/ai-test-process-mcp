@@ -129,7 +129,39 @@ export function findUnknownConditionRefs(
   return result;
 }
 
-// --- 双方向カバレッジ（リスクID） ---
+// --- 双方向カバレッジ（リスクID: derivedFrom 直接参照 + テスト条件経由の間接参照） ---
+
+/**
+ * リスクIDごとに、そのリスクをカバーするケースIDを集める。
+ * 「ケースの derivedFrom がリスクIDを直接参照」と
+ * 「リスクを derivedFrom に持つテスト条件を、ケースが testConditionId で参照」の
+ * 2系統を合算する（推移的カバレッジ: リスク → テスト条件 → テストケース）。
+ * testConditions 省略時は直接参照のみで判定する（従来動作）。
+ */
+export function buildRiskCoverage(
+  risks: TestSpecificationRisk[],
+  testConditions: TestCaseSourceCondition[] | undefined,
+  testCases: TestCaseSpec[]
+): TestSpecificationCoverageRow[] {
+  const conditionIdsByRisk = new Map<string, Set<string>>();
+  for (const condition of testConditions ?? []) {
+    for (const riskId of derivedFromIds(condition.derivedFrom)) {
+      if (!conditionIdsByRisk.has(riskId)) conditionIdsByRisk.set(riskId, new Set());
+      conditionIdsByRisk.get(riskId)!.add(condition.id);
+    }
+  }
+
+  return risks.map((risk) => {
+    const conditionIds = conditionIdsByRisk.get(risk.id);
+    const caseIds: string[] = [];
+    for (const c of testCases) {
+      const isDirect = derivedFromIds(c.derivedFrom).includes(risk.id);
+      const isIndirect = conditionIds !== undefined && conditionIds.has(c.testConditionId);
+      if (isDirect || isIndirect) caseIds.push(c.caseId);
+    }
+    return { id: risk.id, caseIds };
+  });
+}
 
 function riskPrefixOf(id: string): string {
   const idx = id.indexOf("-");

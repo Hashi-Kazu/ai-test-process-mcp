@@ -6,6 +6,7 @@ import {
   PRIORITY_CRITERIA_KEYWORDS,
   buildDerivedFromCoverage,
   buildPriorityDistribution,
+  buildRiskCoverage,
   extractAllBasisIds,
   extractRequirementIdsFromDocuments,
   findCasesWithoutPriority,
@@ -169,6 +170,70 @@ describe("findUnknownConditionRefs", () => {
     expect(
       findUnknownConditionRefs(conditions, [makeCase({ caseId: "TCS-001", testConditionId: "TC-001" })])
     ).toEqual([]);
+  });
+});
+
+describe("buildRiskCoverage", () => {
+  const risks = [
+    { id: "R-001", description: "決済失敗" },
+    { id: "R-002", description: "二重購入" },
+  ];
+
+  it("counts a case whose derivedFrom directly references the risk id", () => {
+    const cases = [makeCase({ caseId: "TCS-001", derivedFrom: ["EH-100", "R-001"] })];
+    expect(buildRiskCoverage(risks, undefined, cases)).toEqual([
+      { id: "R-001", caseIds: ["TCS-001"] },
+      { id: "R-002", caseIds: [] },
+    ]);
+  });
+
+  it("counts a case that only references a test condition derived from the risk (transitive coverage)", () => {
+    const conditions: TestCaseSourceCondition[] = [
+      { id: "TC-001", target: "決済", statement: "決済できる", derivedFrom: ["EH-100", "R-001"] },
+    ];
+    const cases = [
+      makeCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: ["EH-100"] }),
+    ];
+    expect(buildRiskCoverage(risks, conditions, cases)).toEqual([
+      { id: "R-001", caseIds: ["TCS-001"] },
+      { id: "R-002", caseIds: [] },
+    ]);
+  });
+
+  it("does not double count a case covering the same risk both directly and transitively", () => {
+    const conditions: TestCaseSourceCondition[] = [
+      { id: "TC-001", target: "決済", statement: "決済できる", derivedFrom: ["R-001"] },
+    ];
+    const cases = [
+      makeCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: ["R-001"] }),
+    ];
+    expect(buildRiskCoverage(risks, conditions, cases)).toEqual([
+      { id: "R-001", caseIds: ["TCS-001"] },
+      { id: "R-002", caseIds: [] },
+    ]);
+  });
+
+  it("ignores conditions unrelated to the risk and cases whose testConditionId does not match", () => {
+    const conditions: TestCaseSourceCondition[] = [
+      { id: "TC-001", target: "決済", statement: "決済できる", derivedFrom: ["R-001"] },
+      { id: "TC-002", target: "購入", statement: "購入できる", derivedFrom: ["EH-100"] },
+    ];
+    const cases = [makeCase({ caseId: "TCS-001", testConditionId: "TC-002", derivedFrom: ["EH-100"] })];
+    expect(buildRiskCoverage(risks, conditions, cases)).toEqual([
+      { id: "R-001", caseIds: [] },
+      { id: "R-002", caseIds: [] },
+    ]);
+  });
+
+  it("respects explicit-kind derivedFrom entries on test conditions", () => {
+    const conditions: TestCaseSourceCondition[] = [
+      { id: "TC-001", target: "決済", statement: "決済できる", derivedFrom: [{ kind: "risk", id: "R-001" }] },
+    ];
+    const cases = [makeCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: ["EH-100"] })];
+    expect(buildRiskCoverage(risks, conditions, cases)).toEqual([
+      { id: "R-001", caseIds: ["TCS-001"] },
+      { id: "R-002", caseIds: [] },
+    ]);
   });
 });
 

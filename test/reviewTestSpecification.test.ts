@@ -234,6 +234,24 @@ describe("renderTestSpecificationReview - リスクIDカバレッジ(双方向)"
     expect(withConditions).toContain("- [medium] TCS-002: 由来「R-009」が risks[].id に存在しない。");
   });
 
+  it("counts a risk as covered when only linked transitively via a test condition", () => {
+    const md = renderTestSpecificationReview(
+      baseInput({
+        testConditions: [
+          { id: "TC-001", target: "決済", statement: "決済できる", derivedFrom: ["EH-100", "R-001"] },
+        ],
+        risks: [{ id: "R-001", description: "決済失敗" }],
+        testCases: [
+          // derivedFrom は要件IDのみで、リスクは testConditionId 経由の間接カバレッジ
+          makeCase({ caseId: "TCS-001", testConditionId: "TC-001", derivedFrom: ["EH-100"] }),
+        ],
+      })
+    );
+    expect(md).toContain("| R-001 | TCS-001 | 1 |");
+    expect(md).toContain("#### 1.4.1 未カバーリスク(forward)");
+    expect(md).toContain("- 未カバーなし");
+  });
+
   it("becomes section 1.3 when testConditions is omitted", () => {
     const md = renderTestSpecificationReview(
       baseInput({

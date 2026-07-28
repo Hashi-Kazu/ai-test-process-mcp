@@ -15,6 +15,7 @@ import {
   PRIORITY_CRITERIA_KEYWORDS,
   buildDerivedFromCoverage,
   buildPriorityDistribution,
+  buildRiskCoverage,
   extractAllBasisIds,
   extractRequirementIdsFromDocuments,
   findCasesWithoutPriority,
@@ -106,7 +107,7 @@ export function renderTestSpecificationReview(
     ? findUnknownConditionRefs(testConditions, testCases)
     : [];
 
-  const riskRows = risks ? buildDerivedFromCoverage(risks.map((r) => r.id), testCases) : [];
+  const riskRows = risks ? buildRiskCoverage(risks, testConditions, testCases) : [];
   const uncoveredRiskIds = findUncoveredIds(riskRows);
   const unknownRiskRefs = risks ? findUnknownRiskRefs(risks, testCases) : [];
 
