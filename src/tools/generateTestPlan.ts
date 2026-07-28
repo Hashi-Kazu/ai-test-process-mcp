@@ -15,6 +15,7 @@ import type {
   TestPlanInput,
   TestPlanRisk,
   TestPlanTeamMember,
+  TestPlanRevisionRow,
 } from "../types.js";
 
 const TBD = "_未記入_";
@@ -155,6 +156,39 @@ export const generateTestPlanInputShape = {
     .array(z.object({ name: z.string(), description: z.string().optional() }))
     .optional(),
   notes: z.string().optional(),
+  testingTasksFlow: z
+    .array(z.string())
+    .optional()
+    .describe("(optional section 9.1 テスト作業の流れ) Ordered steps of the overall testing workflow (preparation〜execution〜completion)"),
+  staffingAndTraining: z
+    .object({
+      additionalStaffing: z.string().optional(),
+      trainingItems: z.array(z.string()).optional(),
+    })
+    .optional()
+    .describe("(optional section 12 要員・教育) Additional staffing needs and required training items"),
+  projectRisks: z
+    .array(
+      z.object({
+        description: z.string(),
+        impact: z.enum(["low", "medium", "high"]).optional(),
+        mitigation: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe("(optional section 14.2 プロジェクトリスク) Project execution risks with impact and mitigation"),
+  revisions: z
+    .array(
+      z.object({
+        version: z.string().optional(),
+        date: z.string().optional(),
+        author: z.string().optional(),
+        approver: z.string().optional(),
+        changeContent: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe("(optional revision history table) One row per revision with version/date/author/approver/change content"),
 } as const;
 
 const generateTestPlanInputSchema = z.object(generateTestPlanInputShape);
@@ -429,6 +463,23 @@ function referenceDocsContent(input: TestPlanInput, required: boolean): string {
     .join("\n");
 }
 
+function staffingAndTrainingContent(input: TestPlanInput, required: boolean): string {
+  const staffing = input.staffingAndTraining;
+  const hasAdditionalStaffing = !!(staffing?.additionalStaffing && staffing.additionalStaffing.trim());
+  const hasTrainingItems = !!(staffing?.trainingItems && staffing.trainingItems.length > 0);
+  if (!hasAdditionalStaffing && !hasTrainingItems) return requiredTbd(required);
+  const lines: string[] = [];
+  if (hasAdditionalStaffing) {
+    lines.push(`**追加要員:** ${staffing!.additionalStaffing}`);
+  }
+  if (hasTrainingItems) {
+    if (hasAdditionalStaffing) lines.push("");
+    lines.push("**教育項目:**");
+    lines.push(listOrTbd(staffing!.trainingItems));
+  }
+  return lines.join("\n");
+}
+
 function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput): string {
   const req = section.required;
   switch (section.id) {
@@ -486,6 +537,12 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
       return scheduleOrTbd(input.scheduleConstraints, req);
     case "product-risk":
       return risksOrTbd(input.risks, req);
+    case "testing-tasks-flow":
+      return listOrTbd(input.testingTasksFlow, req);
+    case "staffing-and-training-needs":
+      return staffingAndTrainingContent(input, req);
+    case "project-risk":
+      return risksOrTbd(input.projectRisks, req);
     case "approvers":
       return listOrTbd(input.approvers, req);
     case "notes":
@@ -495,19 +552,31 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
   }
 }
 
+function revisionRowLine(row: TestPlanRevisionRow): string {
+  const date = row.date ?? TBD;
+  const version = row.version ?? TBD;
+  const author = row.author ?? TBD;
+  const approver = row.approver ?? TBD;
+  const changeContent = row.changeContent ?? TBD;
+  return `| ${date} | ${version} | ${author} | ${approver} | ${changeContent} |`;
+}
+
 function revisionHistory(input: TestPlanInput): string[] {
+  const header = [
+    "## 改訂履歴",
+    "",
+    "| 改訂日 | バージョン | 作成・改訂者 | 承認者 | 改訂内容 |",
+    "| --- | --- | --- | --- | --- |",
+  ];
+  if (input.revisions && input.revisions.length > 0) {
+    return [...header, ...input.revisions.map(revisionRowLine)];
+  }
   const approver = input.approvers && input.approvers.length > 0 ? input.approvers.join("、") : TBD;
   const changeContent =
     input.revisionContent && input.revisionContent.length > 0
       ? input.revisionContent.join("；")
       : "初版作成";
-  return [
-    "## 改訂履歴",
-    "",
-    "| 改訂日 | バージョン | 作成・改訂者 | 承認者 | 改訂内容 |",
-    "| --- | --- | --- | --- | --- |",
-    `| ${TBD} | ${TBD} | ${TBD} | ${approver} | ${changeContent} |`,
-  ];
+  return [...header, `| ${TBD} | ${TBD} | ${TBD} | ${approver} | ${changeContent} |`];
 }
 
 export function renderTestPlan(
