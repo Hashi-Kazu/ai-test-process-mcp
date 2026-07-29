@@ -12,7 +12,7 @@
   ],
   "declaredPopulations": [
     {
-      "toolName": "generate_test_plan",
+      "toolName": "create_test_plan",
       "label": "工程B:テスト計画書のテスト対象",
       "ids": [
         "EH-100",

@@ -5,6 +5,9 @@
 // --documents-dir で指定したディレクトリの *.txt をファイル名昇順で読み、
 // {name, content} 配列として payload の --documents-key へ注入する。
 //
+// 同じ理由で、生成済み markdown（テスト計画書本文など）を payload JSON に埋め込まずに投入するため、
+// --text-file で指定したファイルを UTF-8 で読み、文字列として payload の --text-key へ注入する。
+//
 // 使い方:
 //   node scripts/call-mcp-tool.mjs \
 //     --tool audit_id_population \
@@ -12,6 +15,13 @@
 //     --documents-dir .work/testbase/2025 \
 //     --documents-key documents \
 //     --out sample/2025/01_ID母集団監査_2025テストベース.md
+//
+//   node scripts/call-mcp-tool.mjs \
+//     --tool review_test_plan \
+//     --payload sample/2025/payloads/review-test-plan.json \
+//     --text-file sample/2025/02_テスト計画書_初版.md \
+//     --text-key planMarkdown \
+//     --out sample/2025/03_テスト計画書レビュー結果_初版.md
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -20,6 +30,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const USAGE = `usage: node scripts/call-mcp-tool.mjs --tool <name> --payload <json> --out <path>
                                      [--documents-dir <dir>] [--documents-key <documents|testBasisDocuments>]
+                                     [--text-file <path>] [--text-key <planMarkdown|...>]
                                      [--server <path to dist/server.js>]`;
 
 function parseArgs(argv) {
@@ -66,6 +77,16 @@ async function main() {
       throw new Error(`payload already has "${key}"; remove it or omit --documents-dir`);
     }
     payload[key] = await loadDocuments(args["documents-dir"]);
+  }
+
+  if (args["text-file"]) {
+    const key = args["text-key"] ?? "planMarkdown";
+    if (payload[key] !== undefined) {
+      throw new Error(`payload already has "${key}"; remove it or omit --text-file`);
+    }
+    const text = await readFile(args["text-file"], "utf8");
+    if (text.trim() === "") throw new Error(`--text-file ${args["text-file"]} is empty`);
+    payload[key] = text;
   }
 
   const serverPath = args.server ?? "dist/server.js";
