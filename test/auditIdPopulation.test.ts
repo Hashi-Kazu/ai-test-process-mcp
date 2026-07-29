@@ -66,3 +66,33 @@ describe("renderIdPopulationAudit", () => {
     expect(markdown.endsWith("\n\n")).toBe(false);
   });
 });
+
+describe("renderIdPopulationAudit - 入力ダイジェスト", () => {
+  it("renders the input digest table in 1.1 with escaped document names", () => {
+    const section11 = markdown.split("### 1.1 投入されたテストベース文書")[1].split("### 1.2")[0];
+    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section11).toContain("| doc-A |");
+    expect(section11).toContain("| doc-B |");
+    const escaped = renderIdPopulationAudit({
+      ...input,
+      documents: [{ name: "doc|X", content: "EH-100 発券機起動" }],
+    });
+    expect(escaped).toContain("| doc\\|X |");
+    expect(section11).toContain("- doc-A");
+    expect(section11).toContain(
+      "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
+    );
+    expect(markdown).toContain("ダイジェスト指摘数: 0");
+  });
+
+  it("flags a document with no detected ids as [medium] and counts it in the 2.8 summary", () => {
+    const md = renderIdPopulationAudit({
+      ...input,
+      documents: [...documents, { name: "doc-C", content: "抜粋メモのみ" }],
+    });
+    expect(md).toContain(
+      "- [medium] doc-C: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
+    );
+    expect(md).toContain("ダイジェスト指摘数: 1");
+  });
+});

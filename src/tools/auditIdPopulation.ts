@@ -12,6 +12,11 @@ import {
   findUndefinedPopulationIds,
   summarizeIdPopulation,
 } from "../idPopulationAnalysis.js";
+import {
+  buildDocumentDigests,
+  findDocumentDigestFindings,
+  renderDocumentDigestLines,
+} from "../documentDigest.js";
 import type { AuditIdPopulationInput, IdPopulationAuditCriteria } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -34,6 +39,9 @@ export function renderIdPopulationAudit(
   const populationDiff = buildPopulationDiff(declaredPopulations);
   const summary = summarizeIdPopulation(rows, undefinedIds, missingDocuments);
 
+  const digestRows = buildDocumentDigests(documents, { idPatterns });
+  const digestFindings = findDocumentDigestFindings(digestRows);
+
   const lines: string[] = [];
   lines.push("# ID母集団監査結果");
   lines.push("");
@@ -45,6 +53,8 @@ export function renderIdPopulationAudit(
   for (const doc of documents) {
     lines.push(`- ${escapeCell(doc.name)}`);
   }
+  lines.push("");
+  for (const l of renderDocumentDigestLines(digestRows, digestFindings)) lines.push(l);
   lines.push("");
   lines.push("### 1.2 宣言された母集団");
   lines.push("");
@@ -159,7 +169,7 @@ export function renderIdPopulationAudit(
   lines.push("### 2.8 サマリ");
   lines.push("");
   lines.push(
-    `- 定義ID総数: ${summary.definedTotal} / 宣言済み: ${summary.declaredTotal} / 除外宣言: ${summary.excludedTotal} / 未宣言: ${summary.neverDeclaredTotal} / 母集団反映率: ${summary.declarationRate}% / テストベース未定義ID数: ${summary.undefinedPopulationIdTotal} / 未投入文書数: ${summary.missingDocumentTotal}`
+    `- 定義ID総数: ${summary.definedTotal} / 宣言済み: ${summary.declaredTotal} / 除外宣言: ${summary.excludedTotal} / 未宣言: ${summary.neverDeclaredTotal} / 母集団反映率: ${summary.declarationRate}% / テストベース未定義ID数: ${summary.undefinedPopulationIdTotal} / 未投入文書数: ${summary.missingDocumentTotal} / ダイジェスト指摘数: ${digestFindings.length}`
   );
   lines.push("");
 

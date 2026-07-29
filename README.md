@@ -62,7 +62,7 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 
 ### Tool: `analyze_requirements`
 
-複数のテストベース文書を横断分析し、要件ID体系・数量表現の全文書横断集約・境界値候補（`design_boundary_values` 連携）・用語定義と本文使用の照合・曖昧語検出を決定的に行い、根拠位置必須の指摘表付きMarkdownとして返す。要件ID→文書名・行範囲・引用ラベルの根拠位置（`requirementSources`）もJSON付きで出力し、`extract_test_conditions` / `generate_test_cases` にそのまま引き継げる。品質特性マッピング・ステークホルダー別影響・変更差分4区分は呼び出し側LLMへの指示として出力される。
+複数のテストベース文書を横断分析し、要件ID体系・数量表現の全文書横断集約・境界値候補（`design_boundary_values` 連携）・用語定義と本文使用の照合・曖昧語検出を決定的に行い、根拠位置必須の指摘表付きMarkdownとして返す。要件ID→文書名・行範囲・引用ラベルの根拠位置（`requirementSources`）もJSON付きで出力し、`extract_test_conditions` / `generate_test_cases` にそのまま引き継げる。品質特性マッピング・ステークホルダー別影響・変更差分4区分は呼び出し側LLMへの指示として出力される。文書全文を受け取るツール（`analyze_requirements` / `review_test_basis` / `audit_id_population` / `review_test_specification`）は、投入されたテキストの規模と検出量（文字数・行数・見出し数・検出ID数・数値トークン数）を「入力ダイジェスト」表として先頭に出力し、検出IDが0件の文書やプレフィックスの検出が極端に少ない文書を抜粋投入の疑いとして `[medium]` で指摘する。
 
 ### Prompt: `requirements_analysis_interview`
 

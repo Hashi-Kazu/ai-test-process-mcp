@@ -4,6 +4,11 @@ import { testBasisReviewChecklist } from "../resources/testBasisReviewChecklist.
 import { questionPriorityDefinitions } from "../resources/testPlanTemplate.js";
 import type { TestBasisDocument, TestBasisReviewChecklist } from "../types.js";
 import {
+  buildDocumentDigests,
+  findDocumentDigestFindings,
+  renderDocumentDigestLines,
+} from "../documentDigest.js";
+import {
   analyzePrefixes,
   extractIdOccurrences,
   extractQuantityExpressions,
@@ -39,6 +44,9 @@ export function renderTestBasisReview(
   const noBoundary = quantities.filter((q) => !q.hasBoundaryWord);
   const ambiguousTotal = ambiguousTerms.reduce((sum, t) => sum + t.total, 0);
 
+  const digestRows = buildDocumentDigests(documents, options);
+  const digestFindings = findDocumentDigestFindings(digestRows);
+
   const lines: string[] = [];
   lines.push("# テストベースレビュー結果");
   lines.push("");
@@ -51,6 +59,8 @@ export function renderTestBasisReview(
     const lineCount = doc.content.split("\n").length;
     lines.push(`- ${doc.name}(行数: ${lineCount})`);
   }
+  lines.push("");
+  for (const l of renderDocumentDigestLines(digestRows, digestFindings)) lines.push(l);
   lines.push("");
 
   lines.push("### 1.2 ID体系の集計");
@@ -131,7 +141,7 @@ export function renderTestBasisReview(
   lines.push("### 1.8 サマリ");
   lines.push("");
   lines.push(
-    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / プレフィックス逸脱数: ${issues.length} / 曖昧語出現数: ${ambiguousTotal} / 数量表現数(境界語なし): ${noBoundary.length}`
+    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / プレフィックス逸脱数: ${issues.length} / 曖昧語出現数: ${ambiguousTotal} / 数量表現数(境界語なし): ${noBoundary.length} / ダイジェスト指摘数: ${digestFindings.length}`
   );
   lines.push("");
 

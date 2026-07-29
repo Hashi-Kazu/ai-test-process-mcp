@@ -17,6 +17,11 @@ import {
   buildDeterministicFindings,
   toBoundaryValuesToolInput,
 } from "../requirementsAnalysis.js";
+import {
+  buildDocumentDigests,
+  findDocumentDigestFindings,
+  renderDocumentDigestLines,
+} from "../documentDigest.js";
 import type { AnalyzeRequirementsInput, QualityCharacteristicModel } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -64,6 +69,9 @@ export function renderRequirementsAnalysis(
   const findings = buildDeterministicFindings(documents, options);
   const requirementSources = buildRequirementSourceRefs(occurrences, documents);
 
+  const digestRows = buildDocumentDigests(documents, options);
+  const digestFindings = findDocumentDigestFindings(digestRows);
+
   const lines: string[] = [];
   lines.push("# 要件分析結果");
   lines.push("");
@@ -75,6 +83,10 @@ export function renderRequirementsAnalysis(
     const lineCount = doc.content.split("\n").length;
     lines.push(`- ${doc.name}(行数: ${lineCount})`);
   }
+  lines.push("");
+  lines.push("### 入力ダイジェスト");
+  lines.push("");
+  for (const l of renderDocumentDigestLines(digestRows, digestFindings)) lines.push(l);
   lines.push("");
   lines.push("### 開発背景");
   lines.push("");
@@ -240,7 +252,7 @@ export function renderRequirementsAnalysis(
   lines.push(
     `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / 数量矛盾候補: ${aggregates.filter(
       (a) => a.crossDocumentVariance
-    ).length} / 境界値候補: ${boundaryCandidates.length} / 用語照合数: ${termFindings.length} / 指摘件数: ${findings.length} / 根拠位置数: ${requirementSources.length}`
+    ).length} / 境界値候補: ${boundaryCandidates.length} / 用語照合数: ${termFindings.length} / 指摘件数: ${findings.length} / 根拠位置数: ${requirementSources.length} / ダイジェスト指摘数: ${digestFindings.length}`
   );
   lines.push("");
 

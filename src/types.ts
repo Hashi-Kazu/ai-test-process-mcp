@@ -302,6 +302,25 @@ export interface TestBasisQuantityExpression {
   hasBoundaryWord: boolean; // 同一マッチ内に 以上/以下/未満/超/以内 を含むか
 }
 
+// --- 入力ダイジェスト（documents 系ツール共通。抜粋投入の可視化） ---
+export interface DocumentDigestRow {
+  document: string;
+  charCount: number;       // content.length
+  lineCount: number;       // content.split("\n").length
+  headingCount: number;    // parseHeadings(content).length
+  idCount: number;         // 定義+参照の出現数
+  definedIdCount: number;  // role === "definition"
+  quantityCount: number;   // extractQuantityExpressions の件数
+  prefixCounts: { prefix: string; definitionCount: number }[]; // 出現順
+}
+
+export interface DocumentDigestFinding {
+  document: string;
+  kind: "no-id" | "sparse-prefix";
+  severity: "medium";
+  detail: string;
+}
+
 export interface TestBasisReviewCheckItem {
   id: string; // "TB-01" 形式
   severity: ReviewSeverity; // 既存 ReviewSeverity を再利用
