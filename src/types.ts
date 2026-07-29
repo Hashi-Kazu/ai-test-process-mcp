@@ -302,6 +302,25 @@ export interface TestBasisQuantityExpression {
   hasBoundaryWord: boolean; // 同一マッチ内に 以上/以下/未満/超/以内 を含むか
 }
 
+// --- 入力ダイジェスト（documents 系ツール共通。抜粋投入の可視化） ---
+export interface DocumentDigestRow {
+  document: string;
+  charCount: number;       // content.length
+  lineCount: number;       // content.split("\n").length
+  headingCount: number;    // parseHeadings(content).length
+  idCount: number;         // 定義+参照の出現数
+  definedIdCount: number;  // role === "definition"
+  quantityCount: number;   // extractQuantityExpressions の件数
+  prefixCounts: { prefix: string; definitionCount: number }[]; // 出現順
+}
+
+export interface DocumentDigestFinding {
+  document: string;
+  kind: "no-id" | "sparse-prefix";
+  severity: "medium";
+  detail: string;
+}
+
 export interface TestBasisReviewCheckItem {
   id: string; // "TB-01" 形式
   severity: ReviewSeverity; // 既存 ReviewSeverity を再利用
@@ -751,6 +770,8 @@ export interface GenerateTestCasesInput {
   additionalSubjectiveTerms?: string[];            // 主観語検査への追加語
   idPrefix?: string;                               // 既定 "TCS-"
   requirementSources?: RequirementSourceRef[];     // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
+  testBasisDocuments?: TestBasisDocument[];        // 引用文言・IDの実在照合に使うテストベース全文（未指定なら照合をスキップ）
+  idPatterns?: string[];                           // ID抽出の追加パターン（実在照合で使う）
 }
 
 // --- 決定的検査の結果型（generate_test_cases） ---
@@ -786,6 +807,26 @@ export interface TestCaseHardcodedFinding {
   places: string[];                  // "steps[2].action" / "preconditions[0].value" 等
 }
 export interface TestCaseUnknownTargetRef { caseId: string; targetId: string; }
+
+/** 宣言した網羅対象がケース本文から裏付けられないもの（generate_test_cases 4.3） */
+export interface TestCaseUnsubstantiatedTarget {
+  caseId: string;
+  targetId: string;
+  techniqueId: TestTechniqueId;
+  missing: "variable" | "value" | "class" | "transition";
+  detail: string;
+}
+
+/** 期待結果の引用文言・IDがテストベースに実在しないもの（generate_test_cases 4.8） */
+export interface TestCaseUngroundedQuotation {
+  caseId: string;
+  stepNo: number;
+  place: string;                     // "steps[2].expected" / "steps[0].action"
+  kind: "quotation" | "id";
+  text: string;                      // 抽出した原文（正規化前）
+  severity: "high";
+  detail: string;
+}
 
 // --- テストレベル配分の妥当性検査（generate_test_cases 4.9） ---
 export type TestSizeDecidingFactor = "dependency" | "duration" | "both" | "none";

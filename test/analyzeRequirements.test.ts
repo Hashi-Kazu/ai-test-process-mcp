@@ -143,3 +143,28 @@ describe("renderRequirementsAnalysis", () => {
     expect(markdown.endsWith("\n\n")).toBe(false);
   });
 });
+
+describe("renderRequirementsAnalysis - 入力ダイジェスト", () => {
+  it("renders the input digest table in section 1 and keeps the document list lines", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    const section1 = markdown.split("## 1. 対象文書")[1].split("### 開発背景")[0];
+    expect(section1).toContain("### 入力ダイジェスト");
+    expect(section1).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section1).toContain("| doc-a.md |");
+    expect(section1).toContain("| doc-b.md |");
+    expect(section1).toContain("- doc-a.md(行数: 9)");
+    expect(section1).toContain(
+      "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
+    );
+  });
+
+  it("flags a document with no detected ids as [medium] and counts it in the 2.7 summary", () => {
+    const markdown = renderRequirementsAnalysis({
+      documents: [...baseInput.documents, { name: "memo.md", content: "抜粋メモのみ" }],
+    });
+    expect(markdown).toContain(
+      "- [medium] memo.md: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
+    );
+    expect(markdown).toContain("ダイジェスト指摘数: 1");
+  });
+});

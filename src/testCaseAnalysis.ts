@@ -4,11 +4,13 @@ import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
 import { toDerivedFromRef } from "./derivedFromRefs.js";
+import { extractIdOccurrences } from "./testBasisAnalysis.js";
 import type {
   GenerateTestCasesInput,
   GuidewordDictionary,
   RequirementSourceRef,
   StateTransitionSpec,
+  TestBasisDocument,
   TestBasisSourceRef,
   TestCaseCoverageRow,
   TestCaseCoverageTarget,
@@ -20,8 +22,10 @@ import type {
   TestCaseSpec,
   TestCaseStepFinding,
   TestCaseTraceRow,
+  TestCaseUngroundedQuotation,
   TestCaseUnknownTargetRef,
   TestCaseUnresolvedRef,
+  TestCaseUnsubstantiatedTarget,
   TestTechniqueCatalog,
   TestTechniqueId,
 } from "./types.js";
@@ -515,6 +519,325 @@ export function findHardcodedParameterValues(
     }
   }
   return [...merged.values()];
+}
+
+// --- 網羅対象の裏付け検査 ---
+// 宣言された網羅対象IDが、ケース本文（タイトル・前提条件・手順・事後条件）から裏付けられるかを検査する。
+// 網羅対象IDの流用だけで網羅率が緑になる状態を防ぐのが目的。
+
+const SUBSTANTIATION_ADVICE =
+  "網羅対象IDの流用でないか確認し、該当値を実際に操作する手順へ修正するか宣言を外すこと。";
+
+/** 照合対象フィールドを1本のテキストへ連結する（決定的）。 */
+function caseBodyText(c: TestCaseSpec): string {
+  const parts: string[] = [c.title];
+  for (const v of c.preconditions) {
+    parts.push(v.name);
+    parts.push(v.value);
+  }
+  for (const s of c.steps) {
+    parts.push(s.action);
+    parts.push(s.expected);
+  }
+  for (const v of c.postconditions ?? []) {
+    parts.push(v.name);
+    parts.push(v.value);
+  }
+  return parts.join("\n");
+}
+
+/** 末尾の括弧修飾（"残数僅か(△)" → "残数僅か"）を落とす。 */
+function stripTrailingParenthetical(label: string): string {
+  return label.replace(/[(（][^()（）]*[)）]\s*$/, "").trim();
+}
+
+function equivalenceRepresentative(
+  input: GenerateTestCasesInput,
+  variable: string,
+  label: string,
+  description: string
+): string | undefined {
+  for (const v of input.equivalenceVariables ?? []) {
+    if (v.name !== variable) continue;
+    for (const cls of [...v.validClasses, ...(v.invalidClasses ?? [])]) {
+      if (cls.label === label) return cls.representative;
+    }
+  }
+  const matched = /代表値: (.+?)）/.exec(description);
+  return matched ? matched[1] : undefined;
+}
+
+export function findUnsubstantiatedCoverageTargets(
+  input: GenerateTestCasesInput,
+  universe: TestCaseCoverageTarget[] = buildCoverageUniverse(input)
+): TestCaseUnsubstantiatedTarget[] {
+  const testCases = input.testCases ?? [];
+  const byId = new Map<string, TestCaseCoverageTarget>();
+  for (const t of universe) {
+    if (!byId.has(t.id)) byId.set(t.id, t);
+  }
+  const parameters = input.parameters ?? [];
+  const transitions = input.stateTransition?.transitions ?? [];
+  const states = input.stateTransition?.states ?? [];
+
+  const findings: TestCaseUnsubstantiatedTarget[] = [];
+  for (const c of testCases) {
+    const text = caseBodyText(c);
+    for (const targetId of c.coverageTargets) {
+      const target = byId.get(targetId);
+      if (!target) continue; // 未知の網羅対象IDは 4.2 側で指摘するため対象外
+
+      if (targetId.startsWith("BV:")) {
+        const prefix = `BV:${target.origin}:`;
+        if (!targetId.startsWith(prefix)) continue;
+        const value = targetId.slice(prefix.length);
+        if (value.length === 0) continue;
+        // パラメータ名を併記していれば直値なしでも裏付けありとみなす（4.10 と同じ許容ルール）
+        const aliasHit = parameters.some((p) => p.value === value && text.includes(p.name));
+        if (aliasHit) continue;
+        const variableHit = text.includes(target.origin);
+        const valueHit = matchesParameterLiteral(text, { value });
+        if (variableHit && valueHit) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: variableHit ? "value" : "variable",
+          detail: variableHit
+            ? `値「${value}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`
+            : `変数名「${target.origin}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      if (targetId.startsWith("EP:")) {
+        const prefix = `EP:${target.origin}:`;
+        if (!targetId.startsWith(prefix)) continue;
+        const label = targetId.slice(prefix.length);
+        if (label.length === 0) continue;
+        const representative = equivalenceRepresentative(
+          input,
+          target.origin,
+          label,
+          target.description
+        );
+        const core = stripTrailingParenthetical(label);
+        const labelHit = text.includes(label);
+        const labelCoreHit = core.length > 0 && core !== label && text.includes(core);
+        const repHit =
+          representative !== undefined &&
+          representative.length > 0 &&
+          (matchesParameterLiteral(text, { value: representative }) || text.includes(representative));
+        // 分析上の変数名はケース本文に逐語で現れないことが多いため、変数名の一致は必須にしない。
+        if (labelHit || labelCoreHit || repHit) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "class",
+          detail:
+            representative !== undefined && representative.length > 0
+              ? `クラス名「${label}」も代表値「${representative}」もケース本文に現れない。${SUBSTANTIATION_ADVICE}`
+              : `クラス名「${label}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      if (targetId.startsWith("ST:")) {
+        const transition = transitions.find((t) => t.id === target.origin);
+        if (!transition) continue; // 遷移が引けない場合は検査対象外
+        const labelsFor = (stateId: string): string[] => {
+          const labels = [stateId];
+          for (const s of states) {
+            if (s.id === stateId && s.nameJa.length > 0) labels.push(s.nameJa);
+          }
+          return labels.filter((l) => l.length > 0);
+        };
+        const fromHit = labelsFor(transition.from).some((l) => text.includes(l));
+        const toHit = labelsFor(transition.to).some((l) => text.includes(l));
+        if (text.includes(target.origin) || (fromHit && toHit)) continue;
+        const missingSide = !fromHit && !toHit ? "遷移元・遷移先" : !fromHit ? "遷移元" : "遷移先";
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "transition",
+          detail: `遷移「${transition.from} --${transition.event}--> ${transition.to}」の${missingSide}がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+    }
+  }
+  return findings;
+}
+
+/** 裏付けなしと判定された網羅対象宣言を除いた複製を返す（入力は破壊しない）。 */
+export function stripUnsubstantiatedCoverageTargets(
+  testCases: TestCaseSpec[],
+  findings: TestCaseUnsubstantiatedTarget[]
+): TestCaseSpec[] {
+  const excluded = new Set(findings.map((f) => `${f.caseId} ${f.targetId}`));
+  return testCases.map((c) => ({
+    ...c,
+    coverageTargets: c.coverageTargets.filter((id) => !excluded.has(`${c.caseId} ${id}`)),
+  }));
+}
+
+// --- テストベースとの事実照合（引用文言・IDの実在確認） ---
+
+export interface UngroundedQuotationOptions {
+  /** 照合対象外にするケースIDのプレフィックス（既定 TCS-） */
+  idPrefix?: string;
+  /** 照合対象外の設計内部ID（テスト条件ID・リスクID・ペルソナID・ケースID） */
+  internalIds?: string[];
+  /** extractIdOccurrences へ渡す追加パターン */
+  idPatterns?: string[];
+  /** 引用として扱う最小長（正規化後の文字数。既定 2） */
+  minQuotationLength?: number;
+}
+
+const GROUNDING_SYMBOL_CHARS =
+  "、。，．・:：;；!！?？…「」『』“”\"'（）()【】[]{}〈〉《》／/\\|＊*＋+,.-‐–—ー~〜→←↑↓";
+const GROUNDING_SYMBOLS = new Set(Array.from(GROUNDING_SYMBOL_CHARS));
+
+/** 表記差（全角半角・大文字小文字・空白・記号）を吸収した照合用文字列へ正規化する。 */
+export function normalizeForGrounding(text: string): string {
+  const base = text.normalize("NFKC").toLowerCase();
+  let out = "";
+  for (const ch of base) {
+    if (ch === "　" || /\s/.test(ch)) continue;
+    if (GROUNDING_SYMBOLS.has(ch)) continue;
+    out += ch;
+  }
+  return out;
+}
+
+const QUOTE_PATTERN_SOURCES = [
+  "「([^」]{1,200})」",
+  "『([^』]{1,200})』",
+  "“([^”]{1,200})”",
+  '"([^"]{1,200})"',
+];
+
+/** 括弧（「」『』“”""）で囲まれた引用文言を出現順に抽出する（入れ子は扱わない）。 */
+export function extractQuotedStrings(text: string): string[] {
+  const hits: { index: number; value: string }[] = [];
+  for (const source of QUOTE_PATTERN_SOURCES) {
+    const regex = new RegExp(source, "g");
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(text)) !== null) {
+      hits.push({ index: m.index, value: m[1] });
+      if (m[0].length === 0) regex.lastIndex++;
+    }
+  }
+  return hits.sort((a, b) => a.index - b.index).map((h) => h.value);
+}
+
+export interface GroundingCandidate {
+  caseId: string;
+  stepNo: number;
+  place: string;
+  kind: "quotation" | "id";
+  text: string;
+  normalized: string;
+}
+
+/**
+ * 照合対象（期待結果の引用文言・手順中のIDトークン）を抽出する。
+ * (caseId, kind, 正規化後テキスト) で一意化し、最初に見つかった place / stepNo を残す。
+ */
+export function collectGroundingCandidates(
+  testCases: TestCaseSpec[],
+  options: UngroundedQuotationOptions = {}
+): GroundingCandidate[] {
+  const idPrefix = options.idPrefix ?? DEFAULT_TEST_CASE_ID_PREFIX;
+  const internalIds = new Set(options.internalIds ?? []);
+  const minLength = options.minQuotationLength ?? 2;
+
+  const candidates: GroundingCandidate[] = [];
+  for (const c of testCases) {
+    const fields: { place: string; stepNo: number; text: string; quotable: boolean }[] = [];
+    c.steps.forEach((s, i) => {
+      fields.push({ place: `steps[${i}].action`, stepNo: s.no, text: s.action, quotable: false });
+      fields.push({ place: `steps[${i}].expected`, stepNo: s.no, text: s.expected, quotable: true });
+    });
+
+    // 1行=1フィールドの擬似文書を組み立て、occurrence.lineIndex から place / stepNo を逆引きする。
+    const pseudoDocument: TestBasisDocument = {
+      name: c.caseId,
+      content: fields.map((f) => f.text.replace(/[\r\n]+/g, " ")).join("\n"),
+    };
+    const idsByLine = new Map<number, string[]>();
+    for (const occ of extractIdOccurrences([pseudoDocument], { idPatterns: options.idPatterns })) {
+      const list = idsByLine.get(occ.lineIndex);
+      if (list) list.push(occ.id);
+      else idsByLine.set(occ.lineIndex, [occ.id]);
+    }
+
+    const seen = new Set<string>();
+    fields.forEach((field, lineIndex) => {
+      if (field.quotable) {
+        for (const quoted of extractQuotedStrings(field.text)) {
+          const normalized = normalizeForGrounding(quoted);
+          if (normalized.length < minLength) continue;
+          const key = `quotation ${normalized}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          candidates.push({
+            caseId: c.caseId,
+            stepNo: field.stepNo,
+            place: field.place,
+            kind: "quotation",
+            text: quoted,
+            normalized,
+          });
+        }
+      }
+      for (const id of idsByLine.get(lineIndex) ?? []) {
+        if (idPrefix.length > 0 && id.startsWith(idPrefix)) continue;
+        if (internalIds.has(id)) continue;
+        if (id === c.caseId) continue;
+        const normalized = normalizeForGrounding(id);
+        if (normalized.length === 0) continue;
+        const key = `id ${normalized}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        candidates.push({
+          caseId: c.caseId,
+          stepNo: field.stepNo,
+          place: field.place,
+          kind: "id",
+          text: id,
+          normalized,
+        });
+      }
+    });
+  }
+  return candidates;
+}
+
+export function findUngroundedQuotations(
+  testCases: TestCaseSpec[],
+  testBasisDocuments: TestBasisDocument[],
+  options: UngroundedQuotationOptions = {}
+): TestCaseUngroundedQuotation[] {
+  const basis = normalizeForGrounding(testBasisDocuments.map((d) => d.content).join("\n"));
+  return collectGroundingCandidates(testCases, options)
+    .filter((candidate) => !basis.includes(candidate.normalized))
+    .map((candidate) => ({
+      caseId: candidate.caseId,
+      stepNo: candidate.stepNo,
+      place: candidate.place,
+      kind: candidate.kind,
+      text: candidate.text,
+      severity: "high" as const,
+      detail:
+        candidate.kind === "quotation"
+          ? `「${candidate.text}」がテストベース本文に見つからない。テストベースの実文言へ修正すること。`
+          : `「${candidate.text}」がテストベース本文に見つからない。テストベースの実IDへ修正すること。`,
+    }));
 }
 
 // --- 技法推奨 ---

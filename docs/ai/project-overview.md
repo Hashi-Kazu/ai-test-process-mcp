@@ -62,7 +62,8 @@ src/
     testDesignInterview.ts # test_design_interview プロンプト（buildTestDesignInterviewPrompt純関数）
   testBasisAnalysis.ts   # テストベース決定的検査の共有純関数群（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現）。analyze_requirements からも再利用予定
   testConditionAnalysis.ts # テスト条件の決定的検査の共有純関数群（カバレッジマトリクス・観点未使用・ID重複/欠番・derivedFrom未解決参照・リスクスコア算出）
-  testCaseAnalysis.ts    # テストケースの決定的検査の共有純関数群（網羅対象ユニバース構築・網羅率カウント・トレーサビリティ・ID重複/欠番・未解決参照・主観語/空欄/手順粒度/直値埋め込み検査・技法推奨）
+  testCaseAnalysis.ts    # テストケースの決定的検査の共有純関数群（網羅対象ユニバース構築・網羅率カウント・網羅対象宣言のケース本文からの裏付け検査・引用文言/IDのテストベース実在照合・トレーサビリティ・ID重複/欠番・未解決参照・主観語/空欄/手順粒度/直値埋め込み検査・技法推奨）
+  documentDigest.ts      # documents / testBasisDocuments を受け取るツール共通の入力ダイジェスト純関数群（文字数・行数・見出し数・検出ID数・数値トークン数の集計と、検出ID0件/プレフィックス過少による抜粋投入の検出）
   testSpecificationAnalysis.ts # テスト仕様書の決定的検査の共有純関数群（要件ID母集合抽出・derivedFrom双方向カバレッジ・未知リスク/条件参照・ID表記ゆれ・優先度分布・前提条件プレースホルダー・手順と期待結果のバランス・宣言キーワード検査）
   derivedFromRefs.ts     # derivedFrom（要件/リスク/ステークホルダー/ガイドワードの参照種別付き構造化参照）の正規化・照合・表示整形の共有純関数群とzodスキーマ
   idPopulationAnalysis.ts # ID母集団監査の決定的検査の共有純関数群（定義済みID抽出・母集団突き合わせ・未宣言/除外/母集団未定義ID・文書別反映率・母集団間差分）
@@ -88,6 +89,7 @@ test/
   riskAnalysisFrame.test.ts       # リスク分析フレーム構造データの単体テスト
   generateTestCases.test.ts       # renderTestCases()の単体テスト
   testCaseAnalysis.test.ts        # テストケース決定的検査の共有純関数群の単体テスト
+  documentDigest.test.ts          # 入力ダイジェスト純関数群の単体テスト
   testTechniqueCatalog.test.ts    # テスト技法カタログ構造データの単体テスト
   testDesignInterview.test.ts     # buildTestDesignInterviewPrompt()の単体テスト
   reviewTestSpecification.test.ts # renderTestSpecificationReview()の単体テスト

@@ -384,3 +384,45 @@ describe("renderTestSpecificationReview - 宣言なし・指摘なしの場合",
     expect(md).toContain("| EH\\|100 | - | 0 |");
   });
 });
+
+describe("renderTestSpecificationReview - 入力ダイジェストと事実照合", () => {
+  it("renders the input digest table in 1.1", () => {
+    const markdown = renderTestSpecificationReview(
+      baseInput({ testCases: [makeCase({ caseId: "TCS-001" })] })
+    );
+    const section11 = markdown.split("### 1.1 対象文書")[1].split("### 1.2")[0];
+    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section11).toContain("| 要求仕様書 |");
+    expect(section11).toContain(
+      "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
+    );
+    // 既存の文書一覧行は残す
+    expect(section11).toContain("- テストベース: 要求仕様書(行数: 4)");
+  });
+
+  it("lists expected-result quotations that do not exist in the test basis as [high]", () => {
+    const markdown = renderTestSpecificationReview(
+      baseInput({
+        testCases: [
+          makeCase({
+            caseId: "TCS-001",
+            steps: [
+              { no: 1, action: "購入ボタンを押す", expected: "「ご希望の枚数が確保できませんでした」と表示される" },
+            ],
+          }),
+          makeCase({
+            caseId: "TCS-002",
+            steps: [{ no: 1, action: "購入ボタンを押す", expected: "「チケットを購入できる」と表示される" }],
+          }),
+        ],
+      })
+    );
+    expect(markdown).toContain("テストベースとの事実照合");
+    const section = markdown.split("テストベースとの事実照合")[1].split("### 1.")[0];
+    expect(section).toContain("- [high] TCS-001 手順1(引用): 「ご希望の枚数が確保できませんでした」");
+    expect(section).not.toContain("TCS-002");
+    expect(section).toContain("- 照合対象: 引用 2件 / ID 0件 / 未照合 1件");
+    expect(markdown).toContain("事実照合指摘数: 1");
+    expect(markdown).toContain("ダイジェスト指摘数: 0");
+  });
+});

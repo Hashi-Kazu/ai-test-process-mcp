@@ -4,12 +4,20 @@ import { testSpecificationReviewChecklist } from "../resources/testSpecification
 import { testCaseSpecShape } from "./generateTestCases.js";
 import { derivedFromSchema } from "../derivedFromRefs.js";
 import {
+  DEFAULT_TEST_CASE_ID_PREFIX,
   buildConditionTraceability,
+  collectGroundingCandidates,
   findDuplicateCaseIds,
   findEmptyExpectedResults,
   findSubjectiveExpectedResults,
   findUncoveredConditionIds,
+  findUngroundedQuotations,
 } from "../testCaseAnalysis.js";
+import {
+  buildDocumentDigests,
+  findDocumentDigestFindings,
+  renderDocumentDigestLines,
+} from "../documentDigest.js";
 import {
   COVERAGE_CRITERIA_KEYWORDS,
   PRIORITY_CRITERIA_KEYWORDS,
@@ -122,6 +130,21 @@ export function renderTestSpecificationReview(
   const subjectiveFindings = findSubjectiveExpectedResults(testCases, additionalSubjectiveTerms);
   const coverageCriteria = findDeclarationKeywords(testSpecificationText, COVERAGE_CRITERIA_KEYWORDS);
 
+  const groundingOptions = {
+    idPrefix: input.idPrefix ?? DEFAULT_TEST_CASE_ID_PREFIX,
+    internalIds: [
+      ...(testConditions ?? []).map((c) => c.id),
+      ...(risks ?? []).map((r) => r.id),
+      ...testCases.map((c) => c.caseId),
+    ],
+    idPatterns,
+  };
+  const groundingCandidates = collectGroundingCandidates(testCases, groundingOptions);
+  const ungroundedFindings = findUngroundedQuotations(testCases, testBasisDocuments, groundingOptions);
+
+  const digestRows = buildDocumentDigests(testBasisDocuments, analysisOptions);
+  const digestFindings = findDocumentDigestFindings(digestRows);
+
   const lines: string[] = [];
   lines.push("# テスト仕様書レビュー結果");
   lines.push("");
@@ -145,6 +168,8 @@ export function renderTestSpecificationReview(
       "- [medium] testCases が未指定のため、ID抽出ベースの簡易チェックのみを実施した。構造検査を通すには testCases を渡すこと。"
     );
   }
+  lines.push("");
+  for (const l of renderDocumentDigestLines(digestRows, digestFindings)) lines.push(l);
   lines.push("");
 
   // --- 1.2 要件IDカバレッジ ---
@@ -357,19 +382,41 @@ export function renderTestSpecificationReview(
   }
   lines.push("");
 
+  // --- テストベースとの事実照合 ---
+  lines.push(`### 1.${idSyncNo + 6} テストベースとの事実照合`);
+  lines.push("");
+  if (ungroundedFindings.length === 0) {
+    lines.push("- なし");
+  } else {
+    for (const f of ungroundedFindings) {
+      const kindLabel = f.kind === "quotation" ? "引用" : "ID";
+      lines.push(
+        `- [${f.severity}] ${escapeCell(f.caseId)} 手順${f.stepNo}(${kindLabel}): ${escapeCell(f.detail)}`
+      );
+    }
+  }
+  lines.push(
+    `- 照合対象: 引用 ${groundingCandidates.filter((c) => c.kind === "quotation").length}件 / ID ${
+      groundingCandidates.filter((c) => c.kind === "id").length
+    }件 / 未照合 ${ungroundedFindings.length}件`
+  );
+  lines.push("");
+
   // --- 網羅基準の宣言有無 ---
-  lines.push(`### 1.${idSyncNo + 6} 網羅基準の宣言有無`);
+  lines.push(`### 1.${idSyncNo + 7} 網羅基準の宣言有無`);
   lines.push("");
   for (const l of declarationLines(coverageCriteria, "網羅基準")) lines.push(l);
   lines.push("");
 
   // --- サマリ ---
-  lines.push(`### 1.${idSyncNo + 7} サマリ`);
+  lines.push(`### 1.${idSyncNo + 8} サマリ`);
   lines.push("");
   lines.push(
     `- テストケース数: ${testCases.length} / 要件ID数: ${requirementIds.length} / 未カバー要件数: ${uncoveredRequirementIds.length} / 根拠不明ケース数: ${unfoundedCases.length} / 未カバーテスト条件数: ${uncoveredConditionIds.length} / 未知条件参照数: ${unknownConditionRefs.length} / 未カバーリスク数: ${uncoveredRiskIds.length} / 未知リスク参照数: ${unknownRiskRefs.length} / ID表記ゆれ数: ${idMismatches.length} / 重複ケースID数: ${duplicates.length} / 期待結果空欄数: ${emptyExpected.length} / 優先度未設定数: ${noPriority.length} / 前提条件指摘数: ${preconditionFindings.length} / 検証点不足数: ${stepBalanceFindings.length} / 主観語指摘数: ${subjectiveFindings.length} / 優先度基準宣言: ${
       priorityCriteria.found ? "あり" : "なし"
-    } / 網羅基準宣言: ${coverageCriteria.found ? "あり" : "なし"}`
+    } / 網羅基準宣言: ${
+      coverageCriteria.found ? "あり" : "なし"
+    } / 事実照合指摘数: ${ungroundedFindings.length} / ダイジェスト指摘数: ${digestFindings.length}`
   );
   lines.push("");
 
@@ -473,7 +520,8 @@ export function registerReviewTestSpecificationTool(server: McpServer): void {
       title: "Review Test Specification",
       description:
         "テストベースに対してテスト仕様書が十分かをレビュー。要件ID・テスト条件ID・リスクIDの3系統×双方向カバレッジ、ID表記ゆれ、" +
-        "ケースID重複・期待結果空欄・優先度付与・前提条件・手順と期待結果のバランス・主観語・網羅基準宣言を決定的に検査し、" +
+        "ケースID重複・期待結果空欄・優先度付与・前提条件・手順と期待結果のバランス・主観語・期待結果の引用文言/IDのテストベース実在照合・" +
+        "網羅基準宣言を決定的に検査する。投入文書の入力ダイジェスト(抜粋投入の検出)も出力し、" +
         "意味的チェックリストと改善提案を併せて返す。",
       inputSchema: reviewTestSpecificationInputShape,
     },

@@ -116,3 +116,28 @@ describe("renderTestBasisReview", () => {
     expect(first).toBe(second);
   });
 });
+
+describe("renderTestBasisReview - 入力ダイジェスト", () => {
+  it("renders the input digest table in 1.1 and keeps the document list lines", () => {
+    const markdown = renderTestBasisReview(flawedDocuments);
+    const section11 = markdown.split("### 1.1 対象文書")[1].split("### 1.2")[0];
+    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section11).toContain("| spec-a.md |");
+    expect(section11).toContain("- spec-a.md(行数: 9)");
+    expect(section11).toContain(
+      "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
+    );
+    expect(markdown).toContain("ダイジェスト指摘数: 0");
+  });
+
+  it("flags a document with no detected ids as [medium]", () => {
+    const markdown = renderTestBasisReview([
+      ...flawedDocuments,
+      { name: "memo.md", content: "抜粋メモのみ" },
+    ]);
+    expect(markdown).toContain(
+      "- [medium] memo.md: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
+    );
+    expect(markdown).toContain("ダイジェスト指摘数: 1");
+  });
+});
