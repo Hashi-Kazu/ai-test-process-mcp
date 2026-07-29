@@ -787,6 +787,15 @@ export interface TestCaseHardcodedFinding {
 }
 export interface TestCaseUnknownTargetRef { caseId: string; targetId: string; }
 
+/** 宣言した網羅対象がケース本文から裏付けられないもの（generate_test_cases 4.3） */
+export interface TestCaseUnsubstantiatedTarget {
+  caseId: string;
+  targetId: string;
+  techniqueId: TestTechniqueId;
+  missing: "variable" | "value" | "class" | "transition";
+  detail: string;
+}
+
 // --- テストレベル配分の妥当性検査（generate_test_cases 4.9） ---
 export type TestSizeDecidingFactor = "dependency" | "duration" | "both" | "none";
 export type TestSizeFindingSeverity = "high" | "medium" | "info";

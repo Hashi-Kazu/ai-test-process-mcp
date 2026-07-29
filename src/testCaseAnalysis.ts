@@ -22,6 +22,7 @@ import type {
   TestCaseTraceRow,
   TestCaseUnknownTargetRef,
   TestCaseUnresolvedRef,
+  TestCaseUnsubstantiatedTarget,
   TestTechniqueCatalog,
   TestTechniqueId,
 } from "./types.js";
@@ -515,6 +516,170 @@ export function findHardcodedParameterValues(
     }
   }
   return [...merged.values()];
+}
+
+// --- 網羅対象の裏付け検査 ---
+// 宣言された網羅対象IDが、ケース本文（タイトル・前提条件・手順・事後条件）から裏付けられるかを検査する。
+// 網羅対象IDの流用だけで網羅率が緑になる状態を防ぐのが目的。
+
+const SUBSTANTIATION_ADVICE =
+  "網羅対象IDの流用でないか確認し、該当値を実際に操作する手順へ修正するか宣言を外すこと。";
+
+/** 照合対象フィールドを1本のテキストへ連結する（決定的）。 */
+function caseBodyText(c: TestCaseSpec): string {
+  const parts: string[] = [c.title];
+  for (const v of c.preconditions) {
+    parts.push(v.name);
+    parts.push(v.value);
+  }
+  for (const s of c.steps) {
+    parts.push(s.action);
+    parts.push(s.expected);
+  }
+  for (const v of c.postconditions ?? []) {
+    parts.push(v.name);
+    parts.push(v.value);
+  }
+  return parts.join("\n");
+}
+
+/** 末尾の括弧修飾（"残数僅か(△)" → "残数僅か"）を落とす。 */
+function stripTrailingParenthetical(label: string): string {
+  return label.replace(/[(（][^()（）]*[)）]\s*$/, "").trim();
+}
+
+function equivalenceRepresentative(
+  input: GenerateTestCasesInput,
+  variable: string,
+  label: string,
+  description: string
+): string | undefined {
+  for (const v of input.equivalenceVariables ?? []) {
+    if (v.name !== variable) continue;
+    for (const cls of [...v.validClasses, ...(v.invalidClasses ?? [])]) {
+      if (cls.label === label) return cls.representative;
+    }
+  }
+  const matched = /代表値: (.+?)）/.exec(description);
+  return matched ? matched[1] : undefined;
+}
+
+export function findUnsubstantiatedCoverageTargets(
+  input: GenerateTestCasesInput,
+  universe: TestCaseCoverageTarget[] = buildCoverageUniverse(input)
+): TestCaseUnsubstantiatedTarget[] {
+  const testCases = input.testCases ?? [];
+  const byId = new Map<string, TestCaseCoverageTarget>();
+  for (const t of universe) {
+    if (!byId.has(t.id)) byId.set(t.id, t);
+  }
+  const parameters = input.parameters ?? [];
+  const transitions = input.stateTransition?.transitions ?? [];
+  const states = input.stateTransition?.states ?? [];
+
+  const findings: TestCaseUnsubstantiatedTarget[] = [];
+  for (const c of testCases) {
+    const text = caseBodyText(c);
+    for (const targetId of c.coverageTargets) {
+      const target = byId.get(targetId);
+      if (!target) continue; // 未知の網羅対象IDは 4.2 側で指摘するため対象外
+
+      if (targetId.startsWith("BV:")) {
+        const prefix = `BV:${target.origin}:`;
+        if (!targetId.startsWith(prefix)) continue;
+        const value = targetId.slice(prefix.length);
+        if (value.length === 0) continue;
+        // パラメータ名を併記していれば直値なしでも裏付けありとみなす（4.10 と同じ許容ルール）
+        const aliasHit = parameters.some((p) => p.value === value && text.includes(p.name));
+        if (aliasHit) continue;
+        const variableHit = text.includes(target.origin);
+        const valueHit = matchesParameterLiteral(text, { value });
+        if (variableHit && valueHit) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: variableHit ? "value" : "variable",
+          detail: variableHit
+            ? `値「${value}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`
+            : `変数名「${target.origin}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      if (targetId.startsWith("EP:")) {
+        const prefix = `EP:${target.origin}:`;
+        if (!targetId.startsWith(prefix)) continue;
+        const label = targetId.slice(prefix.length);
+        if (label.length === 0) continue;
+        const representative = equivalenceRepresentative(
+          input,
+          target.origin,
+          label,
+          target.description
+        );
+        const core = stripTrailingParenthetical(label);
+        const labelHit = text.includes(label);
+        const labelCoreHit = core.length > 0 && core !== label && text.includes(core);
+        const repHit =
+          representative !== undefined &&
+          representative.length > 0 &&
+          (matchesParameterLiteral(text, { value: representative }) || text.includes(representative));
+        // 分析上の変数名はケース本文に逐語で現れないことが多いため、変数名の一致は必須にしない。
+        if (labelHit || labelCoreHit || repHit) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "class",
+          detail:
+            representative !== undefined && representative.length > 0
+              ? `クラス名「${label}」も代表値「${representative}」もケース本文に現れない。${SUBSTANTIATION_ADVICE}`
+              : `クラス名「${label}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      if (targetId.startsWith("ST:")) {
+        const transition = transitions.find((t) => t.id === target.origin);
+        if (!transition) continue; // 遷移が引けない場合は検査対象外
+        const labelsFor = (stateId: string): string[] => {
+          const labels = [stateId];
+          for (const s of states) {
+            if (s.id === stateId && s.nameJa.length > 0) labels.push(s.nameJa);
+          }
+          return labels.filter((l) => l.length > 0);
+        };
+        const fromHit = labelsFor(transition.from).some((l) => text.includes(l));
+        const toHit = labelsFor(transition.to).some((l) => text.includes(l));
+        if (text.includes(target.origin) || (fromHit && toHit)) continue;
+        const missingSide = !fromHit && !toHit ? "遷移元・遷移先" : !fromHit ? "遷移元" : "遷移先";
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "transition",
+          detail: `遷移「${transition.from} --${transition.event}--> ${transition.to}」の${missingSide}がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+    }
+  }
+  return findings;
+}
+
+/** 裏付けなしと判定された網羅対象宣言を除いた複製を返す（入力は破壊しない）。 */
+export function stripUnsubstantiatedCoverageTargets(
+  testCases: TestCaseSpec[],
+  findings: TestCaseUnsubstantiatedTarget[]
+): TestCaseSpec[] {
+  const excluded = new Set(findings.map((f) => `${f.caseId} ${f.targetId}`));
+  return testCases.map((c) => ({
+    ...c,
+    coverageTargets: c.coverageTargets.filter((id) => !excluded.has(`${c.caseId} ${id}`)),
+  }));
 }
 
 // --- 技法推奨 ---

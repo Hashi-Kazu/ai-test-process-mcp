@@ -17,8 +17,10 @@ import {
   findUncoveredConditionIds,
   findUnknownCoverageTargetRefs,
   findUnresolvedCaseRefs,
+  findUnsubstantiatedCoverageTargets,
   recommendTechniques,
   resolveCaseSourceRefs,
+  stripUnsubstantiatedCoverageTargets,
 } from "../testCaseAnalysis.js";
 import {
   buildTestLevelDistribution,
@@ -42,6 +44,7 @@ const DEFAULT_COVERAGE_CRITERIA = [
   "2節の網羅対象すべてがいずれかのケースで充足されている。",
   "期待結果に主観語を含まない。",
   "閾値は1.4のパラメータ名で参照されている。",
+  "宣言した網羅対象がケース本文（タイトル・前提条件・手順）から裏付けられている。",
 ];
 
 const DECIDING_FACTOR_LABELS: Record<string, string> = {
@@ -83,6 +86,12 @@ export function renderTestCases(
   const universe = buildCoverageUniverse(input);
   const coverageRows = computeCoverageRows(universe, testCases, catalog);
   const unknownTargetRefs = findUnknownCoverageTargetRefs(universe, testCases);
+  const unsubstantiatedTargets = findUnsubstantiatedCoverageTargets(input, universe);
+  const substantiatedRows = computeCoverageRows(
+    universe,
+    stripUnsubstantiatedCoverageTargets(testCases, unsubstantiatedTargets),
+    catalog
+  );
   const traceRows = buildConditionTraceability(testConditions, testCases);
   const uncoveredConditionIds = findUncoveredConditionIds(testConditions, testCases);
   const duplicates = findDuplicateCaseIds(testCases);
@@ -320,7 +329,39 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.3 テスト条件 × テストケース トレーサビリティ");
+  lines.push("### 4.3 網羅対象の裏付け検査");
+  lines.push("");
+  lines.push(
+    "宣言された網羅対象IDが、ケース本文（タイトル・前提条件の変数/値・手順の操作/期待結果・事後条件）から裏付けられるかを照合する。additionalCoverageTargets 由来の任意IDは照合対象外。"
+  );
+  lines.push("");
+  if (coverageRows.length === 0) {
+    lines.push("- 対象なし");
+  } else {
+    lines.push("| 技法 | 網羅基準 | 総数 | 宣言充足 | 裏付けあり充足 | 裏付けなしのみ | 裏付けあり充足率 |");
+    lines.push("| --- | --- | --- | --- | --- | --- | --- |");
+    coverageRows.forEach((row, i) => {
+      const substantiated = substantiatedRows[i];
+      lines.push(
+        `| ${row.techniqueId} | ${escapeCell(row.criterionLabel)} | ${row.total} | ${row.covered} | ${
+          substantiated.covered
+        } | ${row.covered - substantiated.covered} | ${substantiated.ratioPercent.toFixed(1)}% |`
+      );
+    });
+    lines.push("");
+    if (unsubstantiatedTargets.length === 0) {
+      lines.push("- なし");
+    } else {
+      for (const f of unsubstantiatedTargets) {
+        lines.push(
+          `- [high] ${escapeCell(f.caseId)} / ${escapeCell(f.targetId)}: ${escapeCell(f.detail)}`
+        );
+      }
+    }
+  }
+  lines.push("");
+
+  lines.push("### 4.4 テスト条件 × テストケース トレーサビリティ");
   lines.push("");
   lines.push("| 条件ID | 紐づくケースID | 件数 | 根拠位置 |");
   lines.push("| --- | --- | --- | --- |");
@@ -345,7 +386,7 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.4 ケースIDの重複・欠番・プレフィックス不一致");
+  lines.push("### 4.5 ケースIDの重複・欠番・プレフィックス不一致");
   lines.push("");
   if (duplicates.length === 0) {
     lines.push("- 重複: なし");
@@ -366,7 +407,7 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.5 由来メタデータの未解決参照");
+  lines.push("### 4.6 由来メタデータの未解決参照");
   lines.push("");
   if (unresolvedRefs.length === 0 && invalidTransitions.length === 0) {
     lines.push("- なし");
@@ -390,7 +431,7 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.6 期待結果の主観語・空欄検査");
+  lines.push("### 4.7 期待結果の主観語・空欄検査");
   lines.push("");
   if (subjectiveFindings.length === 0 && emptyFindings.length === 0) {
     lines.push("- なし");
@@ -404,7 +445,7 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.7 手順の粒度検査");
+  lines.push("### 4.8 手順の粒度検査");
   lines.push("");
   if (stepFindings.length === 0) {
     lines.push("- なし");
@@ -416,7 +457,7 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.8 閾値の直値埋め込み検査");
+  lines.push("### 4.9 閾値の直値埋め込み検査");
   lines.push("");
   if (hardcodedFindings.length === 0) {
     lines.push("- なし");
@@ -431,7 +472,7 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.9 テストレベル配分の妥当性");
+  lines.push("### 4.10 テストレベル配分の妥当性");
   lines.push("");
   if (!hasAllocationInput) {
     lines.push(
@@ -492,13 +533,13 @@ export function renderTestCases(
   }
   lines.push("");
 
-  lines.push("### 4.10 サマリ");
+  lines.push("### 4.11 サマリ");
   lines.push("");
   lines.push(
     `- 対象テスト条件数: ${testConditions.length} / テストケース数: ${testCases.length} / 網羅対象数: ${universe.length} / 未充足網羅対象数: ${coverageRows.reduce(
       (sum, r) => sum + r.uncoveredTargetIds.length,
       0
-    )} / 未充足条件数: ${uncoveredConditionIds.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 未解決参照数: ${unresolvedRefs.length} / 主観語指摘数: ${subjectiveFindings.length} / 空欄指摘数: ${emptyFindings.length} / 手順粒度指摘数: ${stepFindings.length} / 直値埋め込み指摘数: ${hardcodedFindings.length} / テストレベル配分指摘数: ${allocationFindings.length}`
+    )} / 未充足条件数: ${uncoveredConditionIds.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 未解決参照数: ${unresolvedRefs.length} / 主観語指摘数: ${subjectiveFindings.length} / 空欄指摘数: ${emptyFindings.length} / 手順粒度指摘数: ${stepFindings.length} / 直値埋め込み指摘数: ${hardcodedFindings.length} / テストレベル配分指摘数: ${allocationFindings.length} / 裏付けなし網羅対象数: ${unsubstantiatedTargets.length}`
   );
   lines.push("");
 
@@ -549,6 +590,14 @@ export function renderTestCases(
     }
     lines.push("");
   }
+  if (unsubstantiatedTargets.length > 0) {
+    lines.push("以下の網羅対象宣言をケース本文から裏付けられる形へ修正すること:");
+    lines.push("");
+    for (const f of unsubstantiatedTargets) {
+      lines.push(`- ${f.caseId}: ${escapeCell(f.targetId)}`);
+    }
+    lines.push("");
+  }
   if (subjectiveFindings.length > 0 || emptyFindings.length > 0) {
     lines.push("以下の期待結果を観測可能な具体的文言へ修正すること:");
     lines.push("");
@@ -573,7 +622,7 @@ export function renderTestCases(
     }
     lines.push("");
   }
-  if (noTechniqueConditions.length === 0 && !anyUncovered && subjectiveFindings.length === 0 && emptyFindings.length === 0 && hardcodedFindings.length === 0 && levelSizeMismatches.length === 0 && crossLevelDuplicates.length === 0 && testCases.length > 0) {
+  if (noTechniqueConditions.length === 0 && !anyUncovered && unsubstantiatedTargets.length === 0 && subjectiveFindings.length === 0 && emptyFindings.length === 0 && hardcodedFindings.length === 0 && levelSizeMismatches.length === 0 && crossLevelDuplicates.length === 0 && testCases.length > 0) {
     lines.push("- 追加の修正指示なし。");
     lines.push("");
   }
@@ -801,7 +850,8 @@ export function registerGenerateTestCasesTool(server: McpServer): void {
     {
       title: "Generate Test Cases",
       description:
-        "テストケース仕様を、決定的層(網羅率カウント・未通過網羅対象の列挙・期待結果の主観語/空欄検査・閾値の直値埋め込み検査・" +
+        "テストケース仕様を、決定的層(網羅率カウント・未通過網羅対象の列挙・網羅対象宣言のケース本文からの裏付け検査・" +
+        "期待結果の主観語/空欄検査・閾値の直値埋め込み検査・" +
         "テストサイズ(外部依存・実行時間)に基づくテストレベル配分の妥当性検査)と、" +
         "手順列の組み立てのみを呼び出し側LLMへ委ねる意味的層の二層構成で扱う。testCases が未指定・空の場合は決定的エンジンへの入力から" +
         "網羅対象一覧のみを算出し、生成指示を返す。既存のテストケース一式を testCases に渡せば、既存成果物のレビュー（網羅率・未通過網羅対象・" +

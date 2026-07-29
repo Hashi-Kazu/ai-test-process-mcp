@@ -15,14 +15,15 @@ const HEADINGS = [
   "## 4. 決定的検査(自動)",
   "### 4.1 網羅率",
   "### 4.2 未充足の網羅対象",
-  "### 4.3 テスト条件 × テストケース トレーサビリティ",
-  "### 4.4 ケースIDの重複・欠番・プレフィックス不一致",
-  "### 4.5 由来メタデータの未解決参照",
-  "### 4.6 期待結果の主観語・空欄検査",
-  "### 4.7 手順の粒度検査",
-  "### 4.8 閾値の直値埋め込み検査",
-  "### 4.9 テストレベル配分の妥当性",
-  "### 4.10 サマリ",
+  "### 4.3 網羅対象の裏付け検査",
+  "### 4.4 テスト条件 × テストケース トレーサビリティ",
+  "### 4.5 ケースIDの重複・欠番・プレフィックス不一致",
+  "### 4.6 由来メタデータの未解決参照",
+  "### 4.7 期待結果の主観語・空欄検査",
+  "### 4.8 手順の粒度検査",
+  "### 4.9 閾値の直値埋め込み検査",
+  "### 4.10 テストレベル配分の妥当性",
+  "### 4.11 サマリ",
   "## 5. 技法選定決定表(カタログ)",
   "## 6. テストケース組み立て指示(意味的層)",
 ];
@@ -63,7 +64,7 @@ describe("renderTestCases", () => {
     expect(markdown).toContain("| 条件ID | 対象 | 条件文 | 優先度 | 由来 | 根拠位置 |");
   });
 
-  it("renders the 4.3 table header with the source location column", () => {
+  it("renders the 4.4 table header with the source location column", () => {
     const markdown = renderTestCases(baseInput);
     expect(markdown).toContain("| 条件ID | 紐づくケースID | 件数 | 根拠位置 |");
   });
@@ -193,13 +194,13 @@ describe("renderTestCases", () => {
       ],
     };
     const markdown = renderTestCases(input);
-    const section46 = markdown.split("### 4.6 期待結果の主観語・空欄検査")[1].split("### 4.7")[0];
-    expect(section46).toContain("適切に");
-    const section48 = markdown.split("### 4.8 閾値の直値埋め込み検査")[1].split("### 4.9")[0];
-    expect(section48).toContain("MAX_TICKETS");
-    const section45 = markdown.split("### 4.5 由来メタデータの未解決参照")[1].split("### 4.6")[0];
-    expect(section45).toContain("TC-999");
-    expect(section45).toContain("R-999");
+    const section47 = markdown.split("### 4.7 期待結果の主観語・空欄検査")[1].split("### 4.8")[0];
+    expect(section47).toContain("適切に");
+    const section49 = markdown.split("### 4.9 閾値の直値埋め込み検査")[1].split("### 4.10")[0];
+    expect(section49).toContain("MAX_TICKETS");
+    const section46 = markdown.split("### 4.6 由来メタデータの未解決参照")[1].split("### 4.7")[0];
+    expect(section46).toContain("TC-999");
+    expect(section46).toContain("R-999");
   });
 
   it("escapes pipe characters inside cells", () => {
@@ -239,7 +240,7 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
     expect(conditionRow).toContain("リスク:RK-001");
   });
 
-  it("shows a kind-labeled unresolved reference in 4.5 when riskIds does not contain the id", () => {
+  it("shows a kind-labeled unresolved reference in 4.6 when riskIds does not contain the id", () => {
     const input: GenerateTestCasesInput = {
       ...baseInput,
       riskIds: ["RK-001"],
@@ -257,9 +258,9 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
       ],
     };
     const markdown = renderTestCases(input);
-    const section45 = markdown.split("### 4.5 由来メタデータの未解決参照")[1].split("### 4.6")[0];
-    expect(section45).toContain("リスク:RK-999");
-    expect(section45).toContain("riskIds[]");
+    const section46 = markdown.split("### 4.6 由来メタデータの未解決参照")[1].split("### 4.7")[0];
+    expect(section46).toContain("リスク:RK-999");
+    expect(section46).toContain("riskIds[]");
   });
 
   it("does not affect existing plain-string derivedFrom output", () => {
@@ -269,7 +270,7 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
     expect(conditionRow).not.toContain("要件:R-001");
   });
 
-  it("renders 4.9 as not-judgeable when no test size inputs are given", () => {
+  it("renders 4.10 as not-judgeable when no test size inputs are given", () => {
     const markdown = renderTestCases({
       ...baseInput,
       testCases: [
@@ -285,14 +286,14 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
         },
       ],
     });
-    const section49 = markdown.split("### 4.9 テストレベル配分の妥当性")[1].split("### 4.10")[0];
-    expect(section49).toContain(
+    const section410 = markdown.split("### 4.10 テストレベル配分の妥当性")[1].split("### 4.11")[0];
+    expect(section410).toContain(
       "- 判定入力(testLevel / externalDependencyIds / estimatedDurationSeconds)が未指定のため判定不可"
     );
-    expect(section49).not.toContain("| ケースID | 宣言レベル |");
-    // 4.1〜4.8 は従来どおり
+    expect(section410).not.toContain("| ケースID | 宣言レベル |");
+    // 4.1〜4.9 は従来どおり
     expect(markdown).toContain("| 技法 | 網羅基準 | 総数 | 充足 | 未充足 | 充足率 |");
-    expect(markdown).toContain("### 4.8 閾値の直値埋め込み検査");
+    expect(markdown).toContain("### 4.9 閾値の直値埋め込み検査");
   });
 
   it("renders the classification / size distribution / test level distribution tables and findings when inputs are given", () => {
@@ -328,22 +329,22 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
         },
       ],
     });
-    const section49 = markdown.split("### 4.9 テストレベル配分の妥当性")[1].split("### 4.10")[0];
-    expect(section49).toContain(
+    const section410 = markdown.split("### 4.10 テストレベル配分の妥当性")[1].split("### 4.11")[0];
+    expect(section410).toContain(
       "| ケースID | 宣言レベル | 該当判定軸 | 想定実行時間(秒) | 判定サイズ | 決定要因 | 宣言サイズ | 判定 |"
     );
-    expect(section49).toContain("| サイズ | 件数 | 構成比 | 推奨範囲 | 判定 |");
-    expect(section49).toContain("| テストレベル | 件数 | 構成比 |");
-    const caseRow = section49.split("\n").find((l) => l.startsWith("| TCS-001 |"));
+    expect(section410).toContain("| サイズ | 件数 | 構成比 | 推奨範囲 | 判定 |");
+    expect(section410).toContain("| テストレベル | 件数 | 構成比 |");
+    const caseRow = section410.split("\n").find((l) => l.startsWith("| TCS-001 |"));
     expect(caseRow).toContain("コンポーネントテスト（単体テスト）");
     expect(caseRow).toContain("スモール");
     expect(caseRow).toContain("一致");
-    const caseRow2 = section49.split("\n").find((l) => l.startsWith("| TCS-002 |"));
+    const caseRow2 = section410.split("\n").find((l) => l.startsWith("| TCS-002 |"));
     expect(caseRow2).toContain("TSD-07");
     expect(caseRow2).toContain("ラージ");
     expect(caseRow2).toContain("240");
-    expect(section49).toContain("| 未指定 | 0 | 0.0% |");
-    expect(section49).toContain("- 指摘なし");
+    expect(section410).toContain("| 未指定 | 0 | 0.0% |");
+    expect(section410).toContain("- 指摘なし");
   });
 
   it("adds a test level allocation instruction to section 6 when level-size-mismatch exists", () => {
@@ -365,17 +366,92 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
         },
       ],
     });
-    const section49 = markdown.split("### 4.9 テストレベル配分の妥当性")[1].split("### 4.10")[0];
-    expect(section49).toContain("- [medium] TCS-001:");
+    const section410 = markdown.split("### 4.10 テストレベル配分の妥当性")[1].split("### 4.11")[0];
+    expect(section410).toContain("- [medium] TCS-001:");
     const section6 = markdown.split("## 6. テストケース組み立て指示(意味的層)")[1];
     expect(section6).toContain("以下のテストレベル配分を見直すこと:");
     expect(section6).toContain("- TCS-001:");
     expect(section6).not.toContain("追加の修正指示なし。");
   });
 
-  it("includes テストレベル配分指摘数 in the 4.10 summary line", () => {
+  it("includes テストレベル配分指摘数 in the 4.11 summary line", () => {
     const markdown = renderTestCases(baseInput);
-    const summary = markdown.split("### 4.10 サマリ")[1].split("## 5.")[0];
+    const summary = markdown.split("### 4.11 サマリ")[1].split("## 5.")[0];
     expect(summary).toContain("テストレベル配分指摘数: 0");
+  });
+});
+
+describe("renderTestCases coverage substantiation (4.3)", () => {
+  const unsubstantiatedInput: GenerateTestCasesInput = {
+    ...baseInput,
+    boundaryVariables: [{ name: "枚数", min: 1, max: 2 }],
+    boundaryMode: "two",
+    parameters: [],
+    testCases: [
+      {
+        caseId: "TCS-001",
+        title: "下限で購入できる",
+        testConditionId: "TC-001",
+        derivedFrom: ["R-001"],
+        techniqueId: "boundary-value-analysis",
+        coverageTargets: ["BV:枚数:1"],
+        preconditions: [{ name: "state", value: "初期状態" }],
+        steps: [{ no: 1, action: "枚数1で購入する", expected: "購入できる" }],
+      },
+      {
+        caseId: "TCS-002",
+        title: "上限で購入できる",
+        testConditionId: "TC-001",
+        derivedFrom: ["R-001"],
+        techniqueId: "boundary-value-analysis",
+        coverageTargets: ["BV:枚数:2"],
+        preconditions: [{ name: "state", value: "初期状態" }],
+        steps: [{ no: 1, action: "対象時間枠残数2で購入する", expected: "購入できる" }],
+      },
+    ],
+  };
+
+  it("renders the substantiation table and lists unsubstantiated declarations as [high]", () => {
+    const markdown = renderTestCases(unsubstantiatedInput);
+    const section43 = markdown.split("### 4.3 網羅対象の裏付け検査")[1].split("### 4.4")[0];
+    expect(section43).toContain(
+      "| 技法 | 網羅基準 | 総数 | 宣言充足 | 裏付けあり充足 | 裏付けなしのみ | 裏付けあり充足率 |"
+    );
+    expect(section43).toContain("- [high] TCS-002 / BV:枚数:2:");
+    expect(section43).not.toContain("- [high] TCS-001 /");
+    // 宣言ベースは 2/4 = 50.0%、裏付けありは 1/4 = 25.0%
+    const substantiationRow = section43.split("\n").find((l) => l.startsWith("| boundary-value-analysis |"));
+    expect(substantiationRow).toContain("| 4 | 2 | 1 | 1 | 25.0% |");
+    const section41 = markdown.split("### 4.1 網羅率")[1].split("### 4.2")[0];
+    expect(section41).toContain("50.0%");
+  });
+
+  it("reports なし in 4.3 when every declaration is substantiated", () => {
+    const markdown = renderTestCases({
+      ...unsubstantiatedInput,
+      testCases: [unsubstantiatedInput.testCases![0]],
+    });
+    const section43 = markdown.split("### 4.3 網羅対象の裏付け検査")[1].split("### 4.4")[0];
+    expect(section43).toContain("- なし");
+  });
+
+  it("adds a substantiation instruction block to section 6", () => {
+    const markdown = renderTestCases(unsubstantiatedInput);
+    const section6 = markdown.split("## 6. テストケース組み立て指示(意味的層)")[1];
+    expect(section6).toContain("以下の網羅対象宣言をケース本文から裏付けられる形へ修正すること:");
+    expect(section6).toContain("- TCS-002: BV:枚数:2");
+    expect(section6).not.toContain("追加の修正指示なし。");
+  });
+
+  it("includes 裏付けなし網羅対象数 in the 4.11 summary line", () => {
+    const summary = renderTestCases(unsubstantiatedInput).split("### 4.11 サマリ")[1].split("## 5.")[0];
+    expect(summary).toContain("裏付けなし網羅対象数: 1");
+  });
+
+  it("adds the substantiation criterion to the default coverage criteria in 1.3", () => {
+    const markdown = renderTestCases(baseInput);
+    expect(markdown).toContain(
+      "- 宣言した網羅対象がケース本文（タイトル・前提条件・手順）から裏付けられている。"
+    );
   });
 });

@@ -7,7 +7,9 @@ import {
   findStepGranularityIssues,
   findSubjectiveExpectedResults,
   findUnresolvedCaseRefs,
+  findUnsubstantiatedCoverageTargets,
   resolveCaseSourceRefs,
+  stripUnsubstantiatedCoverageTargets,
 } from "../src/testCaseAnalysis.js";
 import type {
   GenerateTestCasesInput,
@@ -325,5 +327,247 @@ describe("resolveCaseSourceRefs", () => {
     const testCase = baseCase({ caseId: "TCS-001", testConditionId: "TC-999", derivedFrom: ["UNKNOWN"] });
     const conditions = [sourceCondition({ id: "TC-001", derivedFrom: ["OTHER"] })];
     expect(resolveCaseSourceRefs(testCase, conditions, requirementSources)).toEqual([]);
+  });
+});
+
+describe("findUnsubstantiatedCoverageTargets", () => {
+  const equivalenceVariables = [
+    {
+      name: "残数表示状態",
+      validClasses: [
+        { label: "残数あり(〇)", representative: "〇" },
+        { label: "残数僅か(△)", representative: "△" },
+      ],
+      invalidClasses: [{ label: "残数なし(×)", representative: "×" }],
+    },
+  ];
+  const stateTransition = {
+    states: [
+      { id: "S1", nameJa: "未使用", initial: true },
+      { id: "S2", nameJa: "無効" },
+      { id: "S3", nameJa: "使用済" },
+    ],
+    transitions: [
+      { id: "ST-01", from: "S1", to: "S3", event: "入場" },
+      { id: "ST-02", from: "S1", to: "S2", event: "失効" },
+    ],
+  };
+
+  it("reports nothing when the variable name and the value both appear in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+      testCases: [
+        baseCase({
+          caseId: "TCS-001",
+          coverageTargets: ["BV:枚数:10"],
+          steps: [{ no: 1, action: "枚数の上限として10枚を指定して購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags a missing variable name when only another variable appears in the body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "入場制限人数", min: 1, max: 999 }],
+      boundaryMode: "three",
+      testCases: [
+        baseCase({
+          caseId: "TCS-004",
+          coverageTargets: ["BV:入場制限人数:1"],
+          steps: [{ no: 1, action: "対象時間枠残数 1枚の状態で購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].caseId).toBe("TCS-004");
+    expect(findings[0].targetId).toBe("BV:入場制限人数:1");
+    expect(findings[0].missing).toBe("variable");
+    expect(findings[0].detail).toContain("入場制限人数");
+  });
+
+  it("flags a missing value when the variable name appears but the boundary value does not", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "入場制限人数", min: 1, max: 999 }],
+      boundaryMode: "three",
+      testCases: [
+        baseCase({
+          caseId: "TCS-010",
+          coverageTargets: ["BV:入場制限人数:998"],
+          steps: [{ no: 1, action: "入場制限人数パラメータ(60人)で購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].missing).toBe("value");
+    expect(findings[0].detail).toContain("998");
+  });
+
+  it("accepts a parameter-name reference without the literal value (alias rule)", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      parameters: [{ name: "MAX_TICKETS", value: "10", unit: "枚" }],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+      testCases: [
+        baseCase({
+          caseId: "TCS-002",
+          coverageTargets: ["BV:枚数:10"],
+          steps: [{ no: 1, action: "MAX_TICKETS の上限で購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("accepts an EP class whose label core (without the trailing parenthetical) appears in the body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      equivalenceVariables,
+      testCases: [
+        baseCase({
+          caseId: "TCS-006",
+          techniqueId: "equivalence-partitioning",
+          coverageTargets: ["EP:残数表示状態:残数僅か(△)"],
+          steps: [{ no: 1, action: "△(残数僅か)の時間枠を選択する", expected: "選択できる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags an EP class when neither the class name nor the representative value appears", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      equivalenceVariables,
+      testCases: [
+        baseCase({
+          caseId: "TCS-007",
+          techniqueId: "equivalence-partitioning",
+          coverageTargets: ["EP:残数表示状態:残数僅か(△)"],
+          steps: [{ no: 1, action: "障害注入で発券機を停止させる", expected: "エラーになる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].missing).toBe("class");
+    expect(findings[0].detail).toContain("残数僅か(△)");
+  });
+
+  it("accepts a state transition whose from/to state labels both appear in the body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      stateTransition,
+      testCases: [
+        baseCase({
+          caseId: "TCS-003",
+          techniqueId: "state-transition",
+          coverageTargets: ["ST:ST-02"],
+          preconditions: [{ name: "券面状態", value: "未使用" }],
+          steps: [{ no: 1, action: "有効期限を過ぎさせる", expected: "券が無効になる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags a state transition when only the from state appears in the body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      stateTransition,
+      testCases: [
+        baseCase({
+          caseId: "TCS-060",
+          techniqueId: "state-transition",
+          coverageTargets: ["ST:ST-02"],
+          preconditions: [{ name: "券面状態", value: "未使用" }],
+          steps: [{ no: 1, action: "何もしない", expected: "表示が変わらない" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].missing).toBe("transition");
+    expect(findings[0].detail).toContain("遷移先");
+  });
+
+  it("skips manually declared coverage targets that are not BV/EP/ST", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      additionalCoverageTargets: [
+        { id: "FI:起動失敗", techniqueId: "fault-injection", description: "起動失敗を注入", origin: "宣言" },
+      ],
+      testCases: [
+        baseCase({
+          caseId: "TCS-020",
+          techniqueId: "fault-injection",
+          coverageTargets: ["FI:起動失敗"],
+          steps: [{ no: 1, action: "何も関係しない操作をする", expected: "何も起きない" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("lowers the coverage ratio when combined with stripUnsubstantiatedCoverageTargets", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+      testCases: [
+        baseCase({
+          caseId: "TCS-001",
+          coverageTargets: ["BV:枚数:1"],
+          steps: [{ no: 1, action: "枚数1で購入する", expected: "購入できる" }],
+        }),
+        baseCase({
+          caseId: "TCS-002",
+          coverageTargets: ["BV:枚数:10"],
+          steps: [{ no: 1, action: "対象時間枠残数10で購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    const universe = buildCoverageUniverse(input);
+    const findings = findUnsubstantiatedCoverageTargets(input, universe);
+    expect(findings.map((f) => f.caseId)).toEqual(["TCS-002"]);
+
+    const declaredRows = computeCoverageRows(universe, input.testCases as TestCaseSpec[]);
+    expect(declaredRows[0].total).toBe(4);
+    expect(declaredRows[0].covered).toBe(2);
+
+    const substantiatedRows = computeCoverageRows(
+      universe,
+      stripUnsubstantiatedCoverageTargets(input.testCases as TestCaseSpec[], findings)
+    );
+    expect(substantiatedRows[0].covered).toBe(1);
+    expect(substantiatedRows[0].ratioPercent).toBe(25);
+  });
+
+  it("is deterministic and does not mutate the input", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+      testCases: [
+        baseCase({
+          caseId: "TCS-001",
+          coverageTargets: ["BV:枚数:10"],
+          steps: [{ no: 1, action: "残数10で購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    const snapshot = JSON.stringify(input);
+    const first = findUnsubstantiatedCoverageTargets(input);
+    const second = findUnsubstantiatedCoverageTargets(input);
+    expect(second).toEqual(first);
+    stripUnsubstantiatedCoverageTargets(input.testCases as TestCaseSpec[], first);
+    expect(JSON.stringify(input)).toBe(snapshot);
   });
 });
