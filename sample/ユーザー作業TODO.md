@@ -112,9 +112,54 @@ https://www.aster.or.jp/testcontest/doc/2025/presentation/presentation_team_futo
 
 ## 3 任意: egressポリシーで aster.or.jp を許可する
 
-許可設定を行えば、上記1・2の全URLについてClaude側で生死確認・ダウンロード・`sample/` への配置・35項目マトリクスの再評価まで一括で実行できる。設定方法は [Claude Code on the web のドキュメント](https://code.claude.com/docs/en/claude-code-on-the-web) を参照。
+許可設定を行えば、上記1・2の全URLについてClaude側で生死確認・ダウンロード・`sample/` への配置・35項目マトリクスの再評価まで一括で実行できる。**1と2を手作業で集めるより、こちらのほうが早い可能性が高い。**
 
-**1と2を手作業で集めるより、こちらのほうが早い可能性が高い。**
+### 設定手順
+
+専用の設定ページは存在せず、環境セレクタから設定する。
+
+1. [claude.ai/code](https://claude.ai/code) を開く
+2. メッセージ入力欄の**すぐ上の行**にある雲アイコン（現在の環境名が表示されている）を選択
+3. 使用中の環境（既定は **Default**）にホバーし、右側に出る**歯車アイコン**を選択
+4. ダイアログの **Network access** を変更（下記のどちらか）
+5. 保存
+
+### 案A: Full（推奨・手間ゼロ）
+
+**Network access** を `Full` にするだけ。全ドメインが通る。
+
+- 追加設定が不要で、後述の「既定リスト同梱チェック忘れ」事故が構造的に起きない
+- セキュリティプロキシ（不正リクエスト防御・レート制限・コンテンツフィルタ・DNS監査ログ）は Full でも有効なので、素の全開放ではない
+
+### 案B: Custom（範囲を絞る）
+
+**Network access** を `Custom` にし、**Allowed domains** 欄へ1行1ドメインで入力する。
+
+```text
+aster.or.jp
+*.aster.or.jp
+```
+
+**「Also include default list of common package managers」に必ずチェックを入れること。** 外すと列挙したドメインだけしか通らなくなり、`registry.npmjs.org` が落ちて `npm install` / `npm test` が失敗する（本リポジトリは vitest が未インストール状態のため確実に踏む）。
+
+### 共通の注意
+
+- **設定変更は実行中のセッションに反映されない。** 環境設定はセッション開始時に読み込まれるため、変更後に**新しいセッションを開始**する必要がある（resume では反映されない。allowed hosts を変更すると環境キャッシュの再構築も走る）
+- **GitHub 操作は影響を受けない。** GitHub は独立した専用プロキシを通るため、`Custom` に切り替えても Issue 操作・push は動作する。MCP コネクタの通信も allowlist の対象外
+- ネットワークアクセスレベルは 4 種（`None` / `Trusted`（既定・既定allowlistのみ） / `Full` / `Custom`）
+- Team / Enterprise で組織共通にする場合は、Owner / Admin が [claude.ai/admin-settings](https://claude.ai/admin-settings) の **Cloud environments** ページで組織共有環境を作成・編集する。ただし**全メンバーの環境へ一括適用できる組織レベルの allowlist は存在しない**（環境ごとに個別のリスト）
+
+### Full を選ぶ場合に知っておくべきこと
+
+唯一の実質リスクは**プロンプトインジェクション経由の情報持ち出し**である。本ワークフローでは Claude が web ページを取得し、GitHub の Issue 本文・PR コメント・CI ログを読むため、外部由来テキストに悪意ある指示が混ざる経路が実在する。Full では送信先が制限されない。
+
+ただし本リポジトリでは影響は小さいと判断している。
+
+- ソースは OSS（LICENSE あり・npm 公開済み）で、持ち出されて困る秘密を含まない
+- GitHub トークンは専用プロキシ側にあり VM 内に存在しない。push もセッションの作業ブランチ限定
+- Jira の認証情報は GitHub Actions の secrets 側にあり、セッションからは参照できない
+
+参照: [Configure cloud environments](https://code.claude.com/docs/en/cloud-environments)
 
 ---
 
