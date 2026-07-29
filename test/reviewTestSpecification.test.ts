@@ -384,3 +384,30 @@ describe("renderTestSpecificationReview - 宣言なし・指摘なしの場合",
     expect(md).toContain("| EH\\|100 | - | 0 |");
   });
 });
+
+describe("renderTestSpecificationReview - 事実照合", () => {
+  it("lists expected-result quotations that do not exist in the test basis as [high]", () => {
+    const markdown = renderTestSpecificationReview(
+      baseInput({
+        testCases: [
+          makeCase({
+            caseId: "TCS-001",
+            steps: [
+              { no: 1, action: "購入ボタンを押す", expected: "「ご希望の枚数が確保できませんでした」と表示される" },
+            ],
+          }),
+          makeCase({
+            caseId: "TCS-002",
+            steps: [{ no: 1, action: "購入ボタンを押す", expected: "「チケットを購入できる」と表示される" }],
+          }),
+        ],
+      })
+    );
+    expect(markdown).toContain("テストベースとの事実照合");
+    const section = markdown.split("テストベースとの事実照合")[1].split("### 1.")[0];
+    expect(section).toContain("- [high] TCS-001 手順1(引用): 「ご希望の枚数が確保できませんでした」");
+    expect(section).not.toContain("TCS-002");
+    expect(section).toContain("- 照合対象: 引用 2件 / ID 0件 / 未照合 1件");
+    expect(markdown).toContain("事実照合指摘数: 1");
+  });
+});

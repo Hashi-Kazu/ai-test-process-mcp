@@ -751,6 +751,8 @@ export interface GenerateTestCasesInput {
   additionalSubjectiveTerms?: string[];            // 主観語検査への追加語
   idPrefix?: string;                               // 既定 "TCS-"
   requirementSources?: RequirementSourceRef[];     // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
+  testBasisDocuments?: TestBasisDocument[];        // 引用文言・IDの実在照合に使うテストベース全文（未指定なら照合をスキップ）
+  idPatterns?: string[];                           // ID抽出の追加パターン（実在照合で使う）
 }
 
 // --- 決定的検査の結果型（generate_test_cases） ---
@@ -793,6 +795,17 @@ export interface TestCaseUnsubstantiatedTarget {
   targetId: string;
   techniqueId: TestTechniqueId;
   missing: "variable" | "value" | "class" | "transition";
+  detail: string;
+}
+
+/** 期待結果の引用文言・IDがテストベースに実在しないもの（generate_test_cases 4.8） */
+export interface TestCaseUngroundedQuotation {
+  caseId: string;
+  stepNo: number;
+  place: string;                     // "steps[2].expected" / "steps[0].action"
+  kind: "quotation" | "id";
+  text: string;                      // 抽出した原文（正規化前）
+  severity: "high";
   detail: string;
 }
 

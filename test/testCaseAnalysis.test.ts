@@ -2,18 +2,22 @@ import { describe, expect, it } from "vitest";
 import {
   buildCoverageUniverse,
   computeCoverageRows,
+  extractQuotedStrings,
   findHardcodedParameterValues,
   findMissingCaseNumbers,
   findStepGranularityIssues,
   findSubjectiveExpectedResults,
+  findUngroundedQuotations,
   findUnresolvedCaseRefs,
   findUnsubstantiatedCoverageTargets,
+  normalizeForGrounding,
   resolveCaseSourceRefs,
   stripUnsubstantiatedCoverageTargets,
 } from "../src/testCaseAnalysis.js";
 import type {
   GenerateTestCasesInput,
   RequirementSourceRef,
+  TestBasisDocument,
   TestCaseCoverageTarget,
   TestCaseParameter,
   TestCaseSourceCondition,
@@ -569,5 +573,140 @@ describe("findUnsubstantiatedCoverageTargets", () => {
     expect(second).toEqual(first);
     stripUnsubstantiatedCoverageTargets(input.testCases as TestCaseSpec[], first);
     expect(JSON.stringify(input)).toBe(snapshot);
+  });
+});
+
+describe("normalizeForGrounding / extractQuotedStrings", () => {
+  it("absorbs full-width, case and punctuation differences", () => {
+    expect(normalizeForGrounding("Ｅ-０２０")).toBe("e020");
+    expect(normalizeForGrounding("購入できる入場券残数がありません。")).toBe(
+      normalizeForGrounding("購入できる 入場券残数が ありません")
+    );
+  });
+
+  it("extracts quoted strings of every supported bracket kind in appearance order", () => {
+    expect(extractQuotedStrings('「一つ目」と『二つ目』と"三つ目"')).toEqual([
+      "一つ目",
+      "二つ目",
+      "三つ目",
+    ]);
+  });
+});
+
+describe("findUngroundedQuotations", () => {
+  const basis: TestBasisDocument[] = [
+    {
+      name: "11_要求仕様書",
+      content: [
+        "E-020 購入できる入場券残数がありません。",
+        "S-008-01 発券機はエラー画面を表示する。",
+      ].join("\n"),
+    },
+  ];
+
+  it("accepts a quotation that matches the test basis wording apart from punctuation", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-001",
+        steps: [
+          { no: 1, action: "残数0の時間枠を選択する", expected: "「購入できる入場券残数がありません」と表示される" },
+        ],
+      }),
+    ];
+    expect(findUngroundedQuotations(testCases, basis)).toEqual([]);
+  });
+
+  it("flags a quotation that does not exist in the test basis", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-061",
+        steps: [
+          { no: 1, action: "残数0の時間枠を選択する", expected: "「ご希望の枚数が確保できませんでした」と表示される" },
+        ],
+      }),
+    ];
+    const findings = findUngroundedQuotations(testCases, basis);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].kind).toBe("quotation");
+    expect(findings[0].severity).toBe("high");
+    expect(findings[0].caseId).toBe("TCS-061");
+    expect(findings[0].place).toBe("steps[0].expected");
+    expect(findings[0].detail).toContain("テストベースの実文言へ修正すること");
+  });
+
+  it("accepts an id that exists in the test basis", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-002",
+        steps: [{ no: 1, action: "エラーを発生させる", expected: "S-008-01 の画面が表示される" }],
+      }),
+    ];
+    expect(findUngroundedQuotations(testCases, basis)).toEqual([]);
+  });
+
+  it("flags an id that does not exist in the test basis", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-003",
+        steps: [{ no: 1, action: "エラーを発生させる", expected: "S-999-01 の画面が表示される" }],
+      }),
+    ];
+    const findings = findUngroundedQuotations(testCases, basis);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].kind).toBe("id");
+    expect(findings[0].text).toBe("S-999-01");
+  });
+
+  it("does not flag case ids or declared internal ids", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-001",
+        steps: [
+          { no: 1, action: "TC-004 と R-01 に基づき TCS-001 を実行する", expected: "結果が表示される" },
+        ],
+      }),
+    ];
+    expect(
+      findUngroundedQuotations(testCases, basis, { internalIds: ["TC-004", "R-01", "TCS-001"] })
+    ).toEqual([]);
+  });
+
+  it("ignores single-character quotations such as 「×」", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-005",
+        steps: [{ no: 1, action: "残数を確認する", expected: "残数表示が「×」になる" }],
+      }),
+    ];
+    expect(findUngroundedQuotations(testCases, basis)).toEqual([]);
+  });
+
+  it("matches a full-width quotation against a half-width test basis id", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-006",
+        steps: [{ no: 1, action: "エラーを発生させる", expected: "「Ｅ-０２０」が表示される" }],
+      }),
+    ];
+    expect(findUngroundedQuotations(testCases, basis)).toEqual([]);
+  });
+
+  it("collapses the same invented wording in two steps into one finding and stays deterministic", () => {
+    const testCases = [
+      baseCase({
+        caseId: "TCS-061",
+        steps: [
+          { no: 1, action: "残数0を選択する", expected: "「ご希望の枚数が確保できませんでした」と表示される" },
+          { no: 2, action: "再試行する", expected: "「ご希望の枚数が確保できませんでした」と再表示される" },
+        ],
+      }),
+    ];
+    const snapshot = JSON.stringify(testCases);
+    const first = findUngroundedQuotations(testCases, basis);
+    const second = findUngroundedQuotations(testCases, basis);
+    expect(first).toHaveLength(1);
+    expect(first[0].stepNo).toBe(1);
+    expect(second).toEqual(first);
+    expect(JSON.stringify(testCases)).toBe(snapshot);
   });
 });

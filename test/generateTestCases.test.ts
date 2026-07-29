@@ -20,10 +20,11 @@ const HEADINGS = [
   "### 4.5 ケースIDの重複・欠番・プレフィックス不一致",
   "### 4.6 由来メタデータの未解決参照",
   "### 4.7 期待結果の主観語・空欄検査",
-  "### 4.8 手順の粒度検査",
-  "### 4.9 閾値の直値埋め込み検査",
-  "### 4.10 テストレベル配分の妥当性",
-  "### 4.11 サマリ",
+  "### 4.8 テストベースとの事実照合",
+  "### 4.9 手順の粒度検査",
+  "### 4.10 閾値の直値埋め込み検査",
+  "### 4.11 テストレベル配分の妥当性",
+  "### 4.12 サマリ",
   "## 5. 技法選定決定表(カタログ)",
   "## 6. テストケース組み立て指示(意味的層)",
 ];
@@ -196,8 +197,8 @@ describe("renderTestCases", () => {
     const markdown = renderTestCases(input);
     const section47 = markdown.split("### 4.7 期待結果の主観語・空欄検査")[1].split("### 4.8")[0];
     expect(section47).toContain("適切に");
-    const section49 = markdown.split("### 4.9 閾値の直値埋め込み検査")[1].split("### 4.10")[0];
-    expect(section49).toContain("MAX_TICKETS");
+    const section410 = markdown.split("### 4.10 閾値の直値埋め込み検査")[1].split("### 4.11")[0];
+    expect(section410).toContain("MAX_TICKETS");
     const section46 = markdown.split("### 4.6 由来メタデータの未解決参照")[1].split("### 4.7")[0];
     expect(section46).toContain("TC-999");
     expect(section46).toContain("R-999");
@@ -270,7 +271,7 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
     expect(conditionRow).not.toContain("要件:R-001");
   });
 
-  it("renders 4.10 as not-judgeable when no test size inputs are given", () => {
+  it("renders 4.11 as not-judgeable when no test size inputs are given", () => {
     const markdown = renderTestCases({
       ...baseInput,
       testCases: [
@@ -286,14 +287,14 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
         },
       ],
     });
-    const section410 = markdown.split("### 4.10 テストレベル配分の妥当性")[1].split("### 4.11")[0];
-    expect(section410).toContain(
+    const section411 = markdown.split("### 4.11 テストレベル配分の妥当性")[1].split("### 4.12")[0];
+    expect(section411).toContain(
       "- 判定入力(testLevel / externalDependencyIds / estimatedDurationSeconds)が未指定のため判定不可"
     );
-    expect(section410).not.toContain("| ケースID | 宣言レベル |");
-    // 4.1〜4.9 は従来どおり
+    expect(section411).not.toContain("| ケースID | 宣言レベル |");
+    // 4.1〜4.10 は従来どおり
     expect(markdown).toContain("| 技法 | 網羅基準 | 総数 | 充足 | 未充足 | 充足率 |");
-    expect(markdown).toContain("### 4.9 閾値の直値埋め込み検査");
+    expect(markdown).toContain("### 4.10 閾値の直値埋め込み検査");
   });
 
   it("renders the classification / size distribution / test level distribution tables and findings when inputs are given", () => {
@@ -329,22 +330,22 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
         },
       ],
     });
-    const section410 = markdown.split("### 4.10 テストレベル配分の妥当性")[1].split("### 4.11")[0];
-    expect(section410).toContain(
+    const section411 = markdown.split("### 4.11 テストレベル配分の妥当性")[1].split("### 4.12")[0];
+    expect(section411).toContain(
       "| ケースID | 宣言レベル | 該当判定軸 | 想定実行時間(秒) | 判定サイズ | 決定要因 | 宣言サイズ | 判定 |"
     );
-    expect(section410).toContain("| サイズ | 件数 | 構成比 | 推奨範囲 | 判定 |");
-    expect(section410).toContain("| テストレベル | 件数 | 構成比 |");
-    const caseRow = section410.split("\n").find((l) => l.startsWith("| TCS-001 |"));
+    expect(section411).toContain("| サイズ | 件数 | 構成比 | 推奨範囲 | 判定 |");
+    expect(section411).toContain("| テストレベル | 件数 | 構成比 |");
+    const caseRow = section411.split("\n").find((l) => l.startsWith("| TCS-001 |"));
     expect(caseRow).toContain("コンポーネントテスト（単体テスト）");
     expect(caseRow).toContain("スモール");
     expect(caseRow).toContain("一致");
-    const caseRow2 = section410.split("\n").find((l) => l.startsWith("| TCS-002 |"));
+    const caseRow2 = section411.split("\n").find((l) => l.startsWith("| TCS-002 |"));
     expect(caseRow2).toContain("TSD-07");
     expect(caseRow2).toContain("ラージ");
     expect(caseRow2).toContain("240");
-    expect(section410).toContain("| 未指定 | 0 | 0.0% |");
-    expect(section410).toContain("- 指摘なし");
+    expect(section411).toContain("| 未指定 | 0 | 0.0% |");
+    expect(section411).toContain("- 指摘なし");
   });
 
   it("adds a test level allocation instruction to section 6 when level-size-mismatch exists", () => {
@@ -366,17 +367,17 @@ describe("renderTestCases with explicit-kind derivedFrom entries", () => {
         },
       ],
     });
-    const section410 = markdown.split("### 4.10 テストレベル配分の妥当性")[1].split("### 4.11")[0];
-    expect(section410).toContain("- [medium] TCS-001:");
+    const section411 = markdown.split("### 4.11 テストレベル配分の妥当性")[1].split("### 4.12")[0];
+    expect(section411).toContain("- [medium] TCS-001:");
     const section6 = markdown.split("## 6. テストケース組み立て指示(意味的層)")[1];
     expect(section6).toContain("以下のテストレベル配分を見直すこと:");
     expect(section6).toContain("- TCS-001:");
     expect(section6).not.toContain("追加の修正指示なし。");
   });
 
-  it("includes テストレベル配分指摘数 in the 4.11 summary line", () => {
+  it("includes テストレベル配分指摘数 in the 4.12 summary line", () => {
     const markdown = renderTestCases(baseInput);
-    const summary = markdown.split("### 4.11 サマリ")[1].split("## 5.")[0];
+    const summary = markdown.split("### 4.12 サマリ")[1].split("## 5.")[0];
     expect(summary).toContain("テストレベル配分指摘数: 0");
   });
 });
@@ -443,8 +444,8 @@ describe("renderTestCases coverage substantiation (4.3)", () => {
     expect(section6).not.toContain("追加の修正指示なし。");
   });
 
-  it("includes 裏付けなし網羅対象数 in the 4.11 summary line", () => {
-    const summary = renderTestCases(unsubstantiatedInput).split("### 4.11 サマリ")[1].split("## 5.")[0];
+  it("includes 裏付けなし網羅対象数 in the 4.12 summary line", () => {
+    const summary = renderTestCases(unsubstantiatedInput).split("### 4.12 サマリ")[1].split("## 5.")[0];
     expect(summary).toContain("裏付けなし網羅対象数: 1");
   });
 
@@ -453,5 +454,67 @@ describe("renderTestCases coverage substantiation (4.3)", () => {
     expect(markdown).toContain(
       "- 宣言した網羅対象がケース本文（タイトル・前提条件・手順）から裏付けられている。"
     );
+  });
+});
+
+describe("renderTestCases test basis grounding (4.8)", () => {
+  const groundedCase = {
+    caseId: "TCS-001",
+    title: "残数なしで購入できない",
+    testConditionId: "TC-001",
+    derivedFrom: ["R-001"],
+    techniqueId: "boundary-value-analysis" as const,
+    coverageTargets: ["BV:枚数:1"],
+    preconditions: [{ name: "state", value: "初期状態" }],
+    steps: [
+      {
+        no: 1,
+        action: "枚数1で購入する",
+        expected: "「購入できる入場券残数がありません」と表示される",
+      },
+    ],
+  };
+
+  it("states that the check was skipped when testBasisDocuments is omitted", () => {
+    const markdown = renderTestCases({ ...baseInput, testCases: [groundedCase] });
+    const section48 = markdown.split("### 4.8 テストベースとの事実照合")[1].split("### 4.9")[0];
+    expect(section48).toContain(
+      "- testBasisDocuments が未指定のため、引用文言・IDの実在照合は実施していない(要確認)。"
+    );
+    const summary = markdown.split("### 4.12 サマリ")[1].split("## 5.")[0];
+    expect(summary).toContain("事実照合指摘数: 未実施");
+  });
+
+  it("flags an invented quotation as [high] and keeps existing wordings unflagged", () => {
+    const markdown = renderTestCases({
+      ...baseInput,
+      testBasisDocuments: [
+        { name: "11_要求仕様書", content: "E-020 購入できる入場券残数がありません。" },
+      ],
+      testCases: [
+        groundedCase,
+        {
+          ...groundedCase,
+          caseId: "TCS-002",
+          coverageTargets: ["BV:枚数:10"],
+          steps: [
+            {
+              no: 1,
+              action: "枚数10で購入する",
+              expected: "「ご希望の枚数が確保できませんでした」と表示される",
+            },
+          ],
+        },
+      ],
+    });
+    const section48 = markdown.split("### 4.8 テストベースとの事実照合")[1].split("### 4.9")[0];
+    expect(section48).toContain("- [high] TCS-002 手順1(引用): 「ご希望の枚数が確保できませんでした」");
+    expect(section48).not.toContain("TCS-001 手順1(引用)");
+    expect(section48).toContain("- 照合対象: 引用 2件 / ID 0件 / 未照合 1件");
+    const section6 = markdown.split("## 6. テストケース組み立て指示(意味的層)")[1];
+    expect(section6).toContain("以下の引用文言・IDをテストベースの実文言へ修正すること:");
+    expect(section6).toContain("- TCS-002 手順1(引用): ご希望の枚数が確保できませんでした");
+    const summary = markdown.split("### 4.12 サマリ")[1].split("## 5.")[0];
+    expect(summary).toContain("事実照合指摘数: 1");
   });
 });

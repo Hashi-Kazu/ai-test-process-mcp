@@ -4,11 +4,13 @@ import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
 import { toDerivedFromRef } from "./derivedFromRefs.js";
+import { extractIdOccurrences } from "./testBasisAnalysis.js";
 import type {
   GenerateTestCasesInput,
   GuidewordDictionary,
   RequirementSourceRef,
   StateTransitionSpec,
+  TestBasisDocument,
   TestBasisSourceRef,
   TestCaseCoverageRow,
   TestCaseCoverageTarget,
@@ -20,6 +22,7 @@ import type {
   TestCaseSpec,
   TestCaseStepFinding,
   TestCaseTraceRow,
+  TestCaseUngroundedQuotation,
   TestCaseUnknownTargetRef,
   TestCaseUnresolvedRef,
   TestCaseUnsubstantiatedTarget,
@@ -680,6 +683,161 @@ export function stripUnsubstantiatedCoverageTargets(
     ...c,
     coverageTargets: c.coverageTargets.filter((id) => !excluded.has(`${c.caseId} ${id}`)),
   }));
+}
+
+// --- テストベースとの事実照合（引用文言・IDの実在確認） ---
+
+export interface UngroundedQuotationOptions {
+  /** 照合対象外にするケースIDのプレフィックス（既定 TCS-） */
+  idPrefix?: string;
+  /** 照合対象外の設計内部ID（テスト条件ID・リスクID・ペルソナID・ケースID） */
+  internalIds?: string[];
+  /** extractIdOccurrences へ渡す追加パターン */
+  idPatterns?: string[];
+  /** 引用として扱う最小長（正規化後の文字数。既定 2） */
+  minQuotationLength?: number;
+}
+
+const GROUNDING_SYMBOL_CHARS =
+  "、。，．・:：;；!！?？…「」『』“”\"'（）()【】[]{}〈〉《》／/\\|＊*＋+,.-‐–—ー~〜→←↑↓";
+const GROUNDING_SYMBOLS = new Set(Array.from(GROUNDING_SYMBOL_CHARS));
+
+/** 表記差（全角半角・大文字小文字・空白・記号）を吸収した照合用文字列へ正規化する。 */
+export function normalizeForGrounding(text: string): string {
+  const base = text.normalize("NFKC").toLowerCase();
+  let out = "";
+  for (const ch of base) {
+    if (ch === "　" || /\s/.test(ch)) continue;
+    if (GROUNDING_SYMBOLS.has(ch)) continue;
+    out += ch;
+  }
+  return out;
+}
+
+const QUOTE_PATTERN_SOURCES = [
+  "「([^」]{1,200})」",
+  "『([^』]{1,200})』",
+  "“([^”]{1,200})”",
+  '"([^"]{1,200})"',
+];
+
+/** 括弧（「」『』“”""）で囲まれた引用文言を出現順に抽出する（入れ子は扱わない）。 */
+export function extractQuotedStrings(text: string): string[] {
+  const hits: { index: number; value: string }[] = [];
+  for (const source of QUOTE_PATTERN_SOURCES) {
+    const regex = new RegExp(source, "g");
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(text)) !== null) {
+      hits.push({ index: m.index, value: m[1] });
+      if (m[0].length === 0) regex.lastIndex++;
+    }
+  }
+  return hits.sort((a, b) => a.index - b.index).map((h) => h.value);
+}
+
+export interface GroundingCandidate {
+  caseId: string;
+  stepNo: number;
+  place: string;
+  kind: "quotation" | "id";
+  text: string;
+  normalized: string;
+}
+
+/**
+ * 照合対象（期待結果の引用文言・手順中のIDトークン）を抽出する。
+ * (caseId, kind, 正規化後テキスト) で一意化し、最初に見つかった place / stepNo を残す。
+ */
+export function collectGroundingCandidates(
+  testCases: TestCaseSpec[],
+  options: UngroundedQuotationOptions = {}
+): GroundingCandidate[] {
+  const idPrefix = options.idPrefix ?? DEFAULT_TEST_CASE_ID_PREFIX;
+  const internalIds = new Set(options.internalIds ?? []);
+  const minLength = options.minQuotationLength ?? 2;
+
+  const candidates: GroundingCandidate[] = [];
+  for (const c of testCases) {
+    const fields: { place: string; stepNo: number; text: string; quotable: boolean }[] = [];
+    c.steps.forEach((s, i) => {
+      fields.push({ place: `steps[${i}].action`, stepNo: s.no, text: s.action, quotable: false });
+      fields.push({ place: `steps[${i}].expected`, stepNo: s.no, text: s.expected, quotable: true });
+    });
+
+    // 1行=1フィールドの擬似文書を組み立て、occurrence.lineIndex から place / stepNo を逆引きする。
+    const pseudoDocument: TestBasisDocument = {
+      name: c.caseId,
+      content: fields.map((f) => f.text.replace(/[\r\n]+/g, " ")).join("\n"),
+    };
+    const idsByLine = new Map<number, string[]>();
+    for (const occ of extractIdOccurrences([pseudoDocument], { idPatterns: options.idPatterns })) {
+      const list = idsByLine.get(occ.lineIndex);
+      if (list) list.push(occ.id);
+      else idsByLine.set(occ.lineIndex, [occ.id]);
+    }
+
+    const seen = new Set<string>();
+    fields.forEach((field, lineIndex) => {
+      if (field.quotable) {
+        for (const quoted of extractQuotedStrings(field.text)) {
+          const normalized = normalizeForGrounding(quoted);
+          if (normalized.length < minLength) continue;
+          const key = `quotation ${normalized}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          candidates.push({
+            caseId: c.caseId,
+            stepNo: field.stepNo,
+            place: field.place,
+            kind: "quotation",
+            text: quoted,
+            normalized,
+          });
+        }
+      }
+      for (const id of idsByLine.get(lineIndex) ?? []) {
+        if (idPrefix.length > 0 && id.startsWith(idPrefix)) continue;
+        if (internalIds.has(id)) continue;
+        if (id === c.caseId) continue;
+        const normalized = normalizeForGrounding(id);
+        if (normalized.length === 0) continue;
+        const key = `id ${normalized}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        candidates.push({
+          caseId: c.caseId,
+          stepNo: field.stepNo,
+          place: field.place,
+          kind: "id",
+          text: id,
+          normalized,
+        });
+      }
+    });
+  }
+  return candidates;
+}
+
+export function findUngroundedQuotations(
+  testCases: TestCaseSpec[],
+  testBasisDocuments: TestBasisDocument[],
+  options: UngroundedQuotationOptions = {}
+): TestCaseUngroundedQuotation[] {
+  const basis = normalizeForGrounding(testBasisDocuments.map((d) => d.content).join("\n"));
+  return collectGroundingCandidates(testCases, options)
+    .filter((candidate) => !basis.includes(candidate.normalized))
+    .map((candidate) => ({
+      caseId: candidate.caseId,
+      stepNo: candidate.stepNo,
+      place: candidate.place,
+      kind: candidate.kind,
+      text: candidate.text,
+      severity: "high" as const,
+      detail:
+        candidate.kind === "quotation"
+          ? `「${candidate.text}」がテストベース本文に見つからない。テストベースの実文言へ修正すること。`
+          : `「${candidate.text}」がテストベース本文に見つからない。テストベースの実IDへ修正すること。`,
+    }));
 }
 
 // --- 技法推奨 ---
