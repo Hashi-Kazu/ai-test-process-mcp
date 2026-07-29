@@ -1,3 +1,5 @@
 node_modules/
 dist/
 *.log
+# テストベースPDFの抽出テキスト等、コミットしない作業成果物
+.work/
