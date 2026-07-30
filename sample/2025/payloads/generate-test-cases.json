@@ -1,0 +1,4938 @@
+{
+  "testConditions": [
+    {
+      "id": "TC-001",
+      "target": "発券機側 EH-100 発券機起動 / 入場ゲートハブ側 EH-100 ゲートハブ起動",
+      "statement": "発券機側とゲートハブ側の EH-100 を別機能として扱い、それぞれの起動でハードウェア初期化と自機の機能提供開始が完了し、起動直後から後続の要求を受け付けられることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-100"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-002",
+      "target": "発券機側 EH-900 発券機停止 / 入場ゲートハブ側 EH-900 ゲートハブ停止",
+      "statement": "処理中・通信中の状態で停止要求を受けた場合に、発券機側と入場ゲートハブ側のそれぞれが処理と通信の完了を待って停止状態へ遷移し、未完了の処理を残さないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-900"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-003",
+      "target": "発券機 EH-101 メニュー表示 / S-001-01 開始画面",
+      "statement": "開始画面から各購入機能と予約済み入場券発券への呼び出しが正順と戻り操作の双方で正しい画面へ遷移し、戻った先で選択状態が破綻していないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-101"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-001-01"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "業務フローが長い"
+      ]
+    },
+    {
+      "id": "TC-004",
+      "target": "発券機 EH-102 いますぐ入場券購入 / S-002-01 いますぐ入場券購入画面",
+      "statement": "いますぐ入場券購入で、券種選択から区分別枚数指定・支払い・発券までの一連の操作が画面遷移どおりに完了し、購入後すぐに入場できる入場券が出力されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-102"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-002-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-005",
+      "target": "発券機 S-002-02 / S-002-03 / S-002-04 いますぐ入場券購入（入場券確保失敗）",
+      "statement": "いますぐ入場券の入場券確保が失敗した場合に、1号機／1号機以外と残数有／残数無の組み合わせごとに該当画面へ遷移し、購入枚数と支払い状態が購入前へ戻ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "S-002-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-002-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-002-04"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-006",
+      "target": "発券機 EH-103 時間指定入場券購入 / S-003-01 / S-003-02",
+      "statement": "時間指定入場券購入で、入場予約時間と枚数の選択を経て購入が確定し、選択した時間枠の入場券として発券されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-103"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-003-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-003-02"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-007",
+      "target": "発券機 S-003-03 / S-003-04 / S-003-05 時間指定入場券情報確認",
+      "statement": "時間指定入場券情報確認で入場券確保が失敗した場合に、残数有と残数無で異なる案内へ分岐し、いずれの場合も購入が成立しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "S-003-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-003-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-003-05"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-008",
+      "target": "発券機 EH-220 入場時間枠選択",
+      "statement": "入場時間枠の選択で、枠の開始時刻・終了直前・終了時刻の各時点が30分単位のどちらの枠へ割り当てられるかが仕様どおりに切り替わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-220"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ"
+      ]
+    },
+    {
+      "id": "TC-009",
+      "target": "発券機 EH-230 区分別購入枚数指定 / E-015 / E-016",
+      "statement": "おとな／こども区分別の購入枚数について、合計0枚で E-015、合計1枚と合計9枚で購入成立、合計10枚で E-016 となる境界で扱いが切り替わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-230"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-015"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-016"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ",
+        "入力が分類を持つ"
+      ]
+    },
+    {
+      "id": "TC-010",
+      "target": "発券機 EH-240 支払い方法選択 / S-005-01 支払い方法選択画面",
+      "statement": "支払い方法選択で、現金・カード・QRコード・非接触電子マネーの各区分を選んだときに対応する支払い処理へ分岐し、同一区分内の別条件でも分岐先が変わらないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-240"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-005-01"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-04",
+      "basisCharacteristics": [
+        "入力が分類を持つ",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-011",
+      "target": "発券機 EH-104 予約済み入場券発券 / EH-312 発券対象予約選択 / S-004-01 予約済入場券情報表示",
+      "statement": "予約済入場券情報表示から当日分の対象を選択して発券が完了し、選択しなかった予約が未発券のまま残ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-104"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-312"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-004-01"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-012",
+      "target": "発券機 EH-311 ログイン / 入場管理 EK-510 会員認証",
+      "statement": "発券機からの会員認証要求が入場管理を経由してWebチケットシステム側へ中継され、認証に失敗した場合は予約情報を取得できないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-311"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-510"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-013",
+      "target": "発券機 S-007-01 / S-007-02 / S-007-03 / S-007-04 会員情報入力・確認",
+      "statement": "会員情報入力で、ログイン用QRコード入力とキーボード入力のどちらの経路からも会員情報確認へ到達し、同じ会員として扱われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "S-007-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-007-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-007-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-007-04"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-04",
+      "basisCharacteristics": [
+        "入力が分類を持つ",
+        "業務フローが長い"
+      ]
+    },
+    {
+      "id": "TC-014",
+      "target": "発券機 S-007-05 / S-007-06 会員情報入力NG",
+      "statement": "会員情報入力が失敗した場合に、ログイン用QRコードNGとキーボード入力NGでそれぞれの案内が表示され、再入力へ戻れることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "S-007-05"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-007-06"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-015",
+      "target": "発券機 EH-320 QRコード印刷 / S-006-01 発券画面",
+      "statement": "発券で、指定した区分と枚数と同数の入場用QRコードが専用用紙へ印刷され、印刷結果が入場ゲートで読み取れる形式であることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-320"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-006-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-016",
+      "target": "発券機 EH-400 停止状態表示 / S-008-01 障害停止 / S-009-01 販売停止",
+      "statement": "死活管理から障害が通知された状態で停止状態表示へ画面が切り替わり、障害停止と販売停止へ遷移して販売が継続されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-400"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-009-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-11",
+      "basisCharacteristics": [
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-017",
+      "target": "発券機 S-001-02 / S-001-03 開始画面（購入停止）",
+      "statement": "残数の状態に応じて開始画面がいますぐ入場券購入停止といますぐ／時間指定の双方停止へ切り替わり、停止中の購入操作が選択できないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "S-001-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-001-03"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-018",
+      "target": "発券機 EH-500 入場管理システム連携",
+      "statement": "発券機と入場管理の連携で、時間枠別残数情報の受信と購入要求の応答の順序が入れ替わっても発券機の表示と購入結果が矛盾しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-500"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-019",
+      "target": "入場ゲートハブ側 EH-300 入場管理システム連携",
+      "statement": "入場ゲートハブと入場管理の連携で、入場券情報一覧の受信と状態変更の送信が想定より遅れた場合の待ちと打ち切りが仕様どおりであることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-020",
+      "target": "発券機側 EH-210 ログイン / 入場ゲートハブ側 EH-210 QRコード有効・無効判定",
+      "statement": "入場ゲートハブ側の判定で入場券情報一覧の状態（未使用／使用済／無効）ごとに有効・無効の結果が切り替わり、発券機側のログインとは独立に動作することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-021",
+      "target": "入場ゲート EG-100 ゲート起動 / EG-900 ゲート停止",
+      "statement": "入場ゲートの起動でハードウェア初期化と入場ゲートハブとの通信確立が完了し、停止時には読み取り中の処理を完了させてから停止することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-100"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-900"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-022",
+      "target": "入場ゲート EG-210 QRコード読み取り / EG-220 QRコード情報通信",
+      "statement": "入場ゲートで読み取ったQRコード情報が入場ゲートハブへ送信され、判定結果が入場ゲートへ返って所定のハードウェア制御に使われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-210"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-023",
+      "target": "入場ゲート EG-310 ゲート開閉制御 / EG-320 LED制御 / EG-330 ブザー制御",
+      "statement": "有効・無効・形式不正の判定結果ごとに、ゲート開閉制御・LED制御・ブザー制御の3系統が同じ判定結果に基づいた一致した動作をすることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-310"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-320"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-330"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-024",
+      "target": "入場ゲート EG-220 判定結果受信 / EG-310 ゲート開閉制御",
+      "statement": "入場ゲートが判定結果を受信するまでの待ち時間について、1秒の直前では通常の判定制御となり、1秒を超えた場合は入場不能入場券時と同じ制御になる境界を確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-310"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "入力が範囲を持つ",
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-025",
+      "target": "入場管理 EK-100 入場管理起動 / EK-900 入場管理停止",
+      "statement": "入場管理の起動と停止で構成機器への配信と各機器からの要求受付が開始・終了し、停止時に処理途中の要求が放置されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-100"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-900"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-14",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-026",
+      "target": "入場管理 EK-210 時間枠別残数配信 / EK-230 時間枠別残数取得",
+      "statement": "Webチケットシステム側の予約管理DBサーバから取得した時間枠別残数が、発券機・残数表示インジケータ1／2・Webチケットシステムへ配信の周期どおりに反映されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-210"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-230"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-027",
+      "target": "入場管理 EK-220 残数表示切替閾値配信 / Z1-202 / Z2-202",
+      "statement": "残数表示切替閾値を境に、残数0枚・9枚・10枚・11枚で残数表示の記号と数字表示が切り替わり、閾値を変更した場合も同じ規則で切り替わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z1-202"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-202"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ"
+      ]
+    },
+    {
+      "id": "TC-028",
+      "target": "入場管理 EK-311 時間枠別残数更新（減算）",
+      "statement": "発券機とWebチケットシステムから同一時間枠へ同時に購入要求が発生したとき、残数の最後の1枚に対して一方だけが成立し、時間枠別残数が負の値にならないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-311"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-07",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-029",
+      "target": "入場管理 EK-312 購入情報生成",
+      "statement": "発券機からの要求で生成された購入情報が、Webチケットシステム側の購入情報と入場券情報一覧の双方に整合した内容で反映されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-312"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-09",
+      "basisCharacteristics": [
+        "データの生成〜消滅",
+        "業務フローが長い"
+      ]
+    },
+    {
+      "id": "TC-030",
+      "target": "入場管理 EK-321 時間枠別残数更新（加算） / EK-322 購入情報削除",
+      "statement": "購入中止の要求で時間枠別残数が購入前の値へ戻り、追加済みの購入情報が削除されて残数と購入情報の間に不整合が残らないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-321"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-322"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-09",
+      "basisCharacteristics": [
+        "データの生成〜消滅",
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-031",
+      "target": "入場管理 EK-410 予約情報応答",
+      "statement": "発券機からの要求に対し、認証済み会員の購入情報のうち発券対象となる予約情報だけが応答され、他の会員の予約が含まれないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-410"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-032",
+      "target": "入場管理 EK-520 入場券情報一覧同期",
+      "statement": "入場ゲートハブ起動時・新しい時間枠の開始時・いますぐ入場券購入を契機とする更新通知時の3種の契機それぞれで入場券情報一覧の同期が成立し、同期漏れが生じないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "並行・競合",
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-033",
+      "target": "入場管理 EK-530 死活管理",
+      "statement": "ACK応答を2回連続で欠落させた場合に障害と認識せず、3回連続で欠落させた場合に障害と認識して該当構成要素の運用を停止することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-530"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-11",
+      "basisCharacteristics": [
+        "入力が範囲を持つ"
+      ]
+    },
+    {
+      "id": "TC-034",
+      "target": "残数表示インジケータ1 Z1-100 / Z1-203 / Z1-900、残数表示インジケータ2 Z2-100 / Z2-900",
+      "statement": "残数表示インジケータ1／2の起動と停止でハードウェア初期化と電源断が完了し、固定文言が不揮発メモリ上のデータから表示されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "Z1-100"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z1-203"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z1-900"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-100"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-900"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "業務フローが長い"
+      ]
+    },
+    {
+      "id": "TC-035",
+      "target": "残数表示インジケータ1 Z1-201 / Z1-202、残数表示インジケータ2 Z2-201 / Z2-202",
+      "statement": "残数表示インジケータ1のいますぐ入場券残数表示と2の時間枠別残数表示が、初見の来園者が列に並ぶ前に購入可否を判断できる内容になっており、実際の購入可否と一致することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "Z1-201"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z1-202"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-201"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-202"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-16",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "仕様が不完全・未確定"
+      ]
+    },
+    {
+      "id": "TC-036",
+      "target": "Webチケットシステム W-000 ナビゲーション / W-000-01 ナビゲーション画面",
+      "statement": "ナビゲーションから各画面へ遷移でき、ログイン状態と未ログイン状態で表示される項目が仕様どおりに変わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-000"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-000-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "業務フローが長い"
+      ]
+    },
+    {
+      "id": "TC-037",
+      "target": "Webチケットシステム W-003 ログイン / W-003-01 ログイン画面 / E-013",
+      "statement": "ログイン画面で、未登録のメールアドレスと誤ったパスワードのいずれの場合も E-013 の同一文言が表示され、どちらが誤りかを推測できる差異が出ないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-003"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-003-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-013"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "入力が分類を持つ"
+      ]
+    },
+    {
+      "id": "TC-038",
+      "target": "Webチケットシステム W-004 ログアウト / W-004-01 ログアウト完了画面",
+      "statement": "ログアウト後に戻る操作や直リンクで会員向け画面へ到達できず、再ログインが要求されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-004"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-004-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-039",
+      "target": "Webチケットシステム W-006 マイページ / W-006-01 マイページ画面",
+      "statement": "マイページから予約購入・予約購入履歴・ログイン用QRコードの各機能へ遷移でき、遷移の前後で会員の識別が保たれることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-006"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-006-01"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "状態が多い・順序依存"
+      ]
+    },
+    {
+      "id": "TC-040",
+      "target": "Webチケットシステム W-008 予約購入 / W-008-01 予約購入画面 / E-014 / E-017",
+      "statement": "予約購入画面で入場日が未入力のとき E-014、指定時間帯が未指定のとき E-017 が表示され、いずれの場合も次の画面へ遷移しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-014"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-017"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "入力が分類を持つ"
+      ]
+    },
+    {
+      "id": "TC-041",
+      "target": "Webチケットシステム W-008-02 お支払方法選択画面 / E-018",
+      "statement": "お支払方法選択画面で、クレジットカード情報が未入力の場合と利用できないブランドを入力した場合の双方で E-018 が表示され、購入が確定しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-018"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-042",
+      "target": "Webチケットシステム W-008-03 予約購入確認画面 / W-008-04 予約購入完了画面 / E-020",
+      "statement": "予約購入確認画面から予約購入完了画面まで進んだ場合に購入情報が記録され、確認から確定までの間に残数がなくなった場合は E-020 が表示されて購入が成立しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-020"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-043",
+      "target": "Webチケットシステム W-009 予約購入履歴 / W-009-01 予約購入履歴画面",
+      "statement": "予約購入履歴が0件・1件・購入上限まで存在する場合のそれぞれで、一覧の表示件数と並び順が仕様どおりであることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-009"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-009-01"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ",
+        "入力が分類を持つ"
+      ]
+    },
+    {
+      "id": "TC-044",
+      "target": "Webチケットシステム W-010 予約購入詳細 / W-010-01 予約購入詳細画面",
+      "statement": "予約購入詳細画面で購入した入場券IDと券種が購入時の指定どおりに表示され、入場券を送る・QRコード表示・印刷プレビューの各操作が対応する画面へつながることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-010"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-010-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-045",
+      "target": "Webチケットシステム W-011 入場券分け与え / W-011-01 分け与え画面 / E-004 / E-005 / E-019",
+      "statement": "入場券分け与えの宛先に“@”を含まない値のとき E-004、半角英数字記号以外を含む値のとき E-005、送信エラー時に E-019 が表示され、いずれの場合も入場券が消費されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-011"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-011-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-004"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-005"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-019"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "入力が分類を持つ",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-046",
+      "target": "Webチケットシステム W-Mail-011-01 入場券分け与えの通知メール",
+      "statement": "分け与えの通知メールが指定した宛先へ届き、メール本文から入場用QRコードを取り出して入場ゲートで使用できることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-Mail-011-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-047",
+      "target": "Webチケットシステム W-013 ログイン用QRコード / W-013-01 ログイン用QRコード画面",
+      "statement": "ログイン用QRコード画面で表示されるQRコードが本人の会員に限って有効であり、他の会員として発券機の会員情報入力に流用できないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-013"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-013-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-048",
+      "target": "Webチケットシステム W-014 入場用QRコード / W-014-01 入場用QRコード画面",
+      "statement": "入場用QRコード画面で購入済みの入場券に対応するQRコードが表示され、複数枚購入時にどの入場券のQRコードかを識別できることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-014"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-014-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-049",
+      "target": "Webチケットシステム W-015 QRコードページ印刷プレビュー / W-015-01 印刷プレビュー画面",
+      "statement": "QRコードページ印刷プレビューについて、PCブラウザでは印刷プレビューボタンが表示され、モバイルブラウザでは表示されないという環境差が仕様どおりであることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-015"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-015-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-10",
+      "basisCharacteristics": [
+        "因子が多く組合せ爆発"
+      ]
+    },
+    {
+      "id": "TC-050",
+      "target": "Webチケットシステム W-900 エラー通知 / W-900-01 / W-900-02 / W-900-03 / W-900-04",
+      "statement": "予約購入エラー・ネットワーク混雑エラー・404エラーの各条件で対応するエラー画面へ遷移し、エラー通知メッセージエリアに原因と次に取るべき操作が示されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-900"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-900-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-900-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-900-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-900-04"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-11",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-051",
+      "target": "残数表示インジケータ1 Z1-202 / 残数表示インジケータ2 Z2-202 / 発券機 S-001-02",
+      "statement": "ゲスト購入の当日来園者が列に並ぶ前に残数表示から購入可否を判断でき、購入できない場合は発券機の開始画面でも購入停止が読み取れることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z1-202"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-202"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-001-02"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-16",
+      "basisCharacteristics": [
+        "仕様が不完全・未確定",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-052",
+      "target": "発券機 EH-102 いますぐ入場券購入 / EH-320 QRコード印刷（ゲスト購入時の再発券可否）",
+      "statement": "ゲスト購入と会員購入で再発券の可否が分かれ、ゲスト購入の入場券を紛失した場合に再発券が成立しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-102"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-320"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-02",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる",
+        "業務フローが長い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "02_だんだん動物園入場システム概要書",
+          "startLine": 326,
+          "endLine": 328
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 110,
+          "endLine": 112
+        }
+      ]
+    },
+    {
+      "id": "TC-053",
+      "target": "発券機 EH-240 支払い方法選択 / S-005-01 支払い方法選択画面（現金支払い時の釣り銭）",
+      "statement": "現金支払いで釣銭切れ・釣銭詰まりが発生した場合に係員呼び出しの案内が示され、入金額と発券状態が不整合にならないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-240"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-005-01"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-11",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "13_園内チケットシステム発券機画面仕様書",
+          "startLine": 497
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 598,
+          "endLine": 611
+        }
+      ]
+    },
+    {
+      "id": "TC-054",
+      "target": "Webチケットシステム W-003-01 ログイン画面 / W-008-01 予約購入画面 / W-008-04 予約購入完了画面",
+      "statement": "定めたPCブラウザ×OSとモバイルブラウザ×OSの各組み合わせで、ログインから入場日・時間枠の指定、区分別枚数指定、購入確定までが同じ結果になることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-003-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-04"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-10",
+      "basisCharacteristics": [
+        "因子が多く組合せ爆発"
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 1361,
+          "endLine": 1372
+        }
+      ]
+    },
+    {
+      "id": "TC-055",
+      "target": "Webチケットシステム W-015-01 印刷プレビュー画面 / W-010-01 予約購入詳細画面",
+      "statement": "会員が紙の入場用QRコードを用意しようとした場合に、モバイルブラウザでは印刷プレビューボタンが表示されないことを購入前に把握できる導線になっていることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-015-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-010-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-16",
+      "basisCharacteristics": [
+        "仕様が不完全・未確定"
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 799
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 978,
+          "endLine": 997
+        }
+      ]
+    },
+    {
+      "id": "TC-056",
+      "target": "Webチケットシステム W-Mail-011-01 通知メール / W-011-01 分け与え画面 / 入場ゲート EG-210",
+      "statement": "アカウントを持たない同伴者が通知メールの入場用QRコードだけで入場ゲートを通過でき、会員本人の分と取り違えないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-Mail-011-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-011-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-057",
+      "target": "Webチケットシステム W-011-01 分け与え画面 / W-014-01 入場用QRコード画面",
+      "statement": "分け与えメールと受信側で表示・印刷される内容に会員のメールアドレスがそのまま現れず、入場用QRコードの元データがハッシュ化された状態で扱われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-011-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-014-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "71_だんだん動物園入場システム入場券仕様書",
+          "startLine": 181,
+          "endLine": 185
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 824,
+          "endLine": 842
+        }
+      ]
+    },
+    {
+      "id": "TC-058",
+      "target": "入場管理 EK-530 死活管理 / 発券機 EH-400 停止状態表示（事務所のコンソール）",
+      "statement": "発券機・入場ゲート・入場ゲートハブ・残数表示インジケータ1／2のそれぞれでエラーを模擬したとき、事務所の入場管理コンソールで機器と事象が判別できる形で示されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-530"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-400"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-14",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "02_だんだん動物園入場システム概要書",
+          "startLine": 159
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1437,
+          "endLine": 1460
+        }
+      ]
+    },
+    {
+      "id": "TC-059",
+      "target": "発券機 S-009-01 販売停止 / EH-400 停止状態表示（用紙・釣り銭の補充と復旧）",
+      "statement": "印刷用紙切れ・釣銭切れ・釣銭詰まりを模擬したときに事務所側で状況を把握でき、補充後に販売が再開し、復旧の前後で発券枚数と入金の記録が矛盾しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-009-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-400"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-14",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "02_だんだん動物園入場システム概要書",
+          "startLine": 129
+        },
+        {
+          "document": "13_園内チケットシステム発券機画面仕様書",
+          "startLine": 497
+        }
+      ]
+    },
+    {
+      "id": "TC-060",
+      "target": "入場管理 EK-311 時間枠別残数更新（減算） / EK-321 時間枠別残数更新（加算） / 発券機 S-001-02",
+      "statement": "発券機・Webチケットシステム・窓口（係員対応）の3経路から同じ時間枠へ購入が集まっても時間枠別残数を超える販売が成立せず、残数なしの後は時間指定入場券購入と予約発券のみに絞られることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-311"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-321"
+        },
+        {
+          "kind": "requirement",
+          "id": "S-001-02"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-07",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-061",
+      "target": "窓口（係員対応）の団体予約購入受付",
+      "statement": "窓口扱いの団体予約について、9人と10人の境界で受付経路が分かれ、申込日を1日目として30日目と31日目の境界で受付可否が切り替わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-04"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ",
+        "複数条件の論理積で振る舞いが変わる"
+      ],
+      "sourceRefs": [
+        {
+          "document": "02_だんだん動物園入場システム概要書",
+          "startLine": 331,
+          "endLine": 336
+        }
+      ]
+    },
+    {
+      "id": "TC-062",
+      "target": "2025年改修の追加・変更点（入場ゲートハブ EH-300 / 入場ゲート EG-220 / 入場管理 EK-520）",
+      "statement": "入場ゲートハブの新設・入場ゲートの追加による複数台運用・事務所での運用の追加・時間指定入場券のWeb予約購入のそれぞれについて、影響を受ける既存機能が特定され、テスト結果と残存する未確定事項が引用できる形で残ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-05"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-18",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-063",
+      "target": "入場ゲート EG-220 QRコード情報通信 / 入場管理 EK-312 購入情報生成（入場記録と時間別入場者数の集計）",
+      "statement": "入場記録と時間別入場者数の集計が時間枠単位で取得でき、2025年改修の前後で同じ入力に対する集計結果が一致することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-05"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-312"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-18",
+      "basisCharacteristics": [
+        "業務フローが長い"
+      ]
+    },
+    {
+      "id": "TC-064",
+      "target": "Webチケットシステム W-008-01 予約購入画面 / W-014-01 入場用QRコード画面 / 残数表示インジケータ2 Z2-202",
+      "statement": "対応言語が日本語のみである前提のもとで、OSまたはブラウザのロケールが日本語以外に設定された環境でも画面文言が日本語で表示され、入場日と時間枠の日付・時刻の書式がずれないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-014-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "Z2-202"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-17",
+      "basisCharacteristics": [
+        "入力が範囲を持つ"
+      ],
+      "sourceRefs": [
+        {
+          "document": "02_だんだん動物園入場システム概要書",
+          "startLine": 341,
+          "endLine": 342
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 627,
+          "endLine": 673
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 1361,
+          "endLine": 1372
+        }
+      ]
+    },
+    {
+      "id": "TC-065",
+      "target": "入場管理 EK-530 死活管理 / EK-100 入場管理起動 / 発券機 EH-500 入場管理システム連携",
+      "statement": "開園から閉園までを超える連続稼働で、入場管理・発券機・入場ゲートハブの資源使用量が単調に増え続けず、時間枠切替をまたぐ定期処理が欠落・重複しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-530"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-100"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-500"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-12",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-066",
+      "target": "入場ゲートハブ側 EH-300 入場管理システム連携 / 入場管理 EK-520 入場券情報一覧同期",
+      "statement": "入場ゲートハブが保持する入場券情報一覧の件数を実運用相当より多い件数まで増やした状態で、判定処理の応答が入場ゲートの待ち時間内に収まり、限界を超えた場合に安全側で拒否されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-11"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-13",
+      "basisCharacteristics": [],
+      "sourceRefs": [
+        {
+          "document": "12_園内チケットシステムハードウェア仕様書",
+          "startLine": 22,
+          "endLine": 26
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1416,
+          "endLine": 1436
+        }
+      ]
+    },
+    {
+      "id": "TC-067",
+      "target": "入場ゲート EG-220 QRコード情報通信 / EG-310 ゲート開閉制御（複数台運用）",
+      "statement": "追加分2台を含む複数台の入場ゲートから同時に判定要求が発生した状態でも、有効な入場券が入場不能として扱われないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-03"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-16"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-310"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-13",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-068",
+      "target": "Webチケットシステム W-014-01 入場用QRコード画面 / W-015-01 印刷プレビュー画面 / W-011-01 分け与え画面",
+      "statement": "入場ゲートハブでの使用済化からクラウド2の購入情報へ反映されるまでの最大60秒の窓の中で、入場用QRコードの再表示・印刷プレビューからの再印刷・分け与えメールの再送を行っても、2回目の入場が成立しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-19"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-014-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-015-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-011-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "並行・競合"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 243,
+          "endLine": 251
+        },
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 259,
+          "endLine": 260
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1062,
+          "endLine": 1063
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 815,
+          "endLine": 840
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 943,
+          "endLine": 955
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 968,
+          "endLine": 985
+        }
+      ]
+    },
+    {
+      "id": "TC-069",
+      "target": "Webチケットシステム W-Mail-011-01 通知メール / 入場ゲートハブ側 EH-210 QRコード有効・無効判定",
+      "statement": "分け与えを受けた同伴者が入場後の60秒以内に通知メールの入場用QRコードを再度提示した場合に、入場ゲートハブ側の判定で入場不可となることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-Mail-011-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "業務フローが長い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 243,
+          "endLine": 251
+        },
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 259,
+          "endLine": 260
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1062,
+          "endLine": 1063
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 815,
+          "endLine": 840
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 943,
+          "endLine": 955
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 968,
+          "endLine": 985
+        }
+      ]
+    },
+    {
+      "id": "TC-070",
+      "target": "Webチケットシステム W-014-01 入場用QRコード画面 / 入場ゲートハブ側 EH-300 入場管理システム連携",
+      "statement": "使用済化の直後・60秒の直前・60秒経過後の各時点でWeb側の購入情報の状態を参照し、反映前は未使用のまま表示され、反映後に使用済へ変わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-08"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-014-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-08",
+      "basisCharacteristics": [
+        "並行・競合",
+        "入力が範囲を持つ"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 243,
+          "endLine": 251
+        },
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 259,
+          "endLine": 260
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1062,
+          "endLine": 1063
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 815,
+          "endLine": 840
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 943,
+          "endLine": 955
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 968,
+          "endLine": 985
+        }
+      ]
+    },
+    {
+      "id": "TC-071",
+      "target": "入場管理 EK-520 入場券情報一覧同期 / 入場ゲートハブ側 EH-300 / W-010-01 予約購入詳細画面",
+      "statement": "新しい時間枠の開始時に状態が未使用のままだった入場券情報が無効へ変更され、その状態がWebチケットシステム側の購入情報へ反映されて予約購入詳細の表示と一致することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-20"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-010-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-09",
+      "basisCharacteristics": [
+        "データの生成〜消滅",
+        "並行・競合"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1082,
+          "endLine": 1085
+        },
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 243,
+          "endLine": 251
+        },
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 259,
+          "endLine": 260
+        }
+      ]
+    },
+    {
+      "id": "TC-072",
+      "target": "Webチケットシステム W-008-01 予約購入画面 / E-014（指定可能日の上限）",
+      "statement": "Web予約購入で指定できる入場日について、当日と29日後で購入が成立し、30日後は指定できないという上限の境界を確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-014"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ"
+      ],
+      "sourceRefs": [
+        {
+          "document": "01_だんだん動物園入場システムテスト依頼書_20250507",
+          "startLine": 226
+        },
+        {
+          "document": "01_だんだん動物園入場システムテスト依頼書_20250507",
+          "startLine": 419
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 627,
+          "endLine": 673
+        },
+        {
+          "document": "71_だんだん動物園入場システム入場券仕様書",
+          "startLine": 134
+        }
+      ]
+    },
+    {
+      "id": "TC-073",
+      "target": "Webチケットシステム W-008-01 予約購入画面 / E-017（指定可能な時間枠の下限）",
+      "statement": "Web予約購入で指定できる入場時間枠の下限について、現在時刻の1時間後の時間枠が選択でき、それより前の時間枠が選択できないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-017"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ",
+        "複数条件の論理積で振る舞いが変わる"
+      ],
+      "sourceRefs": [
+        {
+          "document": "01_だんだん動物園入場システムテスト依頼書_20250507",
+          "startLine": 419
+        },
+        {
+          "document": "02_だんだん動物園入場システム概要書",
+          "startLine": 238
+        },
+        {
+          "document": "71_だんだん動物園入場システム入場券仕様書",
+          "startLine": 134
+        },
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 627,
+          "endLine": 673
+        }
+      ]
+    },
+    {
+      "id": "TC-074",
+      "target": "入場ゲートハブ側 EH-210 QRコード有効・無効判定 / 入場ゲート EG-210 QRコード読み取り",
+      "statement": "複製・改変された入場用QRコード、および他人の購入分の入場用QRコードを入場ゲートで読み取らせた場合に、入場ゲートハブの判定で受理されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-15"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-19"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-210"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-075",
+      "target": "Webチケットシステム W-008-03 予約購入確認画面 / 入場管理 EK-312 購入情報生成",
+      "statement": "予約購入確認画面の確定操作を二重に送信した場合に、購入情報が二重に生成されず時間枠別残数が二重に減算されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-04"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-10"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-312"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-07",
+      "basisCharacteristics": [
+        "並行・競合",
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-076",
+      "target": "入場管理 EK-520 入場券情報一覧同期 / 入場ゲートハブ側 EH-300 入場管理システム連携",
+      "statement": "入場券情報一覧の同期が通信断で中途で終わった場合に、入場ゲートハブが不完全な一覧のまま判定を続けず、再開後に欠落なく同期されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-12"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-16"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-11",
+      "basisCharacteristics": [
+        "並行・競合"
+      ]
+    },
+    {
+      "id": "TC-077",
+      "target": "Webチケットシステム W-009-01 予約購入履歴画面 / 入場管理 EK-410 予約情報応答",
+      "statement": "予約情報が0件・1件・購入上限まで存在する場合に、発券機の予約済入場券情報表示とWebの予約購入履歴で示される件数が一致することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-10"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-12"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-009-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-410"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "入力が範囲を持つ",
+        "入力が分類を持つ"
+      ]
+    },
+    {
+      "id": "TC-078",
+      "target": "Webチケットシステム W-008-03 予約購入確認画面 / W-008-04 予約購入完了画面",
+      "statement": "予約購入完了画面からブラウザの戻る操作で確認画面へ戻って再送信した場合に、同じ購入が二重に成立せず画面と購入情報の状態が一致することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-05"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-06"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-04"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "仕様が不完全・未確定"
+      ]
+    },
+    {
+      "id": "TC-079",
+      "target": "入場管理 EK-230 時間枠別残数取得 / EK-210 時間枠別残数配信",
+      "statement": "Webチケットシステム側の予約管理DBサーバから時間枠別残数を取得できない場合に、発券機と残数表示インジケータが古い残数のまま販売を続けず、取得できていない状態へ切り替わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-07"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-230"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-11",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-080",
+      "target": "入場ゲートハブ側 EH-210 QRコード有効・無効判定 / 入場管理 EK-520 入場券情報一覧同期",
+      "statement": "状態が無効の入場券と使用済の入場券をそれぞれ入場ゲートで提示した場合に、いずれも入場不可となり状態が未使用へ戻らないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-11"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-14"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-210"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "状態が多い・順序依存",
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-081",
+      "target": "Webチケットシステム W-010-01 予約購入詳細画面 / W-006-01 マイページ画面",
+      "statement": "ログイン中の会員が自分以外の会員の予約購入詳細へ直接URLで到達できず、他人の入場券IDと入場用QRコードを参照できないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-14"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-11"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-010-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-006-01"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い"
+      ]
+    },
+    {
+      "id": "TC-082",
+      "target": "Webチケットシステム W-900-02 ネットワーク混雑エラー画面 / W-008-02 お支払方法選択画面",
+      "statement": "低速・不安定な回線でWeb予約購入を行った場合に、ネットワーク混雑エラー画面へ遷移して購入が中途半端な状態で残らないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-09"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-900-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-008-02"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-10",
+      "basisCharacteristics": []
+    },
+    {
+      "id": "TC-083",
+      "target": "入場管理 EK-312 購入情報生成 / EK-322 購入情報削除",
+      "statement": "購入情報の生成と時間枠別残数の更新のうち一方だけが成立して終わった場合に、その不整合を運用側で検知できて復旧できることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GWF-06"
+        },
+        {
+          "kind": "guideword",
+          "id": "GW-18"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-312"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-322"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-09",
+      "basisCharacteristics": [
+        "データの生成〜消滅"
+      ]
+    },
+    {
+      "id": "TC-084",
+      "target": "入場ゲート EG-100 / EG-220 / EG-310 / EG-320 / EG-330（入場ゲート単独判定からの退行）",
+      "statement": "判定処理が入場ゲート単独から入場ゲートハブへ移ったことにより、入場ゲート単独判定を前提としていた既存動作が退行していないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-100"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-310"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-320"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-330"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-18",
+      "basisCharacteristics": [
+        "複数条件の論理積で振る舞いが変わる"
+      ]
+    },
+    {
+      "id": "TC-085",
+      "target": "入場ゲートハブ側 EH-300 / 入場ゲート EG-220 / 入場管理 EK-520（72号のデータ連携の解釈）",
+      "statement": "72号のデータ項目と通信タイミングを期待結果として明文化し、園内側とWebチケットシステム側の双方が同一の期待結果で統合テストを実行できることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-09"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-17"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-300"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "業務フローが長い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 243,
+          "endLine": 251
+        },
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 259,
+          "endLine": 260
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1093,
+          "endLine": 1098
+        }
+      ]
+    },
+    {
+      "id": "TC-086",
+      "target": "Webチケットシステム W-014-01 入場用QRコード画面 / 発券機 EH-320 QRコード印刷",
+      "statement": "入場用QRコードの元データに含まれる4桁の乱数が同一購入内で重複した場合でも、入場券が取り違えられず入場ゲートハブの判定が誤らないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-18"
+        },
+        {
+          "kind": "requirement",
+          "id": "W-014-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "EH-320"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-15",
+      "basisCharacteristics": [
+        "経験・勘に依存する不具合が多い",
+        "入力が範囲を持つ"
+      ],
+      "sourceRefs": [
+        {
+          "document": "71_だんだん動物園入場システム入場券仕様書",
+          "startLine": 181,
+          "endLine": 185
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 145,
+          "endLine": 148
+        }
+      ]
+    }
+  ],
+  "requirementIds": [
+    "EH-100",
+    "EH-101",
+    "EH-102",
+    "EH-103",
+    "EH-104",
+    "EH-210",
+    "EH-220",
+    "EH-230",
+    "EH-240",
+    "EH-311",
+    "EH-312",
+    "EH-320",
+    "EH-400",
+    "EH-500",
+    "EH-900",
+    "EH-300",
+    "EG-100",
+    "EG-210",
+    "EG-220",
+    "EG-310",
+    "EG-320",
+    "EG-330",
+    "EG-900",
+    "EK-100",
+    "EK-210",
+    "EK-220",
+    "EK-230",
+    "EK-311",
+    "EK-312",
+    "EK-321",
+    "EK-322",
+    "EK-410",
+    "EK-510",
+    "EK-520",
+    "EK-530",
+    "EK-900",
+    "Z1-100",
+    "Z1-201",
+    "Z1-202",
+    "Z1-203",
+    "Z1-900",
+    "Z2-100",
+    "Z2-201",
+    "Z2-202",
+    "Z2-900",
+    "S-001-01",
+    "S-001-02",
+    "S-001-03",
+    "S-002-01",
+    "S-002-02",
+    "S-002-03",
+    "S-002-04",
+    "S-003-01",
+    "S-003-02",
+    "S-003-03",
+    "S-003-04",
+    "S-003-05",
+    "S-004-01",
+    "S-005-01",
+    "S-006-01",
+    "S-007-01",
+    "S-007-02",
+    "S-007-03",
+    "S-007-04",
+    "S-007-05",
+    "S-007-06",
+    "S-008-01",
+    "S-009-01",
+    "W-000",
+    "W-003",
+    "W-004",
+    "W-006",
+    "W-008",
+    "W-009",
+    "W-010",
+    "W-011",
+    "W-013",
+    "W-014",
+    "W-015",
+    "W-900",
+    "W-Mail-011-01",
+    "W-000-01",
+    "W-003-01",
+    "W-004-01",
+    "W-006-01",
+    "W-008-03",
+    "W-008-01",
+    "E-017",
+    "W-008-02",
+    "W-008-04",
+    "W-009-01",
+    "W-010-01",
+    "W-011-01",
+    "W-013-01",
+    "W-014-01",
+    "W-015-01",
+    "W-900-01",
+    "W-900-02",
+    "W-900-03",
+    "E-004",
+    "E-005",
+    "E-013",
+    "E-014",
+    "E-015",
+    "E-016",
+    "E-018",
+    "E-019",
+    "E-020",
+    "W-900-04"
+  ],
+  "riskIds": [
+    "RK-01",
+    "RK-02",
+    "RK-03",
+    "RK-04",
+    "RK-05",
+    "RK-06",
+    "RK-07",
+    "RK-08",
+    "RK-09",
+    "RK-10",
+    "RK-11",
+    "RK-12",
+    "RK-13",
+    "RK-14",
+    "RK-15",
+    "RK-16",
+    "RK-17",
+    "RK-18",
+    "RK-19",
+    "RK-20",
+    "RK-21"
+  ],
+  "personaIds": [
+    "P-01",
+    "P-02",
+    "P-03",
+    "P-04",
+    "P-05"
+  ],
+  "requirementSources": [
+    {
+      "requirementId": "EH-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 104,
+      "endLine": 106
+    },
+    {
+      "requirementId": "EH-101",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 107,
+      "endLine": 109
+    },
+    {
+      "requirementId": "EH-102",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 110,
+      "endLine": 112
+    },
+    {
+      "requirementId": "EH-103",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 113,
+      "endLine": 115
+    },
+    {
+      "requirementId": "EH-104",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 116,
+      "endLine": 118
+    },
+    {
+      "requirementId": "EH-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 119,
+      "endLine": 121
+    },
+    {
+      "requirementId": "EH-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 122,
+      "endLine": 123
+    },
+    {
+      "requirementId": "EH-230",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 124,
+      "endLine": 127
+    },
+    {
+      "requirementId": "EH-240",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 128,
+      "endLine": 129
+    },
+    {
+      "requirementId": "EH-311",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 139,
+      "endLine": 141
+    },
+    {
+      "requirementId": "EH-312",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 142,
+      "endLine": 144
+    },
+    {
+      "requirementId": "EH-320",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 145,
+      "endLine": 148
+    },
+    {
+      "requirementId": "EH-400",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 149,
+      "endLine": 150
+    },
+    {
+      "requirementId": "EH-500",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 151,
+      "endLine": 161
+    },
+    {
+      "requirementId": "EH-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 162,
+      "endLine": 177
+    },
+    {
+      "requirementId": "EH-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 178,
+      "endLine": 180
+    },
+    {
+      "requirementId": "EH-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 181,
+      "endLine": 185
+    },
+    {
+      "requirementId": "EH-300",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 186,
+      "endLine": 188
+    },
+    {
+      "requirementId": "EH-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 189,
+      "endLine": 199
+    },
+    {
+      "requirementId": "EG-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 200,
+      "endLine": 202
+    },
+    {
+      "requirementId": "EG-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 203,
+      "endLine": 205
+    },
+    {
+      "requirementId": "EG-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 206,
+      "endLine": 209
+    },
+    {
+      "requirementId": "EG-310",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 210,
+      "endLine": 212
+    },
+    {
+      "requirementId": "EG-320",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 213,
+      "endLine": 216
+    },
+    {
+      "requirementId": "EG-330",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 217,
+      "endLine": 220
+    },
+    {
+      "requirementId": "EG-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 221,
+      "endLine": 236
+    },
+    {
+      "requirementId": "EK-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 237,
+      "endLine": 240
+    },
+    {
+      "requirementId": "EK-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 241,
+      "endLine": 243
+    },
+    {
+      "requirementId": "EK-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 244,
+      "endLine": 247
+    },
+    {
+      "requirementId": "EK-230",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 248,
+      "endLine": 251
+    },
+    {
+      "requirementId": "EK-311",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 252,
+      "endLine": 255
+    },
+    {
+      "requirementId": "EK-312",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 256,
+      "endLine": 262
+    },
+    {
+      "requirementId": "EK-321",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 263,
+      "endLine": 266
+    },
+    {
+      "requirementId": "EK-322",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 267,
+      "endLine": 269
+    },
+    {
+      "requirementId": "EK-410",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 270,
+      "endLine": 272
+    },
+    {
+      "requirementId": "EK-510",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 273,
+      "endLine": 275
+    },
+    {
+      "requirementId": "EK-520",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 276,
+      "endLine": 281
+    },
+    {
+      "requirementId": "EK-530",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 282,
+      "endLine": 286
+    },
+    {
+      "requirementId": "EK-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 287,
+      "endLine": 309
+    },
+    {
+      "requirementId": "Z1-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 310,
+      "endLine": 315
+    },
+    {
+      "requirementId": "Z1-201",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 316,
+      "endLine": 318
+    },
+    {
+      "requirementId": "Z1-202",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 319,
+      "endLine": 321
+    },
+    {
+      "requirementId": "Z1-203",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 322,
+      "endLine": 324
+    },
+    {
+      "requirementId": "Z1-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 325,
+      "endLine": 334
+    },
+    {
+      "requirementId": "Z2-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 335,
+      "endLine": 338
+    },
+    {
+      "requirementId": "Z2-201",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 339,
+      "endLine": 341
+    },
+    {
+      "requirementId": "Z2-202",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 342,
+      "endLine": 344
+    },
+    {
+      "requirementId": "Z2-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 345,
+      "endLine": 363
+    },
+    {
+      "requirementId": "EH-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 364,
+      "endLine": 385
+    },
+    {
+      "requirementId": "EH-101",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 386,
+      "endLine": 420
+    },
+    {
+      "requirementId": "EH-102",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 421,
+      "endLine": 452
+    },
+    {
+      "requirementId": "EH-103",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 453,
+      "endLine": 482
+    },
+    {
+      "requirementId": "EH-104",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 483,
+      "endLine": 500
+    },
+    {
+      "requirementId": "EH-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 501,
+      "endLine": 531
+    },
+    {
+      "requirementId": "EH-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 532,
+      "endLine": 559
+    },
+    {
+      "requirementId": "EH-230",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 560,
+      "endLine": 597
+    },
+    {
+      "requirementId": "EH-240",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 598,
+      "endLine": 611
+    },
+    {
+      "requirementId": "EH-311",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 719,
+      "endLine": 723
+    },
+    {
+      "requirementId": "EH-312",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 724,
+      "endLine": 777
+    },
+    {
+      "requirementId": "EH-400",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 778,
+      "endLine": 826
+    },
+    {
+      "requirementId": "EH-500",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 827,
+      "endLine": 1025
+    },
+    {
+      "requirementId": "EH-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1026,
+      "endLine": 1039
+    },
+    {
+      "requirementId": "EH-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1040,
+      "endLine": 1053
+    },
+    {
+      "requirementId": "EH-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1054,
+      "endLine": 1092
+    },
+    {
+      "requirementId": "EH-300",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1093,
+      "endLine": 1098
+    },
+    {
+      "requirementId": "EG-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1099,
+      "endLine": 1118
+    },
+    {
+      "requirementId": "EG-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1119,
+      "endLine": 1133
+    },
+    {
+      "requirementId": "EG-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1134,
+      "endLine": 1141
+    },
+    {
+      "requirementId": "EG-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1142,
+      "endLine": 1165
+    },
+    {
+      "requirementId": "EG-310",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1166,
+      "endLine": 1172
+    },
+    {
+      "requirementId": "EG-320",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1173,
+      "endLine": 1179
+    },
+    {
+      "requirementId": "EG-330",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1180,
+      "endLine": 1188
+    },
+    {
+      "requirementId": "EG-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1189,
+      "endLine": 1202
+    },
+    {
+      "requirementId": "EK-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1203,
+      "endLine": 1224
+    },
+    {
+      "requirementId": "EK-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1225,
+      "endLine": 1246
+    },
+    {
+      "requirementId": "EK-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1247,
+      "endLine": 1268
+    },
+    {
+      "requirementId": "EK-230",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1269,
+      "endLine": 1287
+    },
+    {
+      "requirementId": "EK-311",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1288,
+      "endLine": 1312
+    },
+    {
+      "requirementId": "EK-312",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1313,
+      "endLine": 1344
+    },
+    {
+      "requirementId": "EK-321",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1345,
+      "endLine": 1369
+    },
+    {
+      "requirementId": "EK-322",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1370,
+      "endLine": 1387
+    },
+    {
+      "requirementId": "EK-410",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1388,
+      "endLine": 1400
+    },
+    {
+      "requirementId": "EK-510",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1401,
+      "endLine": 1415
+    },
+    {
+      "requirementId": "EK-520",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1416,
+      "endLine": 1436
+    },
+    {
+      "requirementId": "EK-530",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1437,
+      "endLine": 1460
+    },
+    {
+      "requirementId": "EK-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1461,
+      "endLine": 1474
+    },
+    {
+      "requirementId": "Z1-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1475,
+      "endLine": 1494
+    },
+    {
+      "requirementId": "Z1-201",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1495,
+      "endLine": 1510
+    },
+    {
+      "requirementId": "Z1-202",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1511,
+      "endLine": 1609
+    },
+    {
+      "requirementId": "Z1-203",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1610,
+      "endLine": 1621
+    },
+    {
+      "requirementId": "Z1-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1622,
+      "endLine": 1631
+    },
+    {
+      "requirementId": "Z2-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1632,
+      "endLine": 1652
+    },
+    {
+      "requirementId": "Z2-201",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1653,
+      "endLine": 1660
+    },
+    {
+      "requirementId": "Z2-202",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1661,
+      "endLine": 1716
+    },
+    {
+      "requirementId": "Z2-900",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1717,
+      "endLine": 1806
+    },
+    {
+      "requirementId": "S-001-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 30,
+      "endLine": 30
+    },
+    {
+      "requirementId": "S-001-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 31,
+      "endLine": 31
+    },
+    {
+      "requirementId": "S-001-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 32,
+      "endLine": 32
+    },
+    {
+      "requirementId": "S-002-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 33,
+      "endLine": 33
+    },
+    {
+      "requirementId": "S-002-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 34,
+      "endLine": 34
+    },
+    {
+      "requirementId": "S-002-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 35,
+      "endLine": 35
+    },
+    {
+      "requirementId": "S-002-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 36,
+      "endLine": 36
+    },
+    {
+      "requirementId": "S-003-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 37,
+      "endLine": 37
+    },
+    {
+      "requirementId": "S-003-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 38,
+      "endLine": 38
+    },
+    {
+      "requirementId": "S-003-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 39,
+      "endLine": 39
+    },
+    {
+      "requirementId": "S-003-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 40,
+      "endLine": 40
+    },
+    {
+      "requirementId": "S-003-05",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 41,
+      "endLine": 41
+    },
+    {
+      "requirementId": "S-004-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 42,
+      "endLine": 42
+    },
+    {
+      "requirementId": "S-005-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 43,
+      "endLine": 43
+    },
+    {
+      "requirementId": "S-006-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 59,
+      "endLine": 59
+    },
+    {
+      "requirementId": "S-007-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 60,
+      "endLine": 60
+    },
+    {
+      "requirementId": "S-007-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 61,
+      "endLine": 61
+    },
+    {
+      "requirementId": "S-007-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 62,
+      "endLine": 69
+    },
+    {
+      "requirementId": "S-007-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 70,
+      "endLine": 70
+    },
+    {
+      "requirementId": "S-007-05",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 71,
+      "endLine": 71
+    },
+    {
+      "requirementId": "S-007-06",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 72,
+      "endLine": 72
+    },
+    {
+      "requirementId": "S-008-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 73,
+      "endLine": 73
+    },
+    {
+      "requirementId": "S-009-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 74,
+      "endLine": 137
+    },
+    {
+      "requirementId": "S-001-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 138,
+      "endLine": 139
+    },
+    {
+      "requirementId": "S-001-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 140,
+      "endLine": 141
+    },
+    {
+      "requirementId": "S-001-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 142,
+      "endLine": 143
+    },
+    {
+      "requirementId": "S-002-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 144,
+      "endLine": 144
+    },
+    {
+      "requirementId": "S-002-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 145,
+      "endLine": 145
+    },
+    {
+      "requirementId": "S-002-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 146,
+      "endLine": 146
+    },
+    {
+      "requirementId": "S-002-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 147,
+      "endLine": 147
+    },
+    {
+      "requirementId": "S-003-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 148,
+      "endLine": 148
+    },
+    {
+      "requirementId": "S-003-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 149,
+      "endLine": 149
+    },
+    {
+      "requirementId": "S-003-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 150,
+      "endLine": 150
+    },
+    {
+      "requirementId": "S-003-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 151,
+      "endLine": 151
+    },
+    {
+      "requirementId": "S-003-05",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 152,
+      "endLine": 152
+    },
+    {
+      "requirementId": "S-004-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 153,
+      "endLine": 153
+    },
+    {
+      "requirementId": "S-005-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 154,
+      "endLine": 154
+    },
+    {
+      "requirementId": "S-006-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 170,
+      "endLine": 170
+    },
+    {
+      "requirementId": "S-007-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 171,
+      "endLine": 178
+    },
+    {
+      "requirementId": "S-007-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 179,
+      "endLine": 179
+    },
+    {
+      "requirementId": "S-007-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 180,
+      "endLine": 180
+    },
+    {
+      "requirementId": "S-007-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 181,
+      "endLine": 181
+    },
+    {
+      "requirementId": "S-007-05",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 182,
+      "endLine": 182
+    },
+    {
+      "requirementId": "S-007-06",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 183,
+      "endLine": 183
+    },
+    {
+      "requirementId": "S-008-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 184,
+      "endLine": 184
+    },
+    {
+      "requirementId": "S-009-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 185,
+      "endLine": 211
+    },
+    {
+      "requirementId": "S-001-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 212,
+      "endLine": 218
+    },
+    {
+      "requirementId": "S-001-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 219,
+      "endLine": 229
+    },
+    {
+      "requirementId": "S-001-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 230,
+      "endLine": 234
+    },
+    {
+      "requirementId": "S-002-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 235,
+      "endLine": 290
+    },
+    {
+      "requirementId": "S-002-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 291,
+      "endLine": 315
+    },
+    {
+      "requirementId": "S-002-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 316,
+      "endLine": 332
+    },
+    {
+      "requirementId": "S-002-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 333,
+      "endLine": 357
+    },
+    {
+      "requirementId": "S-003-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 358,
+      "endLine": 373
+    },
+    {
+      "requirementId": "S-003-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 374,
+      "endLine": 419
+    },
+    {
+      "requirementId": "S-003-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 420,
+      "endLine": 427
+    },
+    {
+      "requirementId": "S-003-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 428,
+      "endLine": 444
+    },
+    {
+      "requirementId": "S-003-05",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 445,
+      "endLine": 461
+    },
+    {
+      "requirementId": "S-004-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 462,
+      "endLine": 483
+    },
+    {
+      "requirementId": "S-005-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 484,
+      "endLine": 491
+    },
+    {
+      "requirementId": "S-006-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 668,
+      "endLine": 680
+    },
+    {
+      "requirementId": "S-007-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 681,
+      "endLine": 688
+    },
+    {
+      "requirementId": "S-007-02",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 689,
+      "endLine": 701
+    },
+    {
+      "requirementId": "S-007-03",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 702,
+      "endLine": 718
+    },
+    {
+      "requirementId": "S-007-04",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 719,
+      "endLine": 738
+    },
+    {
+      "requirementId": "S-007-05",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 739,
+      "endLine": 746
+    },
+    {
+      "requirementId": "S-007-06",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 747,
+      "endLine": 761
+    },
+    {
+      "requirementId": "S-008-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 762,
+      "endLine": 768
+    },
+    {
+      "requirementId": "S-009-01",
+      "document": "13_園内チケットシステム発券機画面仕様書",
+      "startLine": 769,
+      "endLine": 796
+    },
+    {
+      "requirementId": "W-000",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 26,
+      "endLine": 26
+    },
+    {
+      "requirementId": "W-003",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 29,
+      "endLine": 29
+    },
+    {
+      "requirementId": "W-004",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 30,
+      "endLine": 30
+    },
+    {
+      "requirementId": "W-006",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 32,
+      "endLine": 32
+    },
+    {
+      "requirementId": "W-008",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 34,
+      "endLine": 34
+    },
+    {
+      "requirementId": "W-009",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 35,
+      "endLine": 35
+    },
+    {
+      "requirementId": "W-010",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 36,
+      "endLine": 36
+    },
+    {
+      "requirementId": "W-011",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 37,
+      "endLine": 37
+    },
+    {
+      "requirementId": "W-013",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 39,
+      "endLine": 39
+    },
+    {
+      "requirementId": "W-014",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 40,
+      "endLine": 40
+    },
+    {
+      "requirementId": "W-015",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 41,
+      "endLine": 41
+    },
+    {
+      "requirementId": "W-900",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 42,
+      "endLine": 44
+    },
+    {
+      "requirementId": "W-Mail-011-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 49,
+      "endLine": 49
+    },
+    {
+      "requirementId": "W-000",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 99,
+      "endLine": 100
+    },
+    {
+      "requirementId": "W-003",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 105,
+      "endLine": 106
+    },
+    {
+      "requirementId": "W-004",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 107,
+      "endLine": 108
+    },
+    {
+      "requirementId": "W-006",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 111,
+      "endLine": 112
+    },
+    {
+      "requirementId": "W-008",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 115,
+      "endLine": 116
+    },
+    {
+      "requirementId": "W-009",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 117,
+      "endLine": 119
+    },
+    {
+      "requirementId": "W-010",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 120,
+      "endLine": 122
+    },
+    {
+      "requirementId": "W-011",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 123,
+      "endLine": 125
+    },
+    {
+      "requirementId": "W-013",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 128,
+      "endLine": 130
+    },
+    {
+      "requirementId": "W-014",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 131,
+      "endLine": 133
+    },
+    {
+      "requirementId": "W-015",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 134,
+      "endLine": 136
+    },
+    {
+      "requirementId": "W-900",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 137,
+      "endLine": 153
+    },
+    {
+      "requirementId": "W-000",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 154,
+      "endLine": 159
+    },
+    {
+      "requirementId": "W-000-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 160,
+      "endLine": 180
+    },
+    {
+      "requirementId": "W-003",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 181,
+      "endLine": 193
+    },
+    {
+      "requirementId": "W-003",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 341,
+      "endLine": 348
+    },
+    {
+      "requirementId": "W-003-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 349,
+      "endLine": 386
+    },
+    {
+      "requirementId": "W-004",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 387,
+      "endLine": 396
+    },
+    {
+      "requirementId": "W-004-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 397,
+      "endLine": 404
+    },
+    {
+      "requirementId": "W-006",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 518,
+      "endLine": 525
+    },
+    {
+      "requirementId": "W-006-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 526,
+      "endLine": 552
+    },
+    {
+      "requirementId": "W-008",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 618,
+      "endLine": 621
+    },
+    {
+      "requirementId": "W-008-03",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 622,
+      "endLine": 626
+    },
+    {
+      "requirementId": "W-008-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 627,
+      "endLine": 673
+    },
+    {
+      "requirementId": "E-017",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 674,
+      "endLine": 681
+    },
+    {
+      "requirementId": "W-008-02",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 682,
+      "endLine": 716
+    },
+    {
+      "requirementId": "W-008-03",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 717,
+      "endLine": 722
+    },
+    {
+      "requirementId": "W-008-04",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 723,
+      "endLine": 736
+    },
+    {
+      "requirementId": "W-008-04",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 737,
+      "endLine": 753
+    },
+    {
+      "requirementId": "W-009",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 754,
+      "endLine": 761
+    },
+    {
+      "requirementId": "W-009-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 762,
+      "endLine": 780
+    },
+    {
+      "requirementId": "W-010",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 781,
+      "endLine": 788
+    },
+    {
+      "requirementId": "W-010-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 789,
+      "endLine": 814
+    },
+    {
+      "requirementId": "W-011",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 815,
+      "endLine": 823
+    },
+    {
+      "requirementId": "W-011-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 824,
+      "endLine": 842
+    },
+    {
+      "requirementId": "W-013",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 915,
+      "endLine": 922
+    },
+    {
+      "requirementId": "W-013-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 923,
+      "endLine": 942
+    },
+    {
+      "requirementId": "W-014",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 943,
+      "endLine": 950
+    },
+    {
+      "requirementId": "W-014-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 951,
+      "endLine": 967
+    },
+    {
+      "requirementId": "W-015",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 968,
+      "endLine": 977
+    },
+    {
+      "requirementId": "W-015-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 978,
+      "endLine": 997
+    },
+    {
+      "requirementId": "W-900",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 998,
+      "endLine": 1003
+    },
+    {
+      "requirementId": "W-900-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1004,
+      "endLine": 1014
+    },
+    {
+      "requirementId": "W-900-02",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1015,
+      "endLine": 1032
+    },
+    {
+      "requirementId": "W-900-03",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1033,
+      "endLine": 1058
+    },
+    {
+      "requirementId": "E-004",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1065,
+      "endLine": 1067
+    },
+    {
+      "requirementId": "E-005",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1068,
+      "endLine": 1070
+    },
+    {
+      "requirementId": "E-013",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1087,
+      "endLine": 1089
+    },
+    {
+      "requirementId": "E-014",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1090,
+      "endLine": 1091
+    },
+    {
+      "requirementId": "E-015",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1092,
+      "endLine": 1093
+    },
+    {
+      "requirementId": "E-016",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1094,
+      "endLine": 1095
+    },
+    {
+      "requirementId": "E-017",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1096,
+      "endLine": 1097
+    },
+    {
+      "requirementId": "E-018",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1098,
+      "endLine": 1101
+    },
+    {
+      "requirementId": "E-019",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1102,
+      "endLine": 1103
+    },
+    {
+      "requirementId": "E-020",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1104,
+      "endLine": 1124
+    },
+    {
+      "requirementId": "W-Mail-011-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1135,
+      "endLine": 1137
+    },
+    {
+      "requirementId": "W-Mail-011-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1284,
+      "endLine": 1335
+    },
+    {
+      "requirementId": "W-000-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 24,
+      "endLine": 24
+    },
+    {
+      "requirementId": "W-003-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 31,
+      "endLine": 31
+    },
+    {
+      "requirementId": "W-004-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 32,
+      "endLine": 32
+    },
+    {
+      "requirementId": "W-006-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 38,
+      "endLine": 38
+    },
+    {
+      "requirementId": "W-008-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 40,
+      "endLine": 40
+    },
+    {
+      "requirementId": "W-008-02",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 41,
+      "endLine": 41
+    },
+    {
+      "requirementId": "W-008-03",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 42,
+      "endLine": 42
+    },
+    {
+      "requirementId": "W-008-04",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 43,
+      "endLine": 43
+    },
+    {
+      "requirementId": "W-009-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 44,
+      "endLine": 44
+    },
+    {
+      "requirementId": "W-010-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 45,
+      "endLine": 45
+    },
+    {
+      "requirementId": "W-011-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 46,
+      "endLine": 46
+    },
+    {
+      "requirementId": "W-013-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 49,
+      "endLine": 49
+    },
+    {
+      "requirementId": "W-014-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 50,
+      "endLine": 50
+    },
+    {
+      "requirementId": "W-015-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 51,
+      "endLine": 51
+    },
+    {
+      "requirementId": "W-900-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 52,
+      "endLine": 52
+    },
+    {
+      "requirementId": "W-900-02",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 53,
+      "endLine": 53
+    },
+    {
+      "requirementId": "W-900-03",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 54,
+      "endLine": 54
+    },
+    {
+      "requirementId": "W-900-04",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 55,
+      "endLine": 75
+    },
+    {
+      "requirementId": "W-000-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 76,
+      "endLine": 77
+    },
+    {
+      "requirementId": "W-003-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 86,
+      "endLine": 86
+    },
+    {
+      "requirementId": "W-004-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 87,
+      "endLine": 87
+    },
+    {
+      "requirementId": "W-006-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 96,
+      "endLine": 96
+    },
+    {
+      "requirementId": "W-008-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 98,
+      "endLine": 98
+    },
+    {
+      "requirementId": "W-008-02",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 99,
+      "endLine": 99
+    },
+    {
+      "requirementId": "W-008-03",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 100,
+      "endLine": 101
+    },
+    {
+      "requirementId": "W-008-04",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 102,
+      "endLine": 102
+    },
+    {
+      "requirementId": "W-009-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 103,
+      "endLine": 103
+    },
+    {
+      "requirementId": "W-010-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 104,
+      "endLine": 106
+    },
+    {
+      "requirementId": "W-011-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 107,
+      "endLine": 107
+    },
+    {
+      "requirementId": "W-013-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 116,
+      "endLine": 116
+    },
+    {
+      "requirementId": "W-014-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 117,
+      "endLine": 118
+    },
+    {
+      "requirementId": "W-015-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 119,
+      "endLine": 119
+    },
+    {
+      "requirementId": "W-900-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 120,
+      "endLine": 120
+    },
+    {
+      "requirementId": "W-900-02",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 121,
+      "endLine": 121
+    },
+    {
+      "requirementId": "W-900-03",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 122,
+      "endLine": 124
+    },
+    {
+      "requirementId": "W-900-04",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 125,
+      "endLine": 153
+    },
+    {
+      "requirementId": "W-000-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 154,
+      "endLine": 181
+    },
+    {
+      "requirementId": "W-003-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 352,
+      "endLine": 389
+    },
+    {
+      "requirementId": "W-004-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 390,
+      "endLine": 410
+    },
+    {
+      "requirementId": "W-006-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 534,
+      "endLine": 567
+    },
+    {
+      "requirementId": "W-008-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 625,
+      "endLine": 661
+    },
+    {
+      "requirementId": "W-008-02",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 662,
+      "endLine": 709
+    },
+    {
+      "requirementId": "W-008-03",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 710,
+      "endLine": 733
+    },
+    {
+      "requirementId": "W-008-04",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 734,
+      "endLine": 755
+    },
+    {
+      "requirementId": "W-009-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 756,
+      "endLine": 780
+    },
+    {
+      "requirementId": "W-010-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 781,
+      "endLine": 815
+    },
+    {
+      "requirementId": "W-011-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 816,
+      "endLine": 846
+    },
+    {
+      "requirementId": "W-013-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 898,
+      "endLine": 919
+    },
+    {
+      "requirementId": "W-014-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 920,
+      "endLine": 941
+    },
+    {
+      "requirementId": "W-015-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 942,
+      "endLine": 968
+    },
+    {
+      "requirementId": "W-900-01",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 969,
+      "endLine": 989
+    },
+    {
+      "requirementId": "W-900-02",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 990,
+      "endLine": 1014
+    },
+    {
+      "requirementId": "W-900-03",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 1015,
+      "endLine": 1039
+    },
+    {
+      "requirementId": "W-900-04",
+      "document": "22_Webチケットシステム画面仕様書",
+      "startLine": 1040,
+      "endLine": 1076
+    }
+  ],
+  "parameters": [
+    {
+      "name": "1回の購入枚数の上限",
+      "value": "9",
+      "unit": "枚",
+      "source": "02号:256（1回の購入で最大9枚まで） / 11号:568-569 / 21号:1094（E-016）"
+    },
+    {
+      "name": "残数アイコン切替閾値",
+      "value": "10",
+      "unit": "枚",
+      "source": "11号:372 / 11号:1266（現在「残数アイコン切替閾値」は10としている） / 11号:540-542"
+    },
+    {
+      "name": "入場ゲートの判定結果受信タイムアウト",
+      "value": "1",
+      "unit": "秒",
+      "source": "11号:1153-1154（1秒以内に判定結果を受信しない場合は「入場不能入場券」時と同様の制御）"
+    },
+    {
+      "name": "時間枠の長さ",
+      "value": "30",
+      "unit": "分",
+      "source": "71号:110-118（30分単位で連続） / 11号:1063（毎時00分および30分）"
+    },
+    {
+      "name": "Web予約購入の指定可能日の上限",
+      "value": "29",
+      "unit": "日",
+      "source": "21号:641（当日から29日後まで） / 71号:134"
+    },
+    {
+      "name": "団体予約が窓口扱いとなる人数の下限",
+      "value": "10",
+      "unit": "人",
+      "source": "02号:332（10人以上の団体予約購入は窓口（係員対応）での取り扱い）"
+    },
+    {
+      "name": "団体予約の受付可能日の下限",
+      "value": "31",
+      "unit": "日目",
+      "source": "02号:333-335（申込日を1日目と起算し31日目を含むそれ以降）"
+    },
+    {
+      "name": "使用済化からクラウド2への反映周期",
+      "value": "60",
+      "unit": "秒",
+      "source": "72号:249-251（60秒毎に状態が使用済に変更された分の情報を送信）"
+    },
+    {
+      "name": "死活管理で障害と認識するACK連続欠落回数",
+      "value": "3",
+      "unit": "回",
+      "source": "11号:1450-1452（3回連続でACKの応答のない構成要素に障害が発生していると認識）"
+    }
+  ],
+  "boundaryVariables": [
+    {
+      "name": "1回の購入枚数（おとな＋こども合計）",
+      "min": 1,
+      "max": 9
+    },
+    {
+      "name": "残数僅か表示となる時間枠別残数（枚）",
+      "min": 1,
+      "max": 9
+    },
+    {
+      "name": "入場ゲートが判定結果を受信するまでの待ち時間（秒）",
+      "min": 0.1,
+      "max": 1,
+      "valueType": "decimal",
+      "step": 0.1
+    },
+    {
+      "name": "入場時刻の時間枠開始からの経過分",
+      "min": 0,
+      "max": 29
+    },
+    {
+      "name": "Web予約購入で指定する入場日の当日からの日数",
+      "min": 0,
+      "max": 29
+    },
+    {
+      "name": "団体予約購入の申込人数（窓口扱いとならない範囲）",
+      "min": 1,
+      "max": 9
+    }
+  ],
+  "equivalenceVariables": [
+    {
+      "name": "いますぐ入場券の時間枠別残数の表示区分",
+      "validClasses": [
+        {
+          "label": "残数あり（〇）",
+          "representative": "残数11枚",
+          "description": "時間枠別残数が残数アイコン切替閾値（現状は10枚）以上で「〇」を表示する区分。代表値は閾値を1枚上回る値。時間枠あたりの残数の上限は2025年テストベースに記述がないため、この区分の上限側は境界値として宣言しない（11号:540 / 11号:372 / 11号:1516-1518）"
+        },
+        {
+          "label": "残数僅か（数字1桁）",
+          "representative": "残数5枚",
+          "description": "残数9枚以下で残数を1桁の数字として表示する区分。代表値は区分内の任意の1桁で、テストデータ（仕様に記述はない）（11号:547 / 13号:376）"
+        },
+        {
+          "label": "残数なし（×）",
+          "representative": "残数0枚",
+          "description": "残数0枚で販売不可として「×」を表示する区分（11号:548 / 13号:376）"
+        },
+        {
+          "label": "販売対象外（－）",
+          "representative": "入場開始時刻を経過した時間枠",
+          "description": "一覧表示された時間枠のうち入場開始時刻を経過して販売対象外となった枠に「－」を表示する区分。残数の多寡とは独立に決まる（11号:549-550 / 13号:376）"
+        }
+      ]
+    },
+    {
+      "name": "発券機の支払い方法選択の区分",
+      "validClasses": [
+        {
+          "label": "現金",
+          "representative": "現金で全額を支払う",
+          "description": "発券機で選択できる支払い方法の1つ（02号:263）。工程Aで対象内に残した支払い方法の選択分岐 EH-240 / S-005-01 の入力である"
+        },
+        {
+          "label": "非接触ICカード",
+          "representative": "非接触ICカードで全額を支払う",
+          "description": "発券機で選択できる支払い方法の1つ（02号:264）"
+        },
+        {
+          "label": "QR決済連携 - ASTER pay",
+          "representative": "QR決済連携 - ASTER pay で全額を支払う",
+          "description": "発券機で選択できる支払い方法の1つ（02号:265）"
+        },
+        {
+          "label": "クレジットカード",
+          "representative": "クレジットカードで全額を支払う",
+          "description": "発券機で選択できる支払い方法の1つ（02号:266）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "併用販売",
+          "representative": "現金と非接触ICカードで分割して支払う",
+          "description": "1回の購入の一部だけを別の方法で支払う指定。発券機・Webチケットシステムのいずれもできない（02号:259-261）。代表値の組み合わせはテストデータ（仕様に記述はない）"
+        }
+      ]
+    },
+    {
+      "name": "Webチケットシステムの支払い方法選択の区分",
+      "validClasses": [
+        {
+          "label": "QR決済連携 - ASTER pay",
+          "representative": "QR決済連携 - ASTER pay で全額を支払う",
+          "description": "Webチケットシステムで選択できる支払い方法の1つ（02号:269）。W-008-02 お支払方法選択画面と E-018 は工程Aで対象内に宣言している"
+        },
+        {
+          "label": "クレジットカード",
+          "representative": "クレジットカードで全額を支払う",
+          "description": "Webチケットシステムで選択できる支払い方法の1つ（02号:270）。発券機の4方法と異なり現金・非接触ICカードは選べない"
+        }
+      ]
+    },
+    {
+      "name": "ログイン認証の入力区分",
+      "validClasses": [
+        {
+          "label": "登録済みメールアドレスと正しいパスワード",
+          "representative": "登録済みメールアドレス＋正しいパスワード",
+          "description": "W-003-01 ログイン画面で認証が成立し、以降の予約購入へ進める入力（21号:379-381）。代表値の具体的な値はテストデータ（仕様に記述はない）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "未登録のメールアドレス",
+          "representative": "未登録のメールアドレス＋任意のパスワード",
+          "description": "エラー E-013 を表示して遷移しない入力。メールアドレスとパスワードのどちらが誤っていても同一のエラー文言になる（21号:379-381）。代表値はテストデータ（仕様に記述はない）"
+        },
+        {
+          "label": "誤ったパスワード",
+          "representative": "登録済みメールアドレス＋誤ったパスワード",
+          "description": "エラー E-013 を表示して遷移しない入力。未登録メールアドレスと同一のエラー文言のため、区分の区別は画面表示ではなく投入データで行う（21号:379-381）。代表値はテストデータ（仕様に記述はない）"
+        }
+      ]
+    },
+    {
+      "name": "入場券分け与えの宛先メールアドレスの区分",
+      "validClasses": [
+        {
+          "label": "使用可能文字のみで@を含む",
+          "representative": "半角英数字と@で構成した宛先アドレス",
+          "description": "W-011-01 入場券分け与え（メール送信）画面から W-Mail-011-01 を送信できる宛先。使用可能文字は半角英数字と - . _ @ で256文字までである（21号:827-836 / 21号:830-832）。代表値はテストデータ（仕様に記述はない）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "@を含まない",
+          "representative": "@を含まない文字列",
+          "description": "エラー E-004 を表示して遷移しない入力（21号:838 / 21号:1065-1066）。代表値はテストデータ（仕様に記述はない）"
+        },
+        {
+          "label": "半角英数字記号以外を含む",
+          "representative": "使用可能文字以外の文字を含む宛先アドレス",
+          "description": "W-011-01 で定義された使用可能文字（半角英数字と - . _ @）以外を含む入力（21号:830-832）。同種の入力制約に対するエラー文言は E-005 だが、E-005 の文言はパスワード向けであり（21号:1068-1069）、W-011-01 の記述が明示的に参照するエラーIDは E-004 のみである（21号:838）。代表値はテストデータ（仕様に記述はない）"
+        }
+      ]
+    },
+    {
+      "name": "予約購入画面の入力状態の区分",
+      "validClasses": [
+        {
+          "label": "入場日と指定時間帯がいずれも入力済み",
+          "representative": "入場日=当日／指定時間帯=購入可能な枠",
+          "description": "お支払方法選択へ進める入力状態。入場日を指定すると指定時間帯エリアの表示が更新される（21号:636-641）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "入場日が未入力",
+          "representative": "入場日=未入力／指定時間帯=購入可能な枠",
+          "description": "日付入力フォームが未入力のためエラー E-014 となる入力状態（21号:1090 / 21号:636-641）"
+        },
+        {
+          "label": "指定時間帯が未指定",
+          "representative": "入場日=当日／指定時間帯=未指定",
+          "description": "指定時間帯が指定されていないためエラー E-017 となる入力状態（21号:1096 / 21号:636-638）"
+        }
+      ]
+    },
+    {
+      "name": "団体予約購入の申込日を1日目とした入場日の区分",
+      "validClasses": [
+        {
+          "label": "31日目以降（受付可）",
+          "representative": "31日目",
+          "description": "申込日を1日目と起算して31日目を含むそれ以降の日付で受け付けられる区分。上限側の日数は記述がないため境界値として宣言しない（02号:333-335）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "1日目から30日目（受付不可）",
+          "representative": "30日目",
+          "description": "申込日から30日以内にあたり受け付けられない区分。代表値は受付可の区分に隣接する30日目（02号:333-335）"
+        }
+      ]
+    }
+  ],
+  "stateTransition": {
+    "states": [
+      {
+        "id": "ST-S1",
+        "nameJa": "未使用",
+        "initial": true
+      },
+      {
+        "id": "ST-S2",
+        "nameJa": "使用済"
+      },
+      {
+        "id": "ST-S3",
+        "nameJa": "無効"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "ST-01",
+        "from": "ST-S1",
+        "to": "ST-S2",
+        "event": "入場ゲートでのQRコード読み取り",
+        "guard": "入場ゲートハブが有効と判定"
+      },
+      {
+        "id": "ST-02",
+        "from": "ST-S1",
+        "to": "ST-S3",
+        "event": "新しい時間枠の開始",
+        "guard": "直前枠で未使用"
+      },
+      {
+        "id": "ST-03",
+        "from": "ST-S2",
+        "to": "ST-S2",
+        "event": "別の入場ゲートで再読み取り",
+        "guard": "無効と判定"
+      },
+      {
+        "id": "ST-04",
+        "from": "ST-S3",
+        "to": "ST-S3",
+        "event": "再読み取り",
+        "guard": "無効と判定"
+      }
+    ]
+  },
+  "additionalCoverageTargets": [
+    {
+      "id": "AC-TC-001-01",
+      "techniqueId": "scenario-based",
+      "description": "発券機側とゲートハブ側の起動完了後に後続要求を受け付けられる状態になっているかを確認する",
+      "origin": "TC-001"
+    },
+    {
+      "id": "AC-TC-002-01",
+      "techniqueId": "state-transition",
+      "description": "処理中・通信中の停止要求で未完了の処理を残さず停止状態へ遷移するかを確認する",
+      "origin": "TC-002"
+    },
+    {
+      "id": "AC-TC-003-01",
+      "techniqueId": "state-transition",
+      "description": "開始画面からの正順遷移と戻り操作後の選択状態が破綻しないかを確認する",
+      "origin": "TC-003"
+    },
+    {
+      "id": "AC-TC-004-01",
+      "techniqueId": "scenario-based",
+      "description": "いますぐ入場券購入の券種選択から発券までの基本フローを通しで確認する",
+      "origin": "TC-004"
+    },
+    {
+      "id": "AC-TC-005-01",
+      "techniqueId": "decision-table",
+      "description": "号機番号と残数有無の組み合わせごとの入場券確保失敗時の画面分岐を確認する",
+      "origin": "TC-005"
+    },
+    {
+      "id": "AC-TC-006-01",
+      "techniqueId": "scenario-based",
+      "description": "時間指定入場券購入の時間枠選択から発券までの基本フローを通しで確認する",
+      "origin": "TC-006"
+    },
+    {
+      "id": "AC-TC-007-01",
+      "techniqueId": "decision-table",
+      "description": "時間指定入場券情報確認での残数有無による入場券確保失敗時の分岐を確認する",
+      "origin": "TC-007"
+    },
+    {
+      "id": "AC-TC-011-01",
+      "techniqueId": "scenario-based",
+      "description": "予約済入場券の当日分の選択発券と未選択分が未発券で残ることを確認する",
+      "origin": "TC-011"
+    },
+    {
+      "id": "AC-TC-012-01",
+      "techniqueId": "checklist-based",
+      "description": "会員認証要求の中継と認証失敗時に予約情報を取得できないことを確認する",
+      "origin": "TC-012"
+    },
+    {
+      "id": "AC-TC-013-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "ログイン用QRコード入力とキーボード入力の双方から同一会員として扱われることを確認する",
+      "origin": "TC-013"
+    },
+    {
+      "id": "AC-TC-014-01",
+      "techniqueId": "error-guessing",
+      "description": "ログイン用QRコードNGとキーボード入力NGの案内表示と再入力への復帰を確認する",
+      "origin": "TC-014"
+    },
+    {
+      "id": "AC-TC-015-01",
+      "techniqueId": "scenario-based",
+      "description": "指定区分・枚数と同数の入場用QRコードが専用用紙へ印刷されることを確認する",
+      "origin": "TC-015"
+    },
+    {
+      "id": "AC-TC-016-01",
+      "techniqueId": "fault-injection",
+      "description": "障害通知時の停止状態表示への切替と販売が継続されないことを確認する",
+      "origin": "TC-016"
+    },
+    {
+      "id": "AC-TC-017-01",
+      "techniqueId": "state-transition",
+      "description": "残数の状態に応じた開始画面の購入停止表示への切替を確認する",
+      "origin": "TC-017"
+    },
+    {
+      "id": "AC-TC-018-01",
+      "techniqueId": "timing-order-test",
+      "description": "残数情報受信と購入要求応答の順序入れ替え時の表示と購入結果の整合を確認する",
+      "origin": "TC-018"
+    },
+    {
+      "id": "AC-TC-019-01",
+      "techniqueId": "timing-order-test",
+      "description": "入場券情報一覧の受信と状態変更送信が遅延した場合の待ちと打ち切りを確認する",
+      "origin": "TC-019"
+    },
+    {
+      "id": "AC-TC-021-01",
+      "techniqueId": "scenario-based",
+      "description": "入場ゲートの起動時の初期化・通信確立と停止時の処理完了待ちを確認する",
+      "origin": "TC-021"
+    },
+    {
+      "id": "AC-TC-022-01",
+      "techniqueId": "scenario-based",
+      "description": "読み取ったQRコード情報の送信と判定結果に基づくハードウェア制御を確認する",
+      "origin": "TC-022"
+    },
+    {
+      "id": "AC-TC-023-01",
+      "techniqueId": "decision-table",
+      "description": "判定結果ごとのゲート開閉・LED・ブザーの3系統の動作の一致を確認する",
+      "origin": "TC-023"
+    },
+    {
+      "id": "AC-TC-025-01",
+      "techniqueId": "checklist-based",
+      "description": "入場管理の起動・停止時の配信開始と処理途中の要求の扱いを確認する",
+      "origin": "TC-025"
+    },
+    {
+      "id": "AC-TC-026-01",
+      "techniqueId": "timing-order-test",
+      "description": "予約管理DBサーバから取得した時間枠別残数の各機器への配信周期を確認する",
+      "origin": "TC-026"
+    },
+    {
+      "id": "AC-TC-028-01",
+      "techniqueId": "concurrency-test",
+      "description": "同一時間枠への同時購入要求時の排他と残数が負にならないことを確認する",
+      "origin": "TC-028"
+    },
+    {
+      "id": "AC-TC-029-01",
+      "techniqueId": "data-lifecycle-test",
+      "description": "生成された購入情報が購入情報テーブルと入場券情報一覧に整合して反映されることを確認する",
+      "origin": "TC-029"
+    },
+    {
+      "id": "AC-TC-030-01",
+      "techniqueId": "data-lifecycle-test",
+      "description": "購入中止時の残数の復元と購入情報の削除の整合を確認する",
+      "origin": "TC-030"
+    },
+    {
+      "id": "AC-TC-031-01",
+      "techniqueId": "decision-table",
+      "description": "認証済み会員の発券対象となる予約情報だけが応答されることを確認する",
+      "origin": "TC-031"
+    },
+    {
+      "id": "AC-TC-032-01",
+      "techniqueId": "timing-order-test",
+      "description": "入場券情報一覧の同期の3種の契機それぞれの成立と同期漏れの有無を確認する",
+      "origin": "TC-032"
+    },
+    {
+      "id": "AC-TC-033-01",
+      "techniqueId": "fault-injection",
+      "description": "ACK応答の連続欠落回数の境界での障害認識と運用停止を確認する",
+      "origin": "TC-033"
+    },
+    {
+      "id": "AC-TC-034-01",
+      "techniqueId": "checklist-based",
+      "description": "残数表示インジケータ1／2の起動・停止と固定文言表示を確認する",
+      "origin": "TC-034"
+    },
+    {
+      "id": "AC-TC-036-01",
+      "techniqueId": "state-transition",
+      "description": "ナビゲーションからの遷移とログイン状態による表示項目の差を確認する",
+      "origin": "TC-036"
+    },
+    {
+      "id": "AC-TC-038-01",
+      "techniqueId": "state-transition",
+      "description": "ログアウト後の戻る操作・直リンクでの会員向け画面への到達可否を確認する",
+      "origin": "TC-038"
+    },
+    {
+      "id": "AC-TC-039-01",
+      "techniqueId": "scenario-based",
+      "description": "マイページからの各機能への遷移と会員の識別の保持を確認する",
+      "origin": "TC-039"
+    },
+    {
+      "id": "AC-TC-042-01",
+      "techniqueId": "scenario-based",
+      "description": "予約購入確認から完了までの購入情報の記録と残数消滅時の分岐を確認する",
+      "origin": "TC-042"
+    },
+    {
+      "id": "AC-TC-043-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "予約購入履歴の件数ごとの表示件数と並び順を確認する",
+      "origin": "TC-043"
+    },
+    {
+      "id": "AC-TC-044-01",
+      "techniqueId": "scenario-based",
+      "description": "予約購入詳細の表示内容と各操作の遷移先を確認する",
+      "origin": "TC-044"
+    },
+    {
+      "id": "AC-TC-046-01",
+      "techniqueId": "scenario-based",
+      "description": "分け与えの通知メールの到達とメール本文の入場用QRコードでの入場を確認する",
+      "origin": "TC-046"
+    },
+    {
+      "id": "AC-TC-047-01",
+      "techniqueId": "checklist-based",
+      "description": "ログイン用QRコードの本人限定の有効性と有効期限を確認する",
+      "origin": "TC-047"
+    },
+    {
+      "id": "AC-TC-048-01",
+      "techniqueId": "scenario-based",
+      "description": "入場用QRコード画面の表示内容と複数枚購入時の識別性を確認する",
+      "origin": "TC-048"
+    },
+    {
+      "id": "AC-TC-049-01",
+      "techniqueId": "config-matrix",
+      "description": "PCブラウザとモバイルブラウザでの印刷プレビューボタンの表示差を確認する",
+      "origin": "TC-049"
+    },
+    {
+      "id": "AC-TC-050-01",
+      "techniqueId": "fault-injection",
+      "description": "各エラー条件での遷移先画面とエラー通知メッセージエリアの内容を確認する",
+      "origin": "TC-050"
+    },
+    {
+      "id": "AC-TC-051-01",
+      "techniqueId": "exploratory",
+      "description": "残数表示からの購入可否の判断と発券機の開始画面での読み取りを確認する",
+      "origin": "TC-051"
+    },
+    {
+      "id": "AC-TC-052-01",
+      "techniqueId": "decision-table",
+      "description": "ゲスト購入と会員購入での再発券の可否の分岐を確認する",
+      "origin": "TC-052"
+    },
+    {
+      "id": "AC-TC-053-01",
+      "techniqueId": "fault-injection",
+      "description": "現金支払いでの釣銭切れ・釣銭詰まり時の案内と入金・発券状態の整合を確認する",
+      "origin": "TC-053"
+    },
+    {
+      "id": "AC-TC-054-01",
+      "techniqueId": "config-matrix",
+      "description": "定めたブラウザ×OSの各組み合わせでの予約購入の結果の同一性を確認する",
+      "origin": "TC-054"
+    },
+    {
+      "id": "AC-TC-055-01",
+      "techniqueId": "exploratory",
+      "description": "モバイルブラウザでの印刷プレビュー不可を購入前に把握できる導線を確認する",
+      "origin": "TC-055"
+    },
+    {
+      "id": "AC-TC-056-01",
+      "techniqueId": "scenario-based",
+      "description": "同伴者が通知メールの入場用QRコードだけで入場できることと取り違えの有無を確認する",
+      "origin": "TC-056"
+    },
+    {
+      "id": "AC-TC-057-01",
+      "techniqueId": "checklist-based",
+      "description": "分け与えメールと受信側の表示・印刷でのメールアドレスの露出とハッシュ化を確認する",
+      "origin": "TC-057"
+    },
+    {
+      "id": "AC-TC-058-01",
+      "techniqueId": "fault-injection",
+      "description": "各機器のエラー模擬時に入場管理側で機器と事象が判別できることを確認する",
+      "origin": "TC-058"
+    },
+    {
+      "id": "AC-TC-059-01",
+      "techniqueId": "fault-injection",
+      "description": "用紙・釣り銭の障害模擬から補充後の販売再開までの記録の整合を確認する",
+      "origin": "TC-059"
+    },
+    {
+      "id": "AC-TC-060-01",
+      "techniqueId": "concurrency-test",
+      "description": "3経路からの同一時間枠への購入集中時に残数を超える販売が成立しないことを確認する",
+      "origin": "TC-060"
+    },
+    {
+      "id": "AC-TC-062-01",
+      "techniqueId": "regression-selection",
+      "description": "2025年改修の4点の影響範囲の特定と未確定事項の記録を確認する",
+      "origin": "TC-062"
+    },
+    {
+      "id": "AC-TC-063-01",
+      "techniqueId": "regression-selection",
+      "description": "入場記録と時間別入場者数の集計の取得と改修前後の一致を確認する",
+      "origin": "TC-063"
+    },
+    {
+      "id": "AC-TC-064-01",
+      "techniqueId": "config-matrix",
+      "description": "ロケールが日本語以外の環境での表示言語と日付・時刻の書式を確認する",
+      "origin": "TC-064"
+    },
+    {
+      "id": "AC-TC-065-01",
+      "techniqueId": "long-run-test",
+      "description": "連続稼働時の資源使用量の推移と時間枠切替をまたぐ定期処理の欠落・重複を確認する",
+      "origin": "TC-065"
+    },
+    {
+      "id": "AC-TC-066-01",
+      "techniqueId": "load-test",
+      "description": "入場券情報一覧の件数を増やした状態での判定応答時間と限界超過時の拒否を確認する",
+      "origin": "TC-066"
+    },
+    {
+      "id": "AC-TC-067-01",
+      "techniqueId": "load-test",
+      "description": "複数台の入場ゲートからの同時判定要求時に有効な入場券が入場不能とならないことを確認する",
+      "origin": "TC-067"
+    },
+    {
+      "id": "AC-TC-068-01",
+      "techniqueId": "timing-order-test",
+      "description": "使用済化からクラウド2への反映周期の窓の中での再表示・再印刷・再送と二重入場の可否を確認する",
+      "origin": "TC-068"
+    },
+    {
+      "id": "AC-TC-070-01",
+      "techniqueId": "timing-order-test",
+      "description": "使用済化の直後・反映周期の直前・経過後のWeb側購入情報の状態を確認する",
+      "origin": "TC-070"
+    },
+    {
+      "id": "AC-TC-073-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "Web予約購入で指定できる入場時間枠の下限と記述の食い違いを確認する",
+      "origin": "TC-073"
+    },
+    {
+      "id": "AC-TC-074-01",
+      "techniqueId": "error-guessing",
+      "description": "複製・改変・他人の購入分の入場用QRコードの受理可否を確認する",
+      "origin": "TC-074"
+    },
+    {
+      "id": "AC-TC-075-01",
+      "techniqueId": "concurrency-test",
+      "description": "確定操作の二重送信時の購入情報の生成と残数の減算の重複を確認する",
+      "origin": "TC-075"
+    },
+    {
+      "id": "AC-TC-076-01",
+      "techniqueId": "fault-injection",
+      "description": "同期の通信断時の不完全な一覧での判定継続の有無と再開後の欠落を確認する",
+      "origin": "TC-076"
+    },
+    {
+      "id": "AC-TC-077-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "予約情報の件数ごとの発券機側とWeb側の表示件数の一致を確認する",
+      "origin": "TC-077"
+    },
+    {
+      "id": "AC-TC-078-01",
+      "techniqueId": "state-transition",
+      "description": "戻る操作からの再送信時の購入の二重成立と画面・購入情報の状態の一致を確認する",
+      "origin": "TC-078"
+    },
+    {
+      "id": "AC-TC-079-01",
+      "techniqueId": "fault-injection",
+      "description": "時間枠別残数を取得できない場合の販売継続の有無と状態の切替を確認する",
+      "origin": "TC-079"
+    },
+    {
+      "id": "AC-TC-081-01",
+      "techniqueId": "checklist-based",
+      "description": "他の会員の予約購入詳細への直接URLでの到達可否を確認する",
+      "origin": "TC-081"
+    },
+    {
+      "id": "AC-TC-082-01",
+      "techniqueId": "config-matrix",
+      "description": "低速・不安定な回線での遷移先画面と購入が中途で残らないことを確認する",
+      "origin": "TC-082"
+    },
+    {
+      "id": "AC-TC-083-01",
+      "techniqueId": "fault-injection",
+      "description": "購入情報の生成と残数更新の一方だけが成立した場合の検知と復旧を確認する",
+      "origin": "TC-083"
+    },
+    {
+      "id": "AC-TC-084-01",
+      "techniqueId": "regression-selection",
+      "description": "判定処理の移動による入場ゲート単独判定前提の既存動作の退行を確認する",
+      "origin": "TC-084"
+    },
+    {
+      "id": "AC-TC-085-01",
+      "techniqueId": "checklist-based",
+      "description": "72号のデータ項目と通信タイミングの明文化と双方の期待結果の一致を確認する",
+      "origin": "TC-085"
+    },
+    {
+      "id": "AC-TC-086-01",
+      "techniqueId": "error-guessing",
+      "description": "4桁の乱数の重複時の入場券の識別と判定の誤りの有無を確認する",
+      "origin": "TC-086"
+    }
+  ],
+  "coverageCriteriaDeclaration": [
+    "対象テスト条件86件すべてに1件以上のテストケースがある。",
+    "2節の網羅対象（境界値36件・同値クラス22件・状態遷移4件・技法エンジンを持たない条件の手動宣言70件）すべてがいずれかのケースで充足されている。",
+    "境界値・同値クラス・状態遷移の網羅対象宣言は、変数名と値・クラス名または代表値・遷移元と遷移先の状態名がケース本文から裏付けられる。",
+    "期待結果に書く引用文言とIDは2025年テストベース9文書に実在するものだけを使う。",
+    "期待結果に主観語を含まず、手順ごとの期待結果に空欄を作らない。",
+    "手順は1手順1操作とし、手順番号を1から連番にする。",
+    "閾値は 1.4 の閾値パラメータ表の名前で参照し、参照名のない直値を単独で埋め込まない。",
+    "優先度の判定基準は `11_テスト条件抽出結果.md` 4.1 の算出式（影響度 × 発生可能性 × 変更差分の重み）で決まる由来テスト条件の優先度とし、その値をそのままケースへ引き継いでケース側で付け替えない。",
+    "テストレベルはテストサイズ（外部依存・想定実行時間）の判定結果と整合する範囲で宣言し、コンポーネントテストは `05_テスト計画書_改訂版.md` 5.1 により本計画の対象外として使わない。",
+    "同一の網羅対象IDを異なるテストレベルのケースで重複して宣言しない。"
+  ],
+  "idPrefix": "TCS-"
+}

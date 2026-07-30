@@ -8,6 +8,9 @@
 // 同じ理由で、生成済み markdown（テスト計画書本文など）を payload JSON に埋め込まずに投入するため、
 // --text-file で指定したファイルを UTF-8 で読み、文字列として payload の --text-key へ注入する。
 //
+// また、テストケース配列のような大きな JSON 値を payload 本体から分離して再利用するため、
+// --json-file で指定したファイルを JSON としてパースし、payload の --json-key へ注入する。
+//
 // 使い方:
 //   node scripts/call-mcp-tool.mjs \
 //     --tool audit_id_population \
@@ -22,6 +25,15 @@
 //     --text-file sample/2025/02_テスト計画書_初版.md \
 //     --text-key planMarkdown \
 //     --out sample/2025/03_テスト計画書レビュー結果_初版.md
+//
+//   node scripts/call-mcp-tool.mjs \
+//     --tool generate_test_cases \
+//     --payload sample/2025/payloads/generate-test-cases.json \
+//     --json-file sample/2025/payloads/test-cases.json \
+//     --json-key testCases \
+//     --documents-dir .work/testbase/2025 \
+//     --documents-key testBasisDocuments \
+//     --out sample/2025/14_テストケース生成結果.md
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -31,6 +43,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const USAGE = `usage: node scripts/call-mcp-tool.mjs --tool <name> --payload <json> --out <path>
                                      [--documents-dir <dir>] [--documents-key <documents|testBasisDocuments>]
                                      [--text-file <path>] [--text-key <planMarkdown|...>]
+                                     [--json-file <path>] [--json-key <testCases|...>]
                                      [--server <path to dist/server.js>]`;
 
 function parseArgs(argv) {
@@ -87,6 +100,26 @@ async function main() {
     const text = await readFile(args["text-file"], "utf8");
     if (text.trim() === "") throw new Error(`--text-file ${args["text-file"]} is empty`);
     payload[key] = text;
+  }
+
+  if (args["json-file"]) {
+    const key = args["json-key"] ?? "testCases";
+    if (payload[key] !== undefined) {
+      throw new Error(`payload already has "${key}"; remove it or omit --json-file`);
+    }
+    const raw = await readFile(args["json-file"], "utf8");
+    if (raw.trim() === "") throw new Error(`--json-file ${args["json-file"]} is empty`);
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      throw new Error(
+        `--json-file ${args["json-file"]} is not valid JSON: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+    payload[key] = parsed;
   }
 
   const serverPath = args.server ?? "dist/server.js";
