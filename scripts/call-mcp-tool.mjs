@@ -14,26 +14,26 @@
 // 使い方:
 //   node scripts/call-mcp-tool.mjs \
 //     --tool audit_id_population \
-//     --payload sample/2025/payloads/audit-id-population.json \
+//     --payload sample/contest_testbase/2025/payloads/audit-id-population.json \
 //     --documents-dir .work/testbase/2025 \
 //     --documents-key documents \
-//     --out sample/2025/01_ID母集団監査_2025テストベース.md
+//     --out sample/contest_testbase/2025/01_ID母集団監査_2025テストベース.md
 //
 //   node scripts/call-mcp-tool.mjs \
 //     --tool review_test_plan \
-//     --payload sample/2025/payloads/review-test-plan.json \
-//     --text-file sample/2025/02_テスト計画書_初版.md \
+//     --payload sample/contest_testbase/2025/payloads/review-test-plan.json \
+//     --text-file sample/contest_testbase/2025/02_テスト計画書_初版.md \
 //     --text-key planMarkdown \
-//     --out sample/2025/03_テスト計画書レビュー結果_初版.md
+//     --out sample/contest_testbase/2025/03_テスト計画書レビュー結果_初版.md
 //
 //   node scripts/call-mcp-tool.mjs \
 //     --tool generate_test_cases \
-//     --payload sample/2025/payloads/generate-test-cases.json \
-//     --json-file sample/2025/payloads/test-cases.json \
+//     --payload sample/contest_testbase/2025/payloads/generate-test-cases.json \
+//     --json-file sample/contest_testbase/2025/payloads/test-cases.json \
 //     --json-key testCases \
 //     --documents-dir .work/testbase/2025 \
 //     --documents-key testBasisDocuments \
-//     --out sample/2025/14_テストケース生成結果.md
+//     --out sample/contest_testbase/2025/14_テストケース生成結果.md
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
