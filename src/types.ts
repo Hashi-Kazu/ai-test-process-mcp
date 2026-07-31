@@ -1380,3 +1380,158 @@ export interface ThresholdChangeImpactCriteria {
   }[];
   notes: string[];
 }
+
+// --- analyze_cause_effect（原因結果グラフ分析） ---
+
+export type CauseEffectNodeKind = "cause" | "intermediate" | "effect";
+export type CauseEffectLogic = "and" | "or";
+export type CauseEffectEdgeKind = "identity" | "not";
+export type CauseEffectConstraintType = "exclusive" | "inclusive" | "onlyOne" | "requires" | "masks";
+
+export interface CauseEffectCauseInput {
+  id: string;
+  statement: string;
+  quote?: string;
+  note?: string;
+}
+
+export interface CauseEffectIntermediateInput {
+  id: string;
+  statement: string;
+  logic?: CauseEffectLogic;
+  note?: string;
+}
+
+export interface CauseEffectEffectInput {
+  id: string;
+  statement: string;
+  logic?: CauseEffectLogic;
+  quote?: string;
+  note?: string;
+}
+
+export interface CauseEffectEdgeInput {
+  from: string;
+  to: string;
+  kind?: CauseEffectEdgeKind;
+  note?: string;
+}
+
+export interface CauseEffectConstraintInput {
+  id: string;
+  type: CauseEffectConstraintType;
+  nodeIds: string[];
+  note?: string;
+}
+
+export interface AnalyzeCauseEffectInput {
+  sectionId: string;
+  sectionTitle?: string;
+  specText: string;
+  causes: CauseEffectCauseInput[];
+  effects: CauseEffectEffectInput[];
+  intermediateNodes?: CauseEffectIntermediateInput[];
+  edges: CauseEffectEdgeInput[];
+  constraints?: CauseEffectConstraintInput[];
+  expectedRuleCount?: number;
+  maxEnumerationCauses?: number;
+  causeIdPrefix?: string;
+  effectIdPrefix?: string;
+  intermediateIdPrefix?: string;
+  constraintIdPrefix?: string;
+  additionalAmbiguousTerms?: string[];
+}
+
+export interface CauseEffectNode {
+  id: string;
+  kind: CauseEffectNodeKind;
+  statement: string;
+  logic: CauseEffectLogic;
+  quote?: string;
+  note?: string;
+  incoming: CauseEffectEdgeInput[];
+  outgoing: CauseEffectEdgeInput[];
+}
+
+export interface CauseEffectGraph {
+  nodes: CauseEffectNode[];
+  nodeById: Map<string, CauseEffectNode>;
+  edges: (CauseEffectEdgeInput & { kind: CauseEffectEdgeKind })[];
+  causeIds: string[];
+  effectIds: string[];
+  intermediateIds: string[];
+}
+
+export interface CauseEffectFinding {
+  categoryId: string;
+  severity: "high" | "medium" | "info";
+  targetId?: string;
+  place?: string;
+  detail: string;
+  suggestion?: string;
+}
+
+export interface CauseEffectRule {
+  no: number;
+  causeValues: Record<string, "T" | "F" | "-">;
+  effectValues: Record<string, "T" | "F" | "-">;
+}
+
+export interface CauseEffectEnumeration {
+  enumerated: boolean;
+  skipReason?: string;
+  causeCount: number;
+  theoreticalCombinationCount: number;
+  validCombinationCount: number;
+  rules: CauseEffectRule[];
+  compressedRules: CauseEffectRule[];
+}
+
+export interface CauseEffectSentence {
+  no: number;
+  text: string;
+  normalized: string;
+  modeled: boolean;
+  nodeIds: string[];
+}
+
+export interface CauseEffectSummary {
+  causeCount: number;
+  effectCount: number;
+  intermediateCount: number;
+  edgeCount: number;
+  constraintCount: number;
+  theoreticalCombinationCount: number;
+  validCombinationCount: number;
+  compressedRuleCount: number;
+  enumerated: boolean;
+  modeledSentenceCount: number;
+  totalSentenceCount: number;
+  modeledSentenceRatioPercent: number;
+  highCount: number;
+  mediumCount: number;
+  infoCount: number;
+}
+
+export interface CauseEffectDecisionTableHandover {
+  sectionId: string;
+  conditions: { id: string; statement: string; values: ["T", "F"] }[];
+  actions: { id: string; statement: string }[];
+  rules: { no: number; conditions: Record<string, string>; actions: Record<string, string> }[];
+  theoreticalCombinationCount: number;
+  validCombinationCount: number;
+  compressedRuleCount: number;
+}
+
+export interface CauseEffectAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    description: string;
+    action: string;
+  }[];
+  notes: string[];
+}

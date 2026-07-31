@@ -13,6 +13,7 @@ import { registerGenerateExploratoryChartersTool } from "./generateExploratoryCh
 import { registerAuditIdPopulationTool } from "./auditIdPopulation.js";
 import { registerGenerateUserStoryMapTool } from "./generateUserStoryMap.js";
 import { registerReexpandThresholdChangesTool } from "./reexpandThresholdChanges.js";
+import { registerAnalyzeCauseEffectTool } from "./analyzeCauseEffect.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -29,4 +30,5 @@ export function registerTools(server: McpServer): void {
   registerAuditIdPopulationTool(server);
   registerGenerateUserStoryMapTool(server);
   registerReexpandThresholdChangesTool(server);
+  registerAnalyzeCauseEffectTool(server);
 }

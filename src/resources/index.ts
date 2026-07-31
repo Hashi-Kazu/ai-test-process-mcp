@@ -16,6 +16,7 @@ import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
 import { personaJourneyFrame } from "./personaJourneyFrame.js";
 import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
+import { causeEffectAnalysisCriteria } from "./causeEffectCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -361,6 +362,30 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(thresholdChangeImpactCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "cause-effect-analysis-criteria",
+    "testbasis://cause-effect/analysis-criteria",
+    {
+      title: "Cause-Effect Graph Analysis Criteria",
+      description:
+        "Judgment category catalog for analyze_cause_effect (CEG-01..CEG-19): unknown node references, duplicate ids, " +
+        "isolated causes that reach no effect, unreachable effects derived from no cause, dangling intermediate nodes, graph cycles, " +
+        "malformed and contradictory constraints, constraint-fixed cause values, redundant constraints, always-false and " +
+        "cause-independent effects, combination and decision table rule counts, quotation grounding against the spec text, " +
+        "unmodeled spec sentences and unmodeled logical connectives, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(causeEffectAnalysisCriteria, null, 2),
         },
       ],
     })
