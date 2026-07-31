@@ -86,7 +86,7 @@ describe("factorRalphFrame", () => {
     });
   });
 
-  it("marks only design_pairwise as planned", () => {
+  it("marks all four handover conventions as available", () => {
     const targetTools = factorRalphFrame.handoverConventions.map((h) => h.targetTool);
     expect(targetTools).toEqual(
       expect.arrayContaining([
@@ -96,12 +96,9 @@ describe("factorRalphFrame", () => {
         "design_pairwise",
       ])
     );
+    expect(factorRalphFrame.handoverConventions).toHaveLength(4);
     for (const handover of factorRalphFrame.handoverConventions) {
-      if (handover.targetTool === "design_pairwise") {
-        expect(handover.status).toBe("planned");
-      } else {
-        expect(handover.status).toBe("available");
-      }
+      expect(handover.status).toBe("available");
     }
   });
 
@@ -130,12 +127,18 @@ describe("factorRalphFrame", () => {
     const decisionTableText = decisionTable!.notation.join(" ");
     expect(decisionTableText).toContain("conditions[]");
     expect(decisionTableText).toContain("levels");
-    expect(decisionTableText).toContain("impossibleCombinations");
+    expect(decisionTableText).toContain("invalidCombinations");
     expect(decisionTable!.traceability.trim().length).toBeGreaterThan(0);
 
     const pairwise = byTool.get("design_pairwise");
     expect(pairwise).toBeDefined();
+    const pairwiseText = pairwise!.notation.join(" ");
+    expect(pairwiseText).toContain("factors[]");
+    expect(pairwiseText).toContain("levels");
+    expect(pairwiseText).toContain("forbiddenCombinations");
+    expect(pairwiseText).toContain("seedRows");
     expect(pairwise!.traceability.trim().length).toBeGreaterThan(0);
+    expect(pairwise!.traceability).toContain("PW:");
   });
 
   it("has non-empty idConvention and at least five completenessChecks", () => {

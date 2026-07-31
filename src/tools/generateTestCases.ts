@@ -227,7 +227,7 @@ export function renderTestCases(
   lines.push("");
   if (universe.length === 0) {
     lines.push(
-      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / additionalCoverageTargets)が指定されていない。"
+      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / additionalCoverageTargets)が指定されていない。"
     );
   } else {
     lines.push("| 網羅対象ID | 技法 | 内容 | 由来 |");
@@ -900,6 +900,43 @@ export const generateTestCasesInputShape = {
     })
     .optional()
     .describe("Decision table spec, same shape as design_decision_table"),
+  pairwise: z
+    .object({
+      setId: z.string().optional(),
+      title: z.string().optional(),
+      factors: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            levels: z.array(z.string()).min(1),
+          })
+        )
+        .min(2),
+      forbiddenCombinations: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            when: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+            reason: z.string(),
+          })
+        )
+        .optional(),
+      seedRows: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            values: z.record(z.string(), z.string()),
+            note: z.string().optional(),
+          })
+        )
+        .optional(),
+      maxPairCount: z.number().int().positive().optional(),
+      maxEnumerationCombinations: z.number().int().positive().optional(),
+      maxSearchNodes: z.number().int().positive().optional(),
+    })
+    .optional()
+    .describe("Pairwise spec, same shape as design_pairwise"),
   additionalCoverageTargets: z
     .array(
       z.object({

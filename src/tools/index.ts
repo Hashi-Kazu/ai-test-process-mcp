@@ -15,6 +15,7 @@ import { registerGenerateUserStoryMapTool } from "./generateUserStoryMap.js";
 import { registerReexpandThresholdChangesTool } from "./reexpandThresholdChanges.js";
 import { registerAnalyzeCauseEffectTool } from "./analyzeCauseEffect.js";
 import { registerDesignDecisionTableTool } from "./designDecisionTable.js";
+import { registerDesignPairwiseTool } from "./designPairwise.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -33,4 +34,5 @@ export function registerTools(server: McpServer): void {
   registerReexpandThresholdChangesTool(server);
   registerAnalyzeCauseEffectTool(server);
   registerDesignDecisionTableTool(server);
+  registerDesignPairwiseTool(server);
 }

@@ -78,6 +78,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 | `review_test_specification` | テスト設計仕様・テストケース仕様のレビュー（テストベース突き合わせ。要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ、ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成） | 完了 |
 | `generate_exploratory_charters` | 探索的テストのチャーター設計（チャーターカタログ resource + チャーターID/観点区分/由来参照/未カバー/タイムボックス/主観語の決定的検査 + ミッション言語化の意味的層） | 完了 |
 | `reexpand_threshold_changes` | 閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存/失効した網羅対象ID参照/名前参照経由の再確認要否を判定区分カタログ `testdesign://threshold/change-impact-criteria` 8区分で決定的に検出 | 完了（GitHub Issue #55） |
+| `design_pairwise` | ペアワイズ設計（因子・水準・禁則・seed行から全水準ペアを正準順に列挙し、禁則による到達不能ペアの判定・ペア被覆組合せの決定的な貪欲法生成・ペア被覆率・全網羅組合せ数に対する削減率を算出。判定区分カタログ `testdesign://pairwise/analysis-criteria` 12区分。生成した各ペアを `PW:` プレフィックスの網羅対象として `generate_test_cases` の universe へ統合し、技法カタログ `TTK-05`(pairwise) の決定的カウント可否を可へ、因子分解フレーム `FHO-04` を available へ更新） | 完了（GitHub Issue #80 / Jira `HSKZ-124`） |
 
 `review_test_specification` の設計方針（旧ロードマップ Phase 4 から引き継ぎ）:
 

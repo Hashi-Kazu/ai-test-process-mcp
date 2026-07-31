@@ -227,7 +227,7 @@ export const factorRalphFrame: FactorRalphFrame = {
       notation: [
         "状態因子・制御因子を条件項目にする。因子1件を conditions[] の1件へ写し、id に条件ID（例 C1）、statement に因子名と判定内容、levels に水準名の配列（2件以上）を置く。",
         "因子IDと条件IDの対応表を必ず出力に残す。",
-        "同時に成立しない水準の組合せは impossibleCombinations に reason 付きで登録し、除外理由を空にしない。",
+        "同時に成立しない水準の組合せは invalidCombinations に reason 付きで登録し、除外理由を空にしない。",
         "動作項目（actions）は目的機能の結果側から起こし、因子ではなく期待される振る舞いを書く。",
         "条件項目の総数が多く maxCombinations に触れる場合は、誤差因子を条件項目へ入れずFHO-04側へ回す。",
       ],
@@ -236,14 +236,16 @@ export const factorRalphFrame: FactorRalphFrame = {
     {
       id: "FHO-04",
       targetTool: "design_pairwise",
-      status: "planned",
+      status: "available",
       applicableCategoryKeys: ["noise", "control"],
       notation: [
-        "本ツールは未実装のため、現時点では因子表に『ペア被覆で扱う候補』として分類だけを記録する。",
-        "誤差因子および環境系の制御因子は、因子名と水準列（FLH-06 等で絞った代表水準）を因子表に保持し、ツール追加後にそのまま渡せる形にしておく。",
-        "ツール実装までの間は generate_test_cases の意味的層で組合せを記述し、選んだ組合せの根拠として因子ID・水準IDを明記する。",
+        "誤差因子・環境系の制御因子を組合せ対象にする。因子1件を factors[] の1件へ写し、id に因子ID（例 F1）、name に因子名、levels に水準名の配列（2件以上）を置く。",
+        "同時に成立しない水準の組合せは forbiddenCombinations に reason 付きで登録し、ありえない理由を空にしない。",
+        "必ず含めたい既知の重要組合せは seedRows に全因子の水準を指定して渡す。",
+        "水準が1件しかない因子は factors に渡さず、固定条件として前提条件へ別記する。",
+        "誤差因子は FLH-06 等で代表水準へ絞り、絞り込んだ理由を因子表に残す。",
       ],
-      traceability: "ペア被覆候補の因子は、実装後に網羅対象IDへ移せるよう因子ID・水準IDを保持する。",
+      traceability: "生成したペアの PW: 網羅対象IDに、由来因子ID・水準IDを対応表で紐づける。",
     },
   ],
   completenessChecks: [

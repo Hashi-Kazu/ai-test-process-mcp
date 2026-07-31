@@ -867,6 +867,94 @@ export interface DecisionTableAnalysisCriteria {
   notes: string[];
 }
 
+// --- ペアワイズ設計(design_pairwise) ---
+export interface PairwiseFactorSpec {
+  id: string;              // 表内で一意(例 "F1")
+  name: string;            // 因子名(例 "支払い方法")
+  levels: string[];        // 水準。2件以上・重複不可・宣言順を保持
+}
+/** 因子IDごとに対象水準を指定する部分割当。未指定の因子は全水準に一致する。 */
+export type PairwiseSelector = Record<string, string | string[]>;
+
+export interface PairwiseForbiddenCombination {
+  id?: string;
+  when: PairwiseSelector;
+  reason: string;          // ありえない理由(必須)
+}
+export interface PairwiseSeedRow {
+  id?: string;
+  values: Record<string, string>;  // 全因子を完全指定する
+  note?: string;
+}
+export interface PairwiseSpec {
+  setId?: string;                  // 網羅対象IDに使う。既定 "MAIN"
+  title?: string;
+  factors: PairwiseFactorSpec[];   // 2件以上
+  forbiddenCombinations?: PairwiseForbiddenCombination[];
+  seedRows?: PairwiseSeedRow[];    // 必ず含めたい既知の重要組合せ
+  maxPairCount?: number;           // ペア数上限。既定 5000
+  maxEnumerationCombinations?: number; // 有効全組合せの厳密列挙上限。既定 4096
+  maxSearchNodes?: number;         // 到達可否探索の1回あたりノード上限。既定 20000
+}
+
+export type PairwisePairStatus = "reachable" | "unreachable" | "undetermined";
+
+export interface PairwisePair {
+  index: number;            // 1始まり、正準順(因子添字 i<j → 水準宣言順)で採番
+  factorIdA: string;
+  levelA: string;
+  factorIdB: string;
+  levelB: string;
+  status: PairwisePairStatus;
+  unreachableReason?: string;     // 一致した禁則のid/reason
+  coveredByRowNos: number[];      // 昇順
+}
+export interface PairwiseRow {
+  no: number;                     // 1始まり
+  source: "seed" | "generated";
+  values: Record<string, string>; // factorId -> level(全因子)
+  newlyCoveredPairIndexes: number[]; // その行で初めて被覆したペアindex(昇順)
+}
+export interface PairwiseFinding {
+  categoryId: string;             // "PWC-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+export interface PairwiseResult {
+  setId: string;
+  generated: boolean;
+  skipReason?: string;
+  factorCount: number;
+  totalPairCount: number;          // Σ_{i<j} |Li|*|Lj|(generated=false でも算出)
+  unreachablePairCount: number;
+  undeterminedPairCount: number;
+  targetPairCount: number;         // total - unreachable - undetermined(＝被覆率の分母)
+  coveredPairCount: number;
+  pairCoverageRatioPercent: number;// covered/target*100、小数第1位。target=0 なら 0
+  rows: PairwiseRow[];
+  pairs: PairwisePair[];           // generated=false のときは空配列
+  fullCombinationCount?: number;   // ∏|Li|。安全整数を超える場合は undefined
+  validCombinationCount?: number;  // 厳密列挙できたときのみ
+  reductionBasis: "valid-enumerated" | "full-product" | "unavailable";
+  reductionRatioPercent: number;   // (1 - rows/分母)*100、小数第1位。unavailable なら 0
+  theoreticalMinimumRowCount: number; // 水準数上位2因子の積(禁則未考慮の参考下限)
+  findings: PairwiseFinding[];
+}
+
+export interface PairwiseAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    definition: string;
+    recommendedAction: string;
+  }[];
+  notes: string[];
+}
+
 // --- 状態遷移入力（決定的層で 0/1 スイッチ被覆を数えるための最小仕様） ---
 export interface StateTransitionState { id: string; nameJa: string; initial?: boolean; }
 export interface StateTransitionEdge {
@@ -902,6 +990,7 @@ export interface GenerateTestCasesInput {
   equivalenceVariables?: EquivalencePartitioningVariableSpec[];
   stateTransition?: StateTransitionSpec;
   decisionTable?: DecisionTableSpec;               // design_decision_table と同形
+  pairwise?: PairwiseSpec;                         // design_pairwise と同形
   additionalCoverageTargets?: TestCaseCoverageTarget[]; // 決定的エンジンが無い技法の網羅対象を手で宣言
   testCases?: TestCaseSpec[];                      // 未指定・空なら「生成指示のみ」モード
   coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
@@ -951,7 +1040,7 @@ export interface TestCaseUnsubstantiatedTarget {
   caseId: string;
   targetId: string;
   techniqueId: TestTechniqueId;
-  missing: "variable" | "value" | "class" | "transition" | "condition-combination";
+  missing: "variable" | "value" | "class" | "transition" | "condition-combination" | "factor-level-pair";
   detail: string;
 }
 

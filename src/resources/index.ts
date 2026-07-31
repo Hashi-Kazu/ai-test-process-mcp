@@ -18,6 +18,7 @@ import { personaJourneyFrame } from "./personaJourneyFrame.js";
 import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
 import { causeEffectAnalysisCriteria } from "./causeEffectCriteria.js";
 import { decisionTableAnalysisCriteria } from "./decisionTableCriteria.js";
+import { pairwiseAnalysisCriteria } from "./pairwiseCriteria.js";
 import { factorRalphFrame } from "./factorRalphFrame.js";
 
 export function registerResources(server: McpServer): void {
@@ -411,6 +412,30 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(decisionTableAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "pairwise-analysis-criteria",
+    "testdesign://pairwise/analysis-criteria",
+    {
+      title: "Pairwise Analysis Criteria",
+      description:
+        "Judgment category catalog for design_pairwise (PWC-01..PWC-12): unknown factor/level references, " +
+        "duplicate factor ids or levels, factors that do not contribute to pair generation, insufficient factor count, " +
+        "pairs made unreachable by forbidden combinations, zero reachable pairs, redundant/unreachable forbidden combinations, " +
+        "malformed seed rows, pair count cap overflow, undetermined reachability under the search budget, " +
+        "and pair coverage below 100 percent, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(pairwiseAnalysisCriteria, null, 2),
         },
       ],
     })
