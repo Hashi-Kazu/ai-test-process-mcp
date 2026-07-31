@@ -18,6 +18,7 @@ import { personaJourneyFrame } from "./personaJourneyFrame.js";
 import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
 import { causeEffectAnalysisCriteria } from "./causeEffectCriteria.js";
 import { decisionTableAnalysisCriteria } from "./decisionTableCriteria.js";
+import { factorRalphFrame } from "./factorRalphFrame.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -410,6 +411,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(decisionTableAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "factor-ralph-frame",
+    "testcondition://factor/ralph-frame",
+    {
+      title: "Factor Decomposition Frame",
+      description:
+        "Paraphrased factor decomposition frame: the four factor categories (signal / noise / state / control) with probe questions and level-assignment guidance, level heuristics, the factor/level id convention, and the handover conventions to design_boundary_values, design_equivalence_partitioning, design_decision_table and the planned design_pairwise.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(factorRalphFrame, null, 2),
         },
       ],
     })
