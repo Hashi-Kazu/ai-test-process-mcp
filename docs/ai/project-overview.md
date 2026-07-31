@@ -2,7 +2,7 @@
 
 ## 概要
 
-JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）、テスト仕様書レビュー `review_test_specification`（テストベースに対する要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ・ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成）、閾値変更の影響再展開 `reexpand_threshold_changes`（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存・失効した網羅対象ID参照・名前参照経由の再確認要否を8区分で決定的に検出する）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
+JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）、テスト仕様書レビュー `review_test_specification`（テストベースに対する要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ・ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成）、閾値変更の影響再展開 `reexpand_threshold_changes`（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存・失効した網羅対象ID参照・名前参照経由の再確認要否を8区分で決定的に検出する）、デシジョンテーブル設計 `design_decision_table`（条件項目・水準・無効組合せ・ルールから全組合せを決定的に列挙し、無効組合せの除外・同一動作列の圧縮(don't care導出)・条件組合せ被覆・動作未定義組合せ検出・圧縮前後の列数と削減率を算出。圧縮後ルールは `DT:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
 
 ## 技術スタック
 
@@ -43,6 +43,7 @@ src/
     idPopulationAuditCriteria.ts # ID母集団監査の判定区分カタログ6区分（testbasis://population/audit-criteria）
     thresholdChangeImpactCriteria.ts # 閾値変更影響の判定区分カタログ8区分（testdesign://threshold/change-impact-criteria）
     causeEffectCriteria.ts # 原因結果グラフ分析の判定区分カタログ19区分 CEG-01〜CEG-19（testbasis://cause-effect/analysis-criteria）
+    decisionTableCriteria.ts # デシジョンテーブル設計の判定区分カタログ10区分 DTC-01〜DTC-10（testdesign://decision-table/analysis-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -57,6 +58,7 @@ src/
     auditIdPopulation.ts  # audit_id_population ツール（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを検出、renderIdPopulationAudit純関数）
     reexpandThresholdChanges.ts # reexpand_threshold_changes ツール（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割を新旧再展開して影響を決定的に洗い出す、renderThresholdChangeReexpansion純関数）
     analyzeCauseEffect.ts # analyze_cause_effect ツール（仕様文＋原因・結果・制約モデルの整合性と仕様文本文による裏付けを決定的に検査、mermaid図とデシジョンテーブル引き渡しJSONを出力、renderCauseEffectAnalysis純関数）
+    designDecisionTable.ts # design_decision_table ツール（条件・水準・無効組合せ・ルールから全組合せ列挙→無効組合せ除外→同一動作列の圧縮(don't care導出)を決定的に行う、renderDecisionTable純関数 + 再利用用 computeDecisionTableRows / buildDecisionTableCoverageTargets export）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -104,6 +106,8 @@ test/
   thresholdChangeAnalysis.test.ts # 閾値変更影響再展開の決定的検査の共有純関数群の単体テスト
   reexpandThresholdChanges.test.ts # renderThresholdChangeReexpansion()の単体テスト
   thresholdChangeImpactCriteria.test.ts # 閾値変更影響判定区分カタログ構造データの単体テスト
+  designDecisionTable.test.ts     # computeDecisionTableRows() / buildDecisionTableCoverageTargets() / renderDecisionTable()の単体テスト
+  decisionTableCriteria.test.ts   # デシジョンテーブル設計判定区分カタログ構造データの単体テスト
 ```
 
 ## 拡張パターン（Test Analysis・Test Design ほか各工程の tool 追加）

@@ -730,6 +730,93 @@ export interface TestCaseSpec {
   declaredTestSize?: TestSizeId;        // 呼び出し側が宣言したサイズ（判定との突き合わせ用）
 }
 
+// --- デシジョンテーブル設計(design_decision_table) ---
+export type DecisionTableActionValue = "Y" | "N" | "-";
+
+export interface DecisionTableConditionSpec {
+  id: string;                 // 表内で一意(例 "C1")
+  statement: string;          // 条件の説明(例 "券種")
+  levels: string[];           // 取り得る水準。2件以上・重複不可・宣言順を保持
+}
+export interface DecisionTableActionSpec {
+  id: string;                 // 表内で一意(例 "A1")
+  statement: string;
+}
+/** 条件IDごとに対象水準を指定する部分割当。未指定の条件は全水準に一致する。 */
+export type DecisionTableSelector = Record<string, string | string[]>;
+
+export interface DecisionTableInvalidCombination {
+  id?: string;
+  when: DecisionTableSelector;
+  reason: string;             // ありえない理由(必須)
+}
+export interface DecisionTableRuleSpec {
+  id?: string;
+  when: DecisionTableSelector;
+  actions: Record<string, DecisionTableActionValue>; // 未指定の動作IDは "N" 扱い
+  note?: string;
+}
+export interface DecisionTableSpec {
+  tableId?: string;           // 網羅対象IDに使う。既定 "MAIN"
+  title?: string;
+  conditions: DecisionTableConditionSpec[];  // 1件以上
+  actions: DecisionTableActionSpec[];        // 1件以上
+  invalidCombinations?: DecisionTableInvalidCombination[];
+  rules?: DecisionTableRuleSpec[];
+  maxCombinations?: number;   // 全列挙上限。既定 4096
+}
+
+export interface DecisionTableCombination {
+  index: number;                        // 1始まり、全組合せ列挙順
+  values: Record<string, string>;       // conditionId -> level
+  status: "valid" | "invalid";
+  invalidReason?: string;
+  matchedRuleIndexes: number[];         // spec.rules[] の0始まり添字(valid のみ)
+  actions?: Record<string, DecisionTableActionValue>; // 一意に決まったときのみ
+}
+export interface DecisionTableCompressedRule {
+  no: number;                                 // 1始まり
+  conditionLevels: Record<string, string[]>;  // conditionId -> 採用水準(宣言順)
+  dontCareConditionIds: string[];             // 全水準を含む条件ID("-" 表示対象)
+  actions: Record<string, DecisionTableActionValue>;
+  combinationIndexes: number[];               // 束ねた valid 組合せ index(昇順)
+}
+export interface DecisionTableFinding {
+  categoryId: string;                   // "DTC-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;                       // 条件ID / 動作ID / ルール表記 / 組合せ表記
+  detail: string;
+}
+export interface DecisionTableResult {
+  tableId: string;
+  enumerated: boolean;
+  skipReason?: string;
+  conditionCount: number;
+  totalCombinationCount: number;        // ∏ levels(enumerated=false でも算出)
+  invalidCombinationCount: number;
+  validCombinationCount: number;
+  definedCombinationCount: number;      // 動作が一意に決まった valid 組合せ数
+  undefinedCombinationIndexes: number[];
+  conflictingCombinationIndexes: number[];
+  combinations: DecisionTableCombination[]; // enumerated=false のときは空配列
+  compressedRules: DecisionTableCompressedRule[];
+  compressionRatioPercent: number;      // (1 - compressed/defined)*100、小数第1位。defined=0 なら 0
+  findings: DecisionTableFinding[];
+}
+
+export interface DecisionTableAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    definition: string;
+    recommendedAction: string;
+  }[];
+  notes: string[];
+}
+
 // --- 状態遷移入力（決定的層で 0/1 スイッチ被覆を数えるための最小仕様） ---
 export interface StateTransitionState { id: string; nameJa: string; initial?: boolean; }
 export interface StateTransitionEdge {
@@ -764,6 +851,7 @@ export interface GenerateTestCasesInput {
   boundaryMode?: BoundaryValueMode;
   equivalenceVariables?: EquivalencePartitioningVariableSpec[];
   stateTransition?: StateTransitionSpec;
+  decisionTable?: DecisionTableSpec;               // design_decision_table と同形
   additionalCoverageTargets?: TestCaseCoverageTarget[]; // 決定的エンジンが無い技法の網羅対象を手で宣言
   testCases?: TestCaseSpec[];                      // 未指定・空なら「生成指示のみ」モード
   coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
@@ -813,7 +901,7 @@ export interface TestCaseUnsubstantiatedTarget {
   caseId: string;
   targetId: string;
   techniqueId: TestTechniqueId;
-  missing: "variable" | "value" | "class" | "transition";
+  missing: "variable" | "value" | "class" | "transition" | "condition-combination";
   detail: string;
 }
 

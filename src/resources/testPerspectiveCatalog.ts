@@ -715,7 +715,7 @@ export const testPerspectiveCatalog: TestPerspectiveCatalog = {
 export const testTechniqueToolMapping: { techniqueId: TestTechniqueId; toolName: string }[] = [
   { techniqueId: "equivalence-partitioning", toolName: "design_equivalence_partitioning" },
   { techniqueId: "boundary-value-analysis", toolName: "design_boundary_values" },
-  { techniqueId: "decision-table", toolName: "generate_test_cases" },
+  { techniqueId: "decision-table", toolName: "design_decision_table" },
   { techniqueId: "state-transition", toolName: "generate_test_cases" },
   { techniqueId: "pairwise", toolName: "generate_test_cases" },
   { techniqueId: "scenario-based", toolName: "generate_test_cases" },

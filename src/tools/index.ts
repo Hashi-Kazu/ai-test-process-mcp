@@ -14,6 +14,7 @@ import { registerAuditIdPopulationTool } from "./auditIdPopulation.js";
 import { registerGenerateUserStoryMapTool } from "./generateUserStoryMap.js";
 import { registerReexpandThresholdChangesTool } from "./reexpandThresholdChanges.js";
 import { registerAnalyzeCauseEffectTool } from "./analyzeCauseEffect.js";
+import { registerDesignDecisionTableTool } from "./designDecisionTable.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -31,4 +32,5 @@ export function registerTools(server: McpServer): void {
   registerGenerateUserStoryMapTool(server);
   registerReexpandThresholdChangesTool(server);
   registerAnalyzeCauseEffectTool(server);
+  registerDesignDecisionTableTool(server);
 }
