@@ -541,6 +541,56 @@ export interface RiskAnalysisFrame {
   controlFlawFrame: ControlFlawFrame;
 }
 
+// --- 因子分解フレーム（testcondition://factor/ralph-frame） ---
+export type FactorCategoryKey = "signal" | "noise" | "state" | "control";
+
+export interface FactorDecompositionStep {
+  id: string;            // "FDS-01" 形式
+  nameJa: string;
+  description: string;
+}
+
+export interface FactorLevelHeuristic {
+  id: string;            // "FLH-01" 形式
+  nameJa: string;
+  appliesTo: string;     // どんな性質の因子に適用するか
+  levelPattern: string[];// 取る水準の並び（例: ["下限-1", "下限", "上限", "上限+1"]）
+  note: string;
+}
+
+export interface FactorCategoryDefinition {
+  id: string;                  // "FC-01".."FC-04"
+  key: FactorCategoryKey;
+  nameJa: string;              // 信号因子 / 誤差因子 / 状態因子 / 制御因子
+  definition: string;
+  roleInDesign: string;        // 組合せ設計上の扱い
+  probeQuestions: string[];    // 3件以上
+  levelGuidance: string;       // 水準の割り当て方
+  levelHeuristicIds: string[]; // FLH-xx の参照、1件以上
+  badExamples: string[];       // 2件以上
+  handoverConventionIds: string[]; // FHO-xx の参照、1件以上
+}
+
+export interface FactorHandoverConvention {
+  id: string;                          // "FHO-01".."FHO-04"
+  targetTool: string;                  // 例: "design_boundary_values"
+  status: "available" | "planned";     // planned は未実装ツール
+  applicableCategoryKeys: FactorCategoryKey[];
+  notation: string[];                  // 引き渡し記法（対象ツールの引数名を明記した手順文）
+  traceability: string;                // 因子ID/水準IDの追跡の残し方
+}
+
+export interface FactorRalphFrame {
+  name: string;
+  note: string;                        // 自作整理であり逐語転載・特定手法への適合主張でない旨
+  procedure: FactorDecompositionStep[];      // "FDS-01".. 6件、実施順
+  categories: FactorCategoryDefinition[];    // 4件、signal → noise → state → control 順
+  levelHeuristics: FactorLevelHeuristic[];   // "FLH-01".. 6件
+  idConvention: string[];                    // 因子ID・水準IDの採番規約
+  handoverConventions: FactorHandoverConvention[]; // "FHO-01".. 4件
+  completenessChecks: string[];              // 洗い出し漏れの自己点検、5件以上
+}
+
 // --- derivedFrom 参照種別（要件/リスク/ステークホルダー/ガイドワード） ---
 export type DerivedFromKind = "requirement" | "risk" | "stakeholder" | "guideword";
 export interface DerivedFromRef { kind: DerivedFromKind; id: string; }
