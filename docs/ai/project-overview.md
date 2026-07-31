@@ -42,6 +42,7 @@ src/
     testSpecificationReviewChecklist.ts # テスト仕様書レビューチェックリスト14項目（testspec://review/checklist）
     idPopulationAuditCriteria.ts # ID母集団監査の判定区分カタログ6区分（testbasis://population/audit-criteria）
     thresholdChangeImpactCriteria.ts # 閾値変更影響の判定区分カタログ8区分（testdesign://threshold/change-impact-criteria）
+    causeEffectCriteria.ts # 原因結果グラフ分析の判定区分カタログ19区分 CEG-01〜CEG-19（testbasis://cause-effect/analysis-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -55,6 +56,7 @@ src/
     reviewTestSpecification.ts # review_test_specification ツール（3系統×双方向カバレッジの決定的検査 + 意味的チェックリスト/改善提案、renderTestSpecificationReview純関数）
     auditIdPopulation.ts  # audit_id_population ツール（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを検出、renderIdPopulationAudit純関数）
     reexpandThresholdChanges.ts # reexpand_threshold_changes ツール（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割を新旧再展開して影響を決定的に洗い出す、renderThresholdChangeReexpansion純関数）
+    analyzeCauseEffect.ts # analyze_cause_effect ツール（仕様文＋原因・結果・制約モデルの整合性と仕様文本文による裏付けを決定的に検査、mermaid図とデシジョンテーブル引き渡しJSONを出力、renderCauseEffectAnalysis純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -68,6 +70,7 @@ src/
   derivedFromRefs.ts     # derivedFrom（要件/リスク/ステークホルダー/ガイドワードの参照種別付き構造化参照）の正規化・照合・表示整形の共有純関数群とzodスキーマ
   idPopulationAnalysis.ts # ID母集団監査の決定的検査の共有純関数群（定義済みID抽出・母集団突き合わせ・未宣言/除外/母集団未定義ID・文書別反映率・母集団間差分）
   thresholdChangeAnalysis.ts # 閾値変更影響再展開の決定的検査の共有純関数群（パラメータ差分・境界値/同値クラスの新旧再展開・参照インデックス・失効網羅対象検出・成果物別影響判定・サマリ集計）
+  causeEffectAnalysis.ts # 原因結果グラフ分析の決定的検査の共有純関数群（グラフ構築・孤立原因/導出されない結果/循環検出・制約の指定不正と矛盾・真偽組合せの全列挙とルール圧縮・結果の可変性検査・引用の仕様文実在照合・未モデル化文と論理接続語の検出・mermaid生成・デシジョンテーブル引き渡し構築）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
