@@ -44,11 +44,17 @@ describe("testTechniqueCatalog", () => {
     }
   });
 
-  it("only marks boundary-value-analysis, equivalence-partitioning, and state-transition as deterministic", () => {
+  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, and state-transition as deterministic", () => {
     const deterministicIds = testTechniqueCatalog.entries.filter((e) => e.deterministic).map((e) => e.techniqueId);
     expect(new Set(deterministicIds)).toEqual(
-      new Set(["boundary-value-analysis", "equivalence-partitioning", "state-transition"])
+      new Set(["boundary-value-analysis", "equivalence-partitioning", "decision-table", "state-transition"])
     );
+  });
+
+  it("routes decision-table (TTK-03) to design_decision_table deterministically", () => {
+    const entry = testTechniqueCatalog.entries.find((e) => e.id === "TTK-03");
+    expect(entry?.engineToolName).toBe("design_decision_table");
+    expect(entry?.deterministic).toBe(true);
   });
 
   it("does not include verbatim external standard wording", () => {

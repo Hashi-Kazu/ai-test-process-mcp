@@ -55,12 +55,14 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
           definition: "宣言した条件項目の組み合わせ(ルール)のうち、いずれかのケースで通過した組み合わせの割合。",
         },
       ],
-      requiredInputs: ["条件項目とその取り得る値", "各組み合わせに対応するアクション/期待結果"],
-      deterministic: false,
+      requiredInputs: ["条件項目とその取り得る水準", "無効組合せ(ありえない組合せ)と理由", "各組み合わせに対応するアクション/期待結果"],
+      engineToolName: "design_decision_table",
+      deterministic: true,
       selectionRationale: "複数条件の論理積・論理和で振る舞いが変わり、条件の組み合わせ漏れが起きやすい場合に選ぶ。",
       note:
-        "本 MCP では条件組合せの自動生成エンジンは未実装。additionalCoverageTargets で組み合わせ(ルール)ごとの" +
-        "網羅対象を宣言し、決定的層ではその充足状況のみをカウントする運用とする。",
+        "design_decision_table が全組合せの列挙・無効組合せの除外・同一動作列の圧縮(don't care 導出)を決定的に行う。" +
+        "圧縮後の各ルールを DT: プレフィックスの網羅対象として generate_test_cases の decisionTable へ渡すと、" +
+        "条件組合せ被覆を決定的にカウントできる。",
     },
     {
       id: "TTK-04",

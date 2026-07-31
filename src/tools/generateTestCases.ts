@@ -227,7 +227,7 @@ export function renderTestCases(
   lines.push("");
   if (universe.length === 0) {
     lines.push(
-      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / additionalCoverageTargets)が指定されていない。"
+      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / additionalCoverageTargets)が指定されていない。"
     );
   } else {
     lines.push("| 網羅対象ID | 技法 | 内容 | 由来 |");
@@ -865,6 +865,41 @@ export const generateTestCasesInputShape = {
     })
     .optional()
     .describe("Minimal state transition spec used to count 0/1 switch coverage"),
+  decisionTable: z
+    .object({
+      tableId: z.string().optional(),
+      title: z.string().optional(),
+      conditions: z.array(
+        z.object({
+          id: z.string(),
+          statement: z.string(),
+          levels: z.array(z.string()).min(1),
+        })
+      ),
+      actions: z.array(z.object({ id: z.string(), statement: z.string() })),
+      invalidCombinations: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            when: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+            reason: z.string(),
+          })
+        )
+        .optional(),
+      rules: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            when: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+            actions: z.record(z.string(), z.enum(["Y", "N", "-"])),
+            note: z.string().optional(),
+          })
+        )
+        .optional(),
+      maxCombinations: z.number().int().positive().optional(),
+    })
+    .optional()
+    .describe("Decision table spec, same shape as design_decision_table"),
   additionalCoverageTargets: z
     .array(
       z.object({

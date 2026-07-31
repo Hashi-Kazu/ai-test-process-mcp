@@ -1,5 +1,6 @@
 import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
+import { buildDecisionTableCoverageTargets, computeDecisionTableRows } from "./tools/designDecisionTable.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
@@ -106,6 +107,10 @@ export function buildCoverageUniverse(input: GenerateTestCasesInput): TestCaseCo
         origin: t.id,
       });
     }
+  }
+
+  if (input.decisionTable) {
+    for (const target of buildDecisionTableCoverageTargets(input.decisionTable)) push(target);
   }
 
   for (const t of input.additionalCoverageTargets ?? []) {
@@ -579,6 +584,7 @@ export function findUnsubstantiatedCoverageTargets(
   const parameters = input.parameters ?? [];
   const transitions = input.stateTransition?.transitions ?? [];
   const states = input.stateTransition?.states ?? [];
+  const decisionTableResult = input.decisionTable ? computeDecisionTableRows(input.decisionTable) : undefined;
 
   const findings: TestCaseUnsubstantiatedTarget[] = [];
   for (const c of testCases) {
@@ -667,7 +673,35 @@ export function findUnsubstantiatedCoverageTargets(
         continue;
       }
 
-      // BV / EP / ST 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+      if (targetId.startsWith("DT:")) {
+        if (!decisionTableResult || !decisionTableResult.enumerated) continue;
+        const match = /R(\d+)$/.exec(targetId);
+        if (!match) continue;
+        const ruleNo = Number(match[1]);
+        const rule = decisionTableResult.compressedRules.find((r) => r.no === ruleNo);
+        if (!rule) continue; // 引けないルールは検査対象外
+
+        const conditions = input.decisionTable?.conditions ?? [];
+        const missingConditions = conditions.filter((cond) => {
+          if (rule.dontCareConditionIds.includes(cond.id)) return false;
+          const levels = rule.conditionLevels[cond.id] ?? [];
+          return !levels.some((lv) => text.includes(lv));
+        });
+        if (missingConditions.length === 0) continue;
+
+        const cond = missingConditions[0];
+        const levels = rule.conditionLevels[cond.id] ?? [];
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "condition-combination",
+          detail: `条件「${cond.statement}」の水準(${levels.join("/")})がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST / DT 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
     }
   }
   return findings;

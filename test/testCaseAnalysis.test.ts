@@ -85,6 +85,37 @@ describe("buildCoverageUniverse", () => {
     expect(universe.find((t) => t.id === "ST:ST-01")?.description).toBe("S1 --確定--> S2");
   });
 
+  it("generates DT: ids from decisionTable, appended after BV/EP/ST", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+      equivalenceVariables: [
+        { name: "年齢", validClasses: [{ label: "成人", representative: "20" }] },
+      ],
+      stateTransition: {
+        states: [
+          { id: "S1", nameJa: "未処理" },
+          { id: "S2", nameJa: "処理済" },
+        ],
+        transitions: [{ id: "ST-01", from: "S1", to: "S2", event: "確定" }],
+      },
+      decisionTable: {
+        conditions: [{ id: "C1", statement: "券種", levels: ["おとな", "こども"] }],
+        actions: [{ id: "A1", statement: "入場可否" }],
+        rules: [{ when: {}, actions: { A1: "Y" } }],
+      },
+    };
+    const universe = buildCoverageUniverse(input);
+    const ids = universe.map((t) => t.id);
+    expect(ids.slice(0, 4)).toEqual(["BV:枚数:0", "BV:枚数:1", "BV:枚数:10", "BV:枚数:11"]);
+    expect(ids).toContain("EP:年齢:成人");
+    expect(ids).toContain("ST:ST-01");
+    expect(ids).toContain("DT:MAIN:R1");
+    // BV/EP/ST の順序・IDは decisionTable 追加後も変わらない。
+    expect(ids.indexOf("ST:ST-01")).toBeLessThan(ids.indexOf("DT:MAIN:R1"));
+  });
+
   it("merges additionalCoverageTargets, keeping the first on id collision", () => {
     const input: GenerateTestCasesInput = {
       testConditions: [],
@@ -119,6 +150,15 @@ describe("computeCoverageRows", () => {
     expect(rows[0].uncovered).toBe(1);
     expect(rows[0].ratioPercent).toBe(75);
     expect(rows[0].uncoveredTargetIds).toEqual(["BV:x:4"]);
+  });
+
+  it("resolves criterionLabel for decision-table as 条件組合せ被覆", () => {
+    const universe: TestCaseCoverageTarget[] = [
+      { id: "DT:MAIN:R1", techniqueId: "decision-table", description: "d1", origin: "MAIN" },
+    ];
+    const rows = computeCoverageRows(universe, []);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].criterionLabel).toBe("条件組合せ被覆");
   });
 
   it.each([
@@ -500,6 +540,51 @@ describe("findUnsubstantiatedCoverageTargets", () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].missing).toBe("transition");
     expect(findings[0].detail).toContain("遷移先");
+  });
+
+  const decisionTable = {
+    conditions: [
+      { id: "C1", statement: "券種", levels: ["おとな", "こども"] },
+      { id: "C2", statement: "支払い方法", levels: ["現金", "IC", "クレカ"] },
+    ],
+    actions: [{ id: "A1", statement: "入場可否" }],
+    rules: [{ id: "R1", when: { C2: "IC" }, actions: { A1: "Y" } }],
+  };
+
+  it("flags a decision table rule whose fixed level does not appear in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      decisionTable,
+      testCases: [
+        baseCase({
+          caseId: "TCS-080",
+          techniqueId: "decision-table",
+          coverageTargets: ["DT:MAIN:R1"],
+          steps: [{ no: 1, action: "現金で入場する", expected: "入場できる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].targetId).toBe("DT:MAIN:R1");
+    expect(findings[0].missing).toBe("condition-combination");
+    expect(findings[0].detail).toContain("支払い方法");
+  });
+
+  it("accepts a decision table rule whose fixed level appears in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      decisionTable,
+      testCases: [
+        baseCase({
+          caseId: "TCS-081",
+          techniqueId: "decision-table",
+          coverageTargets: ["DT:MAIN:R1"],
+          steps: [{ no: 1, action: "ICカードで入場する", expected: "入場できる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
   });
 
   it("skips manually declared coverage targets that are not BV/EP/ST", () => {

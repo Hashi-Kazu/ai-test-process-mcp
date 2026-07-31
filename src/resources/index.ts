@@ -17,6 +17,7 @@ import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
 import { personaJourneyFrame } from "./personaJourneyFrame.js";
 import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
 import { causeEffectAnalysisCriteria } from "./causeEffectCriteria.js";
+import { decisionTableAnalysisCriteria } from "./decisionTableCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -386,6 +387,29 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(causeEffectAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "decision-table-analysis-criteria",
+    "testdesign://decision-table/analysis-criteria",
+    {
+      title: "Decision Table Analysis Criteria",
+      description:
+        "Judgment category catalog for design_decision_table (DTC-01..DTC-10): unknown condition/level/action references, " +
+        "duplicate condition/action ids or levels, conditions that do not contribute to the combination count, " +
+        "undefined-behavior valid combinations, conflicting rule matches, redundant/unreachable rules, zero valid combinations, " +
+        "and enumeration cap overflow, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(decisionTableAnalysisCriteria, null, 2),
         },
       ],
     })
