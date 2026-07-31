@@ -90,7 +90,7 @@
 | state-transition | ✅ `generate_test_cases` の stateTransition | |
 | exploratory | ✅ `generate_exploratory_charters` | |
 | decision-table | ❌ | Tier2④で追加予定 |
-| pairwise | ❌ | Tier2④で追加予定 |
+| pairwise | ✅ `design_pairwise` | 全ペア列挙・禁則による到達不能ペア判定・貪欲法によるペア被覆組合せ生成。`PW:` を universe へ |
 | **use-case-based** | ❌ | **本課題の本丸** |
 | **scenario-based** | ❌ | **本課題の本丸** |
 | config-matrix | ❌ | 11ヒポポタマスの環境一覧 |
@@ -214,7 +214,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 17技法中4→10へ。
 
 - B-1 `design_decision_table`（条件組合せ被覆の決定的カウント、無効組合せ圧縮、`DT:` を universe へ）→ #23
-- B-2 `design_pairwise`（ペア被覆の決定的生成・カウント、`PW:` を universe へ）→ #24
+- B-2 `design_pairwise`（ペア被覆の決定的生成・カウント、`PW:` を universe へ）→ #24 ✅ 完了（#80 / `HSKZ-124`。判定区分カタログ `testdesign://pairwise/analysis-criteria` 12区分付き。技法カタログ `TTK-05` の決定的カウント可否を可へ、因子分解フレーム `FHO-04` を available へ更新済み）
 - B-3 **`design_scenario_flows`**（ユースケース／シナリオ設計。アクター・事前条件・主フロー・代替フロー・例外フローを入力に、シナリオ一覧＋正常/準正常/異常分類＋主要・代替フロー被覆を決定的にカウント、`SC:` を universe へ）→ #19 #20 ★最優先
 - B-4 `design_config_matrix`（因子＝OS/ブラウザ/解像度/機種等、シングル/ペア/フル被覆の選択と絞り込み理由の必須記入、`CFG:` を universe へ）→ #26
 - B-5 `design_test_data`（データ区分×ライフサイクル状態のデータ設計表、データ×ケースの供給トレーサビリティ）→ #27 #（data-lifecycle-test）

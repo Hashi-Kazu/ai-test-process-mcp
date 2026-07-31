@@ -116,6 +116,44 @@ describe("buildCoverageUniverse", () => {
     expect(ids.indexOf("ST:ST-01")).toBeLessThan(ids.indexOf("DT:MAIN:R1"));
   });
 
+  it("generates PW: ids from pairwise, appended after DT: and before additionalCoverageTargets", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      decisionTable: {
+        conditions: [{ id: "C1", statement: "券種", levels: ["おとな", "こども"] }],
+        actions: [{ id: "A1", statement: "入場可否" }],
+        rules: [{ when: {}, actions: { A1: "Y" } }],
+      },
+      pairwise: {
+        factors: [
+          { id: "F1", name: "券種", levels: ["おとな", "こども"] },
+          { id: "F2", name: "支払い方法", levels: ["現金", "IC"] },
+        ],
+      },
+      additionalCoverageTargets: [
+        { id: "X:1", techniqueId: "use-case-based", description: "手宣言", origin: "宣言" },
+      ],
+    };
+    const ids = buildCoverageUniverse(input).map((t) => t.id);
+    expect(ids).toContain("DT:MAIN:R1");
+    expect(ids).toContain("PW:MAIN:P1");
+    expect(ids).toContain("PW:MAIN:P4");
+    expect(ids.indexOf("DT:MAIN:R1")).toBeLessThan(ids.indexOf("PW:MAIN:P1"));
+    expect(ids.indexOf("PW:MAIN:P4")).toBeLessThan(ids.indexOf("X:1"));
+    expect(
+      buildCoverageUniverse(input).find((t) => t.id === "PW:MAIN:P1")
+    ).toMatchObject({ techniqueId: "pairwise", description: "券種=おとな × 支払い方法=現金" });
+  });
+
+  it("does not generate PW: ids when pairwise is omitted", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+    };
+    expect(buildCoverageUniverse(input).some((t) => t.id.startsWith("PW:"))).toBe(false);
+  });
+
   it("merges additionalCoverageTargets, keeping the first on id collision", () => {
     const input: GenerateTestCasesInput = {
       testConditions: [],
@@ -581,6 +619,90 @@ describe("findUnsubstantiatedCoverageTargets", () => {
           techniqueId: "decision-table",
           coverageTargets: ["DT:MAIN:R1"],
           steps: [{ no: 1, action: "ICカードで入場する", expected: "入場できる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  const pairwise = {
+    factors: [
+      { id: "F1", name: "券種", levels: ["おとな", "こども"] },
+      { id: "F2", name: "支払い方法", levels: ["現金", "IC"] },
+    ],
+  };
+
+  it("flags a pairwise target when neither level of the pair appears in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      pairwise,
+      testCases: [
+        baseCase({
+          caseId: "TCS-090",
+          techniqueId: "pairwise",
+          coverageTargets: ["PW:MAIN:P1"], // 券種=おとな × 支払い方法=現金
+          steps: [{ no: 1, action: "こどもがICカードで入場する", expected: "入場できる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].targetId).toBe("PW:MAIN:P1");
+    expect(findings[0].techniqueId).toBe("pairwise");
+    expect(findings[0].missing).toBe("factor-level-pair");
+    expect(findings[0].detail).toContain("おとな");
+    expect(findings[0].detail).toContain("現金");
+  });
+
+  it("flags a pairwise target when only one level of the pair appears in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      pairwise,
+      testCases: [
+        baseCase({
+          caseId: "TCS-091",
+          techniqueId: "pairwise",
+          coverageTargets: ["PW:MAIN:P1"],
+          steps: [{ no: 1, action: "おとながICカードで入場する", expected: "入場できる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].missing).toBe("factor-level-pair");
+    expect(findings[0].detail).toContain("支払い方法=現金");
+    expect(findings[0].detail).not.toContain("券種=おとな");
+  });
+
+  it("accepts a pairwise target whose both levels appear in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      pairwise,
+      testCases: [
+        baseCase({
+          caseId: "TCS-092",
+          techniqueId: "pairwise",
+          coverageTargets: ["PW:MAIN:P1"],
+          steps: [{ no: 1, action: "おとなの券を現金で購入する", expected: "購入できる" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("skips pairwise substantiation when generation was skipped", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      pairwise: { ...pairwise, maxPairCount: 1 },
+      additionalCoverageTargets: [
+        { id: "PW:MAIN:P1", techniqueId: "pairwise", description: "手宣言", origin: "MAIN" },
+      ],
+      testCases: [
+        baseCase({
+          caseId: "TCS-093",
+          techniqueId: "pairwise",
+          coverageTargets: ["PW:MAIN:P1"],
+          steps: [{ no: 1, action: "何も関係しない操作をする", expected: "何も起きない" }],
         }),
       ],
     };

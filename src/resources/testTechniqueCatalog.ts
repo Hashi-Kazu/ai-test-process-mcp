@@ -93,10 +93,15 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
           definition: "宣言した因子間のすべての水準ペアのうち、いずれかのケースに現れたペアの割合。",
         },
       ],
-      requiredInputs: ["因子一覧", "各因子の水準一覧"],
-      deterministic: false,
+      requiredInputs: ["因子一覧", "各因子の水準一覧", "禁則(ありえない組合せ)"],
+      deterministic: true,
+      engineToolName: "design_pairwise",
       selectionRationale: "因子数が多く全組み合わせのテストが現実的でないが、因子間の相互作用を確認したい場合に選ぶ。",
-      note: "ペア表の自動生成エンジンは未実装。additionalCoverageTargets でペア単位の網羅対象を宣言する運用とする。",
+      note:
+        "design_pairwise が、全ての水準ペアの列挙・禁則による到達不能ペアの判定・ペアを被覆する組合せの生成を、" +
+        "貪欲法で決定的に行う（乱数を使わないため同一入力からは常に同一の組合せ表が得られる）。" +
+        "各ペアは PW: プレフィックスの網羅対象IDとして出力されるので、それをそのまま generate_test_cases の pairwise へ渡すと、" +
+        "ペア被覆率を決定的にカウントできる。到達不能ペアと判定保留ペアは被覆率の分母から外れる。",
     },
     {
       id: "TTK-06",

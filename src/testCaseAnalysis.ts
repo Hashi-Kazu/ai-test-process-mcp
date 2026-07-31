@@ -1,6 +1,7 @@
 import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { buildDecisionTableCoverageTargets, computeDecisionTableRows } from "./tools/designDecisionTable.js";
+import { buildPairwiseCoverageTargets, computePairwiseRows } from "./tools/designPairwise.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
@@ -111,6 +112,10 @@ export function buildCoverageUniverse(input: GenerateTestCasesInput): TestCaseCo
 
   if (input.decisionTable) {
     for (const target of buildDecisionTableCoverageTargets(input.decisionTable)) push(target);
+  }
+
+  if (input.pairwise) {
+    for (const target of buildPairwiseCoverageTargets(input.pairwise)) push(target);
   }
 
   for (const t of input.additionalCoverageTargets ?? []) {
@@ -585,6 +590,9 @@ export function findUnsubstantiatedCoverageTargets(
   const transitions = input.stateTransition?.transitions ?? [];
   const states = input.stateTransition?.states ?? [];
   const decisionTableResult = input.decisionTable ? computeDecisionTableRows(input.decisionTable) : undefined;
+  const pairwiseResult = input.pairwise ? computePairwiseRows(input.pairwise) : undefined;
+  const pairwiseFactorName = (factorId: string): string =>
+    input.pairwise?.factors.find((f) => f.id === factorId)?.name ?? factorId;
 
   const findings: TestCaseUnsubstantiatedTarget[] = [];
   for (const c of testCases) {
@@ -701,7 +709,34 @@ export function findUnsubstantiatedCoverageTargets(
         continue;
       }
 
-      // BV / EP / ST / DT 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+      if (targetId.startsWith("PW:")) {
+        if (!pairwiseResult || !pairwiseResult.generated) continue;
+        const match = /P(\d+)$/.exec(targetId);
+        if (!match) continue;
+        const pairIndex = Number(match[1]);
+        const pair = pairwiseResult.pairs.find((p) => p.index === pairIndex);
+        if (!pair) continue; // 引けないペアは検査対象外
+
+        const hitA = text.includes(pair.levelA);
+        const hitB = text.includes(pair.levelB);
+        if (hitA && hitB) continue;
+
+        const missingSide = !hitA && !hitB
+          ? `${pairwiseFactorName(pair.factorIdA)}=${pair.levelA} と ${pairwiseFactorName(pair.factorIdB)}=${pair.levelB} の両方`
+          : !hitA
+            ? `${pairwiseFactorName(pair.factorIdA)}=${pair.levelA}`
+            : `${pairwiseFactorName(pair.factorIdB)}=${pair.levelB}`;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "factor-level-pair",
+          detail: `水準ペアのうち${missingSide}がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST / DT / PW 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
     }
   }
   return findings;

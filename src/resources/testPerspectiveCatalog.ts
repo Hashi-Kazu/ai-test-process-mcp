@@ -717,7 +717,7 @@ export const testTechniqueToolMapping: { techniqueId: TestTechniqueId; toolName:
   { techniqueId: "boundary-value-analysis", toolName: "design_boundary_values" },
   { techniqueId: "decision-table", toolName: "design_decision_table" },
   { techniqueId: "state-transition", toolName: "generate_test_cases" },
-  { techniqueId: "pairwise", toolName: "generate_test_cases" },
+  { techniqueId: "pairwise", toolName: "design_pairwise" },
   { techniqueId: "scenario-based", toolName: "generate_test_cases" },
   { techniqueId: "error-guessing", toolName: "generate_exploratory_charters" },
   { techniqueId: "exploratory", toolName: "generate_exploratory_charters" },

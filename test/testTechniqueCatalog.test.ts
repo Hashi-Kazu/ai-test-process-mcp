@@ -44,10 +44,16 @@ describe("testTechniqueCatalog", () => {
     }
   });
 
-  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, and state-transition as deterministic", () => {
+  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, and pairwise as deterministic", () => {
     const deterministicIds = testTechniqueCatalog.entries.filter((e) => e.deterministic).map((e) => e.techniqueId);
     expect(new Set(deterministicIds)).toEqual(
-      new Set(["boundary-value-analysis", "equivalence-partitioning", "decision-table", "state-transition"])
+      new Set([
+        "boundary-value-analysis",
+        "equivalence-partitioning",
+        "decision-table",
+        "state-transition",
+        "pairwise",
+      ])
     );
   });
 
@@ -55,6 +61,17 @@ describe("testTechniqueCatalog", () => {
     const entry = testTechniqueCatalog.entries.find((e) => e.id === "TTK-03");
     expect(entry?.engineToolName).toBe("design_decision_table");
     expect(entry?.deterministic).toBe(true);
+  });
+
+  it("routes pairwise (TTK-05) to design_pairwise deterministically", () => {
+    const entry = testTechniqueCatalog.entries.find((e) => e.id === "TTK-05");
+    expect(entry?.techniqueId).toBe("pairwise");
+    expect(entry?.engineToolName).toBe("design_pairwise");
+    expect(entry?.deterministic).toBe(true);
+    expect(entry?.requiredInputs).toEqual(["因子一覧", "各因子の水準一覧", "禁則(ありえない組合せ)"]);
+    expect(entry?.note).toContain("design_pairwise");
+    expect(entry?.note).toContain("PW:");
+    expect(entry?.note).not.toContain("未実装");
   });
 
   it("does not include verbatim external standard wording", () => {
