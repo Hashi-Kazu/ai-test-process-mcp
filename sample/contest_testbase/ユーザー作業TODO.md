@@ -8,7 +8,7 @@
 
 | 項目 | 状態 |
 | --- | --- |
-| 調査 | 完了。`docs/ai/capability-gap-analysis.md` と `sample/2026/品質比較レポート_再レビュー.md` |
+| 調査 | 完了。`docs/ai/capability-gap-analysis.md` と `sample/contest_testbase/2026/品質比較レポート_再レビュー.md` |
 | ASTER公式資料の取得 | **完了**（egressポリシーを Full へ変更いただいたため実施） |
 | Issue登録 | 完了。**31件**（トラッキング #69 ＋ 子30件） |
 | コード変更 | **まだゼロ**。1件も着手していない |
@@ -24,7 +24,7 @@
 
 公開資料の一覧は各年度の索引ページ `/testcontest/history/open-YYYY` から機械的に列挙した。サイトは Astro でリニューアルされており、旧 `finalgameopenYYYY.html` 形式のURLは 301 を返す。
 
-### `sample/reference/`
+### `sample/contest_testbase/reference/`
 
 | ファイル | 出所 | 内容 |
 | --- | --- | --- |
@@ -33,7 +33,7 @@
 | `2025_tdc_guidance.pdf` | `/testcontest/doc/2025_tdc_guidance.pdf` | 説明会資料 67ページ |
 | `appeal_sheet_open_2026.docx` | `/testcontest/doc/appeal_sheet_open_2026.docx` | アピールシート指定フォーマット（成果物3のテンプレート） |
 
-### `sample/2025/` — 2026年版とほぼ同一テストベースで戦った直接比較相手
+### `sample/contest_testbase/2025/` — 2026年版とほぼ同一テストベースで戦った直接比較相手
 
 | 種別 | 件数 | 備考 |
 | --- | --- | --- |
@@ -44,7 +44,7 @@
 
 チーム: 不撓不屈の民 / 考えるアシカbeta / ミックスベジタブル / ねこにサウナ / Teamやま
 
-### `sample/2024/` `sample/2023/`
+### `sample/contest_testbase/2024/` `sample/contest_testbase/2023/`
 
 - 2024: `exhibition_AVATES_final.pdf`、`apealsheet_AVATES_final.pdf`（公式のファイル名が `apealsheet` と誤字）
 - 2023: `appeal_sheet_*.pdf` 4チーム（11ヒポポタマス / アプリ絶対落とすマンず / 考えるアシカ / 爆裂たまご）
@@ -125,6 +125,6 @@
 ## 参照
 
 - `docs/ai/capability-gap-analysis.md` — 35項目の充足マトリクス、工程別シミュレーション、Phase A〜F ロードマップ
-- `sample/2026/品質比較レポート_再レビュー.md` — 既存 `品質比較レポート.md` の主張の実データ検証と訂正一覧
-- `sample/reference/OPENクラス参加要項・審査基準_2026.md` — 審査基準・提出物定義の全文
+- `sample/contest_testbase/2026/品質比較レポート_再レビュー.md` — 既存 `品質比較レポート.md` の主張の実データ検証と訂正一覧
+- `sample/contest_testbase/reference/OPENクラス参加要項・審査基準_2026.md` — 審査基準・提出物定義の全文
 - GitHub Issue #69 — トラッキング（子30件のチェックリスト付き）
