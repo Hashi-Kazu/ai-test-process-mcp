@@ -84,4 +84,15 @@ describe("testPerspectiveCatalog", () => {
       expect(mapping?.toolName).toBe("generate_exploratory_charters");
     }
   });
+
+  it("routes use-case-based/scenario-based to design_scenario_flows", () => {
+    const flowBasedIds: (typeof testTechniqueToolMapping)[number]["techniqueId"][] = [
+      "use-case-based",
+      "scenario-based",
+    ];
+    for (const id of flowBasedIds) {
+      const mapping = testTechniqueToolMapping.find((m) => m.techniqueId === id);
+      expect(mapping?.toolName).toBe("design_scenario_flows");
+    }
+  });
 });

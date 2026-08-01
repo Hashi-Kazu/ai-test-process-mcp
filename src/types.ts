@@ -955,6 +955,109 @@ export interface PairwiseAnalysisCriteria {
   notes: string[];
 }
 
+// --- ユースケース／シナリオ設計(design_scenario_flows) ---
+export interface ScenarioActorSpec { id: string; nameJa: string; kind?: "human" | "system"; }
+
+export interface ScenarioStepSpec {
+  no: number;              // フロー内で 1 始まりの連番
+  actor: string;           // actors[].id を参照
+  action: string;
+  featureIds?: string[];   // このステップで通過する機能ID
+}
+
+export type ScenarioBranchKind = "alternate" | "exception";
+export type ScenarioBranchOutcome = "goal-achieved" | "aborted";
+
+export interface ScenarioBranchSpec {
+  id: string;                 // "AF-01" / "EF-01"（ユースケース内で一意）
+  kind: ScenarioBranchKind;
+  nameJa: string;
+  fromStepNo: number;         // 主フローのどのステップから分岐するか
+  trigger: string;            // 分岐条件（必須・空文字不可）
+  steps: ScenarioStepSpec[];  // 1件以上
+  rejoinStepNo?: number;      // 主フローへの復帰位置。未指定なら復帰せず終端
+  outcome: ScenarioBranchOutcome;
+}
+
+export interface UseCaseSpec {
+  id: string;                 // "UC-01"
+  nameJa: string;
+  primaryActor: string;       // actors[].id
+  supportingActors?: string[];
+  preconditions: string[];    // 1件以上
+  postconditions?: string[];
+  mainFlow: ScenarioStepSpec[];  // 1件以上
+  branches?: ScenarioBranchSpec[];
+}
+
+export interface ScenarioTestConditionRef { id: string; statement?: string; featureIds?: string[]; }
+
+export interface ScenarioFlowSpec {
+  title?: string;
+  actors: ScenarioActorSpec[];     // 1件以上
+  useCases: UseCaseSpec[];         // 1件以上
+  featureIds?: string[];           // 機能IDの母集団（宣言）。未宣言なら被覆率は未算出
+  testConditions?: ScenarioTestConditionRef[];
+  maxScenariosPerUseCase?: number; // 既定 200
+}
+
+export type ScenarioOutcomeClass = "normal" | "semi-normal" | "abnormal";
+
+export interface ScenarioPassStep {
+  flowId: string;          // "MAIN" または branch id
+  stepNo: number;
+  actor: string;
+  action: string;
+  featureIds: string[];
+}
+export interface GeneratedScenario {
+  index: number;                  // ユースケース内 1 始まり
+  id: string;                     // "SC:UC-01:S1"
+  useCaseId: string;
+  nameJa: string;
+  branchId?: string;
+  trigger?: string;
+  outcomeClass: ScenarioOutcomeClass;
+  passedFlowIds: string[];        // ["MAIN"] / ["MAIN","AF-01"]
+  steps: ScenarioPassStep[];
+  featureIds: string[];           // 重複除去・初出順
+}
+export interface ScenarioFlowUseCaseResult {
+  useCaseId: string; nameJa: string; primaryActor: string;
+  flowIds: string[];              // ["MAIN", ...branch ids]（宣言順）
+  coveredFlowIds: string[];
+  scenarios: GeneratedScenario[];
+  normalCount: number; semiNormalCount: number; abnormalCount: number;
+}
+export interface ScenarioFlowFinding {
+  categoryId: string;             // "SFC-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+export interface ScenarioFlowResult {
+  generated: boolean;
+  skipReason?: string;
+  useCases: ScenarioFlowUseCaseResult[];   // generated=false のときは空配列
+  scenarioCount: number;
+  normalCount: number; semiNormalCount: number; abnormalCount: number;
+  flowCount: number;                       // 全ユースケース合計（UC: 網羅対象の母数）
+  coveredFlowCount: number;
+  flowCoverageRatioPercent: number;        // covered/flowCount*100、小数第1位。0件なら 0
+  declaredFeatureIds: string[];
+  passedFeatureIds: string[];              // シナリオのステップに現れた機能ID（初出順）
+  uncoveredFeatureIds: string[];           // 宣言母集団 - passed
+  undeclaredFeatureIds: string[];          // passed - 宣言母集団
+  featureCoverageBasis: "declared-population" | "unavailable";
+  featureCoverageRatioPercent?: number;    // basis が declared-population のときのみ
+  findings: ScenarioFlowFinding[];
+}
+export interface ScenarioFlowAnalysisCriteria {
+  name: string; summary: string;
+  categories: { id: string; nameJa: string; severity: "high" | "medium" | "info"; definition: string; recommendedAction: string; }[];
+  notes: string[];
+}
+
 // --- 状態遷移入力（決定的層で 0/1 スイッチ被覆を数えるための最小仕様） ---
 export interface StateTransitionState { id: string; nameJa: string; initial?: boolean; }
 export interface StateTransitionEdge {
@@ -991,6 +1094,7 @@ export interface GenerateTestCasesInput {
   stateTransition?: StateTransitionSpec;
   decisionTable?: DecisionTableSpec;               // design_decision_table と同形
   pairwise?: PairwiseSpec;                         // design_pairwise と同形
+  scenarioFlows?: ScenarioFlowSpec;                // design_scenario_flows と同形
   additionalCoverageTargets?: TestCaseCoverageTarget[]; // 決定的エンジンが無い技法の網羅対象を手で宣言
   testCases?: TestCaseSpec[];                      // 未指定・空なら「生成指示のみ」モード
   coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
@@ -1040,7 +1144,15 @@ export interface TestCaseUnsubstantiatedTarget {
   caseId: string;
   targetId: string;
   techniqueId: TestTechniqueId;
-  missing: "variable" | "value" | "class" | "transition" | "condition-combination" | "factor-level-pair";
+  missing:
+    | "variable"
+    | "value"
+    | "class"
+    | "transition"
+    | "condition-combination"
+    | "factor-level-pair"
+    | "scenario-flow"
+    | "use-case-flow";
   detail: string;
 }
 

@@ -19,6 +19,7 @@ import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.j
 import { causeEffectAnalysisCriteria } from "./causeEffectCriteria.js";
 import { decisionTableAnalysisCriteria } from "./decisionTableCriteria.js";
 import { pairwiseAnalysisCriteria } from "./pairwiseCriteria.js";
+import { scenarioFlowAnalysisCriteria } from "./scenarioFlowCriteria.js";
 import { factorRalphFrame } from "./factorRalphFrame.js";
 
 export function registerResources(server: McpServer): void {
@@ -437,6 +438,31 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(pairwiseAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "scenario-flow-analysis-criteria",
+    "testdesign://scenario-flow/analysis-criteria",
+    {
+      title: "Scenario Flow Analysis Criteria",
+      description:
+        "Judgment category catalog for design_scenario_flows (SFC-01..SFC-14): unknown actor references, " +
+        "duplicate use case / branch ids, non-sequential step numbering, malformed branch and rejoin positions, " +
+        "missing branch triggers, feature ids outside the declared population, use cases without an exception flow, " +
+        "skewed scenario classification, declared feature ids no scenario passes through, flows with no feature ids at all, " +
+        "test-condition feature ids not reached by any scenario, passed feature ids no test condition references, " +
+        "duplicate scenarios, and scenario count cap overflow, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(scenarioFlowAnalysisCriteria, null, 2),
         },
       ],
     })

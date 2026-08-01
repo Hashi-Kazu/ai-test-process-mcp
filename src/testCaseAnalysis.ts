@@ -2,12 +2,18 @@ import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { buildDecisionTableCoverageTargets, computeDecisionTableRows } from "./tools/designDecisionTable.js";
 import { buildPairwiseCoverageTargets, computePairwiseRows } from "./tools/designPairwise.js";
+import {
+  MAIN_FLOW_ID,
+  buildScenarioFlowCoverageTargets,
+  computeScenarioFlows,
+} from "./tools/designScenarioFlows.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
 import { toDerivedFromRef } from "./derivedFromRefs.js";
 import { extractIdOccurrences } from "./testBasisAnalysis.js";
 import type {
+  GeneratedScenario,
   GenerateTestCasesInput,
   GuidewordDictionary,
   RequirementSourceRef,
@@ -116,6 +122,10 @@ export function buildCoverageUniverse(input: GenerateTestCasesInput): TestCaseCo
 
   if (input.pairwise) {
     for (const target of buildPairwiseCoverageTargets(input.pairwise)) push(target);
+  }
+
+  if (input.scenarioFlows) {
+    for (const target of buildScenarioFlowCoverageTargets(input.scenarioFlows)) push(target);
   }
 
   for (const t of input.additionalCoverageTargets ?? []) {
@@ -591,6 +601,7 @@ export function findUnsubstantiatedCoverageTargets(
   const states = input.stateTransition?.states ?? [];
   const decisionTableResult = input.decisionTable ? computeDecisionTableRows(input.decisionTable) : undefined;
   const pairwiseResult = input.pairwise ? computePairwiseRows(input.pairwise) : undefined;
+  const scenarioFlowResult = input.scenarioFlows ? computeScenarioFlows(input.scenarioFlows) : undefined;
   const pairwiseFactorName = (factorId: string): string =>
     input.pairwise?.factors.find((f) => f.id === factorId)?.name ?? factorId;
 
@@ -736,7 +747,88 @@ export function findUnsubstantiatedCoverageTargets(
         continue;
       }
 
-      // BV / EP / ST / DT / PW 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+      if (targetId.startsWith("SC:")) {
+        if (!scenarioFlowResult || !scenarioFlowResult.generated) continue;
+        let found: GeneratedScenario | undefined;
+        for (const ucResult of scenarioFlowResult.useCases) {
+          const hit = ucResult.scenarios.find((s) => s.id === targetId);
+          if (hit) {
+            found = hit;
+            break;
+          }
+        }
+        if (!found) continue; // 引けないシナリオは検査対象外
+        const scenario: GeneratedScenario = found;
+
+        const useCase = input.scenarioFlows?.useCases.find((u) => u.id === scenario.useCaseId);
+        if (scenario.branchId !== undefined) {
+          const branch = (useCase?.branches ?? []).find((b) => b.id === scenario.branchId);
+          const evidence: string[] = [];
+          if (scenario.trigger) evidence.push(scenario.trigger);
+          if (branch) {
+            evidence.push(branch.nameJa);
+            for (const s of branch.steps) evidence.push(s.action);
+          }
+          const hit = evidence.some((e) => e.length > 0 && text.includes(e));
+          if (hit) continue;
+          findings.push({
+            caseId: c.caseId,
+            targetId,
+            techniqueId: target.techniqueId,
+            missing: "scenario-flow",
+            detail: `分岐シナリオ「${scenario.nameJa}」の分岐条件・分岐フローの操作がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+          });
+        } else {
+          const evidence: string[] = [];
+          if (useCase) {
+            evidence.push(useCase.nameJa);
+            const lastStep = useCase.mainFlow[useCase.mainFlow.length - 1];
+            if (lastStep) evidence.push(lastStep.action);
+          }
+          const hit = evidence.some((e) => e.length > 0 && text.includes(e));
+          if (hit) continue;
+          findings.push({
+            caseId: c.caseId,
+            targetId,
+            techniqueId: target.techniqueId,
+            missing: "scenario-flow",
+            detail: `主フローシナリオ「${scenario.nameJa}」のユースケース名・主フロー最終ステップの操作がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+          });
+        }
+        continue;
+      }
+
+      if (targetId.startsWith("UC:")) {
+        if (!scenarioFlowResult || !scenarioFlowResult.generated) continue;
+        const useCase = input.scenarioFlows?.useCases.find((u) => u.id === target.origin);
+        if (!useCase) continue; // 引けないユースケースは検査対象外
+        const prefix = `UC:${target.origin}:`;
+        if (!targetId.startsWith(prefix)) continue;
+        const flowId = targetId.slice(prefix.length);
+        if (flowId.length === 0) continue;
+
+        const evidence: string[] = [];
+        if (flowId === MAIN_FLOW_ID) {
+          evidence.push(useCase.nameJa);
+          for (const s of useCase.mainFlow) evidence.push(s.action);
+        } else {
+          const branch = (useCase.branches ?? []).find((b) => b.id === flowId);
+          if (!branch) continue; // 引けないフローは検査対象外
+          evidence.push(branch.nameJa);
+          for (const s of branch.steps) evidence.push(s.action);
+        }
+        if (evidence.some((e) => e.length > 0 && text.includes(e))) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "use-case-flow",
+          detail: `フロー「${target.description}」のフロー名・ステップの操作がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST / DT / PW / UC / SC 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
     }
   }
   return findings;
