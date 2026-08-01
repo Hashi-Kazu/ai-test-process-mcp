@@ -1095,6 +1095,7 @@ export interface GenerateTestCasesInput {
   decisionTable?: DecisionTableSpec;               // design_decision_table と同形
   pairwise?: PairwiseSpec;                         // design_pairwise と同形
   scenarioFlows?: ScenarioFlowSpec;                // design_scenario_flows と同形
+  testData?: TestDataSpec;                         // design_test_data と同形
   additionalCoverageTargets?: TestCaseCoverageTarget[]; // 決定的エンジンが無い技法の網羅対象を手で宣言
   testCases?: TestCaseSpec[];                      // 未指定・空なら「生成指示のみ」モード
   coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
@@ -1152,7 +1153,9 @@ export interface TestCaseUnsubstantiatedTarget {
     | "condition-combination"
     | "factor-level-pair"
     | "scenario-flow"
-    | "use-case-flow";
+    | "use-case-flow"
+    | "data-state"
+    | "data-transition";
   detail: string;
 }
 
@@ -1997,5 +2000,181 @@ export interface TestArchitectureDesignPrinciples {
   priorityClasses: TestContainerPriorityClassDefinition[];
   scopeDeclarationItems: { id: string; nameJa: string; description: string }[]; // "TSC-01" 形式
   categories: TestArchitectureCriteriaCategory[];
+  notes: string[];
+}
+
+// --- テストデータ設計(design_test_data) ---
+export type DataClassKind =
+  | "master"
+  | "transaction"
+  | "counter"
+  | "credential"
+  | "external-settlement"
+  | "time-dependent";
+export type DataSharingPolicy = "shared" | "exclusive" | "per-case";
+export type DataAccessKind = "read" | "update";
+
+export interface DataLifecycleStateSpec {
+  id: string;                 // 区分内で一意
+  nameJa: string;
+  definition?: string;
+  isInitial?: boolean;
+  isTerminal?: boolean;
+}
+
+export interface DataLifecycleTransitionSpec {
+  id: string;                 // 区分内で一意
+  from: string;
+  to: string;
+  event: string;
+  guard?: string;
+  mutating?: boolean;         // 既定 true
+}
+
+export interface DataClassSpec {
+  id: string;                 // 入力全体で一意
+  nameJa: string;
+  kind?: DataClassKind;
+  description?: string;
+  owner?: string;              // 準備担当
+  preparation?: string;        // 調達方法
+  sharingPolicy?: DataSharingPolicy;
+  keyAttributes?: string[];    // 同一データとみなす鍵
+  volume?: string;
+  states: DataLifecycleStateSpec[];       // 1件以上
+  transitions: DataLifecycleTransitionSpec[]; // 既定 []
+}
+
+export interface DataItemSpec {
+  id: string;
+  dataClassId: string;
+  label: string;
+  initialStateId: string;
+  attributes?: Record<string, string>;
+  note?: string;
+}
+
+export interface RequiredDataSpec {
+  dataClassId: string;
+  stateId: string;
+  dataItemId?: string;
+  access: DataAccessKind;
+  resultStateId?: string;
+  transitionId?: string;
+}
+
+export interface TestDataCaseSpec {
+  caseId: string;
+  title?: string;
+  preconditionText?: string;
+  stepsText?: string[];
+  requiredData: RequiredDataSpec[];
+}
+
+export interface TestDataSpec {
+  title?: string;
+  dataClasses: DataClassSpec[];     // 1件以上
+  dataItems?: DataItemSpec[];
+  testCases?: TestDataCaseSpec[];
+  maxDataClasses?: number;          // 既定 100
+  maxStatesPerClass?: number;       // 既定 50
+}
+
+export interface TestDataFinding {
+  categoryId: string;               // "TDC-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+
+export interface TestDataMatrixCell {
+  dataClassId: string;
+  stateId: string;
+  requestingCaseIds: string[];      // 昇順ではなく入力順・重複排除
+  unused: boolean;
+}
+
+export interface TestDataTransitionUsage {
+  dataClassId: string;
+  transitionId: string;
+  passingCaseIds: string[];
+  unused: boolean;
+}
+
+export type TestDataSubstantiation = "yes" | "no" | "unchecked";
+export type TestDataSupplyStatus = "ok" | "no-supplier" | "unchecked";
+
+export interface TestDataSupplyRow {
+  caseId: string;
+  dataClassId: string;
+  stateId: string;
+  dataItemId?: string;
+  access: DataAccessKind;
+  resultStateId?: string;
+  transitionId?: string;
+  supplyingItemIds: string[];
+  supplyStatus: TestDataSupplyStatus;
+  substantiation: TestDataSubstantiation;
+}
+
+export interface TestDataExclusiveGroup {
+  identityKey: string;              // 表示用の同定キー
+  dataClassId: string;
+  dataItemId?: string;
+  updatingCaseIds: string[];        // update するケース(6節の排他表の対象)
+  sharedCaseIds: string[];          // read/updateを問わず共有するケース
+}
+
+export interface TestDataCoverageBucket {
+  basis: "case-body" | "unavailable";
+  total: number;
+  covered: number;
+  ratioPercent?: number;            // basis が case-body のときのみ
+  uncoveredIds: string[];
+  reason?: string;                  // basis が unavailable のときのみ
+}
+
+export interface TestDataUnidentifiableRequest {
+  caseId: string;
+  dataClassId: string;
+  stateId: string;
+  access: DataAccessKind;
+}
+
+export interface TestDataResult {
+  generated: boolean;
+  skipReason?: string;
+  findings: TestDataFinding[];
+  matrix: TestDataMatrixCell[];
+  transitionUsages: TestDataTransitionUsage[];
+  matrixEvaluated: boolean;         // testCases が渡され未使用判定を実施したか
+  supplyRows: TestDataSupplyRow[];
+  exclusiveGroups: TestDataExclusiveGroup[];
+  unidentifiableRequests: TestDataUnidentifiableRequest[]; // keyAttributes で同定不能だった要求
+  stateCoverage: TestDataCoverageBucket;
+  transitionCoverage: TestDataCoverageBucket;
+}
+
+// resource 型
+export interface TestDataDesignCriteriaCategory {
+  id: string;                       // "TDC-01" 形式
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+export interface TestDataKindDefinition {
+  id: string;                       // "TDK-01" 形式
+  kind: DataClassKind;
+  nameJa: string;
+  description: string;
+  cautions: string[];
+}
+export interface TestDataDesignCriteria {
+  name: string;
+  note: string;
+  summary: string;
+  dataKinds: TestDataKindDefinition[];
+  categories: TestDataDesignCriteriaCategory[];
   notes: string[];
 }

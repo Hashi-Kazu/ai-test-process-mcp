@@ -7,6 +7,7 @@ import {
   buildScenarioFlowCoverageTargets,
   computeScenarioFlows,
 } from "./tools/designScenarioFlows.js";
+import { buildTestDataCoverageTargets, computeTestDataDesign } from "./tools/designTestData.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
@@ -126,6 +127,10 @@ export function buildCoverageUniverse(input: GenerateTestCasesInput): TestCaseCo
 
   if (input.scenarioFlows) {
     for (const target of buildScenarioFlowCoverageTargets(input.scenarioFlows)) push(target);
+  }
+
+  if (input.testData) {
+    for (const target of buildTestDataCoverageTargets(input.testData)) push(target);
   }
 
   for (const t of input.additionalCoverageTargets ?? []) {
@@ -602,6 +607,7 @@ export function findUnsubstantiatedCoverageTargets(
   const decisionTableResult = input.decisionTable ? computeDecisionTableRows(input.decisionTable) : undefined;
   const pairwiseResult = input.pairwise ? computePairwiseRows(input.pairwise) : undefined;
   const scenarioFlowResult = input.scenarioFlows ? computeScenarioFlows(input.scenarioFlows) : undefined;
+  const testDataResult = input.testData ? computeTestDataDesign(input.testData) : undefined;
   const pairwiseFactorName = (factorId: string): string =>
     input.pairwise?.factors.find((f) => f.id === factorId)?.name ?? factorId;
 
@@ -828,7 +834,55 @@ export function findUnsubstantiatedCoverageTargets(
         continue;
       }
 
-      // BV / EP / ST / DT / PW / UC / SC 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+      if (targetId.startsWith("DL:S:")) {
+        if (!testDataResult || !testDataResult.generated) continue;
+        const rest = targetId.slice("DL:S:".length);
+        const sepIdx = rest.indexOf(":");
+        if (sepIdx < 0) continue;
+        const dataClassId = rest.slice(0, sepIdx);
+        const stateId = rest.slice(sepIdx + 1);
+        const dataClass = input.testData?.dataClasses.find((dc) => dc.id === dataClassId);
+        if (!dataClass) continue; // 引けない区分は検査対象外
+        const state = dataClass.states.find((s) => s.id === stateId);
+        const evidence = [dataClass.nameJa, state?.nameJa ?? ""].filter((e) => e.length > 0);
+        if (evidence.some((e) => text.includes(e))) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "data-state",
+          detail: `データ区分「${dataClass.nameJa}」の状態「${state?.nameJa ?? stateId}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      if (targetId.startsWith("DL:T:")) {
+        if (!testDataResult || !testDataResult.generated) continue;
+        const rest = targetId.slice("DL:T:".length);
+        const sepIdx = rest.indexOf(":");
+        if (sepIdx < 0) continue;
+        const dataClassId = rest.slice(0, sepIdx);
+        const transitionId = rest.slice(sepIdx + 1);
+        const dataClass = input.testData?.dataClasses.find((dc) => dc.id === dataClassId);
+        if (!dataClass) continue; // 引けない区分は検査対象外
+        const transition = dataClass.transitions.find((t) => t.id === transitionId);
+        if (!transition) continue; // 引けない遷移は検査対象外
+        const toState = dataClass.states.find((s) => s.id === transition.to);
+        const evidence = [dataClass.nameJa, transition.event, toState?.nameJa ?? ""].filter((e) => e.length > 0);
+        if (evidence.some((e) => text.includes(e))) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "data-transition",
+          detail: `データ区分「${dataClass.nameJa}」の遷移「${transition.event}」の遷移先「${
+            toState?.nameJa ?? transition.to
+          }」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST / DT / PW / UC / SC / DL 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
     }
   }
   return findings;

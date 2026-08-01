@@ -94,7 +94,7 @@
 | use-case-based | ✅ `design_scenario_flows` | 主フロー・代替フロー・例外フローを宣言順に展開し、各フローを `UC:` として universe へ |
 | scenario-based | ✅ `design_scenario_flows` | シナリオ一覧を正常系/準正常系/異常系の分類つきで決定的に生成し、`SC:` として universe へ |
 | config-matrix | ❌ | 11ヒポポタマスの環境一覧 |
-| data-lifecycle-test | ❌ | |
+| data-lifecycle-test | ✅ `design_test_data` | データ区分×ライフサイクル状態マトリクス・データ↔ケースの供給トレーサビリティ・排他検出を決定的に生成し、`DL:` を universe へ |
 | concurrency-test | ❌ | V03の中核リスク |
 | timing-order-test | ❌ | V03の中核リスク |
 | fault-injection | ❌ | |
@@ -217,7 +217,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 - B-2 `design_pairwise`（ペア被覆の決定的生成・カウント、`PW:` を universe へ）→ #24 ✅ 完了（#80 / `HSKZ-124`。判定区分カタログ `testdesign://pairwise/analysis-criteria` 12区分付き。技法カタログ `TTK-05` の決定的カウント可否を可へ、因子分解フレーム `FHO-04` を available へ更新済み）
 - B-3 **`design_scenario_flows`**（ユースケース／シナリオ設計。アクター・事前条件・主フロー・代替フロー・例外フローを入力に、シナリオ一覧＋正常/準正常/異常分類＋主要・代替フロー被覆を決定的にカウント、`UC:` / `SC:` を universe へ）→ #19 #20 ✅ 完了（#74 / `HSKZ-118`。判定区分カタログ `testdesign://scenario-flow/analysis-criteria` 14区分付き。技法カタログ `TTK-06` / `TTK-07` の決定的カウント可否を可へ更新済み）
 - B-4 `design_config_matrix`（因子＝OS/ブラウザ/解像度/機種等、シングル/ペア/フル被覆の選択と絞り込み理由の必須記入、`CFG:` を universe へ）→ #26
-- B-5 `design_test_data`（データ区分×ライフサイクル状態のデータ設計表、データ×ケースの供給トレーサビリティ）→ #27 #（data-lifecycle-test）
+- B-5 **`design_test_data`**（データ区分×ライフサイクル状態のデータ設計表、データ×ケースの供給トレーサビリティ、同一データを更新する複数ケースの排他検出、`DL:` を universe へ）→ #27 #82 ✅ 完了（`HSKZ-126`。判定区分カタログ `testdesign://test-data/analysis-criteria`（`TDC-01`〜`TDC-18` / データ区分種別 `TDK-01`〜`TDK-06`）付き。技法カタログ `TTK-08`(data-lifecycle-test) の決定的カウント可否を可へ更新済み）
 
 技法カタログの「決定的カウント可否」を 不可→可 に順次更新する。
 

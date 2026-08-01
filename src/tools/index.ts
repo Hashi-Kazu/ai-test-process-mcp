@@ -18,6 +18,7 @@ import { registerDesignDecisionTableTool } from "./designDecisionTable.js";
 import { registerDesignPairwiseTool } from "./designPairwise.js";
 import { registerDesignScenarioFlowsTool } from "./designScenarioFlows.js";
 import { registerDesignTestArchitectureTool } from "./designTestArchitecture.js";
+import { registerDesignTestDataTool } from "./designTestData.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -39,4 +40,5 @@ export function registerTools(server: McpServer): void {
   registerDesignPairwiseTool(server);
   registerDesignScenarioFlowsTool(server);
   registerDesignTestArchitectureTool(server);
+  registerDesignTestDataTool(server);
 }

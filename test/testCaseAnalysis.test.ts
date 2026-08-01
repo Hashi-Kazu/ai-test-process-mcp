@@ -23,6 +23,7 @@ import type {
   TestCaseParameter,
   TestCaseSourceCondition,
   TestCaseSpec,
+  TestDataSpec,
 } from "../src/types.js";
 
 function baseCase(overrides: Partial<TestCaseSpec> & { caseId: string }): TestCaseSpec {
@@ -70,6 +71,23 @@ function scenarioFlowsSpec(): ScenarioFlowSpec {
             outcome: "aborted",
           },
         ],
+      },
+    ],
+  };
+}
+
+/** 予約データのライフサイクル: 未確定(初期) -> 確定済。 */
+function testDataSpec(): TestDataSpec {
+  return {
+    dataClasses: [
+      {
+        id: "DC-RSV",
+        nameJa: "予約データ",
+        states: [
+          { id: "S-DRAFT", nameJa: "未確定", isInitial: true },
+          { id: "S-CONFIRMED", nameJa: "確定済" },
+        ],
+        transitions: [{ id: "T-CONFIRM", from: "S-DRAFT", to: "S-CONFIRMED", event: "予約を確定する" }],
       },
     ],
   };
@@ -237,6 +255,31 @@ describe("buildCoverageUniverse", () => {
       techniqueId: "scenario-based",
       origin: "UC-01",
     });
+  });
+
+  it("generates DL: ids from testData and computeCoverageRows returns a data-lifecycle-test row", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      testData: testDataSpec(),
+    };
+    const universe = buildCoverageUniverse(input);
+    const ids = universe.map((t) => t.id);
+    expect(ids).toContain("DL:S:DC-RSV:S-DRAFT");
+    expect(ids).toContain("DL:S:DC-RSV:S-CONFIRMED");
+    expect(ids).toContain("DL:T:DC-RSV:T-CONFIRM");
+    expect(universe.find((t) => t.id === "DL:S:DC-RSV:S-DRAFT")).toMatchObject({
+      techniqueId: "data-lifecycle-test",
+      origin: "DC-RSV",
+    });
+
+    const testCases: TestCaseSpec[] = [
+      baseCase({ caseId: "TCS-001", coverageTargets: ["DL:S:DC-RSV:S-DRAFT"] }),
+    ];
+    const rows = computeCoverageRows(universe, testCases);
+    const dlRow = rows.find((r) => r.techniqueId === "data-lifecycle-test");
+    expect(dlRow).toBeDefined();
+    expect(dlRow?.total).toBe(3);
+    expect(dlRow?.covered).toBe(1);
   });
 
   it("does not generate UC: / SC: ids when scenarioFlows is omitted", () => {
@@ -958,6 +1001,45 @@ describe("findUnsubstantiatedCoverageTargets", () => {
       techniqueId: "use-case-based",
       missing: "use-case-flow",
     });
+  });
+
+  it("flags a DL:S: state declaration that never appears in the case body with missing: data-state", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      testData: testDataSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-104",
+          techniqueId: "data-lifecycle-test",
+          coverageTargets: ["DL:S:DC-RSV:S-DRAFT"],
+          preconditions: [{ name: "state", value: "何も準備しない" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-104",
+      targetId: "DL:S:DC-RSV:S-DRAFT",
+      techniqueId: "data-lifecycle-test",
+      missing: "data-state",
+    });
+  });
+
+  it("reports nothing for a DL:S: state declaration when the data class and state names appear in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      testData: testDataSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-105",
+          techniqueId: "data-lifecycle-test",
+          coverageTargets: ["DL:S:DC-RSV:S-DRAFT"],
+          preconditions: [{ name: "state", value: "予約データが未確定である" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
   });
 });
 

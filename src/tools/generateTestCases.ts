@@ -35,6 +35,7 @@ import { testSizeClassificationCriteria } from "../resources/testSizeClassificat
 import { resolveSourceRefs } from "../testConditionAnalysis.js";
 import { formatSourceCitation } from "../testBasisAnalysis.js";
 import { derivedFromSchema, formatDerivedFromEntry, formatDerivedFromList } from "../derivedFromRefs.js";
+import { dataClassShape, testDataCaseShape } from "./designTestData.js";
 import type { GenerateTestCasesInput, TestCaseSpec, TestTechniqueCatalog } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -227,7 +228,7 @@ export function renderTestCases(
   lines.push("");
   if (universe.length === 0) {
     lines.push(
-      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / scenarioFlows / additionalCoverageTargets)が指定されていない。"
+      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / scenarioFlows / testData / additionalCoverageTargets)が指定されていない。"
     );
   } else {
     lines.push("| 網羅対象ID | 技法 | 内容 | 由来 |");
@@ -1008,6 +1009,28 @@ export const generateTestCasesInputShape = {
     })
     .optional()
     .describe("Scenario/use-case flow spec, same shape as design_scenario_flows"),
+  testData: z
+    .object({
+      title: z.string().optional(),
+      dataClasses: z.array(dataClassShape).min(1),
+      dataItems: z
+        .array(
+          z.object({
+            id: z.string(),
+            dataClassId: z.string(),
+            label: z.string(),
+            initialStateId: z.string(),
+            attributes: z.record(z.string(), z.string()).optional(),
+            note: z.string().optional(),
+          })
+        )
+        .optional(),
+      testCases: z.array(testDataCaseShape).optional(),
+      maxDataClasses: z.number().int().positive().optional(),
+      maxStatesPerClass: z.number().int().positive().optional(),
+    })
+    .optional()
+    .describe("Data lifecycle spec, same shape as design_test_data"),
   additionalCoverageTargets: z
     .array(
       z.object({
