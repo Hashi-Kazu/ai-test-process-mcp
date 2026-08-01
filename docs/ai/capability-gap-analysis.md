@@ -243,7 +243,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 - E-4 ステークホルダー影響力×関心度の2軸評価を persona frame に追加 → #2
 - E-5 リスクフレームを重篤度4軸×発生頻度2軸＋ステークホルダ別影響行列へ拡張 → #12 #13
 - E-6 `audit_basis_contradictions`（文書間で同一対象について異なる記述をしている箇所の検出。同一ID・同一画面IDに対する記述の差分、遷移先の不一致など）→ #32
-- E-7 `analyze_cause_effect`（仕様文の論理関係を原因・結果・制約に構造化し、デシジョンテーブルへ橋渡し。B-1 の上流）→ #25 #7
+- E-7 `analyze_cause_effect`（仕様文の論理関係を原因・結果・制約に構造化し、デシジョンテーブルへ橋渡し。B-1 の上流）→ #25 #7 ✅ 完了（#90 / `HSKZ-134`。決定的層20区分の判定カタログ `testbasis://cause-effect/analysis-criteria` 付き。`design_decision_table` への引き渡しは生成JSONを実データと照合するCEG-20まで実装済み）
 
 ### Phase F — 超えるための独自性
 
