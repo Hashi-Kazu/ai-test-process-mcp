@@ -42,7 +42,7 @@ src/
     testSpecificationReviewChecklist.ts # テスト仕様書レビューチェックリスト14項目（testspec://review/checklist）
     idPopulationAuditCriteria.ts # ID母集団監査の判定区分カタログ6区分（testbasis://population/audit-criteria）
     thresholdChangeImpactCriteria.ts # 閾値変更影響の判定区分カタログ8区分（testdesign://threshold/change-impact-criteria）
-    causeEffectCriteria.ts # 原因結果グラフ分析の判定区分カタログ19区分 CEG-01〜CEG-19（testbasis://cause-effect/analysis-criteria）
+    causeEffectCriteria.ts # 原因結果グラフ分析の判定区分カタログ20区分 CEG-01〜CEG-20（testbasis://cause-effect/analysis-criteria）
     decisionTableCriteria.ts # デシジョンテーブル設計の判定区分カタログ10区分 DTC-01〜DTC-10（testdesign://decision-table/analysis-criteria）
   tools/
     index.ts             # 全toolを登録
@@ -57,7 +57,7 @@ src/
     reviewTestSpecification.ts # review_test_specification ツール（3系統×双方向カバレッジの決定的検査 + 意味的チェックリスト/改善提案、renderTestSpecificationReview純関数）
     auditIdPopulation.ts  # audit_id_population ツール（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを検出、renderIdPopulationAudit純関数）
     reexpandThresholdChanges.ts # reexpand_threshold_changes ツール（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割を新旧再展開して影響を決定的に洗い出す、renderThresholdChangeReexpansion純関数）
-    analyzeCauseEffect.ts # analyze_cause_effect ツール（仕様文＋原因・結果・制約モデルの整合性と仕様文本文による裏付けを決定的に検査、mermaid図とデシジョンテーブル引き渡しJSONを出力、renderCauseEffectAnalysis純関数）
+    analyzeCauseEffect.ts # analyze_cause_effect ツール（仕様文＋原因・結果・制約モデルの整合性と仕様文本文による裏付けを決定的に検査、mermaid図と design_decision_table にそのまま渡せる DecisionTableSpec 形式の引き渡しJSON（同ツールの算出ロジックで往復照合済み）を出力、renderCauseEffectAnalysis純関数）
     designDecisionTable.ts # design_decision_table ツール（条件・水準・無効組合せ・ルールから全組合せ列挙→無効組合せ除外→同一動作列の圧縮(don't care導出)を決定的に行う、renderDecisionTable純関数 + 再利用用 computeDecisionTableRows / buildDecisionTableCoverageTargets export）
     designPairwise.ts    # design_pairwise ツール（因子・水準・禁則・seed行から全水準ペア列挙→禁則による到達不能ペア判定→ペア被覆組合せの決定的な貪欲法生成を行う、renderPairwise純関数 + 再利用用 computePairwiseRows / buildPairwiseCoverageTargets export）
   prompts/

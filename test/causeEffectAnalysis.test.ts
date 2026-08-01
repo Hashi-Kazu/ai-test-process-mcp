@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCauseEffectGraph,
+  buildDecisionTableSpec,
   buildStructuralBlockingFindings,
   compressCauseEffectRules,
   enumerateCauseEffect,
@@ -8,6 +9,7 @@ import {
   findConstraintShapeFindings,
   findCycleFindings,
   findDeclaredRuleCountFindings,
+  findDecisionTableHandoverFindings,
   findEffectVariabilityFindings,
   findGraphCycles,
   findIsolatedCauses,
@@ -15,9 +17,11 @@ import {
   findUnmodeledConnectives,
   findUnmodeledSentences,
   findUnreachableEffects,
+  findViolatedCauseConstraintIds,
   renderCauseEffectMermaid,
   splitSpecSentences,
 } from "../src/causeEffectAnalysis.js";
+import { computeDecisionTableRows } from "../src/tools/designDecisionTable.js";
 import type { AnalyzeCauseEffectInput, CauseEffectRule } from "../src/types.js";
 
 function baseInput(overrides: Partial<AnalyzeCauseEffectInput> = {}): AnalyzeCauseEffectInput {
@@ -583,5 +587,165 @@ describe("renderCauseEffectMermaid", () => {
     expect(mermaid).toContain("%% 制約");
     expect(mermaid).toContain("C1 -. E .-> C2");
     expect(renderCauseEffectMermaid(graph, input.constraints ?? [])).toBe(mermaid);
+  });
+});
+
+describe("findViolatedCauseConstraintIds", () => {
+  it("returns the ids of violated constraints and keeps satisfiesCauseConstraints behaviour", () => {
+    const constraints: AnalyzeCauseEffectInput["constraints"] = [
+      { id: "CN1", type: "exclusive", nodeIds: ["C1", "C2"] },
+      { id: "CN2", type: "requires", nodeIds: ["C1", "C3"] },
+    ];
+
+    // C1,C2 both true -> violates exclusive CN1. C1 true, C3 false -> violates requires CN2.
+    const violating = new Map([
+      ["C1", true],
+      ["C2", true],
+      ["C3", false],
+    ]);
+    expect(findViolatedCauseConstraintIds(violating, constraints ?? [])).toEqual(["CN1", "CN2"]);
+
+    const satisfying = new Map([
+      ["C1", true],
+      ["C2", false],
+      ["C3", true],
+    ]);
+    expect(findViolatedCauseConstraintIds(satisfying, constraints ?? [])).toEqual([]);
+
+    // Cross-check against the enumeration behaviour driven by satisfiesCauseConstraints internally.
+    const input = baseInput({
+      causes: [
+        { id: "C1", statement: "原因1" },
+        { id: "C2", statement: "原因2" },
+      ],
+      effects: [{ id: "E1", statement: "結果1", logic: "or" }],
+      edges: [
+        { from: "C1", to: "E1" },
+        { from: "C2", to: "E1" },
+      ],
+      constraints: [{ id: "CN1", type: "exclusive", nodeIds: ["C1", "C2"] }],
+    });
+    const { enumeration } = enumerateFor(input);
+    expect(enumeration.validCombinationCount).toBe(3);
+  });
+});
+
+describe("buildDecisionTableSpec", () => {
+  const twoCauseInput = (): AnalyzeCauseEffectInput =>
+    baseInput({
+      sectionId: "SEC-01",
+      sectionTitle: "送料計算",
+      causes: [
+        { id: "C1", statement: "会員である" },
+        { id: "C2", statement: "クーポンを保持する" },
+      ],
+      effects: [{ id: "E1", statement: "送料を無料にする", logic: "or" }],
+      edges: [
+        { from: "C1", to: "E1" },
+        { from: "C2", to: "E1" },
+      ],
+      constraints: [{ id: "CN1", type: "onlyOne", nodeIds: ["C1", "C2"] }],
+    });
+
+  it("returns a DecisionTableSpec with T/F levels, constraint-derived invalidCombinations and compressed rules", () => {
+    const input = twoCauseInput();
+    const { graph, enumeration } = enumerateFor(input);
+
+    const spec = buildDecisionTableSpec(input, graph, enumeration);
+
+    expect(spec).toBeDefined();
+    expect(spec?.tableId).toBe("SEC-01");
+    expect(spec?.title).toBe("送料計算");
+    expect(spec?.conditions).toEqual([
+      { id: "C1", statement: "会員である", levels: ["T", "F"] },
+      { id: "C2", statement: "クーポンを保持する", levels: ["T", "F"] },
+    ]);
+    expect(spec?.actions).toEqual([{ id: "E1", statement: "送料を無料にする" }]);
+
+    // onlyOne(C1, C2) is violated by (T,T) and (F,F).
+    expect(spec?.invalidCombinations).toHaveLength(2);
+    for (const invalid of spec?.invalidCombinations ?? []) {
+      expect(invalid.reason).toContain("CN1");
+    }
+
+    expect(spec?.rules).toEqual(
+      enumeration.compressedRules.map((rule) => ({
+        id: `R${rule.no}`,
+        when: Object.fromEntries(
+          Object.entries(rule.causeValues).filter(([, v]) => v !== "-")
+        ),
+        actions: Object.fromEntries(
+          Object.entries(rule.effectValues).map(([id, v]) => [id, v === "T" ? "Y" : v === "F" ? "N" : "-"])
+        ),
+      }))
+    );
+  });
+
+  it("returns undefined when enumeration was skipped or causes/effects are empty", () => {
+    const skippedInput = twoCauseInput();
+    const skippedGraph = buildCauseEffectGraph(skippedInput);
+    const skippedEnumeration = enumerateCauseEffect(
+      { ...skippedInput, maxEnumerationCauses: 1 },
+      skippedGraph,
+      []
+    );
+    expect(buildDecisionTableSpec(skippedInput, skippedGraph, skippedEnumeration)).toBeUndefined();
+
+    const noEffectsInput: AnalyzeCauseEffectInput = {
+      sectionId: "SEC-02",
+      specText: "対象なし",
+      causes: [{ id: "C1", statement: "原因1" }],
+      effects: [],
+      edges: [],
+    };
+    const noEffectsGraph = buildCauseEffectGraph(noEffectsInput);
+    const noEffectsEnumeration = enumerateCauseEffect(noEffectsInput, noEffectsGraph, []);
+    expect(buildDecisionTableSpec(noEffectsInput, noEffectsGraph, noEffectsEnumeration)).toBeUndefined();
+  });
+});
+
+describe("findDecisionTableHandoverFindings", () => {
+  const twoCauseInput = (): AnalyzeCauseEffectInput =>
+    baseInput({
+      sectionId: "SEC-01",
+      causes: [
+        { id: "C1", statement: "会員である" },
+        { id: "C2", statement: "クーポンを保持する" },
+      ],
+      effects: [{ id: "E1", statement: "送料を無料にする", logic: "or" }],
+      edges: [
+        { from: "C1", to: "E1" },
+        { from: "C2", to: "E1" },
+      ],
+    });
+
+  it("returns no findings for a spec built from the same enumeration", () => {
+    const input = twoCauseInput();
+    const { graph, enumeration } = enumerateFor(input);
+    const spec = buildDecisionTableSpec(input, graph, enumeration);
+    expect(spec).toBeDefined();
+
+    const result = computeDecisionTableRows(spec!);
+    const findings = findDecisionTableHandoverFindings(enumeration, spec!, result);
+
+    expect(findings).toEqual([]);
+  });
+
+  it("reports CEG-20 when the decision table result disagrees with the enumeration", () => {
+    const input = twoCauseInput();
+    const { graph, enumeration } = enumerateFor(input);
+    const spec = buildDecisionTableSpec(input, graph, enumeration);
+    expect(spec).toBeDefined();
+
+    const result = computeDecisionTableRows(spec!);
+    const tamperedResult = { ...result, validCombinationCount: result.validCombinationCount + 1 };
+
+    const findings = findDecisionTableHandoverFindings(enumeration, spec!, tamperedResult);
+
+    expect(findings.length).toBeGreaterThan(0);
+    for (const f of findings) {
+      expect(f.categoryId).toBe("CEG-20");
+      expect(f.severity).toBe("high");
+    }
   });
 });

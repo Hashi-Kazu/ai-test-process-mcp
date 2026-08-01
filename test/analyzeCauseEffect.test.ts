@@ -157,22 +157,52 @@ describe("renderCauseEffectAnalysis", () => {
     expect(s39).toContain("[medium] CEG-16 文2: 「返品期限は14日以内とする」");
   });
 
-  it("emits the decision table handover JSON and the design_decision_table note in 5.3", () => {
+  it("emits a design_decision_table-ready DecisionTableSpec JSON in 5.3", () => {
     const md = renderCauseEffectAnalysis(twoCauseInput());
 
     const s53 = section(md, "### 5.3 design_decision_table 入力(JSON)");
     expect(s53).toContain("```json");
-    expect(s53).toContain('"conditions"');
-    expect(s53).toContain('"actions"');
-    expect(s53).toContain('"rules"');
-    expect(s53).toContain("design_decision_table（Issue #77 / 旧 #23）は未実装");
+    const jsonText = s53.split("```json")[1].split("```")[0];
+    const spec = JSON.parse(jsonText);
+
+    expect(spec.conditions.every((c: { levels: string[] }) => JSON.stringify(c.levels) === JSON.stringify(["T", "F"]))).toBe(
+      true
+    );
+    for (const rule of spec.rules) {
+      for (const value of Object.values(rule.actions)) {
+        expect(["Y", "N", "-"]).toContain(value);
+      }
+    }
+    for (const invalid of spec.invalidCombinations) {
+      expect(invalid.reason).toMatch(/CN\d+|制約/);
+    }
+    expect(s53).toContain("design_decision_table ツールの入力としてそのまま渡せる形式（DecisionTableSpec）である");
   });
 
-  it("lists every catalog category CEG-01..CEG-19 in section 4", () => {
+  it("5.3 の JSON を computeDecisionTableRows へ渡すと high の DTC 指摘が0件で、有効組合せ数が原因結果グラフの制約充足後の件数と一致する", async () => {
+    const { computeDecisionTableRows } = await import("../src/tools/designDecisionTable.js");
+    const input = twoCauseInput();
+    const md = renderCauseEffectAnalysis(input);
+    const s53 = section(md, "### 5.3 design_decision_table 入力(JSON)");
+    const jsonText = s53.split("```json")[1].split("```")[0];
+    const spec = JSON.parse(jsonText);
+
+    const result = computeDecisionTableRows(spec);
+    expect(result.findings.filter((f) => f.severity === "high")).toHaveLength(0);
+    expect(result.validCombinationCount).toBe(4);
+    expect(s53).toContain("突き合わせ結果: 一致");
+  });
+
+  it("no longer mentions design_decision_table as unimplemented", () => {
+    const md = renderCauseEffectAnalysis(twoCauseInput());
+    expect(md).not.toContain("未実装");
+  });
+
+  it("lists every catalog category CEG-01..CEG-20 in section 4", () => {
     const md = renderCauseEffectAnalysis(baseInput());
     const s4 = section(md, "## 4. 判定区分と対処指針(カタログ)");
 
-    for (let i = 1; i <= 19; i++) {
+    for (let i = 1; i <= 20; i++) {
       const id = `CEG-${String(i).padStart(2, "0")}`;
       expect(s4).toContain(`| ${id} |`);
     }

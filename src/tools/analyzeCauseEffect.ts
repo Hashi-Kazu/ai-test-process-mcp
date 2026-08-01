@@ -4,14 +4,16 @@ import { causeEffectAnalysisCriteria } from "../resources/causeEffectCriteria.js
 import {
   buildCauseEffectFindings,
   buildCauseEffectGraph,
-  buildDecisionTableHandover,
+  buildDecisionTableSpec,
   buildStructuralBlockingFindings,
   constraintTypeLabel,
   enumerateCauseEffect,
+  findDecisionTableHandoverFindings,
   renderCauseEffectMermaid,
   splitSpecSentences,
   summarizeCauseEffect,
 } from "../causeEffectAnalysis.js";
+import { computeDecisionTableRows } from "./designDecisionTable.js";
 import { findAmbiguousTerms } from "../testBasisAnalysis.js";
 import type {
   AnalyzeCauseEffectInput,
@@ -48,9 +50,15 @@ export function renderCauseEffectAnalysis(
   const blockingFindings = buildStructuralBlockingFindings(input, graph);
   const enumeration = enumerateCauseEffect(input, graph, blockingFindings);
   const sentences = splitSpecSentences(input.specText);
-  const findings = buildCauseEffectFindings(input, graph, enumeration, sentences);
+  const baseFindings = buildCauseEffectFindings(input, graph, enumeration, sentences);
+  const decisionTableSpec = buildDecisionTableSpec(input, graph, enumeration);
+  const decisionTableResult = decisionTableSpec !== undefined ? computeDecisionTableRows(decisionTableSpec) : undefined;
+  const decisionTableHandoverFindings =
+    decisionTableSpec !== undefined && decisionTableResult !== undefined
+      ? findDecisionTableHandoverFindings(enumeration, decisionTableSpec, decisionTableResult)
+      : [];
+  const findings = [...baseFindings, ...decisionTableHandoverFindings];
   const summary = summarizeCauseEffect(input, graph, enumeration, sentences, findings);
-  const handover = buildDecisionTableHandover(input, graph, enumeration);
   const ambiguousTerms = findAmbiguousTerms(
     [{ name: input.sectionId, content: input.specText }],
     { additionalAmbiguousTerms: input.additionalAmbiguousTerms }
@@ -364,16 +372,34 @@ export function renderCauseEffectAnalysis(
 
   lines.push("### 5.3 design_decision_table 入力(JSON)");
   lines.push("");
-  if (handover === undefined) {
-    lines.push(`- 未算出（理由: ${escapeCell(enumeration.skipReason ?? "不明")}）`);
-  } else {
+  if (decisionTableSpec === undefined) {
+    const reason = !enumeration.enumerated
+      ? enumeration.skipReason ?? "不明"
+      : "原因または結果が0件のためデシジョンテーブルへ変換できない";
+    lines.push(`- 未算出（理由: ${escapeCell(reason)}）`);
+  } else if (decisionTableResult !== undefined) {
     lines.push("```json");
-    lines.push(JSON.stringify(handover, null, 2));
+    lines.push(JSON.stringify(decisionTableSpec, null, 2));
     lines.push("```");
+    lines.push("- 上記JSONは design_decision_table ツールの入力としてそのまま渡せる形式（DecisionTableSpec）である。");
+    lines.push(
+      `- 条件項目 ${decisionTableSpec.conditions.length} 件 / 動作項目 ${decisionTableSpec.actions.length} 件 / 無効組合せ ${(decisionTableSpec.invalidCombinations ?? []).length} 件 / ルール ${(decisionTableSpec.rules ?? []).length} 件`
+    );
+    lines.push(
+      `- design_decision_table で再計算した結果: 全組合せ ${decisionTableResult.totalCombinationCount} / 有効 ${decisionTableResult.validCombinationCount} / 動作確定 ${decisionTableResult.definedCombinationCount} / 圧縮後 ${decisionTableResult.compressedRules.length}`
+    );
+    lines.push(
+      `- 原因結果グラフ側の算出値: 理論上限 ${enumeration.theoreticalCombinationCount} / 制約充足後 ${enumeration.validCombinationCount} / 圧縮後 ${enumeration.compressedRules.length}`
+    );
+    if (decisionTableHandoverFindings.length === 0) {
+      lines.push(
+        "- 突き合わせ結果: 一致（design_decision_table で再計算した動作値・組合せ数が原因結果グラフの列挙結果と一致）"
+      );
+    } else {
+      lines.push("- 突き合わせ結果: 不一致（CEG-20 を参照）");
+      pushFindingLines(lines, decisionTableHandoverFindings);
+    }
   }
-  lines.push(
-    "- design_decision_table（Issue #77 / 旧 #23）は未実装。実装時に本 JSON をそのまま入力として受け取れる形式とする。"
-  );
   lines.push("");
 
   // --- 6. 追加モデリング指示(意味的層) ---

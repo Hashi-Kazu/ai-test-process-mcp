@@ -1740,16 +1740,6 @@ export interface CauseEffectSummary {
   infoCount: number;
 }
 
-export interface CauseEffectDecisionTableHandover {
-  sectionId: string;
-  conditions: { id: string; statement: string; values: ["T", "F"] }[];
-  actions: { id: string; statement: string }[];
-  rules: { no: number; conditions: Record<string, string>; actions: Record<string, string> }[];
-  theoreticalCombinationCount: number;
-  validCombinationCount: number;
-  compressedRuleCount: number;
-}
-
 export interface CauseEffectAnalysisCriteria {
   name: string;
   summary: string;
