@@ -22,6 +22,7 @@ import { pairwiseAnalysisCriteria } from "./pairwiseCriteria.js";
 import { scenarioFlowAnalysisCriteria } from "./scenarioFlowCriteria.js";
 import { factorRalphFrame } from "./factorRalphFrame.js";
 import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinciples.js";
+import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -512,6 +513,32 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testArchitectureDesignPrinciples, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-data-design-criteria",
+    "testdesign://test-data/analysis-criteria",
+    {
+      title: "Test Data Design Criteria",
+      description:
+        "Self-authored data class kind catalog (TDK-01..06: master / transaction / counter / credential / " +
+        "external-settlement / time-dependent) and judgment category catalog for design_test_data (TDC-01..18): " +
+        "id duplicates, unknown id references, malformed initial-state declarations, missing transition events, " +
+        "unreachable and dead-end states, unused states/transitions/data classes, missing suppliers reachable from " +
+        "the declared initial state, case-body substantiation gaps, unused data items, multiple cases updating the " +
+        "same data, sharing-policy versus actual-access mismatches, illegal transition requests, upper-bound " +
+        "overflow, and state-changing data classes with no update requests, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testDataDesignCriteria, null, 2),
         },
       ],
     })

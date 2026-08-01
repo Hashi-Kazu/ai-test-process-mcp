@@ -159,13 +159,24 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
         {
           id: "TTC-COV-08",
           nameJa: "状態遷移被覆",
-          definition: "宣言したデータの生成・更新・削除・アーカイブ等の各段階のうち、ケース化された段階の割合。",
+          definition:
+            "宣言したデータ区分のライフサイクル状態のうち、いずれかのケースで要求され本文裏付けを通過した状態の割合（状態被覆）、" +
+            "および宣言した状態間の遷移のうち、いずれかのケースの update 要求で一意に通過が確定し本文裏付けを通過した遷移の割合（遷移被覆）の両方を数える。",
         },
       ],
-      requiredInputs: ["データの生成〜消滅までの各段階", "各段階で連動する関連データ"],
-      deterministic: false,
+      requiredInputs: [
+        "データ区分",
+        "各区分のライフサイクル状態",
+        "状態間の遷移とイベント",
+        "各ケースが要求する前提データ（区分・状態・read/update）",
+      ],
+      engineToolName: "design_test_data",
+      deterministic: true,
       selectionRationale: "データが生成から更新・削除・アーカイブまでの過程を持ち、各段階の整合を確認したい場合に選ぶ。",
-      note: "段階自動生成エンジンは未実装。additionalCoverageTargets で段階単位の網羅対象を宣言する運用とする。",
+      note:
+        "design_test_data がデータ区分×ライフサイクル状態マトリクスの生成・未使用状態/遷移の検出・データ↔ケースの供給トレーサビリティ・" +
+        "同一データを更新する複数ケースの検出・状態/遷移被覆のカウントを決定的に行う。各状態は `DL:S:`、各遷移は `DL:T:` プレフィックスの" +
+        "網羅対象IDとして出力されるので、それを generate_test_cases の testData へ渡すと状態遷移被覆を決定的にカウントできる。",
     },
     {
       id: "TTK-09",
