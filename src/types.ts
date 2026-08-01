@@ -1864,3 +1864,138 @@ export interface CauseEffectAnalysisCriteria {
   }[];
   notes: string[];
 }
+
+// --- テストアーキテクチャ設計(design_test_architecture) ---
+export type TestContainerPriorityClass = "must" | "conditional" | "optional";
+
+export interface TestContainerSpec {
+  id: string;                          // "TCN-01" 形式。入力全体で一意
+  nameJa: string;
+  parentId?: string;                   // 階層。未指定はルート
+  responsibility: string;              // 責務（必須。空白のみは未記入として検出）
+  objective?: string;                  // テスト目的
+  testLevel: TestLevelId;              // 必須
+  testTypes: string[];                 // 1件以上
+  priorityClass: TestContainerPriorityClass;  // 必須
+  perspectiveCategoryIds?: string[];   // 担当を宣言する観点カテゴリ TPC-xx
+  targets?: string[];                  // テスト対象（サブシステム名・機能ID等）
+  environment?: string;
+  entryCriteria?: string[];
+  exitCriteria?: string[];
+  note?: string;
+}
+
+export interface TestArchitectureConditionInput {
+  id: string;                          // extract_test_conditions のテスト条件ID
+  statement?: string;
+  target?: string;
+  perspectiveCategoryId?: string;      // TPC-xx
+  priority?: TestConditionPriority;    // 既存の 高/中/低
+  containerIds: string[];              // 帰属先。0件・複数件を許し、検査で扱う
+}
+
+export interface TestArchitectureScopeItem { item: string; reason?: string; }
+export interface TestArchitectureScope {
+  inScope: TestArchitectureScopeItem[];
+  outOfScope: TestArchitectureScopeItem[];
+}
+
+export interface TestArchitectureSpec {
+  title?: string;
+  scope?: TestArchitectureScope;
+  decompositionAxisIds?: string[];     // 宣言した分割軸 TAX-xx
+  containers: TestContainerSpec[];     // 1件以上
+  testConditions: TestArchitectureConditionInput[];  // 1件以上
+  testCases?: TestCaseSpec[];          // 任意。既存 TestCaseSpec をそのまま受ける
+  maxContainers?: number;              // 既定 200
+  maxDepth?: number;                   // 既定 5
+}
+
+export interface TestArchitectureFinding {
+  categoryId: string;                  // "TAC-01" 形式
+  severity: "high" | "medium" | "info";
+  target: string;                      // コンテナID / 条件ID / "scope" 等
+  detail: string;
+}
+
+export interface TestContainerRow {
+  containerId: string;
+  depth: number;                       // ルート0
+  path: string[];                      // ルートからのID列
+  isLeaf: boolean;
+  conditionIds: string[];              // 直接帰属した条件ID（入力順）
+  rolledUpConditionIds: string[];      // 子孫を含む条件ID（重複排除・入力順）
+  caseIds: string[];                   // testCases 指定時のみ。直接帰属条件に紐づくケース
+}
+
+export interface TestArchitectureDistributionRow {
+  key: string;                         // テストレベルID / テストタイプ名 / 優先度クラス
+  label: string;
+  containerIds: string[];
+  containerCount: number;
+  conditionCount: number;
+  conditionSharePercent: number;       // 小数第1位。分母は帰属済み条件数
+}
+
+export interface TestArchitectureResult {
+  containers: TestContainerRow[];
+  unassignedConditionIds: string[];
+  multiAssignedConditions: { conditionId: string; containerIds: string[] }[];
+  assignedConditionCount: number;
+  totalConditionCount: number;
+  assignmentRatioPercent: number;      // 分母 = totalConditionCount
+  levelDistribution: TestArchitectureDistributionRow[];
+  typeDistribution: TestArchitectureDistributionRow[];
+  priorityClassDistribution: TestArchitectureDistributionRow[];
+  containerSizeRows?: {                // testCases 指定時のみ
+    containerId: string;
+    caseCount: number;
+    sizeDistribution: TestSizeDistributionRow[];
+    levelDistribution: TestLevelDistributionRow[];
+  }[];
+  uncoveredConditionIds?: string[];    // testCases 指定時のみ
+  findings: TestArchitectureFinding[];
+  generated: boolean;                  // high 指摘が致命的な場合や上限超過時 false
+  skipReason?: string;
+}
+
+// resource 型
+export interface TestArchitectureDecompositionAxis {
+  id: string;            // "TAX-01"
+  nameJa: string;
+  question: string;
+  suitableWhen: string;
+  caution: string;
+}
+export interface TestContainerResponsibilityField {
+  id: string;            // "RFD-01"
+  nameJa: string;
+  field: string;         // 入力スキーマ上のフィールド名
+  required: boolean;
+  description: string;
+}
+export interface TestContainerPriorityClassDefinition {
+  id: string;            // "TPR-01"
+  classId: TestContainerPriorityClass;
+  nameJa: string;
+  description: string;
+  allowedConditionPriorities: TestConditionPriority[];
+}
+export interface TestArchitectureCriteriaCategory {
+  id: string;            // "TAC-01"
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+export interface TestArchitectureDesignPrinciples {
+  name: string;
+  note: string;
+  summary: string;
+  decompositionAxes: TestArchitectureDecompositionAxis[];
+  responsibilityFields: TestContainerResponsibilityField[];
+  priorityClasses: TestContainerPriorityClassDefinition[];
+  scopeDeclarationItems: { id: string; nameJa: string; description: string }[]; // "TSC-01" 形式
+  categories: TestArchitectureCriteriaCategory[];
+  notes: string[];
+}
