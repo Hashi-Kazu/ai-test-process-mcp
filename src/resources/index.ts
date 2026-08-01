@@ -21,6 +21,7 @@ import { decisionTableAnalysisCriteria } from "./decisionTableCriteria.js";
 import { pairwiseAnalysisCriteria } from "./pairwiseCriteria.js";
 import { scenarioFlowAnalysisCriteria } from "./scenarioFlowCriteria.js";
 import { factorRalphFrame } from "./factorRalphFrame.js";
+import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinciples.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -483,6 +484,34 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(factorRalphFrame, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-architecture-design-principles",
+    "testarch://container/design-principles",
+    {
+      title: "Test Architecture Container Design Principles",
+      description:
+        "Self-authored test container design principles and judgment category catalog for design_test_architecture: " +
+        "eight container decomposition axes (TAX-01..TAX-08) with the question they answer, when they suit, and what they hide; " +
+        "nine responsibility declaration fields (RFD-01..RFD-09) with required flags; three execution-necessity priority classes " +
+        "(TPR-01..TPR-03) with the test condition priorities each class allows; three test scope declaration items (TSC-01..TSC-03); " +
+        "and 17 judgment categories (TAC-01..TAC-17) covering unassigned test conditions, unknown container references, duplicate container ids, " +
+        "malformed parent-child relations, missing responsibility and objective, multi-assigned conditions, empty leaf containers, " +
+        "missing test types, priority class mismatches, perspective category declaration-versus-actual mismatches, unknown perspective ids, " +
+        "declared-versus-actual test level mismatches, scope declaration gaps, conditions that never reach a test case, " +
+        "container count / depth cap overflow, and decomposition axis declaration-versus-actual mismatches, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testArchitectureDesignPrinciples, null, 2),
         },
       ],
     })
