@@ -2,7 +2,6 @@ import { normalizeForGrounding } from "./testCaseAnalysis.js";
 import type {
   AnalyzeCauseEffectInput,
   CauseEffectConstraintInput,
-  CauseEffectDecisionTableHandover,
   CauseEffectEdgeInput,
   CauseEffectEdgeKind,
   CauseEffectEnumeration,
@@ -12,6 +11,11 @@ import type {
   CauseEffectRule,
   CauseEffectSentence,
   CauseEffectSummary,
+  DecisionTableActionValue,
+  DecisionTableInvalidCombination,
+  DecisionTableResult,
+  DecisionTableRuleSpec,
+  DecisionTableSpec,
 } from "./types.js";
 
 // analyze_cause_effect 固有の決定的検査ロジック。
@@ -507,24 +511,32 @@ function assignmentsFor(causeIds: string[], constraints: CauseEffectConstraintIn
   return results;
 }
 
-function satisfiesCauseConstraints(
+export function findViolatedCauseConstraintIds(
   valueById: Map<string, boolean>,
   constraints: CauseEffectConstraintInput[]
-): boolean {
+): string[] {
+  const violated: string[] = [];
   for (const constraint of constraints) {
     if (constraint.type === "masks") continue;
     if (constraint.type === "requires") {
       if (constraint.nodeIds.length !== 2) continue;
       const [a, b] = constraint.nodeIds;
-      if (valueById.get(a) === true && valueById.get(b) !== true) return false;
+      if (valueById.get(a) === true && valueById.get(b) !== true) violated.push(constraint.id);
       continue;
     }
     const trueCount = constraint.nodeIds.filter((id) => valueById.get(id) === true).length;
-    if (constraint.type === "exclusive" && trueCount > 1) return false;
-    if (constraint.type === "inclusive" && trueCount < 1) return false;
-    if (constraint.type === "onlyOne" && trueCount !== 1) return false;
+    if (constraint.type === "exclusive" && trueCount > 1) violated.push(constraint.id);
+    if (constraint.type === "inclusive" && trueCount < 1) violated.push(constraint.id);
+    if (constraint.type === "onlyOne" && trueCount !== 1) violated.push(constraint.id);
   }
-  return true;
+  return violated;
+}
+
+function satisfiesCauseConstraints(
+  valueById: Map<string, boolean>,
+  constraints: CauseEffectConstraintInput[]
+): boolean {
+  return findViolatedCauseConstraintIds(valueById, constraints).length === 0;
 }
 
 function evaluateDerivedNodes(graph: CauseEffectGraph, causeValues: Map<string, boolean>): Map<string, boolean> {
@@ -1032,30 +1044,168 @@ export function summarizeCauseEffect(
 
 // --- 18. デシジョンテーブルへの引き渡し ---
 
-export function buildDecisionTableHandover(
+const MAX_DECISION_TABLE_COMBINATIONS_DEFAULT = 4096;
+
+function toActionValue(value: "T" | "F" | "-"): DecisionTableActionValue {
+  if (value === "T") return "Y";
+  if (value === "F") return "N";
+  return "-";
+}
+
+export function buildDecisionTableSpec(
   input: AnalyzeCauseEffectInput,
   graph: CauseEffectGraph,
   enumeration: CauseEffectEnumeration
-): CauseEffectDecisionTableHandover | undefined {
+): DecisionTableSpec | undefined {
   if (!enumeration.enumerated) return undefined;
+  if (graph.causeIds.length === 0 || graph.effectIds.length === 0) return undefined;
 
-  return {
-    sectionId: input.sectionId,
-    conditions: input.causes.map((cause) => ({
-      id: cause.id,
-      statement: cause.statement,
-      values: ["T", "F"] as ["T", "F"],
-    })),
-    actions: input.effects.map((effect) => ({ id: effect.id, statement: effect.statement })),
-    rules: enumeration.compressedRules.map((rule) => ({
-      no: rule.no,
-      conditions: { ...rule.causeValues },
-      actions: { ...rule.effectValues },
-    })),
-    theoreticalCombinationCount: enumeration.theoreticalCombinationCount,
-    validCombinationCount: enumeration.validCombinationCount,
-    compressedRuleCount: enumeration.compressedRules.length,
+  const causeById = new Map(input.causes.map((c) => [c.id, c]));
+  const effectById = new Map(input.effects.map((e) => [e.id, e]));
+  const constraints = input.constraints ?? [];
+
+  const conditions = graph.causeIds.map((id) => ({
+    id,
+    statement: causeById.get(id)?.statement ?? id,
+    levels: ["T", "F"],
+  }));
+  const actions = graph.effectIds.map((id) => ({
+    id,
+    statement: effectById.get(id)?.statement ?? id,
+  }));
+
+  const invalidCombinations: DecisionTableInvalidCombination[] = [];
+  const causeCount = graph.causeIds.length;
+  const total = 2 ** causeCount;
+  for (let mask = 0; mask < total; mask++) {
+    const assignment: boolean[] = [];
+    for (let i = 0; i < causeCount; i++) {
+      assignment.push(((mask >> (causeCount - 1 - i)) & 1) === 1);
+    }
+    const valueById = new Map<string, boolean>();
+    graph.causeIds.forEach((id, i) => valueById.set(id, assignment[i]));
+    const violatedIds = findViolatedCauseConstraintIds(valueById, constraints);
+    if (violatedIds.length === 0) continue;
+
+    const when: Record<string, "T" | "F"> = {};
+    graph.causeIds.forEach((id) => {
+      when[id] = valueById.get(id) ? "T" : "F";
+    });
+    const labels = violatedIds.map((id) => {
+      const constraint = constraints.find((c) => c.id === id);
+      return constraint ? constraintTypeLabel(constraint.type) : id;
+    });
+    invalidCombinations.push({
+      id: `IC${invalidCombinations.length + 1}`,
+      when,
+      reason: `原因結果グラフの制約 ${violatedIds.join(", ")}（${labels.join(", ")}）を満たさない組合せ。`,
+    });
+  }
+
+  const rules: DecisionTableRuleSpec[] = enumeration.compressedRules.map((rule) => {
+    const when: Record<string, "T" | "F"> = {};
+    for (const causeId of graph.causeIds) {
+      const v = rule.causeValues[causeId];
+      if (v === "-" || v === undefined) continue;
+      when[causeId] = v;
+    }
+    const actionsOut: Record<string, DecisionTableActionValue> = {};
+    for (const effectId of graph.effectIds) {
+      actionsOut[effectId] = toActionValue(rule.effectValues[effectId] ?? "-");
+    }
+    return { id: `R${rule.no}`, when, actions: actionsOut };
+  });
+
+  const spec: DecisionTableSpec = {
+    tableId: input.sectionId,
+    title: input.sectionTitle ?? input.sectionId,
+    conditions,
+    actions,
+    invalidCombinations,
+    rules,
   };
+
+  if (total > MAX_DECISION_TABLE_COMBINATIONS_DEFAULT) {
+    spec.maxCombinations = total;
+  }
+
+  return spec;
+}
+
+export function findDecisionTableHandoverFindings(
+  enumeration: CauseEffectEnumeration,
+  spec: DecisionTableSpec,
+  result: DecisionTableResult
+): CauseEffectFinding[] {
+  const findings: CauseEffectFinding[] = [];
+  const push = (targetId: string | undefined, detail: string): void => {
+    findings.push({ categoryId: "CEG-20", severity: "high", targetId, detail });
+  };
+
+  if (result.totalCombinationCount !== enumeration.theoreticalCombinationCount) {
+    push(
+      spec.tableId,
+      `design_decision_table で再計算した全組合せ数 ${result.totalCombinationCount} が原因結果グラフの理論上限 ${enumeration.theoreticalCombinationCount} と一致しない。`
+    );
+  }
+  if (result.validCombinationCount !== enumeration.validCombinationCount) {
+    push(
+      spec.tableId,
+      `design_decision_table で再計算した有効組合せ数 ${result.validCombinationCount} が原因結果グラフの制約充足後の組合せ数 ${enumeration.validCombinationCount} と一致しない。`
+    );
+  }
+  if (result.definedCombinationCount !== result.validCombinationCount) {
+    push(
+      spec.tableId,
+      `design_decision_table で動作が確定した組合せ数 ${result.definedCombinationCount} が有効組合せ数 ${result.validCombinationCount} と一致しない。`
+    );
+  }
+  if (result.undefinedCombinationIndexes.length > 0) {
+    push(
+      String(result.undefinedCombinationIndexes[0]),
+      `design_decision_table で動作が未定義の組合せが ${result.undefinedCombinationIndexes.length} 件ある（先頭 index ${result.undefinedCombinationIndexes[0]}）。`
+    );
+  }
+  if (result.conflictingCombinationIndexes.length > 0) {
+    push(
+      String(result.conflictingCombinationIndexes[0]),
+      `design_decision_table でルールの動作が食い違う組合せが ${result.conflictingCombinationIndexes.length} 件ある（先頭 index ${result.conflictingCombinationIndexes[0]}）。`
+    );
+  }
+
+  for (const combination of result.combinations) {
+    if (combination.status !== "valid") continue;
+    const values = combination.values;
+    const matchedRule = enumeration.rules.find((rule) =>
+      Object.keys(values).every((causeId) => {
+        const level = values[causeId];
+        return rule.causeValues[causeId] === level;
+      })
+    );
+    if (!matchedRule) {
+      push(
+        spec.tableId,
+        `組合せ index ${combination.index} の条件値に一致する原因結果グラフ側のルールが見つからない。`
+      );
+      continue;
+    }
+    for (const effectId of spec.actions.map((a) => a.id)) {
+      const expected = toActionValue(matchedRule.effectValues[effectId] ?? "-");
+      const actual = combination.actions?.[effectId];
+      if (actual === expected) continue;
+      push(
+        effectId,
+        `組合せ index ${combination.index} の動作「${effectId}」は design_decision_table 側「${actual ?? "(未確定)"}」に対し原因結果グラフ側の期待値は「${expected}」であり一致しない。`
+      );
+    }
+  }
+
+  for (const finding of result.findings) {
+    if (finding.severity !== "high") continue;
+    push(finding.target, `design_decision_table 側の指摘 ${finding.categoryId}: ${finding.detail}`);
+  }
+
+  return findings;
 }
 
 // --- 19. mermaid 図 ---

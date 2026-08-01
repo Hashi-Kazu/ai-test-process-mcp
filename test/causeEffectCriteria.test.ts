@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { causeEffectAnalysisCriteria } from "../src/resources/causeEffectCriteria.js";
 
 describe("causeEffectAnalysisCriteria", () => {
-  it("has exactly 19 categories with ids CEG-01..CEG-19 and no duplicates", () => {
-    expect(causeEffectAnalysisCriteria.categories).toHaveLength(19);
+  it("has exactly 20 categories with ids CEG-01..CEG-20 and no duplicates", () => {
+    expect(causeEffectAnalysisCriteria.categories).toHaveLength(20);
     const ids = causeEffectAnalysisCriteria.categories.map((c) => c.id);
     expect(ids).toEqual([
       "CEG-01",
@@ -25,8 +25,14 @@ describe("causeEffectAnalysisCriteria", () => {
       "CEG-17",
       "CEG-18",
       "CEG-19",
+      "CEG-20",
     ]);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("CEG-20 has high severity", () => {
+    const ceg20 = causeEffectAnalysisCriteria.categories.find((c) => c.id === "CEG-20");
+    expect(ceg20?.severity).toBe("high");
   });
 
   it("has a valid severity for every category", () => {

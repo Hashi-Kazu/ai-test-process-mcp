@@ -376,11 +376,12 @@ export function registerResources(server: McpServer): void {
     {
       title: "Cause-Effect Graph Analysis Criteria",
       description:
-        "Judgment category catalog for analyze_cause_effect (CEG-01..CEG-19): unknown node references, duplicate ids, " +
+        "Judgment category catalog for analyze_cause_effect (CEG-01..CEG-20): unknown node references, duplicate ids, " +
         "isolated causes that reach no effect, unreachable effects derived from no cause, dangling intermediate nodes, graph cycles, " +
         "malformed and contradictory constraints, constraint-fixed cause values, redundant constraints, always-false and " +
         "cause-independent effects, combination and decision table rule counts, quotation grounding against the spec text, " +
-        "unmodeled spec sentences and unmodeled logical connectives, with severity and recommended actions.",
+        "unmodeled spec sentences and unmodeled logical connectives, and design_decision_table handover reconciliation, " +
+        "with severity and recommended actions.",
       mimeType: "application/json",
     },
     async (uri) => ({
