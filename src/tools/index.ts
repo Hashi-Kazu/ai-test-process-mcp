@@ -16,6 +16,7 @@ import { registerReexpandThresholdChangesTool } from "./reexpandThresholdChanges
 import { registerAnalyzeCauseEffectTool } from "./analyzeCauseEffect.js";
 import { registerDesignDecisionTableTool } from "./designDecisionTable.js";
 import { registerDesignPairwiseTool } from "./designPairwise.js";
+import { registerDesignConfigMatrixTool } from "./designConfigMatrix.js";
 import { registerDesignScenarioFlowsTool } from "./designScenarioFlows.js";
 import { registerDesignTestArchitectureTool } from "./designTestArchitecture.js";
 import { registerDesignTestDataTool } from "./designTestData.js";
@@ -38,6 +39,7 @@ export function registerTools(server: McpServer): void {
   registerAnalyzeCauseEffectTool(server);
   registerDesignDecisionTableTool(server);
   registerDesignPairwiseTool(server);
+  registerDesignConfigMatrixTool(server);
   registerDesignScenarioFlowsTool(server);
   registerDesignTestArchitectureTool(server);
   registerDesignTestDataTool(server);

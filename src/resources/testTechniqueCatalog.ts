@@ -319,10 +319,15 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
           definition: "宣言した環境・設定値の組み合わせ(端末・OS・ブラウザ・画面サイズ・ネットワーク条件・設定パラメータ等)のうち、ケース化された組み合わせの割合。",
         },
       ],
-      requiredInputs: ["対象とする環境・設定項目一覧", "各項目の水準", "優先して確認する組み合わせ"],
-      deterministic: false,
+      requiredInputs: ["対象とする環境・設定項目一覧", "各項目の水準", "網羅方針(single/pairwise/full)", "除外する組合せとその理由"],
+      deterministic: true,
+      engineToolName: "design_config_matrix",
       selectionRationale: "対応対象の端末・OS・ブラウザ・画面サイズ・設定値の組み合わせにより挙動差が出得る場合に選ぶ。",
-      note: "構成組合せの自動生成エンジンは未実装。additionalCoverageTargets で組み合わせ単位の網羅対象を宣言する運用とする。",
+      note:
+        "design_config_matrix が、指定した網羅方針(single=シングルカバレッジ/pairwise=ペア/full=フル)に基づく構成生成・" +
+        "水準被覆率・ペア被覆率のカウント・どの構成でもテストされない水準の検出・除外理由未記入の指摘([high])を決定的に行う。" +
+        "各構成は CFG: プレフィックスの網羅対象IDとして出力されるので、それをそのまま generate_test_cases の configMatrix へ渡すと、" +
+        "構成組合せ被覆率を決定的にカウントできる。",
     },
     {
       id: "TTK-17",

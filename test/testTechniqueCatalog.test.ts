@@ -44,7 +44,7 @@ describe("testTechniqueCatalog", () => {
     }
   });
 
-  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, pairwise, use-case-based, scenario-based, and data-lifecycle-test as deterministic", () => {
+  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, pairwise, use-case-based, scenario-based, data-lifecycle-test, and config-matrix as deterministic", () => {
     const deterministicIds = testTechniqueCatalog.entries.filter((e) => e.deterministic).map((e) => e.techniqueId);
     expect(new Set(deterministicIds)).toEqual(
       new Set([
@@ -56,6 +56,7 @@ describe("testTechniqueCatalog", () => {
         "use-case-based",
         "scenario-based",
         "data-lifecycle-test",
+        "config-matrix",
       ])
     );
   });

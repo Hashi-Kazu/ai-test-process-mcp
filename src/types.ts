@@ -955,6 +955,100 @@ export interface PairwiseAnalysisCriteria {
   notes: string[];
 }
 
+// --- 構成・環境マトリクス設計(design_config_matrix) ---
+export interface ConfigMatrixFactorSpec {
+  id: string;
+  name: string;
+  levels: string[]; // 1件以上、重複不可、宣言順を保持
+}
+export type ConfigMatrixSelector = Record<string, string | string[]>;
+
+export interface ConfigMatrixExcludedCombination {
+  id?: string;
+  when: ConfigMatrixSelector;
+  reason?: string; // 必須にしない: 未記入自体を CMC-06[high] で検出するため zod は optional
+}
+
+export type ConfigMatrixCoveragePolicy = "single" | "pairwise" | "full";
+
+export interface ConfigMatrixSpec {
+  matrixId?: string; // 既定 "MAIN"。CFG: prefix と網羅対象IDに使う
+  title?: string;
+  factors: ConfigMatrixFactorSpec[]; // 1件以上
+  coveragePolicy?: ConfigMatrixCoveragePolicy; // 既定 "single"
+  excludedCombinations?: ConfigMatrixExcludedCombination[];
+  maxCombinationCount?: number; // 全構成の列挙上限。既定 5000
+  maxSearchNodes?: number; // single/pairwise の貪欲生成で使う完全割当探索の予算。既定 5000
+}
+
+export type ConfigMatrixLevelStatusKind = "reachable" | "unreachable";
+export interface ConfigMatrixLevelStatus {
+  factorId: string;
+  level: string;
+  status: ConfigMatrixLevelStatusKind;
+  unreachableReason?: string;
+  coveredByRowNos: number[]; // 昇順
+}
+
+export type ConfigMatrixPairStatusKind = "reachable" | "unreachable";
+export interface ConfigMatrixPairStatus {
+  factorIdA: string;
+  levelA: string;
+  factorIdB: string;
+  levelB: string;
+  status: ConfigMatrixPairStatusKind;
+  unreachableReason?: string;
+  coveredByRowNos: number[];
+}
+
+export interface ConfigMatrixRow {
+  no: number; // 1始まり
+  values: Record<string, string>; // factorId -> level（全因子）
+}
+
+export interface ConfigMatrixFinding {
+  categoryId: string; // "CMC-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+
+export interface ConfigMatrixResult {
+  matrixId: string;
+  coveragePolicy: ConfigMatrixCoveragePolicy;
+  generated: boolean;
+  skipReason?: string;
+  factorCount: number;
+  totalLevelCount: number;
+  totalPairCount: number; // factorCount<2 なら 0
+  unreachableLevelCount: number;
+  unreachablePairCount: number;
+  targetLevelCount: number; // total - unreachable
+  targetPairCount: number;
+  coveredLevelCount: number;
+  coveredPairCount: number;
+  levelCoverageRatioPercent: number; // 小数第1位。targetLevelCount=0 なら0
+  pairCoverageRatioPercent: number; // 小数第1位。targetPairCount=0 なら0
+  rows: ConfigMatrixRow[];
+  levels: ConfigMatrixLevelStatus[];
+  pairs: ConfigMatrixPairStatus[]; // factorCount<2 なら空配列
+  untestedLevels: ConfigMatrixLevelStatus[]; // status="reachable" かつ coveredByRowNos.length===0（自己整合チェック用の明示リスト。通常空）
+  findings: ConfigMatrixFinding[];
+}
+
+export interface ConfigMatrixAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    definition: string;
+    recommendedAction: string;
+  }[];
+  notes: string[];
+}
+
 // --- ユースケース／シナリオ設計(design_scenario_flows) ---
 export interface ScenarioActorSpec { id: string; nameJa: string; kind?: "human" | "system"; }
 
@@ -1096,6 +1190,7 @@ export interface GenerateTestCasesInput {
   pairwise?: PairwiseSpec;                         // design_pairwise と同形
   scenarioFlows?: ScenarioFlowSpec;                // design_scenario_flows と同形
   testData?: TestDataSpec;                         // design_test_data と同形
+  configMatrix?: ConfigMatrixSpec;                 // design_config_matrix と同形
   additionalCoverageTargets?: TestCaseCoverageTarget[]; // 決定的エンジンが無い技法の網羅対象を手で宣言
   testCases?: TestCaseSpec[];                      // 未指定・空なら「生成指示のみ」モード
   coverageCriteriaDeclaration?: string[];          // 宣言した網羅基準（未指定なら既定文を出力）
@@ -1155,7 +1250,8 @@ export interface TestCaseUnsubstantiatedTarget {
     | "scenario-flow"
     | "use-case-flow"
     | "data-state"
-    | "data-transition";
+    | "data-transition"
+    | "config-level";
   detail: string;
 }
 
