@@ -17,6 +17,7 @@ import {
 import type {
   GenerateTestCasesInput,
   RequirementSourceRef,
+  ScenarioFlowSpec,
   TestBasisDocument,
   TestCaseCoverageTarget,
   TestCaseParameter,
@@ -34,6 +35,43 @@ function baseCase(overrides: Partial<TestCaseSpec> & { caseId: string }): TestCa
     preconditions: [{ name: "state", value: "初期状態" }],
     steps: [{ no: 1, action: "操作する", expected: "結果が表示される" }],
     ...overrides,
+  };
+}
+
+/** 動物園入場ドメイン: 主フロー3ステップ + 例外フロー1件。 */
+function scenarioFlowsSpec(): ScenarioFlowSpec {
+  return {
+    actors: [
+      { id: "A-USER", nameJa: "来園者", kind: "human" },
+      { id: "A-SYS", nameJa: "発券システム", kind: "system" },
+    ],
+    featureIds: ["F-PURCHASE", "F-ENTRY"],
+    useCases: [
+      {
+        id: "UC-01",
+        nameJa: "入場券を購入して入場する",
+        primaryActor: "A-USER",
+        preconditions: ["券売機が稼働している"],
+        mainFlow: [
+          { no: 1, actor: "A-USER", action: "券売機で入場券を購入する", featureIds: ["F-PURCHASE"] },
+          { no: 2, actor: "A-SYS", action: "入場券を発券する", featureIds: ["F-PURCHASE"] },
+          { no: 3, actor: "A-USER", action: "入場ゲートに入場券をかざす", featureIds: ["F-ENTRY"] },
+        ],
+        branches: [
+          {
+            id: "EF-01",
+            kind: "exception",
+            nameJa: "決済失敗で購入を中止する",
+            fromStepNo: 1,
+            trigger: "決済が承認されない",
+            steps: [
+              { no: 1, actor: "A-SYS", action: "決済失敗を表示し購入を取り消す", featureIds: ["F-PURCHASE"] },
+            ],
+            outcome: "aborted",
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -152,6 +190,64 @@ describe("buildCoverageUniverse", () => {
       boundaryMode: "two",
     };
     expect(buildCoverageUniverse(input).some((t) => t.id.startsWith("PW:"))).toBe(false);
+  });
+
+  it("generates UC: / SC: ids from scenarioFlows without disturbing the existing branches", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+      equivalenceVariables: [
+        { name: "年齢", validClasses: [{ label: "成人", representative: "30" }] },
+      ],
+      stateTransition: {
+        states: [{ id: "S1", nameJa: "未使用" }, { id: "S2", nameJa: "使用済" }],
+        transitions: [{ id: "ST-01", from: "S1", to: "S2", event: "入場" }],
+      },
+      decisionTable: {
+        conditions: [{ id: "C1", statement: "券種", levels: ["おとな", "こども"] }],
+        actions: [{ id: "A1", statement: "発券する" }],
+        rules: [{ when: {}, actions: { A1: "Y" } }],
+      },
+      pairwise: {
+        factors: [
+          { id: "F1", name: "券種", levels: ["おとな", "こども"] },
+          { id: "F2", name: "支払い方法", levels: ["現金", "IC"] },
+        ],
+      },
+      scenarioFlows: scenarioFlowsSpec(),
+      additionalCoverageTargets: [
+        { id: "X:1", techniqueId: "config-matrix", description: "手宣言", origin: "宣言" },
+      ],
+    };
+    const universe = buildCoverageUniverse(input);
+    const ids = universe.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain("UC:UC-01:MAIN");
+    expect(ids).toContain("UC:UC-01:EF-01");
+    expect(ids).toContain("SC:UC-01:S1");
+    expect(ids).toContain("SC:UC-01:S2");
+    expect(ids.indexOf("PW:MAIN:P1")).toBeLessThan(ids.indexOf("UC:UC-01:MAIN"));
+    expect(ids.indexOf("SC:UC-01:S2")).toBeLessThan(ids.indexOf("X:1"));
+    expect(universe.find((t) => t.id === "UC:UC-01:MAIN")).toMatchObject({
+      techniqueId: "use-case-based",
+      origin: "UC-01",
+    });
+    expect(universe.find((t) => t.id === "SC:UC-01:S2")).toMatchObject({
+      techniqueId: "scenario-based",
+      origin: "UC-01",
+    });
+  });
+
+  it("does not generate UC: / SC: ids when scenarioFlows is omitted", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+    };
+    const ids = buildCoverageUniverse(input).map((t) => t.id);
+    expect(ids.some((id) => id.startsWith("UC:"))).toBe(false);
+    expect(ids.some((id) => id.startsWith("SC:"))).toBe(false);
   });
 
   it("merges additionalCoverageTargets, keeping the first on id collision", () => {
@@ -780,6 +876,88 @@ describe("findUnsubstantiatedCoverageTargets", () => {
     expect(second).toEqual(first);
     stripUnsubstantiatedCoverageTargets(input.testCases as TestCaseSpec[], first);
     expect(JSON.stringify(input)).toBe(snapshot);
+  });
+
+  it("reports nothing for a SC: branch scenario when the trigger appears in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-100",
+          techniqueId: "scenario-based",
+          coverageTargets: ["SC:UC-01:S2"],
+          steps: [
+            { no: 1, action: "決済が承認されない状態で購入操作を行う", expected: "購入が取り消される" },
+          ],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags a SC: branch scenario when neither the trigger nor the branch steps appear", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-101",
+          techniqueId: "scenario-based",
+          coverageTargets: ["SC:UC-01:S2"],
+          steps: [{ no: 1, action: "券売機の前に立つ", expected: "案内が表示される" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-101",
+      targetId: "SC:UC-01:S2",
+      techniqueId: "scenario-based",
+      missing: "scenario-flow",
+    });
+  });
+
+  it("reports nothing for a UC: flow when a step action of that flow appears in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-102",
+          techniqueId: "use-case-based",
+          coverageTargets: ["UC:UC-01:MAIN"],
+          steps: [
+            { no: 1, action: "券売機で入場券を購入する", expected: "入場券が発券される" },
+          ],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags a UC: flow when neither the flow name nor its step actions appear", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-103",
+          techniqueId: "use-case-based",
+          coverageTargets: ["UC:UC-01:EF-01"],
+          steps: [{ no: 1, action: "券売機の前に立つ", expected: "案内が表示される" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-103",
+      targetId: "UC:UC-01:EF-01",
+      techniqueId: "use-case-based",
+      missing: "use-case-flow",
+    });
   });
 });
 

@@ -44,7 +44,7 @@ describe("testTechniqueCatalog", () => {
     }
   });
 
-  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, and pairwise as deterministic", () => {
+  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, pairwise, use-case-based, and scenario-based as deterministic", () => {
     const deterministicIds = testTechniqueCatalog.entries.filter((e) => e.deterministic).map((e) => e.techniqueId);
     expect(new Set(deterministicIds)).toEqual(
       new Set([
@@ -53,6 +53,8 @@ describe("testTechniqueCatalog", () => {
         "decision-table",
         "state-transition",
         "pairwise",
+        "use-case-based",
+        "scenario-based",
       ])
     );
   });
@@ -72,6 +74,37 @@ describe("testTechniqueCatalog", () => {
     expect(entry?.note).toContain("design_pairwise");
     expect(entry?.note).toContain("PW:");
     expect(entry?.note).not.toContain("未実装");
+  });
+
+  it("routes use-case-based (TTK-06) to design_scenario_flows deterministically", () => {
+    const entry = testTechniqueCatalog.entries.find((e) => e.id === "TTK-06");
+    expect(entry?.techniqueId).toBe("use-case-based");
+    expect(entry?.engineToolName).toBe("design_scenario_flows");
+    expect(entry?.deterministic).toBe(true);
+    expect(entry?.requiredInputs).toContain("機能ID（ステップ単位）");
+    expect(entry?.note).toContain("design_scenario_flows");
+    expect(entry?.note).toContain("UC:");
+    expect(entry?.note).not.toContain("未実装");
+  });
+
+  it("routes scenario-based (TTK-07) to design_scenario_flows deterministically", () => {
+    const entry = testTechniqueCatalog.entries.find((e) => e.id === "TTK-07");
+    expect(entry?.techniqueId).toBe("scenario-based");
+    expect(entry?.engineToolName).toBe("design_scenario_flows");
+    expect(entry?.deterministic).toBe(true);
+    expect(entry?.requiredInputs).toContain("分岐の終了状態(goal-achieved / aborted)");
+    expect(entry?.note).toContain("design_scenario_flows");
+    expect(entry?.note).toContain("SC:");
+    expect(entry?.note).not.toContain("未実装");
+  });
+
+  it("keeps TTC-COV-06 / TTC-COV-07 ids and names unchanged", () => {
+    const ttk06 = testTechniqueCatalog.entries.find((e) => e.id === "TTK-06");
+    const ttk07 = testTechniqueCatalog.entries.find((e) => e.id === "TTK-07");
+    expect(ttk06?.coverageCriteria[0].id).toBe("TTC-COV-06");
+    expect(ttk06?.coverageCriteria[0].nameJa).toBe("主要・代替フロー被覆");
+    expect(ttk07?.coverageCriteria[0].id).toBe("TTC-COV-07");
+    expect(ttk07?.coverageCriteria[0].nameJa).toBe("主要・代替フロー被覆");
   });
 
   it("does not include verbatim external standard wording", () => {

@@ -60,7 +60,7 @@ export const testPerspectiveCatalog: TestPerspectiveCatalog = {
             "成功時の結果表示・後続処理が仕様どおりか",
           ],
           relatedQualityCharacteristicIds: ["QC-01-01"],
-          recommendedTechniques: ["scenario-based", "equivalence-partitioning"],
+          recommendedTechniques: ["use-case-based", "scenario-based", "equivalence-partitioning"],
         },
         {
           id: "TPC-02-02",
@@ -718,7 +718,8 @@ export const testTechniqueToolMapping: { techniqueId: TestTechniqueId; toolName:
   { techniqueId: "decision-table", toolName: "design_decision_table" },
   { techniqueId: "state-transition", toolName: "generate_test_cases" },
   { techniqueId: "pairwise", toolName: "design_pairwise" },
-  { techniqueId: "scenario-based", toolName: "generate_test_cases" },
+  { techniqueId: "use-case-based", toolName: "design_scenario_flows" },
+  { techniqueId: "scenario-based", toolName: "design_scenario_flows" },
   { techniqueId: "error-guessing", toolName: "generate_exploratory_charters" },
   { techniqueId: "exploratory", toolName: "generate_exploratory_charters" },
   { techniqueId: "checklist-based", toolName: "generate_exploratory_charters" },

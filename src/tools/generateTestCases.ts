@@ -227,7 +227,7 @@ export function renderTestCases(
   lines.push("");
   if (universe.length === 0) {
     lines.push(
-      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / additionalCoverageTargets)が指定されていない。"
+      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / scenarioFlows / additionalCoverageTargets)が指定されていない。"
     );
   } else {
     lines.push("| 網羅対象ID | 技法 | 内容 | 由来 |");
@@ -937,6 +937,77 @@ export const generateTestCasesInputShape = {
     })
     .optional()
     .describe("Pairwise spec, same shape as design_pairwise"),
+  scenarioFlows: z
+    .object({
+      title: z.string().optional(),
+      actors: z
+        .array(
+          z.object({
+            id: z.string(),
+            nameJa: z.string(),
+            kind: z.enum(["human", "system"]).optional(),
+          })
+        )
+        .min(1),
+      useCases: z
+        .array(
+          z.object({
+            id: z.string(),
+            nameJa: z.string(),
+            primaryActor: z.string(),
+            supportingActors: z.array(z.string()).optional(),
+            preconditions: z.array(z.string()).min(1),
+            postconditions: z.array(z.string()).optional(),
+            mainFlow: z
+              .array(
+                z.object({
+                  no: z.number().int().positive(),
+                  actor: z.string(),
+                  action: z.string(),
+                  featureIds: z.array(z.string()).optional(),
+                })
+              )
+              .min(1),
+            branches: z
+              .array(
+                z.object({
+                  id: z.string(),
+                  kind: z.enum(["alternate", "exception"]),
+                  nameJa: z.string(),
+                  fromStepNo: z.number().int().positive(),
+                  trigger: z.string(),
+                  steps: z
+                    .array(
+                      z.object({
+                        no: z.number().int().positive(),
+                        actor: z.string(),
+                        action: z.string(),
+                        featureIds: z.array(z.string()).optional(),
+                      })
+                    )
+                    .min(1),
+                  rejoinStepNo: z.number().int().positive().optional(),
+                  outcome: z.enum(["goal-achieved", "aborted"]),
+                })
+              )
+              .optional(),
+          })
+        )
+        .min(1),
+      featureIds: z.array(z.string()).optional(),
+      testConditions: z
+        .array(
+          z.object({
+            id: z.string(),
+            statement: z.string().optional(),
+            featureIds: z.array(z.string()).optional(),
+          })
+        )
+        .optional(),
+      maxScenariosPerUseCase: z.number().int().positive().optional(),
+    })
+    .optional()
+    .describe("Scenario/use-case flow spec, same shape as design_scenario_flows"),
   additionalCoverageTargets: z
     .array(
       z.object({

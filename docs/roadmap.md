@@ -79,6 +79,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 | `generate_exploratory_charters` | 探索的テストのチャーター設計（チャーターカタログ resource + チャーターID/観点区分/由来参照/未カバー/タイムボックス/主観語の決定的検査 + ミッション言語化の意味的層） | 完了 |
 | `reexpand_threshold_changes` | 閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存/失効した網羅対象ID参照/名前参照経由の再確認要否を判定区分カタログ `testdesign://threshold/change-impact-criteria` 8区分で決定的に検出 | 完了（GitHub Issue #55） |
 | `design_pairwise` | ペアワイズ設計（因子・水準・禁則・seed行から全水準ペアを正準順に列挙し、禁則による到達不能ペアの判定・ペア被覆組合せの決定的な貪欲法生成・ペア被覆率・全網羅組合せ数に対する削減率を算出。判定区分カタログ `testdesign://pairwise/analysis-criteria` 12区分。生成した各ペアを `PW:` プレフィックスの網羅対象として `generate_test_cases` の universe へ統合し、技法カタログ `TTK-05`(pairwise) の決定的カウント可否を可へ、因子分解フレーム `FHO-04` を available へ更新） | 完了（GitHub Issue #80 / Jira `HSKZ-124`） |
+| `design_scenario_flows` | ユースケース／シナリオ設計（アクター・事前条件・主フロー・代替フロー・例外フローから、主フロー単独＋1分岐ずつのシナリオ一覧を正常系/準正常系/異常系の分類つきで決定的に生成。フロー被覆・宣言した機能ID母集団とステップ実体の双方向照合・テスト条件との突合を判定区分カタログ `testdesign://scenario-flow/analysis-criteria` 14区分で検査。各フローを `UC:`、各シナリオを `SC:` プレフィックスの網羅対象として `generate_test_cases` の universe へ統合し、技法カタログ `TTK-06`(use-case-based) / `TTK-07`(scenario-based) の決定的カウント可否を可へ更新） | 完了（GitHub Issue #74 / Jira `HSKZ-118`） |
 
 `review_test_specification` の設計方針（旧ロードマップ Phase 4 から引き継ぎ）:
 

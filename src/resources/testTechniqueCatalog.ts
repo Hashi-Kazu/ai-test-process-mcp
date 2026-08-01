@@ -115,10 +115,13 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
           definition: "宣言したユースケースの基本フロー・代替フロー・例外フローのうち、ケース化された割合。",
         },
       ],
-      requiredInputs: ["アクター", "基本フロー", "代替フロー・例外フロー"],
-      deterministic: false,
+      requiredInputs: ["アクター", "基本フロー", "代替フロー・例外フロー", "機能ID（ステップ単位）"],
+      deterministic: true,
+      engineToolName: "design_scenario_flows",
       selectionRationale: "アクターの目的達成までの一連の操作単位で確認したい業務フローがある場合に選ぶ。",
-      note: "フロー自動生成エンジンは未実装。additionalCoverageTargets でフロー単位の網羅対象を宣言する運用とする。",
+      note:
+        "design_scenario_flows が主フロー・代替フロー・例外フローを宣言順に展開し、各フローを `UC:` プレフィックスの網羅対象IDとして出力する。" +
+        "generate_test_cases の scenarioFlows へ渡すと主要・代替フロー被覆を決定的にカウントできる。",
     },
     {
       id: "TTK-07",
@@ -132,10 +135,20 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
           definition: "宣言した利用シナリオ(複数機能をまたぐ一連の操作)のうち、ケース化された割合。",
         },
       ],
-      requiredInputs: ["登場人物・前提", "一連の操作手順", "途中で起こり得る分岐"],
-      deterministic: false,
+      requiredInputs: [
+        "登場人物・前提",
+        "一連の操作手順",
+        "途中で起こり得る分岐",
+        "分岐の終了状態(goal-achieved / aborted)",
+        "機能ID",
+      ],
+      deterministic: true,
+      engineToolName: "design_scenario_flows",
       selectionRationale: "複数機能・複数画面をまたぐ現実的な利用シナリオ全体の整合を確認したい場合に選ぶ。",
-      note: "シナリオ自動生成エンジンは未実装。additionalCoverageTargets でシナリオ単位の網羅対象を宣言する運用とする。",
+      note:
+        "design_scenario_flows がシナリオ一覧（正常系/準正常系/異常系の分類つき）を決定的に生成し、" +
+        "各シナリオを `SC:` プレフィックスの網羅対象IDとして出力する。" +
+        "generate_test_cases の scenarioFlows へ渡すとシナリオ被覆を決定的にカウントできる。",
     },
     {
       id: "TTK-08",
