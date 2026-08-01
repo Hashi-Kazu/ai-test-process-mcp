@@ -23,6 +23,7 @@ import { scenarioFlowAnalysisCriteria } from "./scenarioFlowCriteria.js";
 import { factorRalphFrame } from "./factorRalphFrame.js";
 import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinciples.js";
 import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
+import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -440,6 +441,30 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(pairwiseAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "config-matrix-analysis-criteria",
+    "testdesign://config-matrix/analysis-criteria",
+    {
+      title: "Config Matrix Analysis Criteria",
+      description:
+        "Judgment category catalog for design_config_matrix (CMC-01..CMC-10): unknown factor/level references, " +
+        "duplicate factor ids or levels, factors that do not contribute to combinations, insufficient factor count, " +
+        "missing exclusion reasons, combinations made unreachable by excluded combinations, redundant/unreachable " +
+        "excluded combinations, combination count cap overflow, and untested levels remaining after generation, " +
+        "with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(configMatrixAnalysisCriteria, null, 2),
         },
       ],
     })

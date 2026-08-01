@@ -517,4 +517,19 @@ describe("renderTestCases test basis grounding (4.8)", () => {
     const summary = markdown.split("### 4.12 サマリ")[1].split("## 5.")[0];
     expect(summary).toContain("事実照合指摘数: 1");
   });
+
+  it("includes CFG: ids in the coverage target list when configMatrix is provided", () => {
+    const markdown = renderTestCases({
+      ...baseInput,
+      configMatrix: {
+        factors: [
+          { id: "F1", name: "OS", levels: ["Windows11", "macOS"] },
+          { id: "F2", name: "ブラウザ", levels: ["Chrome", "Safari"] },
+        ],
+      },
+    });
+    const section2 = markdown.split("## 2. 網羅対象一覧(決定的層)")[1].split("## 3.")[0];
+    expect(section2).toContain("CFG:MAIN:R1");
+    expect(section2).toContain("config-matrix");
+  });
 });

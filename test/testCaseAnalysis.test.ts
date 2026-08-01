@@ -210,6 +210,34 @@ describe("buildCoverageUniverse", () => {
     expect(buildCoverageUniverse(input).some((t) => t.id.startsWith("PW:"))).toBe(false);
   });
 
+  it("generates CFG: ids from configMatrix", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      configMatrix: {
+        factors: [
+          { id: "F1", name: "OS", levels: ["Windows11", "macOS"] },
+          { id: "F2", name: "ブラウザ", levels: ["Chrome", "Safari"] },
+        ],
+      },
+    };
+    const universe = buildCoverageUniverse(input);
+    const ids = universe.map((t) => t.id);
+    expect(ids.some((id) => id.startsWith("CFG:MAIN:R"))).toBe(true);
+    expect(universe.find((t) => t.id === "CFG:MAIN:R1")).toMatchObject({
+      techniqueId: "config-matrix",
+      origin: "MAIN",
+    });
+  });
+
+  it("does not generate CFG: ids when configMatrix is omitted", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+      boundaryMode: "two",
+    };
+    expect(buildCoverageUniverse(input).some((t) => t.id.startsWith("CFG:"))).toBe(false);
+  });
+
   it("generates UC: / SC: ids from scenarioFlows without disturbing the existing branches", () => {
     const input: GenerateTestCasesInput = {
       testConditions: [],
@@ -842,6 +870,50 @@ describe("findUnsubstantiatedCoverageTargets", () => {
           techniqueId: "pairwise",
           coverageTargets: ["PW:MAIN:P1"],
           steps: [{ no: 1, action: "何も関係しない操作をする", expected: "何も起きない" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  const configMatrix = {
+    factors: [
+      { id: "F1", name: "OS", levels: ["Windows11", "macOS"] },
+      { id: "F2", name: "ブラウザ", levels: ["Chrome", "Safari"] },
+    ],
+  };
+
+  it("flags a config-matrix target when a factor level does not appear in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      configMatrix,
+      testCases: [
+        baseCase({
+          caseId: "TCS-095",
+          techniqueId: "config-matrix",
+          coverageTargets: ["CFG:MAIN:R1"], // OS=Windows11, ブラウザ=Chrome
+          steps: [{ no: 1, action: "Windows11で操作する", expected: "正常に動作する" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].targetId).toBe("CFG:MAIN:R1");
+    expect(findings[0].techniqueId).toBe("config-matrix");
+    expect(findings[0].missing).toBe("config-level");
+    expect(findings[0].detail).toContain("Chrome");
+  });
+
+  it("accepts a config-matrix target whose all factor levels appear in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      configMatrix,
+      testCases: [
+        baseCase({
+          caseId: "TCS-096",
+          techniqueId: "config-matrix",
+          coverageTargets: ["CFG:MAIN:R1"],
+          steps: [{ no: 1, action: "Windows11のChromeで操作する", expected: "正常に動作する" }],
         }),
       ],
     };

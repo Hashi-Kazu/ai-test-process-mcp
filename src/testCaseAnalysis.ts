@@ -2,6 +2,7 @@ import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { buildDecisionTableCoverageTargets, computeDecisionTableRows } from "./tools/designDecisionTable.js";
 import { buildPairwiseCoverageTargets, computePairwiseRows } from "./tools/designPairwise.js";
+import { buildConfigMatrixCoverageTargets, computeConfigMatrixRows } from "./tools/designConfigMatrix.js";
 import {
   MAIN_FLOW_ID,
   buildScenarioFlowCoverageTargets,
@@ -131,6 +132,10 @@ export function buildCoverageUniverse(input: GenerateTestCasesInput): TestCaseCo
 
   if (input.testData) {
     for (const target of buildTestDataCoverageTargets(input.testData)) push(target);
+  }
+
+  if (input.configMatrix) {
+    for (const target of buildConfigMatrixCoverageTargets(input.configMatrix)) push(target);
   }
 
   for (const t of input.additionalCoverageTargets ?? []) {
@@ -608,6 +613,7 @@ export function findUnsubstantiatedCoverageTargets(
   const pairwiseResult = input.pairwise ? computePairwiseRows(input.pairwise) : undefined;
   const scenarioFlowResult = input.scenarioFlows ? computeScenarioFlows(input.scenarioFlows) : undefined;
   const testDataResult = input.testData ? computeTestDataDesign(input.testData) : undefined;
+  const configMatrixResult = input.configMatrix ? computeConfigMatrixRows(input.configMatrix) : undefined;
   const pairwiseFactorName = (factorId: string): string =>
     input.pairwise?.factors.find((f) => f.id === factorId)?.name ?? factorId;
 
@@ -882,7 +888,28 @@ export function findUnsubstantiatedCoverageTargets(
         continue;
       }
 
-      // BV / EP / ST / DT / PW / UC / SC / DL 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
+      if (targetId.startsWith("CFG:")) {
+        if (!configMatrixResult || !configMatrixResult.generated) continue;
+        const match = /R(\d+)$/.exec(targetId);
+        if (!match) continue;
+        const rowNo = Number(match[1]);
+        const row = configMatrixResult.rows.find((r) => r.no === rowNo);
+        if (!row) continue; // 引けない行は検査対象外
+        const missingFactor = (input.configMatrix?.factors ?? []).find(
+          (f) => !text.includes(row.values[f.id])
+        );
+        if (!missingFactor) continue;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "config-level",
+          detail: `構成「${missingFactor.name}=${row.values[missingFactor.id]}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+        });
+        continue;
+      }
+
+      // BV / EP / ST / DT / PW / UC / SC / DL / CFG 以外（additionalCoverageTargets 由来の任意ID）は検査対象外。
     }
   }
   return findings;

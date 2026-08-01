@@ -228,7 +228,7 @@ export function renderTestCases(
   lines.push("");
   if (universe.length === 0) {
     lines.push(
-      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / scenarioFlows / testData / additionalCoverageTargets)が指定されていない。"
+      "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / configMatrix / scenarioFlows / testData / additionalCoverageTargets)が指定されていない。"
     );
   } else {
     lines.push("| 網羅対象ID | 技法 | 内容 | 由来 |");
@@ -938,6 +938,34 @@ export const generateTestCasesInputShape = {
     })
     .optional()
     .describe("Pairwise spec, same shape as design_pairwise"),
+  configMatrix: z
+    .object({
+      matrixId: z.string().optional(),
+      title: z.string().optional(),
+      factors: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            levels: z.array(z.string()).min(1),
+          })
+        )
+        .min(1),
+      coveragePolicy: z.enum(["single", "pairwise", "full"]).optional(),
+      excludedCombinations: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            when: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+            reason: z.string().optional(),
+          })
+        )
+        .optional(),
+      maxCombinationCount: z.number().int().positive().optional(),
+      maxSearchNodes: z.number().int().positive().optional(),
+    })
+    .optional()
+    .describe("Config/environment matrix spec, same shape as design_config_matrix"),
   scenarioFlows: z
     .object({
       title: z.string().optional(),
