@@ -26,6 +26,7 @@ import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinci
 import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
+import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -615,6 +616,32 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testDataDesignCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "basis-contradiction-criteria",
+    "testbasis://contradiction/audit-criteria",
+    {
+      title: "Basis Contradiction Audit Criteria",
+      description:
+        "Judgment category catalog for audit_basis_contradictions (BC-01..BC-10): same-id name inconsistencies, " +
+        "cross-document UI element label mismatches and one-sided elements, same-trigger transition target " +
+        "inconsistencies, unresolved transition targets, operation elements with no described behavior, " +
+        "declared-list-versus-body subject mismatches, same-parameter value inconsistencies, revision-declared " +
+        "old values still present in the body, and minority transition targets, with severity and recommended " +
+        "actions. The deterministic layer only enumerates candidates; final contradiction judgment is left to the " +
+        "semantic layer.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(basisContradictionCriteria, null, 2),
         },
       ],
     })
