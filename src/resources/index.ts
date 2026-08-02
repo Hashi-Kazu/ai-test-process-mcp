@@ -24,6 +24,7 @@ import { factorRalphFrame } from "./factorRalphFrame.js";
 import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinciples.js";
 import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
+import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -465,6 +466,32 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(configMatrixAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "cross-matrix-audit-criteria",
+    "testdesign://cross-matrix/audit-criteria",
+    {
+      title: "Cross Matrix Audit Criteria",
+      description:
+        "Judgment category catalog for audit_cross_matrix (CMX-01..CMX-15): links to undeclared item ids, " +
+        "duplicate axis / item ids, empty rows and empty columns that are linked to nothing on the paired axis, " +
+        "links pointing at items on the same axis, one-directional links, missing exclusion reasons, " +
+        "declared-versus-computed fill rate mismatches, axis population shrinkage that inflates fill rates, " +
+        "axis items not substantiated by the test basis text, ids defined in the test basis but present on no axis, " +
+        "axes that do not contribute to the cross product, cell count cap overflow, undeclared axis references and " +
+        "same-axis pair specifications, and fully isolated items, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(crossMatrixAuditCriteria, null, 2),
         },
       ],
     })

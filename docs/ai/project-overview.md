@@ -2,7 +2,7 @@
 
 ## 概要
 
-JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）、テスト仕様書レビュー `review_test_specification`（テストベースに対する要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ・ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成）、閾値変更の影響再展開 `reexpand_threshold_changes`（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存・失効した網羅対象ID参照・名前参照経由の再確認要否を8区分で決定的に検出する）、デシジョンテーブル設計 `design_decision_table`（条件項目・水準・無効組合せ・ルールから全組合せを決定的に列挙し、無効組合せの除外・同一動作列の圧縮(don't care導出)・条件組合せ被覆・動作未定義組合せ検出・圧縮前後の列数と削減率を算出。圧縮後ルールは `DT:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）、ペアワイズ設計 `design_pairwise`（因子・水準・禁則・seed行から全水準ペアを正準順に列挙し、禁則による到達不能ペアの判定・ペアを被覆する組合せの決定的な貪欲法での生成・ペア被覆率・全網羅組合せ数に対する削減率を算出。生成した各ペアは `PW:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）、ユースケース／シナリオ設計 `design_scenario_flows`（アクター・事前条件・主フロー・代替フロー・例外フローから、主フロー単独＋1分岐ずつのシナリオ一覧を正常系/準正常系/異常系の分類つきで決定的に生成し、フロー被覆・宣言した機能ID母集団とステップ実体の双方向照合・テスト条件との突合を判定区分カタログ `testdesign://scenario-flow/analysis-criteria` 14区分で検査する。各フローは `UC:`、各シナリオは `SC:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）、テストアーキテクチャ設計 `design_test_architecture`（テスト条件群をテストコンテナへ束ね、各コンテナの責務・テストレベル・テストタイプ・優先度クラス・担当観点カテゴリ・テストスコープの宣言と、実際に帰属したテスト条件・テストケースの実体を双方向で照合し、帰属率・レベル/タイプ/優先度クラスの分布・コンテナ別テストサイズ分布・条件→ケースのトレーサビリティを分母つきで算出する。設計原則と判定区分カタログ `testarch://container/design-principles` 17区分で検査し、コンテナ間の実行順序・依存関係は対象外とする）、テストデータ設計 `design_test_data`（データ区分ごとのライフサイクル状態・遷移から、データ区分×状態マトリクス・未使用状態/遷移の検出・データ↔ケースの供給トレーサビリティ・同一データを更新する複数ケースの排他検出・状態/遷移被覆を決定的に算出する。供給元の有無は初期状態からの到達可能性で判定し、被覆率は本文裏付けを通過した要求だけを分子に数える。データ区分種別カタログ `TDK-01`〜`TDK-06` と判定区分カタログ `testdesign://test-data/analysis-criteria` `TDC-01`〜`TDC-18` で検査し、各状態・遷移は `DL:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる。実行順序・依存関係は対象外とする）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
+JSTQB/ISTQB Generic Test Process を AI で支援する MCP サーバー。全7工程（Test Planning 〜 Test Completion）のテスト成果物の作成・レビュー・分析を段階的に実装していく構想のうち、現在は Phase 1（Test Planning）として「テスト計画書のドラフト生成（`create_test_plan`）」「テスト計画書レビュー（`review_test_plan`）」、および Test Design 技法エンジン（`design_boundary_values` / `design_equivalence_partitioning`）を実装済み。Phase 2（Test Analysis）として、テストベース（要件・仕様）のレビュー支援 `review_test_basis`、要件分析 `analyze_requirements`、テスト条件抽出 `extract_test_conditions` を実装済み。Phase 3（Test Design）として、テストケース生成 `generate_test_cases`（技法カタログ＋技法選定決定表 resource、決定的な網羅率カウント・未通過網羅対象列挙・主観語/直値埋め込み検査 + 手順組み立ての意味的層の二層構成）、テスト仕様書レビュー `review_test_specification`（テストベースに対する要件ID/テスト条件ID/リスクIDの3系統×双方向カバレッジ・ID表記ゆれ・優先度・前提条件・手順粒度・主観語・網羅基準宣言の決定的検査 + 意味的チェックリスト14項目/改善提案の二層構成）、閾値変更の影響再展開 `reexpand_threshold_changes`（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存・失効した網羅対象ID参照・名前参照経由の再確認要否を8区分で決定的に検出する）、デシジョンテーブル設計 `design_decision_table`（条件項目・水準・無効組合せ・ルールから全組合せを決定的に列挙し、無効組合せの除外・同一動作列の圧縮(don't care導出)・条件組合せ被覆・動作未定義組合せ検出・圧縮前後の列数と削減率を算出。圧縮後ルールは `DT:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）、ペアワイズ設計 `design_pairwise`（因子・水準・禁則・seed行から全水準ペアを正準順に列挙し、禁則による到達不能ペアの判定・ペアを被覆する組合せの決定的な貪欲法での生成・ペア被覆率・全網羅組合せ数に対する削減率を算出。生成した各ペアは `PW:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）、ユースケース／シナリオ設計 `design_scenario_flows`（アクター・事前条件・主フロー・代替フロー・例外フローから、主フロー単独＋1分岐ずつのシナリオ一覧を正常系/準正常系/異常系の分類つきで決定的に生成し、フロー被覆・宣言した機能ID母集団とステップ実体の双方向照合・テスト条件との突合を判定区分カタログ `testdesign://scenario-flow/analysis-criteria` 14区分で検査する。各フローは `UC:`、各シナリオは `SC:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる）、テストアーキテクチャ設計 `design_test_architecture`（テスト条件群をテストコンテナへ束ね、各コンテナの責務・テストレベル・テストタイプ・優先度クラス・担当観点カテゴリ・テストスコープの宣言と、実際に帰属したテスト条件・テストケースの実体を双方向で照合し、帰属率・レベル/タイプ/優先度クラスの分布・コンテナ別テストサイズ分布・条件→ケースのトレーサビリティを分母つきで算出する。設計原則と判定区分カタログ `testarch://container/design-principles` 17区分で検査し、コンテナ間の実行順序・依存関係は対象外とする）、テストデータ設計 `design_test_data`（データ区分ごとのライフサイクル状態・遷移から、データ区分×状態マトリクス・未使用状態/遷移の検出・データ↔ケースの供給トレーサビリティ・同一データを更新する複数ケースの排他検出・状態/遷移被覆を決定的に算出する。供給元の有無は初期状態からの到達可能性で判定し、被覆率は本文裏付けを通過した要求だけを分子に数える。データ区分種別カタログ `TDK-01`〜`TDK-06` と判定区分カタログ `testdesign://test-data/analysis-criteria` `TDC-01`〜`TDC-18` で検査し、各状態・遷移は `DL:` プレフィックスの網羅対象として `generate_test_cases` へ引き継げる。実行順序・依存関係は対象外とする）、多軸マトリクス監査 `audit_cross_matrix`（任意の2軸以上＝リスク／テスト観点カテゴリ／ペルソナ／機能ID／シナリオ／テストコンテナ／パラメータ／テストタイプ等を汎用の軸データとして受け取り、軸ペアの直積表を決定的に生成して空行・空列＝片側にしかない要素を列挙する。3軸以上なら全組合せの軸ペアを一括で回し、充填率は分母（行数 × 列数）を明示して算出する。行被覆率・列被覆率の分母は除外宣言を除いた対象要素数とし、宣言充填率との照合・軸母集団の縮退検出・テストベース本文との双方向の裏付け照合まで行うため、母集団を縮めたことによる見かけの高充填率を検出できる。判定区分カタログ `testdesign://cross-matrix/audit-criteria` `CMX-01`〜`CMX-15` で検査する）を実装済み。文書構成は JSTQB準拠の15章テンプレートに基づき、JSTQBの知識はパラフレーズした構造化データとして resource に保持する（独立した汎用知識ベースにはしない）。段階的な開発計画は [`docs/roadmap.md`](../roadmap.md) を参照。
 
 ## 技術スタック
 
@@ -47,6 +47,7 @@ src/
     pairwiseCriteria.ts # ペアワイズ設計の判定区分カタログ12区分 PWC-01〜PWC-12（testdesign://pairwise/analysis-criteria）
     scenarioFlowCriteria.ts # ユースケース／シナリオ設計の判定区分カタログ14区分 SFC-01〜SFC-14（testdesign://scenario-flow/analysis-criteria）
     testArchitectureDesignPrinciples.ts # テストコンテナ設計原則（分割軸8種 TAX-01〜TAX-08・責務定義項目9種 RFD-01〜RFD-09・優先度クラス3種 TPR-01〜TPR-03・スコープ宣言項目3種 TSC-01〜TSC-03）＋判定区分カタログ17区分 TAC-01〜TAC-17（testarch://container/design-principles）
+    crossMatrixAuditCriteria.ts # 多軸マトリクス監査の判定区分カタログ15区分 CMX-01〜CMX-15（testdesign://cross-matrix/audit-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -66,6 +67,7 @@ src/
     designScenarioFlows.ts # design_scenario_flows ツール（アクター・主フロー・代替/例外フローからシナリオ一覧を正常系/準正常系/異常系分類つきで決定的に展開し、フロー被覆・機能ID通過・テスト条件との突合を検査する、renderScenarioFlows純関数 + 再利用用 computeScenarioFlows / buildScenarioFlowCoverageTargets export）
     designTestArchitecture.ts # design_test_architecture ツール（テスト条件群をテストコンテナへ束ね、責務・テストレベル・テストタイプ・優先度クラス・担当観点カテゴリ・テストスコープの宣言と帰属実体を双方向で照合し、帰属率・レベル/タイプ/優先度クラスの分布・コンテナ別テストサイズ分布・条件→ケースのトレーサビリティを分母つきで算出する、renderTestArchitecture純関数 + 再利用用 computeTestArchitecture export）
     designTestData.ts    # design_test_data ツール（データ区分ごとのライフサイクル状態・遷移から、データ区分×状態マトリクス・未使用状態/遷移の検出・データ↔ケースの供給トレーサビリティ・同一データを更新する複数ケースの排他検出・状態/遷移被覆を決定的に算出する、renderTestData純関数 + 再利用用 computeTestDataDesign / buildTestDataCoverageTargets export）
+    auditCrossMatrix.ts  # audit_cross_matrix ツール（任意の2軸以上を汎用の軸データとして受け取り、軸ペアの直積表を決定的に生成して空行・空列＝片側にしかない要素を列挙する。充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合する、renderCrossMatrixAudit純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -80,6 +82,7 @@ src/
   idPopulationAnalysis.ts # ID母集団監査の決定的検査の共有純関数群（定義済みID抽出・母集団突き合わせ・未宣言/除外/母集団未定義ID・文書別反映率・母集団間差分）
   thresholdChangeAnalysis.ts # 閾値変更影響再展開の決定的検査の共有純関数群（パラメータ差分・境界値/同値クラスの新旧再展開・参照インデックス・失効網羅対象検出・成果物別影響判定・サマリ集計）
   causeEffectAnalysis.ts # 原因結果グラフ分析の決定的検査の共有純関数群（グラフ構築・孤立原因/導出されない結果/循環検出・制約の指定不正と矛盾・真偽組合せの全列挙とルール圧縮・結果の可変性検査・引用の仕様文実在照合・未モデル化文と論理接続語の検出・mermaid生成・デシジョンテーブル引き渡し構築）
+  crossMatrixAnalysis.ts # 多軸マトリクス監査の決定的検査の共有純関数群（軸ペア解決・直積表構築・空行/空列検出・除外宣言の適用・充填率/行被覆率/列被覆率の算出・未宣言リンク/重複ID/自軸内リンク/片方向リンク/完全孤立要素の検出・軸母集団の縮退検出・テストベース本文との双方向裏付け照合・宣言充填率との照合・サマリ集計）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
@@ -109,6 +112,9 @@ test/
   testSpecificationReviewChecklist.test.ts # テスト仕様書レビューチェックリスト構造データの単体テスト
   idPopulationAnalysis.test.ts    # ID母集団監査決定的検査の共有純関数群の単体テスト
   auditIdPopulation.test.ts       # renderIdPopulationAudit()の単体テスト
+  crossMatrixAnalysis.test.ts     # 多軸マトリクス監査決定的検査の共有純関数群の単体テスト
+  auditCrossMatrix.test.ts        # renderCrossMatrixAudit()の単体テスト
+  crossMatrixAuditCriteria.test.ts # 多軸マトリクス監査判定区分カタログ構造データの単体テスト
   idPopulationAuditCriteria.test.ts # ID母集団監査判定区分カタログ構造データの単体テスト
   thresholdChangeAnalysis.test.ts # 閾値変更影響再展開の決定的検査の共有純関数群の単体テスト
   reexpandThresholdChanges.test.ts # renderThresholdChangeReexpansion()の単体テスト
