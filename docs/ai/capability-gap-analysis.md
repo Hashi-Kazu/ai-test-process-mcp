@@ -146,7 +146,7 @@
 | 3 | ドメイン分析 | ねこにサウナ | ✅ | ✅ |
 | 4 | 4象限ペルソナ | 爆裂たまご/ねこにサウナ | ✅ | ✅ |
 | 5 | ユーザーストーリーマップ | ねこにサウナ | ✅ | ✅ |
-| 6 | RDRA等の業務ユースケースモデル | 考えるアシカ | ❌ | ❌ |
+| 6 | RDRA等の業務ユースケースモデル | 考えるアシカ | ✅ | ✅ |
 | 7 | シーケンス図（構成要素間のデータ・タイミング） | 考えるアシカ/ミックスベジタブル | ❌ | ❌ |
 | 8 | 状態遷移モデルと0/1スイッチ被覆 | Teamやま | ✅ | ✅ |
 | 9 | ガイドワードによる仕様外リスク抽出 | 考えるアシカ | ✅ | ✅ |
@@ -244,6 +244,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 - E-5 リスクフレームを重篤度4軸×発生頻度2軸＋ステークホルダ別影響行列へ拡張 → #12 #13
 - E-6 `audit_basis_contradictions`（文書間で同一対象について異なる記述をしている箇所の検出。同一ID・同一画面IDに対する記述の差分、遷移先の不一致など）→ #32
 - E-7 `analyze_cause_effect`（仕様文の論理関係を原因・結果・制約に構造化し、デシジョンテーブルへ橋渡し。B-1 の上流）→ #25 #7 ✅ 完了（#90 / `HSKZ-134`。決定的層20区分の判定カタログ `testbasis://cause-effect/analysis-criteria` 付き。`design_decision_table` への引き渡しは生成JSONを実データと照合するCEG-20まで実装済み）
+- E-8 `testcondition://business/requirement-frame` + `generate_business_requirement_model`（業務側の「システム化の目的→業務ユースケース→業務フロー→駆動する情報」4層モデルを、機能IDの章立てに従属せず再構成する。決定的層15区分 `BRC-01`〜`BRC-15` で目的↔業務ユースケースの相互紐づけ・機能ID母集団との双方向照合・宣言済み機能ID被覆率と算出値の一致・`hasStates`宣言とstates実体の照合等を検査し、`design_scenario_flows`/`design_test_data`/`audit_cross_matrix`への引き渡し表と`testcondition://persona/journey-frame`との役割分担を出力）→ #6 ✅ 完了（GitHub Issue #93 / Jira `HSKZ-137`）
 
 ### Phase F — 超えるための独自性
 

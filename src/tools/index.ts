@@ -22,6 +22,7 @@ import { registerDesignTestArchitectureTool } from "./designTestArchitecture.js"
 import { registerDesignTestDataTool } from "./designTestData.js";
 import { registerAuditCrossMatrixTool } from "./auditCrossMatrix.js";
 import { registerAuditBasisContradictionsTool } from "./auditBasisContradictions.js";
+import { registerGenerateBusinessRequirementModelTool } from "./generateBusinessRequirementModel.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -47,4 +48,5 @@ export function registerTools(server: McpServer): void {
   registerDesignTestDataTool(server);
   registerAuditCrossMatrixTool(server);
   registerAuditBasisContradictionsTool(server);
+  registerGenerateBusinessRequirementModelTool(server);
 }
