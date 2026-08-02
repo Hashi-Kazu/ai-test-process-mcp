@@ -24,7 +24,7 @@ import type {
 // analyze_requirements 固有の決定的分析ロジック。
 // 共有ユーティリティ（testBasisAnalysis.ts）を再利用し、そちらは変更しない。
 
-function headingsPerLine(content: string): string[] {
+export function headingsPerLine(content: string): string[] {
   const lines = content.split("\n");
   const headings = parseHeadings(content);
   const result: string[] = new Array(lines.length);

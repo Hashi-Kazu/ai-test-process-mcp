@@ -16,6 +16,7 @@ import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
 import { personaJourneyFrame } from "./personaJourneyFrame.js";
 import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
+import { thresholdExtractionCriteria } from "./thresholdExtractionCriteria.js";
 import { causeEffectAnalysisCriteria } from "./causeEffectCriteria.js";
 import { decisionTableAnalysisCriteria } from "./decisionTableCriteria.js";
 import { pairwiseAnalysisCriteria } from "./pairwiseCriteria.js";
@@ -370,6 +371,29 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(thresholdChangeImpactCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "threshold-extraction-criteria",
+    "testdesign://threshold/extraction-criteria",
+    {
+      title: "Threshold Extraction Criteria",
+      description:
+        "Judgment category catalog for the specification-text threshold extraction of reexpand_threshold_changes (TCE-01..TCE-07): " +
+        "undeclared extracted thresholds, declared-vs-document value or unit mismatches, declared parameters with no grounding in the documents, " +
+        "document diffs that disagree with the declared parameter diff, conflicting values inside one snapshot, approvals that match no candidate, " +
+        "and unapproved candidates that are proposed but not merged, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(thresholdExtractionCriteria, null, 2),
         },
       ],
     })

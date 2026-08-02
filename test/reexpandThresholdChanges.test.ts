@@ -224,4 +224,122 @@ describe("renderThresholdChangeReexpansion", () => {
     const second = renderThresholdChangeReexpansion(input);
     expect(first).toBe(second);
   });
+
+  it("20. omits section 0 entirely when no documents or approvals are given", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [{ name: "MAX_TICKETS", value: "10", unit: "枚" }],
+      parametersAfter: [{ name: "MAX_TICKETS", value: "20", unit: "枚" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    expect(md).not.toContain("## 0.");
+    expect(md).not.toContain("TCE-");
+  });
+
+  it("21. keeps the existing output shape unchanged when documents are omitted", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [{ name: "MAX_TICKETS", value: "10", unit: "枚" }],
+      parametersAfter: [{ name: "MAX_TICKETS", value: "20", unit: "枚" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    expect(md.split("\n")[0]).toBe("# 閾値変更の影響再展開結果");
+    expect(md.split("\n")[2]).toBe("## 1. パラメータ差分");
+    expect(md).toContain("| MAX_TICKETS | value-changed | 10 | 20 | 枚→枚 | - |");
+    expect(md.match(/^## \d\./gm)).toEqual([
+      "## 1.",
+      "## 2.",
+      "## 3.",
+      "## 4.",
+      "## 5.",
+      "## 6.",
+    ]);
+  });
+
+  it("22. renders the extracted candidate table in section 0.2 when documentsAfter is given", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [],
+      parametersAfter: [{ name: "上限枚数", value: "20", unit: "枚" }],
+      documentsAfter: [{ name: "spec.md", content: "| 上限枚数 | 20枚 |" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    const section = md.split("### 0.2")[1].split("### 0.3")[0];
+    expect(section).toContain("| 候補名 | 値 | 単位 | 出典 | 章節 | 抽出形式 |");
+    expect(section).toContain("| 上限枚数 | 20 | 枚 | spec.md:1 |");
+  });
+
+  it("23. renders the proposed before/after table in section 0.3 as value-changed and unapproved", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [],
+      parametersAfter: [],
+      documentsBefore: [{ name: "spec.md", content: "| 上限枚数 | 10枚 |" }],
+      documentsAfter: [{ name: "spec.md", content: "| 上限枚数 | 20枚 |" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    const section = md.split("### 0.3")[1].split("### 0.4")[0];
+    expect(section).toContain("value-changed");
+    expect(section).toContain("未承認");
+  });
+
+  it("24. merges an approved undeclared candidate into the effective diff table with an extraction source", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [],
+      parametersAfter: [],
+      documentsBefore: [{ name: "spec.md", content: "| 上限枚数 | 10枚 |" }],
+      documentsAfter: [{ name: "spec.md", content: "| 上限枚数 | 20枚 |" }],
+      approvedExtractions: [{ name: "上限枚数", beforeValue: "10", afterValue: "20" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    expect(md.split("### 0.3")[1].split("### 0.4")[0]).toContain("承認済み");
+    const diffSection = md.split("### 1.1")[1].split("### 1.2")[0];
+    expect(diffSection).toContain("| 上限枚数 | value-changed | 10 | 20 | 枚→枚 | 抽出:spec.md:1 |");
+  });
+
+  it("25. reports a declared value that contradicts the document as TCE-02 in section 0.4", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [],
+      parametersAfter: [{ name: "大人料金", value: "600", unit: "円" }],
+      documentsAfter: [{ name: "spec.md", content: "| 大人料金 | 400円 |" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    const section = md.split("### 0.4")[1].split("### 0.5")[0];
+    expect(section).toContain("[high] TCE-02 大人料金");
+  });
+
+  it("26. reports summary counts in 0.6 that match the rows actually rendered in 0.2 and 0.4", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [{ name: "上限枚数", value: "10", unit: "枚" }],
+      parametersAfter: [{ name: "上限枚数", value: "10", unit: "枚" }],
+      documentsBefore: [{ name: "spec.md", content: "| 上限枚数 | 10枚 |" }],
+      documentsAfter: [
+        { name: "spec.md", content: ["| 上限枚数 | 20枚 |", "- 大人料金: 400円"].join("\n") },
+      ],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+
+    const section02 = md.split("### 0.2")[1].split("### 0.3")[0];
+    const candidateRows = section02
+      .split("\n")
+      .filter((l) => l.startsWith("|") && !l.startsWith("| ---") && !l.startsWith("| 候補名"));
+    const section04 = md.split("### 0.4")[1].split("### 0.5")[0];
+    const findingRows = section04.split("\n").filter((l) => l.startsWith("- ["));
+
+    const summaryLine = md.split("### 0.6")[1].split("\n").find((l) => l.startsWith("- 抽出候補数"));
+    expect(summaryLine).toBeDefined();
+    const numbers = (summaryLine as string).match(/\d+/g)?.map(Number) as number[];
+    // 抽出候補数(前) / (後) / 未宣言 / 値不一致 / 裏付け無し宣言 / 差分不整合 / 値衝突 / 承認不一致 / 未承認 / 反映数
+    expect(numbers).toHaveLength(10);
+    expect(numbers[0] + numbers[1]).toBe(candidateRows.length);
+    expect(numbers.slice(2, 9).reduce((a, b) => a + b, 0)).toBe(findingRows.length);
+  });
+
+  it("27. emits the undeclared-threshold instruction block in section 6 when TCE-01 exists", () => {
+    const input: ReexpandThresholdChangesInput = {
+      parametersBefore: [],
+      parametersAfter: [],
+      documentsAfter: [{ name: "spec.md", content: "| 大人料金 | 400円 |" }],
+    };
+    const md = renderThresholdChangeReexpansion(input);
+    const section6 = md.split("## 6.")[1];
+    expect(section6).toContain("宣言漏れか対象外かを判断");
+    expect(section6).toContain("大人料金");
+  });
 });

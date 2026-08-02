@@ -1796,9 +1796,85 @@ export interface ThresholdChangeTestCase {
   note?: string;
 }
 
+// --- 閾値パラメータの自前抽出（Phase F-1 / documents 指定時のみ） ---
+export type ThresholdCandidateForm = "table-row" | "labeled-line";
+
+export interface ThresholdParameterCandidate {
+  name: string;
+  value: string;
+  rawValue: string;
+  unit?: string;
+  document: string;
+  lineIndex: number;
+  heading: string;
+  form: ThresholdCandidateForm;
+}
+
+export type ThresholdCandidateDiffKind = ThresholdParameterChangeKind;
+
+export type ThresholdApprovalStatus = "approved" | "unapproved" | "approval-mismatch";
+
+export interface ThresholdCandidateDiffRow {
+  name: string;
+  kind: ThresholdCandidateDiffKind;
+  beforeValue?: string;
+  afterValue?: string;
+  beforeUnit?: string;
+  afterUnit?: string;
+  beforeSource?: string;
+  afterSource?: string;
+  approval: ThresholdApprovalStatus;
+}
+
+export interface ThresholdExtractionFinding {
+  categoryId: string;
+  severity: "high" | "medium" | "info";
+  snapshot: "before" | "after" | "both";
+  name: string;
+  detail: string;
+  places: string[];
+}
+
+export interface ThresholdApprovedExtraction {
+  name: string;
+  beforeValue?: string;
+  afterValue?: string;
+  unit?: string;
+  note?: string;
+}
+
+export interface ThresholdExtractionSummary {
+  beforeCandidateCount: number;
+  afterCandidateCount: number;
+  undeclaredCount: number;
+  valueMismatchCount: number;
+  ungroundedDeclaredCount: number;
+  diffInconsistencyCount: number;
+  conflictCount: number;
+  approvalMismatchCount: number;
+  unapprovedCount: number;
+  mergedParameterCount: number;
+}
+
+export interface ThresholdExtractionCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    description: string;
+    action: string;
+  }[];
+  notes: string[];
+}
+
 export interface ReexpandThresholdChangesInput {
   parametersBefore: TestCaseParameter[];
   parametersAfter: TestCaseParameter[];
+  documentsBefore?: TestBasisDocument[];
+  documentsAfter?: TestBasisDocument[];
+  approvedExtractions?: ThresholdApprovedExtraction[];
   testConditions?: ThresholdChangeTestCondition[];
   testCases?: ThresholdChangeTestCase[];
   boundaryBindings?: ThresholdBoundaryBinding[];

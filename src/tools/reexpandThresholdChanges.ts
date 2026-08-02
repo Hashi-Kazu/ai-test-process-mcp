@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { thresholdChangeImpactCriteria } from "../resources/thresholdChangeImpactCriteria.js";
+import { thresholdExtractionCriteria } from "../resources/thresholdExtractionCriteria.js";
 import {
   buildBoundaryReexpansion,
   buildEquivalenceReexpansion,
@@ -10,10 +11,21 @@ import {
   diffThresholdParameters,
   summarizeThresholdChange,
 } from "../thresholdChangeAnalysis.js";
+import {
+  analyzeThresholdExtraction,
+  renderThresholdExtractionLines,
+} from "../thresholdExtraction.js";
+import {
+  buildDocumentDigests,
+  findDocumentDigestFindings,
+  renderDocumentDigestLines,
+} from "../documentDigest.js";
 import type {
   ReexpandThresholdChangesInput,
   ThresholdChangeFinding,
   ThresholdChangeImpactCriteria,
+  ThresholdExtractionCriteria,
+  ThresholdExtractionFinding,
 } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -24,43 +36,85 @@ function findingsByCategory(findings: ThresholdChangeFinding[], categoryId: stri
   return findings.filter((f) => f.categoryId === categoryId);
 }
 
+function extractionFindingsByCategory(
+  findings: ThresholdExtractionFinding[],
+  categoryId: string
+): ThresholdExtractionFinding[] {
+  return findings.filter((f) => f.categoryId === categoryId);
+}
+
 export function renderThresholdChangeReexpansion(
   input: ReexpandThresholdChangesInput,
-  criteria: ThresholdChangeImpactCriteria = thresholdChangeImpactCriteria
+  criteria: ThresholdChangeImpactCriteria = thresholdChangeImpactCriteria,
+  extractionCriteria: ThresholdExtractionCriteria = thresholdExtractionCriteria
 ): string {
   const testConditions = input.testConditions ?? [];
   const testCases = input.testCases ?? [];
   const boundaryBindings = input.boundaryBindings ?? [];
   const equivalenceBindings = input.equivalenceBindings ?? [];
 
-  const diffRows = diffThresholdParameters(input.parametersBefore, input.parametersAfter);
-  const references = buildParameterReferenceIndex(input, diffRows);
+  // 1. documents があれば候補抽出・突合・候補差分・承認検証を行う
+  const extraction = analyzeThresholdExtraction({
+    parametersBefore: input.parametersBefore,
+    parametersAfter: input.parametersAfter,
+    documentsBefore: input.documentsBefore,
+    documentsAfter: input.documentsAfter,
+    approvedExtractions: input.approvedExtractions,
+  });
+
+  // 2. 実効パラメータ表（承認された候補のみが追記される。宣言値は上書きしない）
+  const effectiveBefore = extraction.effectiveBefore;
+  const effectiveAfter = extraction.effectiveAfter;
+  const effectiveInput: ReexpandThresholdChangesInput = {
+    ...input,
+    parametersBefore: effectiveBefore,
+    parametersAfter: effectiveAfter,
+  };
+
+  // 3. 既存の決定的層は実効パラメータ表に対して実行する
+  const diffRows = diffThresholdParameters(effectiveBefore, effectiveAfter);
+  const references = buildParameterReferenceIndex(effectiveInput, diffRows);
   const { rows: boundaryRows, issues: boundaryIssues } = buildBoundaryReexpansion(
     boundaryBindings,
-    input.parametersBefore,
-    input.parametersAfter,
+    effectiveBefore,
+    effectiveAfter,
     input.boundaryMode ?? "three"
   );
   const { rows: equivalenceRows, issues: equivalenceIssues } = buildEquivalenceReexpansion(
     equivalenceBindings,
-    input.parametersBefore,
-    input.parametersAfter
+    effectiveBefore,
+    effectiveAfter
   );
   const bindingIssues = [...boundaryIssues, ...equivalenceIssues];
   const findings = buildThresholdChangeFindings(
-    input,
+    effectiveInput,
     diffRows,
     references,
     boundaryRows,
     equivalenceRows,
     bindingIssues
   );
-  const impacted = buildImpactedArtifacts(input, findings);
+  const impacted = buildImpactedArtifacts(effectiveInput, findings);
   const summary = summarizeThresholdChange(diffRows, boundaryRows, equivalenceRows, findings, impacted);
 
   const lines: string[] = [];
   lines.push("# 閾値変更の影響再展開結果");
   lines.push("");
+
+  // --- 0. 投入文書と閾値の自前抽出（documents 指定時のみ） ---
+  if (extraction.enabled) {
+    const digestFor = (documents: ReexpandThresholdChangesInput["documentsBefore"]): string[] => {
+      if (!documents) return [];
+      const rows = buildDocumentDigests(documents);
+      return renderDocumentDigestLines(rows, findDocumentDigestFindings(rows));
+    };
+    for (const l of renderThresholdExtractionLines(extraction, extractionCriteria, {
+      before: digestFor(input.documentsBefore),
+      after: digestFor(input.documentsAfter),
+    })) {
+      lines.push(l);
+    }
+  }
 
   // --- 1. パラメータ差分 ---
   lines.push("## 1. パラメータ差分");
@@ -320,6 +374,42 @@ export function renderThresholdChangeReexpansion(
     lines.push("");
   }
 
+  if (extraction.enabled) {
+    const extractionBlocks: { categoryId: string; heading: string }[] = [
+      {
+        categoryId: "TCE-01",
+        heading:
+          "以下の文書中の閾値がパラメータ表に宣言されていない。宣言漏れか対象外かを判断し、対象なら parametersBefore/parametersAfter へ追加して再実行すること:",
+      },
+      {
+        categoryId: "TCE-02",
+        heading:
+          "以下は宣言値と仕様書記載値が食い違っている。どちらが正かを確定してから再展開すること:",
+      },
+      {
+        categoryId: "TCE-04",
+        heading:
+          "以下は文書差分と宣言差分が一致していない。反映漏れか抽出の取りこぼしかを確認すること:",
+      },
+      {
+        categoryId: "TCE-07",
+        heading:
+          "以下の抽出候補は未承認のため再展開に反映していない。新旧対照表を確認し、承認するものを approvedExtractions へ渡して再実行すること:",
+      },
+    ];
+    for (const block of extractionBlocks) {
+      const items = extractionFindingsByCategory(extraction.findings, block.categoryId);
+      if (items.length === 0) continue;
+      anyInstruction = true;
+      lines.push(block.heading);
+      lines.push("");
+      for (const f of items) {
+        lines.push(`- ${escapeCell(f.name)}: ${escapeCell(f.detail)}`);
+      }
+      lines.push("");
+    }
+  }
+
   if (!anyInstruction) {
     lines.push(
       "- 追加の対応指示なし。再展開後の網羅対象IDで generate_test_cases を再実行し、網羅率が維持されていることを確認すること。"
@@ -355,8 +445,47 @@ export const reexpandThresholdChangesInputShape = {
     .describe("Threshold parameter table snapshot before the change; empty array means all parameters are additions"),
   parametersAfter: z
     .array(parameterShape)
-    .min(1)
     .describe("Threshold parameter table snapshot after the change"),
+  documentsBefore: z
+    .array(
+      z.object({
+        name: z.string().describe("Document name shown in the digest and in extraction sources"),
+        content: z
+          .string()
+          .describe("Full raw text of the specification before the change; free text, format agnostic"),
+      })
+    )
+    .optional()
+    .describe(
+      "Specification texts before the change. Threshold parameter candidates are extracted from them and cross-checked against parametersBefore"
+    ),
+  documentsAfter: z
+    .array(
+      z.object({
+        name: z.string().describe("Document name shown in the digest and in extraction sources"),
+        content: z
+          .string()
+          .describe("Full raw text of the specification after the change; free text, format agnostic"),
+      })
+    )
+    .optional()
+    .describe(
+      "Specification texts after the change. Threshold parameter candidates are extracted from them and cross-checked against parametersAfter"
+    ),
+  approvedExtractions: z
+    .array(
+      z.object({
+        name: z.string().describe("Extracted candidate name being approved"),
+        beforeValue: z.string().optional().describe("Approved before-snapshot value, must equal the extracted value"),
+        afterValue: z.string().optional().describe("Approved after-snapshot value, must equal the extracted value"),
+        unit: z.string().optional(),
+        note: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe(
+      "Human approvals for extracted threshold candidates. Only approved candidates are merged into the effective parameter tables; unapproved candidates stay proposals and never affect the re-expansion. Declared parameter values are never overwritten"
+    ),
   testConditions: z
     .array(
       z.object({
@@ -426,7 +555,8 @@ export function registerReexpandThresholdChangesTool(server: McpServer): void {
       description:
         "閾値パラメータ表の変更前後2スナップショットを突き合わせ、変更が既存のテスト条件・テストケース・網羅対象へ与える影響を決定的に洗い出す。" +
         "パラメータ名に束縛した境界値変数・同値クラスは新旧それぞれで再展開し、網羅対象ID（BV:/EP:）の変化・失効を差分表として提示する。" +
-        "旧値の直値残存、失効した網羅対象ID参照、名前参照経由で再確認が必要なケースを区分付きで列挙し、成果物の再生成指示を返す。",
+        "旧値の直値残存、失効した網羅対象ID参照、名前参照経由で再確認が必要なケースを区分付きで列挙し、成果物の再生成指示を返す。" +
+        "変更前後の仕様書テキストを渡すと閾値パラメータを文書から自前抽出して宣言表と突合し、新旧対照表を提案として提示する（承認された候補のみが再展開へ反映される二段構成）。",
       inputSchema: reexpandThresholdChangesInputShape,
     },
     async (input) => ({
