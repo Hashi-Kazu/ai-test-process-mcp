@@ -2475,3 +2475,160 @@ export interface CrossMatrixAuditCriteria {
   categories: CrossMatrixAuditCriteriaCategory[];
   notes: string[];
 }
+
+// --- テストベース仕様矛盾監査（audit_basis_contradictions） ---
+export interface BasisContradictionOptions {
+  idPatterns?: string[];
+  relativeTargetTerms?: string[];
+}
+
+export interface BasisLine {
+  document: string;
+  lineIndex: number; // 0-based, 元 content の行番号（結合時は先頭行のindex）
+  heading: string;
+  raw: string; // 元行（結合済み）
+  normalized: string; // NFKC正規化 + 全空白除去
+  currentId: string | null; // 直近に開始したID区画
+}
+
+export interface BasisEntityOccurrence {
+  id: string;
+  document: string;
+  lineIndex: number;
+  heading: string;
+  name: string;
+  source: "list-row" | "section-heading" | "inline";
+}
+export interface BasisUiElement {
+  id: string | null;
+  document: string;
+  lineIndex: number;
+  label: string;
+  elementKind: string;
+  source: "quoted" | "table-row";
+}
+export interface BasisTransition {
+  sourceId: string | null;
+  document: string;
+  lineIndex: number;
+  trigger: string;
+  targetId: string | null;
+  targetName: string;
+  targetKind: "id" | "name" | "relative";
+}
+export interface BasisParameterValue {
+  document: string;
+  lineIndex: number;
+  heading: string;
+  parameter: string;
+  unit: string;
+  raw: string;
+  value: number | null;
+}
+export interface BasisRevisionClaim {
+  document: string;
+  lineIndex: number;
+  version: string;
+  date: string;
+  text: string;
+  beforeValue?: string;
+  afterValue?: string;
+}
+
+export type ContradictionCheckId =
+  | "BC-01"
+  | "BC-02"
+  | "BC-03"
+  | "BC-04"
+  | "BC-05"
+  | "BC-06"
+  | "BC-07"
+  | "BC-08"
+  | "BC-09"
+  | "BC-10";
+export type ContradictionConfidence = "high" | "medium" | "low";
+
+export interface ContradictionPlace {
+  document: string;
+  lineIndex: number;
+  heading: string;
+  snippet: string; // raw を80字で切って「…」
+}
+export interface BasisContradictionCandidate {
+  no: string; // "BC-001" 連番
+  checkId: ContradictionCheckId;
+  confidence: ContradictionConfidence;
+  subject: string;
+  summary: string;
+  differingValues: string[];
+  places: ContradictionPlace[];
+  question: string;
+  assumption: string;
+}
+
+export interface BasisDeclaredEntity {
+  id: string;
+  name: string;
+  kind?: string;
+  sourceDocument?: string;
+}
+export interface BasisKnownResolved {
+  subject: string;
+  reason: string;
+}
+
+export type BasisDeclarationReconciliationStatus =
+  | "matched"
+  | "declared-only"
+  | "actual-only"
+  | "name-mismatch";
+export interface BasisDeclarationReconciliationRow {
+  id: string;
+  declaredName?: string;
+  actualName?: string;
+  status: BasisDeclarationReconciliationStatus;
+  confidence: ContradictionConfidence;
+  document?: string;
+  lineIndex?: number;
+}
+
+export type BasisRevisionReconciliationStatus = "residual" | "resolved";
+export interface BasisRevisionReconciliationRow {
+  document: string;
+  lineIndex: number;
+  version: string;
+  date: string;
+  beforeValue: string;
+  afterValue: string;
+  status: BasisRevisionReconciliationStatus;
+}
+
+export interface BasisContradictionSummary {
+  byCheckId: Record<string, number>;
+  byConfidence: Record<string, number>;
+  documentCount: number;
+  totalCandidates: number;
+}
+
+export interface AuditBasisContradictionsInput {
+  documents: TestBasisDocument[];
+  declaredEntities?: BasisDeclaredEntity[];
+  knownResolved?: BasisKnownResolved[];
+  idPatterns?: string[];
+  relativeTargetTerms?: string[];
+  minConfidence?: ContradictionConfidence;
+}
+
+export interface BasisContradictionCriteriaCategory {
+  id: ContradictionCheckId;
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+export interface BasisContradictionCriteria {
+  name: string;
+  summary: string;
+  categories: BasisContradictionCriteriaCategory[];
+  notes: string[];
+}
