@@ -20,6 +20,7 @@ import { registerDesignConfigMatrixTool } from "./designConfigMatrix.js";
 import { registerDesignScenarioFlowsTool } from "./designScenarioFlows.js";
 import { registerDesignTestArchitectureTool } from "./designTestArchitecture.js";
 import { registerDesignTestDataTool } from "./designTestData.js";
+import { registerAuditCrossMatrixTool } from "./auditCrossMatrix.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -43,4 +44,5 @@ export function registerTools(server: McpServer): void {
   registerDesignScenarioFlowsTool(server);
   registerDesignTestArchitectureTool(server);
   registerDesignTestDataTool(server);
+  registerAuditCrossMatrixTool(server);
 }

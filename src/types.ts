@@ -2274,3 +2274,128 @@ export interface TestDataDesignCriteria {
   categories: TestDataDesignCriteriaCategory[];
   notes: string[];
 }
+
+// --- 多軸マトリクス監査(audit_cross_matrix) ---
+export interface CrossMatrixAxisItem {
+  id: string;                 // 全軸を通じて一意であること(重複は CMX-02 で検出)
+  label?: string;             // 表示名。未指定なら id を表示に使う
+  links?: string[];           // 他軸の item.id の列挙。自軸内IDの参照は CMX-05 で検出
+}
+export interface CrossMatrixAxisSpec {
+  axisId: string;             // 軸ID。例 "RISK" / "PERSPECTIVE"
+  axisName: string;           // 軸名。例 "プロダクトリスク"
+  items: CrossMatrixAxisItem[];
+}
+export interface CrossMatrixAxisPairSpec {
+  axisA: string;
+  axisB: string;
+}
+
+export interface CrossMatrixDeclaredCoverage {
+  axisA: string;
+  axisB: string;
+  claimedFillRatePercent?: number;   // 宣言された充填率(セル基準)
+  claimedRowCoveragePercent?: number;
+  claimedColumnCoveragePercent?: number;
+  claimedNoEmptyCells?: boolean;     // 「空セルなし」と宣言したか
+  note?: string;
+}
+export interface CrossMatrixExclusion {
+  axisId: string;
+  itemId: string;
+  pairedAxisId?: string;   // 省略時は全ペアで空行/空列を許容
+  reason?: string;         // 未記入自体を CMX-07[high] で検出するため optional
+}
+export interface CrossMatrixAxisPopulation {
+  axisId: string;
+  ids: string[];
+}
+
+export interface AuditCrossMatrixInput {
+  axes: CrossMatrixAxisSpec[];                        // 2件以上
+  axisPairs?: CrossMatrixAxisPairSpec[];              // 省略時は全組合せ
+  declaredCoverage?: CrossMatrixDeclaredCoverage[];
+  exclusions?: CrossMatrixExclusion[];
+  expectedAxisPopulations?: CrossMatrixAxisPopulation[];
+  documents?: TestBasisDocument[];
+  idPatterns?: string[];
+  maxCellCount?: number;                              // 既定 20000
+}
+
+export type CrossMatrixCellState = "filled" | "empty" | "excluded";
+export interface CrossMatrixCell {
+  rowItemId: string;
+  columnItemId: string;
+  state: CrossMatrixCellState;
+  /** 紐づけの宣言方向。"a-to-b" | "b-to-a" | "both" | "none" */
+  direction: "a-to-b" | "b-to-a" | "both" | "none";
+}
+export interface CrossMatrixEmptyLine {
+  axisId: string;
+  itemId: string;
+  label: string;
+  pairedAxisId: string;
+  excluded: boolean;
+  exclusionReason?: string;
+}
+export interface CrossMatrixPairResult {
+  axisA: string;
+  axisAName: string;
+  axisB: string;
+  axisBName: string;
+  generated: boolean;
+  skipReason?: string;                 // maxCellCount 超過など
+  rowCount: number;
+  columnCount: number;
+  totalCellCount: number;              // rowCount * columnCount
+  filledCellCount: number;
+  cellFillRatePercent: number;         // filled / total、小数第1位
+  targetRowCount: number;              // rowCount - 除外行数
+  coveredRowCount: number;
+  rowCoverageRatePercent: number;      // covered / target
+  targetColumnCount: number;
+  coveredColumnCount: number;
+  columnCoverageRatePercent: number;
+  cells: CrossMatrixCell[];            // 行優先。generated=false のとき空配列
+  emptyRows: CrossMatrixEmptyLine[];
+  emptyColumns: CrossMatrixEmptyLine[];
+}
+export interface CrossMatrixFinding {
+  categoryId: string;                  // "CMX-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+export interface CrossMatrixSummary {
+  axisCount: number;
+  pairCount: number;
+  generatedPairCount: number;
+  totalItemCount: number;
+  isolatedItemCount: number;           // どの他軸とも1件も紐づかない要素
+  emptyRowTotal: number;               // 除外を除いた合計
+  emptyColumnTotal: number;
+  excludedLineTotal: number;
+  overallCellFillRatePercent: number;  // 生成済みペアの filled 合計 / total 合計
+  findingTotal: number;
+  highFindingTotal: number;
+}
+export interface CrossMatrixAuditResult {
+  axes: CrossMatrixAxisSpec[];
+  pairs: CrossMatrixPairResult[];
+  isolatedItems: { axisId: string; itemId: string; label: string }[];
+  findings: CrossMatrixFinding[];
+  summary: CrossMatrixSummary;
+}
+export interface CrossMatrixAuditCriteriaCategory {
+  id: string;
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+export interface CrossMatrixAuditCriteria {
+  name: string;
+  summary: string;
+  categories: CrossMatrixAuditCriteriaCategory[];
+  notes: string[];
+}
