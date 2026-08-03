@@ -44,7 +44,7 @@ describe("testTechniqueCatalog", () => {
     }
   });
 
-  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, pairwise, use-case-based, scenario-based, data-lifecycle-test, and config-matrix as deterministic", () => {
+  it("only marks boundary-value-analysis, equivalence-partitioning, decision-table, state-transition, pairwise, use-case-based, scenario-based, data-lifecycle-test, config-matrix, and regression-selection as deterministic", () => {
     const deterministicIds = testTechniqueCatalog.entries.filter((e) => e.deterministic).map((e) => e.techniqueId);
     expect(new Set(deterministicIds)).toEqual(
       new Set([
@@ -57,8 +57,18 @@ describe("testTechniqueCatalog", () => {
         "scenario-based",
         "data-lifecycle-test",
         "config-matrix",
+        "regression-selection",
       ])
     );
+  });
+
+  it("routes regression-selection (TTK-17) to select_regression_suite deterministically", () => {
+    const entry = testTechniqueCatalog.entries.find((e) => e.id === "TTK-17");
+    expect(entry?.techniqueId).toBe("regression-selection");
+    expect(entry?.engineToolName).toBe("select_regression_suite");
+    expect(entry?.deterministic).toBe(true);
+    expect(entry?.note).toContain("select_regression_suite");
+    expect(entry?.note).not.toContain("未実装");
   });
 
   it("routes data-lifecycle-test (TTK-08) to design_test_data deterministically", () => {

@@ -342,9 +342,13 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
         },
       ],
       requiredInputs: ["変更箇所", "影響範囲の分析結果(依存する機能・データ)", "既存ケースからの再利用対象"],
-      deterministic: false,
+      deterministic: true,
+      engineToolName: "select_regression_suite",
       selectionRationale: "変更差分から影響範囲を特定し、全件再実行ではなく絞り込んで確認したい場合に選ぶ。",
-      note: "影響範囲の自動生成エンジンは未実装。additionalCoverageTargets で影響範囲単位の網羅対象を宣言する運用とする。",
+      note:
+        "select_regression_suite が、テスト条件・テストケースの母集団に対する選択(残す/落とす)判定の理由列挙・" +
+        "非選択となった高リスク項目の明示・テストサイズ分布と推定実行時間・前バージョンスイートとの差分と削除理由・" +
+        "変更差分区分(RA-CHANGE)への未紐づけ検出を決定的に行う。判定区分カタログは testdesign://regression-selection/analysis-criteria。",
     },
   ],
   selectionTable: [

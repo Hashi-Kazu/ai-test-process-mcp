@@ -2839,3 +2839,160 @@ export interface BusinessRequirementMissingRequiredAspect {
   id: string;
   missingAspectIds: string[];
 }
+
+// --- リグレッションスイート選択(select_regression_suite) ---
+export type RegressionItemKind = "condition" | "case";
+export type RegressionSelectionAxis = "risk" | "test-size" | "change-diff" | "other";
+export type RegressionSelectionDecisionValue = "include" | "exclude";
+
+export interface RegressionSuiteTestConditionInput {
+  id: string;
+  statement?: string;
+  target?: string;
+  perspectiveCategoryId?: string;
+  priority?: TestConditionPriority;
+  impact?: number;
+  likelihood?: number;
+  changeCategory?: RequirementsChangeCategory; // RA-CHANGE 4区分
+  containerId?: string; // design_test_architecture の TCN-xx。表示のみ
+}
+
+export interface RegressionSuiteTestCaseInput {
+  caseId: string;
+  title?: string;
+  testConditionId?: string;
+  testLevel?: TestLevelId;
+  externalDependencyIds?: string[];
+  estimatedDurationSeconds?: number;
+  declaredTestSize?: TestSizeId;
+}
+
+export interface RegressionSelectionCriterionInput {
+  id: string;
+  statement: string;
+  axis?: RegressionSelectionAxis;
+}
+
+export interface RegressionSelectionDecisionInput {
+  itemKind: RegressionItemKind;
+  itemId: string;
+  decision: RegressionSelectionDecisionValue;
+  reason?: string;
+  criterionIds?: string[];
+  note?: string;
+}
+
+export interface RegressionPreviousSuiteItem {
+  itemKind: RegressionItemKind;
+  itemId: string;
+}
+export interface RegressionPreviousSuiteInput {
+  suiteId?: string;
+  items: RegressionPreviousSuiteItem[];
+}
+
+export interface RegressionRemovalReasonInput {
+  itemKind: RegressionItemKind;
+  itemId: string;
+  reason: string;
+  approvedBy?: string;
+}
+
+export interface RegressionSelectionSpec {
+  suiteId?: string;
+  title?: string;
+  testConditions: RegressionSuiteTestConditionInput[]; // 1件以上
+  testCases?: RegressionSuiteTestCaseInput[];
+  selectionCriteria?: RegressionSelectionCriterionInput[];
+  selections?: RegressionSelectionDecisionInput[];
+  previousSuite?: RegressionPreviousSuiteInput;
+  removalReasons?: RegressionRemovalReasonInput[];
+  executionTimeBudgetSeconds?: number;
+  claimedImpactScopeCoveragePercent?: number;
+  highRiskMinScore?: number; // 既定 riskAnalysisFrame.bands の R1.minScore
+  maxItems?: number; // 既定 DEFAULT_MAX_REGRESSION_ITEMS
+}
+
+// --- 決定的検査の結果型(select_regression_suite, RSC-01..RSC-20) ---
+export interface RegressionSuiteFinding {
+  categoryId: string; // "RSC-01" 形式
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+
+export type RegressionSuiteItemDecision = "include" | "exclude" | "undecided";
+
+export interface RegressionSuiteItemRow {
+  itemKind: RegressionItemKind;
+  itemId: string;
+  label: string;
+  changeCategory?: RequirementsChangeCategory;
+  inheritedFrom?: string; // itemKind="case" かつ testConditionId が母集団条件に一致した場合の継承元条件ID
+  riskScore?: number; // impact・likelihood 双方が揃うときのみ算出
+  riskBandId?: string;
+  priority?: TestConditionPriority;
+  classifiedSize?: TestSizeId; // itemKind="case" のみ
+  decidingFactor?: TestSizeDecidingFactor; // itemKind="case" のみ
+  durationSeconds?: number; // itemKind="case" のみ
+  isHighRisk: boolean;
+  decision: RegressionSuiteItemDecision;
+  reason?: string;
+  criterionIds: string[];
+}
+
+export type RegressionSuiteDurationBasis = "computed" | "partial" | "unavailable";
+export type RegressionSuiteBudgetVerdict = "within" | "over";
+
+export type RegressionSuiteDiffKind = "added" | "removed" | "kept";
+export interface RegressionSuiteDiffItem {
+  itemKind: RegressionItemKind;
+  itemId: string;
+  kind: RegressionSuiteDiffKind;
+  removalReason?: string;
+  approvedBy?: string;
+}
+
+export type RegressionSuiteCoverageBasis = "computed" | "unavailable";
+export interface RegressionSuiteCoverage {
+  basis: RegressionSuiteCoverageBasis;
+  denominator: number;
+  numerator?: number;
+  percent?: number;
+  reason?: string; // basis="unavailable" のときの理由
+  claimedPercent?: number;
+  claimMismatch: boolean;
+}
+
+export interface RegressionSuiteResult {
+  suiteId: string;
+  generated: boolean;
+  skipReason?: string;
+  items: RegressionSuiteItemRow[];
+  includedItems: RegressionSuiteItemRow[];
+  excludedItems: RegressionSuiteItemRow[];
+  excludedHighRiskItems: RegressionSuiteItemRow[];
+  undecidedItems: RegressionSuiteItemRow[];
+  sizeDistribution: TestSizeDistributionRow[]; // 選択された case が対象
+  unclassifiableSelectedCaseCount: number;
+  estimatedTotalSeconds?: number;
+  durationBasis: RegressionSuiteDurationBasis;
+  budgetVerdict?: RegressionSuiteBudgetVerdict;
+  diff?: RegressionSuiteDiffItem[]; // previousSuite 指定時のみ
+  coverage: RegressionSuiteCoverage;
+  findings: RegressionSuiteFinding[];
+}
+
+// resource 型
+export interface RegressionSelectionAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    definition: string;
+    recommendedAction: string;
+  }[];
+  notes: string[];
+}
