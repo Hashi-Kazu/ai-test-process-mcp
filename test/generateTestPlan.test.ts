@@ -264,6 +264,95 @@ describe("HSKZ-103: testingTasksFlow / staffingAndTraining / projectRisks / revi
   });
 });
 
+describe("HSKZ-127: sloTargets / monitoringPlan / executionOrderPlan (sections 6.6 / 9.4 / 13.3)", () => {
+  it("renders sloTargets as a table in section 6.6", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      sloTargets: [{ metric: "Defect escape rate", comparator: "<=", threshold: "1", unit: "% per release" }],
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 6.6 品質目標(SLO)・実施前合格基準");
+    const sectionEnd = markdown.indexOf("## 7", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("Defect escape rate");
+    expect(section).toContain("<=");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("marks section 6.6 as 未記入 when sloTargets is omitted", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Scope" };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 6.6 品質目標(SLO)・実施前合格基準");
+    const sectionEnd = markdown.indexOf("## 7", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("_未記入_");
+  });
+
+  it("renders monitoringPlan as a bulleted list with items and participants in section 9.4", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      monitoringPlan: [{ timing: "Daily standup", reviewItems: ["Progress", "Blockers"], participants: ["Test Lead"] }],
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 9.4 モニタリング計画");
+    const sectionEnd = markdown.indexOf("## 10", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("Daily standup");
+    expect(section).toContain("Progress");
+    expect(section).toContain("Test Lead");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("marks section 9.4 as 未記入 when monitoringPlan is omitted", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Scope" };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 9.4 モニタリング計画");
+    const sectionEnd = markdown.indexOf("## 10", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("_未記入_");
+  });
+
+  it("renders executionOrderPlan as a table in section 13.3", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Scope",
+      executionOrderPlan: [
+        { nodeId: "TCN-01", nameJa: "Checkout container", dependsOn: [], durationHours: 4, isCritical: true },
+      ],
+    };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 13.3 実行順序・依存関係");
+    const sectionEnd = markdown.indexOf("## 14", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("TCN-01");
+    expect(section).toContain("Checkout container");
+    expect(section).not.toContain("_未記入_");
+  });
+
+  it("marks section 13.3 as 未記入 when executionOrderPlan is omitted", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Scope" };
+    const markdown = renderTestPlan(input);
+
+    const sectionStart = markdown.indexOf("### 13.3 実行順序・依存関係");
+    const sectionEnd = markdown.indexOf("## 14", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+
+    expect(section).toContain("_未記入_");
+  });
+});
+
 describe("sectionContent coverage (issue #17 / HSKZ-84)", () => {
   // renderTestPlan() 内の hasChildren 判定と同一ロジック。
   // level 1 の章に子(level 2)がある場合のみ見出しのみで本文なし＝非leaf。
@@ -365,6 +454,15 @@ describe("sectionContent coverage (issue #17 / HSKZ-84)", () => {
     metricsNote: "Track defect discovery rate weekly",
     testDataRequirements: [
       { description: "Valid and invalid payment card data set", owner: "QA Team", period: "Prepared before test start" },
+    ],
+    sloTargets: [
+      { metric: "Defect escape rate", comparator: "<=", threshold: "1", unit: "% per release" },
+    ],
+    monitoringPlan: [
+      { timing: "Daily standup", reviewItems: ["Progress", "Blockers"], participants: ["Test Lead"] },
+    ],
+    executionOrderPlan: [
+      { nodeId: "TCN-01", nameJa: "Checkout container", dependsOn: [], durationHours: 4, isCritical: true },
     ],
   };
 

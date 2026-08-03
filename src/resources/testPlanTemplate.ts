@@ -158,6 +158,15 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: false,
       guidance: "質問事項の重要度の判定基準を記述する。",
     },
+    {
+      id: "slo-targets",
+      no: "6.6",
+      titleJa: "品質目標(SLO)・実施前合格基準",
+      level: 2,
+      required: false,
+      fieldKey: "sloTargets",
+      guidance: "テスト実施前に合意する品質目標(SLO)と、測定可能な合格基準(指標・比較演算・閾値・単位)を記述する。",
+    },
 
     {
       id: "suspension-resumption-criteria",
@@ -204,6 +213,15 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: false,
       fieldKey: "metricsNote",
       guidance: "テスト中に収集・分析するメトリクスを記述する。",
+    },
+    {
+      id: "monitoring-plan",
+      no: "9.4",
+      titleJa: "モニタリング計画",
+      level: 2,
+      required: false,
+      fieldKey: "monitoringPlan",
+      guidance: "テスト実施期間中のレビュー・進捗確認のタイミングと、その時点で確認する指標・参加者を記述する。",
     },
 
     { id: "environmental-needs", no: "10", titleJa: "環境", level: 1, required: false },
@@ -273,6 +291,17 @@ export const testPlanTemplate: TestPlanTemplate = {
       required: true,
       fieldKey: "scheduleConstraints",
       guidance: "主要な日程・マイルストーンを記述する。",
+    },
+    {
+      id: "execution-order-plan",
+      no: "13.3",
+      titleJa: "実行順序・依存関係",
+      level: 2,
+      required: false,
+      fieldKey: "executionOrderPlan",
+      guidance:
+        "テストコンテナ／スイート間の依存関係・実行順序・クリティカルパス・必要リソースを記述する。" +
+        "analyze_execution_order の出力を転記してよい。",
     },
 
     { id: "risks-and-contingencies", no: "14", titleJa: "リスク・対策", level: 1, required: false },

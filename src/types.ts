@@ -124,6 +124,29 @@ export interface TestPlanReferenceDoc {
   description?: string;
 }
 
+export interface TestPlanSloTarget {
+  metric: string;
+  comparator?: string;
+  threshold?: string;
+  unit?: string;
+  note?: string;
+}
+
+export interface TestPlanMonitoringCheckpoint {
+  timing: string;
+  reviewItems?: string[];
+  participants?: string[];
+}
+
+export interface TestPlanExecutionOrderItem {
+  nodeId: string;
+  nameJa?: string;
+  dependsOn?: string[];
+  durationHours?: number;
+  requiredResources?: string[];
+  isCritical?: boolean;
+}
+
 export type ReviewSeverity = "high" | "medium" | "low";
 
 export interface TestPlanReviewCheckItem {
@@ -177,6 +200,9 @@ export interface TestPlanInput {
   staffingAndTraining?: TestPlanStaffingTraining;
   projectRisks?: TestPlanRisk[];
   revisions?: TestPlanRevisionRow[];
+  sloTargets?: TestPlanSloTarget[];
+  monitoringPlan?: TestPlanMonitoringCheckpoint[];
+  executionOrderPlan?: TestPlanExecutionOrderItem[];
 }
 
 // --- Test Design 技法 ---
@@ -2985,6 +3011,166 @@ export interface RegressionSuiteResult {
 
 // resource 型
 export interface RegressionSelectionAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    definition: string;
+    recommendedAction: string;
+  }[];
+  notes: string[];
+}
+
+// --- テスト実行順序分析(analyze_execution_order) ---
+export type ExecutionDependencyBasisKind = "artifact" | "resource" | "data" | "other";
+export type ExecutionResourceKind = "device" | "environment" | "person" | "other";
+
+export interface ExecutionResourceInput {
+  id: string; // "RES-01" 形式。入力全体で一意
+  nameJa: string;
+  kind: ExecutionResourceKind;
+  capacity?: number; // 既定 1（同時に使える上限）
+  note?: string;
+}
+
+export interface ExecutionDependencyInput {
+  fromId: string; // 先行ノードID
+  basisKind?: ExecutionDependencyBasisKind;
+  basisRef?: string; // basisKind に応じた実体ID
+  reason?: string;
+}
+
+export interface ExecutionResourceRequirementInput {
+  resourceId: string;
+  amount?: number; // 既定 1
+}
+
+export interface ExecutionNodeInput {
+  id: string; // TCN-xx 等。入力全体で一意
+  nameJa?: string;
+  kind?: "container" | "suite" | "case"; // 既定 "container"
+  durationHours?: number; // 未指定は EOC-09
+  dependsOn?: ExecutionDependencyInput[]; // undefined は EOC-09/EOC-05、[] は「依存なし」の明示
+  requiredResources?: ExecutionResourceRequirementInput[]; // undefined は EOC-10
+  producedArtifactIds?: string[]; // basisKind:"artifact" の実体照合に使う
+  priorityClass?: TestContainerPriorityClass;
+  note?: string;
+}
+
+export interface ExecutionSloInput {
+  id: string; // "SLO-01"
+  metric: string;
+  comparator: "<=" | ">=" | "==" | "<" | ">";
+  threshold: number;
+  unit: string;
+  source?: string;
+}
+
+export interface ExecutionExitCriterionInput {
+  id: string; // "EXC-01"
+  statement: string;
+  sloIds?: string[];
+}
+
+export interface ExecutionMonitoringCheckpointInput {
+  id: string; // "MON-01"
+  nameJa: string;
+  atHour?: number;
+  afterNodeIds?: string[];
+  reviewItems: string[];
+  sloIds?: string[];
+  exitCriterionIds?: string[];
+  participants?: string[];
+}
+
+export interface ExecutionOrderSpec {
+  planId?: string; // 既定 DEFAULT_EXECUTION_PLAN_ID
+  title?: string;
+  nodes: ExecutionNodeInput[]; // 1件以上
+  resources?: ExecutionResourceInput[];
+  dataItemIds?: string[]; // basisKind:"data" の実体照合用母集団
+  architectureContainerIds?: string[]; // design_test_architecture のコンテナ母集団
+  slos?: ExecutionSloInput[];
+  exitCriteria?: ExecutionExitCriterionInput[];
+  monitoringCheckpoints?: ExecutionMonitoringCheckpointInput[];
+  maxParallelism?: number;
+  claimedCriticalPathNodeIds?: string[];
+  claimedTotalDurationHours?: number;
+  claimedPlannedContainerCoveragePercent?: number;
+  maxNodes?: number; // 既定 DEFAULT_MAX_EXECUTION_NODES
+}
+
+export interface ExecutionOrderFinding {
+  categoryId: string; // "EOC-01" 形式
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+
+export interface ExecutionScheduleRow {
+  nodeId: string;
+  label: string;
+  order: number; // トポロジカル順の 1 始まり連番
+  wave: number; // 0 始まりの並列可能グループ
+  durationHours?: number;
+  earliestStartHours?: number;
+  earliestFinishHours?: number;
+  latestStartHours?: number;
+  latestFinishHours?: number;
+  slackHours?: number;
+  isCritical: boolean;
+  predecessorIds: string[];
+  successorIds: string[];
+  requiredResourceIds: string[];
+}
+
+export interface ExecutionResourceConflictRow {
+  resourceId: string;
+  fromHours: number;
+  toHours: number;
+  requestedAmount: number;
+  capacity: number;
+  nodeIds: string[];
+}
+
+export type ExecutionScheduleBasis = "computed" | "partial" | "unavailable";
+export type ExecutionCoverageBasis = "computed" | "unavailable";
+
+export interface ExecutionOrderCoverage {
+  basis: ExecutionCoverageBasis;
+  denominator: number;
+  numerator?: number;
+  percent?: number;
+  reason?: string;
+  claimedPercent?: number;
+  claimMismatch: boolean;
+}
+
+export interface ExecutionOrderResult {
+  planId: string;
+  generated: boolean; // 上限超過・循環依存でスケジュール未算出のとき false
+  skipReason?: string;
+  orderedNodeIds: string[]; // 循環時は空配列
+  waves: string[][]; // 同時実行可能グループ（wave 昇順・各wave内は入力順）
+  schedule: ExecutionScheduleRow[]; // 入力順で返す
+  cycleNodeIds: string[];
+  representativeCycle: string[]; // 代表閉路（循環が無ければ空）
+  criticalPathNodeIds: string[];
+  totalDurationHours?: number;
+  scheduleBasis: ExecutionScheduleBasis;
+  undeclaredDependencyNodeIds: string[]; // EOC-05 の全件列挙
+  isolatedNodeIds: string[];
+  resourceConflicts: ExecutionResourceConflictRow[];
+  maxConcurrency?: number;
+  unplannedContainerIds: string[]; // EOC-18 の全件列挙
+  coverage: ExecutionOrderCoverage;
+  findings: ExecutionOrderFinding[];
+}
+
+// resource 型
+export interface ExecutionOrderAnalysisCriteria {
   name: string;
   summary: string;
   categories: {
