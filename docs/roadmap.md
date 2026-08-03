@@ -67,6 +67,7 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
 | `review_test_basis` | テストベース（要件・仕様）のレビュー（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現の決定的検査 + 意味的チェックリスト/質問状/改善提案の二層構成） | 完了 |
 | `audit_id_population` | テストベース定義済みID全量×各ツール呼び出しの宣言母集団の突き合わせ（未宣言ID/除外宣言ID/母集団未定義ID/文書別反映率/未投入文書/母集団間の縮退の決定的検査 + 判定区分カタログ `testbasis://population/audit-criteria`） | 完了（GitHub Issue #45 / Jira `HSKZ-99`） |
 | `analyze_cause_effect` | セクション単位の仕様文と、呼び出し側が構造化した原因・結果・制約の突き合わせ（孤立原因/導出されない結果/中間ノードの片側未接続/グラフの循環/制約の指定不正・矛盾・原因値の固定・冗長/常に偽の結果/組合せ数とデシジョンテーブル列数/引用の仕様文実在照合/未モデル化仕様文と論理接続語の未反映/宣言列数の不一致/デシジョンテーブル引き渡しの不整合の決定的検査 + 判定区分カタログ `testbasis://cause-effect/analysis-criteria` 20区分。mermaid 図と `design_decision_table` にそのまま渡せる `DecisionTableSpec` JSON（同ツールの算出ロジックで往復照合済み）を出力、全列挙未実施時は列数を推測せず「未算出（理由）」を明記、共有純関数 `src/causeEffectAnalysis.ts`） | 完了（GitHub Issue #90 / Jira `HSKZ-134`） |
+| `generate_business_requirement_model` | 業務側の「システム化の目的 → 業務ユースケース → 業務フロー → 駆動する情報」4層モデルを、機能IDの章立てに従属せず再構成（目的↔業務ユースケースの相互紐づけ・機能ID母集団との双方向照合・業務フロー工程0件/担い手未記入・駆動データの未接触・`hasStates`宣言とstates実体の照合・達成判定指標の未記入・例外時運用の未記入・宣言済み機能ID被覆率と算出値の一致・必須観点の空欄を判定区分`BRC-01`〜`BRC-15`で決定的に検査 + フレーム resource `testcondition://business/requirement-frame`。`design_scenario_flows`/`design_test_data`/`audit_cross_matrix`への引き渡し表と`testcondition://persona/journey-frame`との役割分担を出力、共有純関数 `src/businessRequirementAnalysis.ts`） | 完了（GitHub Issue #93 / Jira `HSKZ-137`） |
 
 ### Phase 3: Test Design
 

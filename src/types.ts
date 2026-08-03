@@ -2632,3 +2632,210 @@ export interface BasisContradictionCriteria {
   categories: BasisContradictionCriteriaCategory[];
   notes: string[];
 }
+
+// --- 業務ユースケース・要件モデル（testcondition://business/requirement-frame / generate_business_requirement_model） ---
+export type BusinessFrameLayerKey =
+  | "systemPurpose"
+  | "businessUseCase"
+  | "businessFlow"
+  | "drivingData";
+export type BusinessPurposeLevelKey =
+  | "businessGoal"
+  | "systemizationPurpose"
+  | "achievementMetric";
+export type BusinessRoleOwner = "business" | "persona";
+
+export interface BusinessFrameLayerDefinition {
+  id: string; // "BRL-01".."BRL-04"
+  key: BusinessFrameLayerKey;
+  nameJa: string;
+  definition: string;
+  granularityGuidance: string;
+  questionExamples: string[]; // 1件以上
+  badExamples: string[]; // 1件以上
+}
+
+export interface BusinessPurposeLevelDefinition {
+  id: string; // "BPL-01".."BPL-03"
+  key: BusinessPurposeLevelKey;
+  definition: string;
+  questionExamples: string[];
+  badExamples: string[];
+}
+
+export interface BusinessUseCaseAspectDefinition {
+  id: string; // "BUC-01".."BUC-06"
+  nameJa: string;
+  definition: string;
+  questionExamples: string[];
+  required: boolean;
+}
+
+export interface BusinessFlowAspectDefinition {
+  id: string; // "BFL-01".."BFL-05"
+  nameJa: string;
+  definition: string;
+  questionExamples: string[];
+}
+
+export interface BusinessDataAspectDefinition {
+  id: string; // "BDA-01".."BDA-05"
+  nameJa: string;
+  definition: string;
+  questionExamples: string[];
+  suggestedDataClassKinds?: DataClassKind[]; // 既存 DataClassKind の値のみ
+}
+
+export interface BusinessSharedTopic {
+  topic: string;
+  owner: BusinessRoleOwner;
+  rule: string;
+}
+
+export interface BusinessRoleSeparation {
+  businessFrameScope: string;
+  personaFrameScope: string;
+  sharedTopics: BusinessSharedTopic[]; // 3件以上（業務フロー／役割・担い手／目標）
+  avoidDuplication: string[]; // 1件以上
+}
+
+export interface BusinessHandoverConvention {
+  id: string; // "BRH-01".."BRH-04"
+  targetTool: string;
+  available: boolean;
+  rules: string[];
+}
+
+export interface BusinessRequirementFrame {
+  name: string;
+  note: string; // 自作整理であり逐語転載・特定手法への適合を主張しない旨
+  layers: BusinessFrameLayerDefinition[]; // 4件
+  purposeLevels: BusinessPurposeLevelDefinition[]; // 3件
+  useCaseAspects: BusinessUseCaseAspectDefinition[]; // 6件
+  flowAspects: BusinessFlowAspectDefinition[]; // 5件
+  dataAspects: BusinessDataAspectDefinition[]; // 5件
+  roleSeparation: BusinessRoleSeparation;
+  handoverConventions: BusinessHandoverConvention[]; // 4件
+}
+
+// --- generate_business_requirement_model 入力 ---
+export interface BusinessRoleInput {
+  id: string;
+  nameJa: string;
+}
+
+export interface BusinessPurposeInput {
+  id: string; // 既定プレフィックス "PUR-"
+  level: BusinessPurposeLevelKey;
+  statement: string;
+  achievementMetric?: string; // 達成判定指標
+  measurementMethod?: string; // 測定方法
+}
+
+export interface BusinessUseCaseInput {
+  id: string; // 既定プレフィックス "BUC-"
+  purposeIds?: string[]; // 由来目的ID（purposes[].id）
+  name?: string; // 業務側の名称（BUC-01）
+  actorRoleId?: string; // 担い手となる業務ロール（BUC-02。roles[].id を参照）
+  trigger?: string; // 起動の契機（BUC-03）
+  completionState?: string; // 業務上の完了状態（BUC-04）
+  featureIds?: string[]; // 関連する機能ID（BUC-05）
+  exceptionOperation?: string; // 例外時の業務運用（BUC-06）
+}
+
+export interface BusinessFlowDataAccessInput {
+  dataId: string; // drivingData[].id を参照
+  access: DataAccessKind;
+}
+
+export interface BusinessFlowStepInput {
+  id: string; // 既定プレフィックス "BFL-"
+  useCaseId: string; // businessUseCases[].id を参照
+  no: number; // 工程No
+  actorRoleId?: string; // 担い手（roles[].id を参照）
+  action?: string; // 行為
+  handedOverInfo?: string; // 受け渡される情報
+  branchCondition?: string; // 判断分岐と権限
+  featureIds?: string[]; // 機能ID
+  dataAccess?: BusinessFlowDataAccessInput[]; // 駆動データへの read/update
+}
+
+export interface BusinessDrivingDataInput {
+  id: string; // 既定プレフィックス "BDT-"
+  name: string;
+  suggestedKind?: DataClassKind; // dataAspects の suggestedDataClassKinds から選ぶ
+  source?: string; // 発生源
+  hasStates?: boolean; // 状態を持つか（宣言）
+  states?: string[]; // 実体としての状態一覧（宣言と実体の照合対象）
+  sharingScope?: string; // 共有範囲
+  retentionPeriod?: string; // 保持期間・法規制
+  usedByUseCaseIds?: string[]; // 利用ユースケースID（宣言）
+}
+
+export interface BusinessRequirementIdPrefixes {
+  purpose?: string; // 既定 "PUR-"
+  businessUseCase?: string; // 既定 "BUC-"
+  flowStep?: string; // 既定 "BFL-"
+  drivingData?: string; // 既定 "BDT-"
+}
+
+export interface GenerateBusinessRequirementModelInput {
+  subjectName?: string;
+  roles?: BusinessRoleInput[];
+  purposes?: BusinessPurposeInput[];
+  businessUseCases?: BusinessUseCaseInput[];
+  flowSteps?: BusinessFlowStepInput[];
+  drivingData?: BusinessDrivingDataInput[];
+  featureIdPopulation?: string[]; // 機能ID母集団の宣言
+  claimedFeatureCoveragePercent?: number; // 宣言した機能ID被覆率
+  idPrefixes?: BusinessRequirementIdPrefixes;
+}
+
+// --- 決定的検査の結果型（generate_business_requirement_model, BRC-01..BRC-15） ---
+export type BusinessRequirementEntityKind =
+  | "purpose"
+  | "businessUseCase"
+  | "flowStep"
+  | "drivingData";
+
+export interface BusinessRequirementUnresolvedRef {
+  ownerId: string;
+  ref: string;
+  expectedKind: string;
+}
+export interface BusinessRequirementDuplicateId {
+  kind: BusinessRequirementEntityKind;
+  id: string;
+  count: number;
+}
+export interface BusinessRequirementIdIssue {
+  kind: BusinessRequirementEntityKind;
+  id: string;
+  expectedPrefix: string;
+}
+export interface BusinessRequirementOrphanPurpose {
+  id: string;
+  statement: string;
+}
+export interface BusinessRequirementFeatureCoverage {
+  basis: "declared-population" | "unavailable";
+  computedPercent?: number;
+  claimedPercent?: number;
+  mismatch: boolean;
+}
+export interface BusinessRequirementDataTouchResult {
+  untouchedDataIds: string[];
+  dataLessUseCaseIds: string[];
+}
+export interface BusinessRequirementStateMismatch {
+  dataId: string;
+  kind: "declared-but-no-states" | "states-but-not-declared";
+}
+export interface BusinessRequirementIncompletePurpose {
+  id: string;
+  missing: ("achievementMetric" | "measurementMethod")[];
+}
+export interface BusinessRequirementMissingRequiredAspect {
+  id: string;
+  missingAspectIds: string[];
+}

@@ -27,6 +27,7 @@ import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
+import { businessRequirementFrame } from "./businessRequirementFrame.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -642,6 +643,31 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(basisContradictionCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "business-requirement-frame",
+    "testcondition://business/requirement-frame",
+    {
+      title: "Business Use Case / Requirement Model Frame",
+      description:
+        "Paraphrased frame for reconstructing test requirements from the business side, independent of the " +
+        "feature id chapter structure: systemization purpose layers (business goal / systemization purpose / " +
+        "achievement metric), business use case aspects (BUC-01..06), business flow aspects (BFL-01..05), " +
+        "driving data aspects (BDA-01..05), the role separation from testcondition://persona/journey-frame, " +
+        "and the handover conventions to design_scenario_flows / design_test_data / audit_cross_matrix. " +
+        "Used by generate_business_requirement_model.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(businessRequirementFrame, null, 2),
         },
       ],
     })
