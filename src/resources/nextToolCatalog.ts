@@ -33,6 +33,7 @@ export const registeredToolNames: readonly string[] = [
   "generate_business_requirement_model",
   "select_regression_suite",
   "analyze_execution_order",
+  "audit_deliverable_consistency",
 ];
 
 const DESIGN_FOLLOWUPS: NextToolCatalogEntry[] = [
@@ -228,6 +229,18 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "review_test_specification",
       when: "always",
       reason: "監査結果を踏まえた仕様レビューが未実施である",
+    },
+  ],
+  audit_deliverable_consistency: [
+    {
+      toolName: "revise_test_plan",
+      when: "has-referenced-document-conflicts",
+      reason: "参照テストベース文書リストの記述が成果物間で食い違っており計画書の修正が必要",
+    },
+    {
+      toolName: "review_test_specification",
+      when: "has-consistency-findings",
+      reason: "成果物間の不整合が残っており仕様レビューによる確認が必要",
     },
   ],
   audit_basis_contradictions: [

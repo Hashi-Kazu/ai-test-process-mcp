@@ -30,6 +30,7 @@ import { executionOrderAnalysisCriteria } from "./executionOrderCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
+import { deliverableConsistencyCriteria } from "./deliverableConsistencyCriteria.js";
 import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
 
 export function registerResources(server: McpServer): void {
@@ -579,6 +580,36 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(crossMatrixAuditCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "deliverable-consistency-criteria",
+    "testdesign://deliverable/consistency-criteria",
+    {
+      title: "Deliverable Consistency Audit Criteria",
+      description:
+        "Judgment category catalog for audit_deliverable_consistency (DCC-01..DCC-15): read/unread state " +
+        "conflicts of referenced test basis documents across deliverables and inside one deliverable, " +
+        "documents appearing on only one side, declared-versus-body referenced document list mismatches, " +
+        "ids sourced from documents declared unread, unresolved cross-deliverable id references, " +
+        "correspondence claims not substantiated by ids in the referenced deliverable, defined ids never " +
+        "referenced downstream, non-existent section references, section label mismatches, unresolvable " +
+        "references to deliverables not supplied, same-unit value conflicts and wording divergence for the " +
+        "same id, one-sided shared item enumerations (scope / out-of-scope / preconditions / constraints / " +
+        "test levels / test types), and count or coverage-rate claims that disagree with the enumeration in " +
+        "the body, plus the shared item kind catalog (DSI-01..DSI-06) and the read / unread state vocabulary. " +
+        "The deterministic layer only enumerates candidates; final judgment is left to the semantic layer.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(deliverableConsistencyCriteria, null, 2),
         },
       ],
     })
