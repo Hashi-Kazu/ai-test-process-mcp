@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderBusinessRequirementModel } from "../src/tools/generateBusinessRequirementModel.js";
 import type { GenerateBusinessRequirementModelInput } from "../src/types.js";
 
@@ -167,5 +168,11 @@ describe("renderBusinessRequirementModel", () => {
     expect(markdown).toContain("available: false");
     expect(markdown).toContain("## 9. persona フレームとの役割分担");
     expect(markdown).toContain("業務フロー");
+  });
+});
+
+describe("renderBusinessRequirementModel 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderBusinessRequirementModel(fullInput));
   });
 });

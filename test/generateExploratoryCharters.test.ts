@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderExploratoryCharters } from "../src/tools/generateExploratoryCharters.js";
 import { registerTools } from "../src/tools/index.js";
 import type { GenerateExploratoryChartersInput } from "../src/types.js";
@@ -277,5 +278,11 @@ describe("renderExploratoryCharters", () => {
     };
     registerTools(stub as unknown as McpServer);
     expect(registeredNames).toContain("generate_exploratory_charters");
+  });
+});
+
+describe("renderExploratoryCharters 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderExploratoryCharters(baseInput));
   });
 });

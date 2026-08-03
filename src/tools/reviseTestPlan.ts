@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   testPlanTemplate,
@@ -18,7 +19,7 @@ import {
   schedulePlanTemplateExamples,
   productRiskTemplateExamples,
 } from "../resources/testPlanTemplate.js";
-import type { TestPlanTemplate, TestPlanTemplateSection } from "../types.js";
+import type { CompletedToolDeclaration, TestPlanTemplate, TestPlanTemplateSection } from "../types.js";
 import {
   TBD,
   TBD_REQUIRED,
@@ -149,7 +150,8 @@ function normalizePlaceholderMarkers(markdown: string): NormalizePlaceholderMark
 export function renderTestPlanRevision(
   planMarkdown: string,
   instructions: string[] = [],
-  template: TestPlanTemplate = testPlanTemplate
+  template: TestPlanTemplate = testPlanTemplate,
+  completedTools: readonly CompletedToolDeclaration[] = []
 ): string {
   const { markdown: afterMissing, addedSections } = appendMissingSections(planMarkdown, template);
   const { markdown: revisedMarkdown, replacements } = normalizePlaceholderMarkers(afterMissing);
@@ -239,10 +241,19 @@ export function renderTestPlanRevision(
     }
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "revise_test_plan",
+      [],
+      completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const reviseTestPlanInputShape = {
+  ...completedToolsInputShape,
   planMarkdown: z.string().describe("Markdown body of the existing test plan to revise"),
   instructions: z
     .array(z.string())
@@ -259,8 +270,8 @@ export function registerReviseTestPlanTool(server: McpServer): void {
         "既存テスト計画書のMarkdownと修正指示を入力に、欠落章の補完・未記入マーカー正規化を決定的に適用した修正後計画書と、内容の書き換えを呼び出し側LLMへ指示するレポートを返す。",
       inputSchema: reviseTestPlanInputShape,
     },
-    async ({ planMarkdown, instructions }) => {
-      const markdown = renderTestPlanRevision(planMarkdown, instructions ?? []);
+    async ({ planMarkdown, instructions, completedTools }) => {
+      const markdown = renderTestPlanRevision(planMarkdown, instructions ?? [], undefined, completedTools ?? []);
       return { content: [{ type: "text" as const, text: markdown }] };
     }
   );

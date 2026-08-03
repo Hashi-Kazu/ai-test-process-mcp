@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   ConfigMatrixExcludedCombination,
@@ -798,12 +799,21 @@ export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
     );
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "design_config_matrix",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 const configMatrixSelectorSchema = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
 
 export const designConfigMatrixInputShape = {
+  ...completedToolsInputShape,
   matrixId: z.string().optional().describe("Matrix id used to build coverage target ids (default MAIN)"),
   title: z.string().optional(),
   factors: z

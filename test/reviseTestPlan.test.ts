@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestPlan } from "../src/tools/generateTestPlan.js";
 import {
   TBD_REQUIRED,
@@ -215,5 +216,12 @@ describe("renderTestPlanRevision", () => {
     expect(secondResult).toContain("- 追加なし");
     const occurrencesOf7 = (secondResult.match(/## 7 中断・再開基準/g) ?? []).length;
     expect(occurrencesOf7).toBe(1);
+  });
+});
+
+describe("renderTestPlanRevision 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    // 修正後計画書を本文へ埋め込むツールのため、入力側に節を含まない素の計画書を使う。
+    expectNextToolsSection(renderTestPlanRevision("# テスト計画書: Sample\n"));
   });
 });

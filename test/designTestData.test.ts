@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
   computeTestDataDesign,
   buildTestDataCoverageTargets,
@@ -334,5 +335,11 @@ describe("computeTestDataDesign - coverage 'unavailable' reporting", () => {
     expect(result.stateCoverage.basis).toBe("unavailable");
     const text = renderTestData(spec);
     expect(text).toContain("状態被覆率: 未算出");
+  });
+});
+
+describe("renderTestData 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestData(baseSpec()));
   });
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildConditionTraceability, findUncoveredConditionIds } from "../testCaseAnalysis.js";
 import {
@@ -945,6 +946,14 @@ export function renderTestArchitecture(spec: TestArchitectureSpec): string {
     "- 本検査は渡されたコンテナ・テスト条件に対してのみ成立し、そもそも洗い出されていない観点の取りこぼしは検出できない。"
   );
 
+  lines.push(
+    ...renderNextToolsSection(
+      "design_test_architecture",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -958,6 +967,7 @@ const testLevelEnum = z.enum([
 ]);
 
 export const designTestArchitectureInputShape = {
+  ...completedToolsInputShape,
   title: z.string().optional(),
   scope: z
     .object({

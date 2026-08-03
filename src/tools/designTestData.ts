@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testDataDesignCriteria } from "../resources/testDataDesignCriteria.js";
 import type {
@@ -1178,6 +1179,14 @@ export function renderTestData(spec: TestDataSpec): string {
     );
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "design_test_data",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -1266,6 +1275,7 @@ export const testDataCaseShape = z.object({
 });
 
 export const designTestDataInputShape = {
+  ...completedToolsInputShape,
   title: z.string().optional(),
   dataClasses: z.array(dataClassShape).min(1).describe("Data classes with their lifecycle states and transitions"),
   dataItems: z.array(dataItemShape).optional().describe("Data management table rows (concrete data item instances)"),

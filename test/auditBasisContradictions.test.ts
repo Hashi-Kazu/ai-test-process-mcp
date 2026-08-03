@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderBasisContradictionAudit } from "../src/tools/auditBasisContradictions.js";
 import type { AuditBasisContradictionsInput } from "../src/types.js";
 
@@ -109,5 +110,11 @@ describe("renderBasisContradictionAudit", () => {
   it("ends with exactly one trailing newline", () => {
     expect(markdown.endsWith("\n")).toBe(true);
     expect(markdown.endsWith("\n\n")).toBe(false);
+  });
+});
+
+describe("renderBasisContradictionAudit 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderBasisContradictionAudit(baseInput));
   });
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { businessRequirementFrame } from "../resources/businessRequirementFrame.js";
 import {
@@ -557,6 +558,14 @@ export function renderBusinessRequirementModel(
   }
   lines.push("");
 
+  lines.push(
+    ...renderNextToolsSection(
+      "generate_business_requirement_model",
+      [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -586,6 +595,7 @@ const businessUseCaseShape = z.object({
 });
 
 export const generateBusinessRequirementModelInputShape = {
+  ...completedToolsInputShape,
   subjectName: z.string().optional().describe("Target system / project name"),
   roles: z
     .array(z.object({ id: z.string().describe("Role id"), nameJa: z.string().describe("Role name") }))

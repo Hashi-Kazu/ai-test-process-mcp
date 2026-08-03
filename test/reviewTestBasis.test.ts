@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestBasisReview } from "../src/tools/reviewTestBasis.js";
 import { testBasisReviewChecklist } from "../src/resources/testBasisReviewChecklist.js";
 import { questionPriorityDefinitions } from "../src/resources/testPlanTemplate.js";
@@ -139,5 +140,11 @@ describe("renderTestBasisReview - 入力ダイジェスト", () => {
       "- [medium] memo.md: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
     );
     expect(markdown).toContain("ダイジェスト指摘数: 1");
+  });
+});
+
+describe("renderTestBasisReview 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestBasisReview(cleanDocuments));
   });
 });

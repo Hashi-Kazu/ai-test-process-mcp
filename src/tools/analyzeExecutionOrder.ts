@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { executionOrderAnalysisCriteria } from "../resources/executionOrderCriteria.js";
 import type {
@@ -1083,6 +1084,14 @@ export function renderExecutionOrder(spec: ExecutionOrderSpec): string {
     for (const line of guidanceLines) lines.push(line);
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "analyze_execution_order",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -1093,6 +1102,7 @@ const executionResourceKindEnum = z.enum(["device", "environment", "person", "ot
 const testContainerPriorityClassEnum = z.enum(["must", "conditional", "optional"]);
 
 export const analyzeExecutionOrderInputShape = {
+  ...completedToolsInputShape,
   planId: z.string().optional().describe(`Plan id used in headings and summary (default ${DEFAULT_EXECUTION_PLAN_ID})`),
   title: z.string().optional(),
   nodes: z

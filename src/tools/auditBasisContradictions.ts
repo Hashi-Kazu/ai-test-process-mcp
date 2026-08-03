@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { basisContradictionCriteria } from "../resources/basisContradictionCriteria.js";
 import {
@@ -236,10 +237,19 @@ export function renderBasisContradictionAudit(
   lineOut.push("- 上記の型は候補が0件であっても存在し得る。候補0件は「これらの矛盾が無いこと」を意味しない。");
   lineOut.push("");
 
+  lineOut.push(
+    ...renderNextToolsSection(
+      "audit_basis_contradictions",
+      visible.length > 0 ? ["has-contradictions"] : [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lineOut.join("\n").trimEnd() + "\n";
 }
 
 export const auditBasisContradictionsInputShape = {
+  ...completedToolsInputShape,
   documents: z
     .array(
       z.object({

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { qualityCharacteristicModel } from "../resources/qualityCharacteristics.js";
 import { questionPriorityDefinitions } from "../resources/testPlanTemplate.js";
@@ -373,10 +374,19 @@ export function renderRequirementsAnalysis(
   );
   lines.push("");
 
+  lines.push(
+    ...renderNextToolsSection(
+      "analyze_requirements",
+      duplicates.length > 0 || unresolved.length > 0 ? ["has-id-findings"] : [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const analyzeRequirementsInputShape = {
+  ...completedToolsInputShape,
   documents: z
     .array(
       z.object({

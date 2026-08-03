@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
   DEFAULT_MAX_SCENARIOS_PER_USE_CASE,
   MAIN_FLOW_ID,
@@ -400,5 +401,11 @@ describe("renderScenarioFlows", () => {
 
   it("is deterministic for the same input", () => {
     expect(renderScenarioFlows(baseSpec())).toBe(renderScenarioFlows(baseSpec()));
+  });
+});
+
+describe("renderScenarioFlows 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderScenarioFlows(baseSpec()));
   });
 });

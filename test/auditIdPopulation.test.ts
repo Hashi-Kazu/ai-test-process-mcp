@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderIdPopulationAudit } from "../src/tools/auditIdPopulation.js";
 import type { AuditIdPopulationInput } from "../src/types.js";
 
@@ -94,5 +95,36 @@ describe("renderIdPopulationAudit - 入力ダイジェスト", () => {
       "- [medium] doc-C: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
     );
     expect(md).toContain("ダイジェスト指摘数: 1");
+  });
+});
+
+describe("renderIdPopulationAudit 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderIdPopulationAudit(input));
+  });
+});
+
+describe("renderIdPopulationAudit 次に実行すべきツール節の内容", () => {
+  function nextToolsSection(md: string): string {
+    return md.split("## 次に実行すべきツール")[1];
+  }
+
+  it("未宣言IDがあると extract_test_conditions / generate_test_cases 行が出る", () => {
+    const section = nextToolsSection(markdown);
+    expect(section).toContain("| 未実施 | extract_test_conditions |");
+    expect(section).toContain("| 未実施 | generate_test_cases |");
+  });
+
+  it("全ID宣言済みなら未宣言ID由来の行は出ない", () => {
+    const section = nextToolsSection(
+      renderIdPopulationAudit({
+        documents,
+        declaredPopulations: [
+          { toolName: "extract_test_conditions", ids: ["EH-100", "EH-101", "W-001", "W-002"] },
+        ],
+      })
+    );
+    expect(section).not.toContain("| 未実施 | extract_test_conditions |");
+    expect(section).not.toContain("| 未実施 | generate_test_cases |");
   });
 });

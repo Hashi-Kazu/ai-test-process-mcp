@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
   DEFAULT_PAIRWISE_SET_ID,
   buildPairwiseCoverageTargets,
@@ -383,5 +384,11 @@ describe("renderPairwise", () => {
 
   it("is deterministic", () => {
     expect(renderPairwise(forbiddenSpec())).toBe(renderPairwise(forbiddenSpec()));
+  });
+});
+
+describe("renderPairwise 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderPairwise(baseSpec()));
   });
 });

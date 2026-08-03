@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderEquivalencePartitioning } from "../src/tools/designEquivalencePartitioning.js";
 
 describe("renderEquivalencePartitioning", () => {
@@ -84,5 +85,13 @@ describe("renderEquivalencePartitioning", () => {
     expect(invalidLineForB).toContain("| a1 | bbad |");
 
     expect(md).toContain("- 未被覆: 0");
+  });
+});
+
+describe("renderEquivalencePartitioning 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderEquivalencePartitioning({
+      variables: [{ name: "age", validClasses: [{ label: "成人", representative: "30" }] }],
+    }));
   });
 });

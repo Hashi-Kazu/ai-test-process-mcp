@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { crossMatrixAuditCriteria } from "../resources/crossMatrixAuditCriteria.js";
 import { analyzeCrossMatrix, itemLabel } from "../crossMatrixAnalysis.js";
@@ -384,10 +385,19 @@ export function renderCrossMatrixAudit(
   );
   lines.push("");
 
+  lines.push(
+    ...renderNextToolsSection(
+      "audit_cross_matrix",
+      summary.emptyRowTotal > 0 || summary.emptyColumnTotal > 0 ? ["has-empty-cells"] : [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const auditCrossMatrixInputShape = {
+  ...completedToolsInputShape,
   axes: z
     .array(
       z.object({
