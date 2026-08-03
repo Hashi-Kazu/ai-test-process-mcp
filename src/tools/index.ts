@@ -24,6 +24,7 @@ import { registerAuditCrossMatrixTool } from "./auditCrossMatrix.js";
 import { registerAuditBasisContradictionsTool } from "./auditBasisContradictions.js";
 import { registerGenerateBusinessRequirementModelTool } from "./generateBusinessRequirementModel.js";
 import { registerSelectRegressionSuiteTool } from "./selectRegressionSuite.js";
+import { registerAnalyzeExecutionOrderTool } from "./analyzeExecutionOrder.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -51,4 +52,5 @@ export function registerTools(server: McpServer): void {
   registerAuditBasisContradictionsTool(server);
   registerGenerateBusinessRequirementModelTool(server);
   registerSelectRegressionSuiteTool(server);
+  registerAnalyzeExecutionOrderTool(server);
 }

@@ -16,6 +16,9 @@ import type {
   TestPlanRisk,
   TestPlanTeamMember,
   TestPlanRevisionRow,
+  TestPlanSloTarget,
+  TestPlanMonitoringCheckpoint,
+  TestPlanExecutionOrderItem,
 } from "../types.js";
 
 const TBD = "_未記入_";
@@ -189,6 +192,43 @@ export const generateTestPlanInputShape = {
     )
     .optional()
     .describe("(optional revision history table) One row per revision with version/date/author/approver/change content"),
+  sloTargets: z
+    .array(
+      z.object({
+        metric: z.string(),
+        comparator: z.string().optional(),
+        threshold: z.string().optional(),
+        unit: z.string().optional(),
+        note: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe("(optional section 6.6 品質目標(SLO)・実施前合格基準) Quality/service-level targets and measurable exit criteria"),
+  monitoringPlan: z
+    .array(
+      z.object({
+        timing: z.string(),
+        reviewItems: z.array(z.string()).optional(),
+        participants: z.array(z.string()).optional(),
+      })
+    )
+    .optional()
+    .describe("(optional section 9.4 モニタリング計画) Review/progress-check timings during test execution with items and participants"),
+  executionOrderPlan: z
+    .array(
+      z.object({
+        nodeId: z.string(),
+        nameJa: z.string().optional(),
+        dependsOn: z.array(z.string()).optional(),
+        durationHours: z.number().nonnegative().optional(),
+        requiredResources: z.array(z.string()).optional(),
+        isCritical: z.boolean().optional(),
+      })
+    )
+    .optional()
+    .describe(
+      "(optional section 13.3 実行順序・依存関係) Execution order/dependencies between test containers/suites, e.g. transcribed from analyze_execution_order"
+    ),
 } as const;
 
 const generateTestPlanInputSchema = z.object(generateTestPlanInputShape);
@@ -480,6 +520,48 @@ function staffingAndTrainingContent(input: TestPlanInput, required: boolean): st
   return lines.join("\n");
 }
 
+function sloTargetsContent(targets: TestPlanSloTarget[] | undefined, required = false): string {
+  if (!targets || targets.length === 0) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("| 指標 | 比較 | 閾値 | 単位 | 備考 |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const t of targets) {
+    lines.push(
+      `| ${t.metric} | ${t.comparator ?? "-"} | ${t.threshold ?? "-"} | ${t.unit ?? "-"} | ${t.note ?? "-"} |`
+    );
+  }
+  return lines.join("\n");
+}
+
+function monitoringPlanContent(plan: TestPlanMonitoringCheckpoint[] | undefined, required = false): string {
+  if (!plan || plan.length === 0) return requiredTbd(required);
+  return plan
+    .map((cp) => {
+      const parts = [`- ${cp.timing}`];
+      if (cp.reviewItems && cp.reviewItems.length > 0) parts.push(`(確認項目: ${cp.reviewItems.join("、")})`);
+      if (cp.participants && cp.participants.length > 0) parts.push(`(参加者: ${cp.participants.join("、")})`);
+      return parts.join(" ");
+    })
+    .join("\n");
+}
+
+function executionOrderPlanContent(items: TestPlanExecutionOrderItem[] | undefined, required = false): string {
+  if (!items || items.length === 0) return requiredTbd(required);
+  const lines: string[] = [];
+  lines.push("| ノードID | 名称 | 依存先 | 所要時間(h) | 必要リソース | クリティカル |");
+  lines.push("| --- | --- | --- | --- | --- | --- |");
+  for (const item of items) {
+    lines.push(
+      `| ${item.nodeId} | ${item.nameJa ?? "-"} | ${
+        item.dependsOn && item.dependsOn.length > 0 ? item.dependsOn.join(", ") : "-"
+      } | ${item.durationHours ?? "-"} | ${
+        item.requiredResources && item.requiredResources.length > 0 ? item.requiredResources.join(", ") : "-"
+      } | ${item.isCritical ? "○" : ""} |`
+    );
+  }
+  return lines.join("\n");
+}
+
 function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput): string {
   const req = section.required;
   switch (section.id) {
@@ -515,6 +597,8 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
       return incidentCriteriaContent();
     case "question-priority":
       return questionPriorityContent();
+    case "slo-targets":
+      return sloTargetsContent(input.sloTargets, req);
     case "suspension-resumption-criteria":
       return textOrTbd(input.suspensionCriteria, req);
     case "test-deliverables":
@@ -523,6 +607,8 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
       return executionRecordContent();
     case "collected-metrics":
       return metricsContent(input);
+    case "monitoring-plan":
+      return monitoringPlanContent(input.monitoringPlan, req);
     case "env-requirements":
       return textOrTbd(input.environment, req);
     case "testdata-requirements":
@@ -535,6 +621,8 @@ function sectionContent(section: TestPlanTemplateSection, input: TestPlanInput):
       return textOrTbd(input.testPeriod, req);
     case "schedule-plan":
       return scheduleOrTbd(input.scheduleConstraints, req);
+    case "execution-order-plan":
+      return executionOrderPlanContent(input.executionOrderPlan, req);
     case "product-risk":
       return risksOrTbd(input.risks, req);
     case "testing-tasks-flow":

@@ -42,6 +42,17 @@ describe("testPlanTemplate", () => {
     ]);
   });
 
+  it("includes the newly added optional sections 6.6 / 9.4 / 13.3 without changing required ones", () => {
+    const byNo = new Map(testPlanTemplate.sections.map((s) => [s.no, s]));
+    expect(byNo.get("6.6")).toMatchObject({ id: "slo-targets", required: false, fieldKey: "sloTargets" });
+    expect(byNo.get("9.4")).toMatchObject({ id: "monitoring-plan", required: false, fieldKey: "monitoringPlan" });
+    expect(byNo.get("13.3")).toMatchObject({
+      id: "execution-order-plan",
+      required: false,
+      fieldKey: "executionOrderPlan",
+    });
+  });
+
   it("has unique section numbers and ids", () => {
     const nos = testPlanTemplate.sections.map((s) => s.no);
     expect(new Set(nos).size).toBe(nos.length);

@@ -26,6 +26,7 @@ import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinci
 import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
 import { regressionSelectionAnalysisCriteria } from "./regressionSelectionCriteria.js";
+import { executionOrderAnalysisCriteria } from "./executionOrderCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
@@ -522,6 +523,35 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(regressionSelectionAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "execution-order-analysis-criteria",
+    "testdesign://execution-order/analysis-criteria",
+    {
+      title: "Execution Order Analysis Criteria",
+      description:
+        "Judgment category catalog for analyze_execution_order (EOC-01..EOC-27): duplicate node ids, " +
+        "out-of-population and self-referencing dependency edges, unresolved graph cycles, undeclared or " +
+        "unreasoned dependencies, dependency basis references not backed by the producing node's declared " +
+        "artifacts / resources / data items, duplicate edges, undeclared duration and required-resource " +
+        "declarations, out-of-population resource references, earliest-start resource conflicts, max-parallelism " +
+        "overruns, unused declared resources, isolated nodes, critical-path and total-duration claim mismatches, " +
+        "unplanned-container gaps and out-of-population nodes against a declared architecture container " +
+        "population, unmeasurable or unlinked exit criteria and SLOs, missing or out-of-range or unconnected " +
+        "monitoring checkpoints, planned-container coverage claim mismatches, node count cap overflow, and " +
+        "unavailable scheduling due to no declared durations, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(executionOrderAnalysisCriteria, null, 2),
         },
       ],
     })
