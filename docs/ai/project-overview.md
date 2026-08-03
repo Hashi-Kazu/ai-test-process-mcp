@@ -48,6 +48,7 @@ src/
     scenarioFlowCriteria.ts # ユースケース／シナリオ設計の判定区分カタログ14区分 SFC-01〜SFC-14（testdesign://scenario-flow/analysis-criteria）
     testArchitectureDesignPrinciples.ts # テストコンテナ設計原則（分割軸8種 TAX-01〜TAX-08・責務定義項目9種 RFD-01〜RFD-09・優先度クラス3種 TPR-01〜TPR-03・スコープ宣言項目3種 TSC-01〜TSC-03）＋判定区分カタログ17区分 TAC-01〜TAC-17（testarch://container/design-principles）
     crossMatrixAuditCriteria.ts # 多軸マトリクス監査の判定区分カタログ15区分 CMX-01〜CMX-15（testdesign://cross-matrix/audit-criteria）
+    deliverableConsistencyCriteria.ts # 成果物間整合性監査の判定区分カタログ15区分 DCC-01〜DCC-15 ＋ 共通項目種別カタログ6種 DSI-01〜DSI-06 ＋ 読了状態語彙（testdesign://deliverable/consistency-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -68,6 +69,7 @@ src/
     designTestArchitecture.ts # design_test_architecture ツール（テスト条件群をテストコンテナへ束ね、責務・テストレベル・テストタイプ・優先度クラス・担当観点カテゴリ・テストスコープの宣言と帰属実体を双方向で照合し、帰属率・レベル/タイプ/優先度クラスの分布・コンテナ別テストサイズ分布・条件→ケースのトレーサビリティを分母つきで算出する、renderTestArchitecture純関数 + 再利用用 computeTestArchitecture export）
     designTestData.ts    # design_test_data ツール（データ区分ごとのライフサイクル状態・遷移から、データ区分×状態マトリクス・未使用状態/遷移の検出・データ↔ケースの供給トレーサビリティ・同一データを更新する複数ケースの排他検出・状態/遷移被覆を決定的に算出する、renderTestData純関数 + 再利用用 computeTestDataDesign / buildTestDataCoverageTargets export）
     auditCrossMatrix.ts  # audit_cross_matrix ツール（任意の2軸以上を汎用の軸データとして受け取り、軸ペアの直積表を決定的に生成して空行・空列＝片側にしかない要素を列挙する。充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合する、renderCrossMatrixAudit純関数）
+    auditDeliverableConsistency.ts # audit_deliverable_consistency ツール（複数成果物を突き合わせ、参照テストベース文書リストの差分・IDの成果物間相互参照の解決性・章節参照の実在性・同一項目の記述差分を決定的に検出する。件数・網羅率の宣言は本文の列挙実体と照合し、任意入力未指定の検査は「検査不能（要確認）」として出力する、renderDeliverableConsistencyAudit純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -83,6 +85,7 @@ src/
   thresholdChangeAnalysis.ts # 閾値変更影響再展開の決定的検査の共有純関数群（パラメータ差分・境界値/同値クラスの新旧再展開・参照インデックス・失効網羅対象検出・成果物別影響判定・サマリ集計）
   causeEffectAnalysis.ts # 原因結果グラフ分析の決定的検査の共有純関数群（グラフ構築・孤立原因/導出されない結果/循環検出・制約の指定不正と矛盾・真偽組合せの全列挙とルール圧縮・結果の可変性検査・引用の仕様文実在照合・未モデル化文と論理接続語の検出・mermaid生成・デシジョンテーブル引き渡し構築）
   crossMatrixAnalysis.ts # 多軸マトリクス監査の決定的検査の共有純関数群（軸ペア解決・直積表構築・空行/空列検出・除外宣言の適用・充填率/行被覆率/列被覆率の算出・未宣言リンク/重複ID/自軸内リンク/片方向リンク/完全孤立要素の検出・軸母集団の縮退検出・テストベース本文との双方向裏付け照合・宣言充填率との照合・サマリ集計）
+  deliverableConsistencyAnalysis.ts # 成果物間整合性監査の決定的検査の共有純関数群（成果物索引と呼称解決・参照テストベース文書の抽出と読了/未読マトリクス構築・宣言リストとの照合・未読宣言文書由来IDの実参照検出・IDレンジ展開と成果物間相互参照索引・対応主張の裏付け照合・後続未参照IDの検出・章節参照の実在性と見出しラベル照合・同一IDの単位別異値と2-gram包含率による記述乖離・件数/網羅率宣言と本文列挙実体の照合・共通項目列挙の片側欠落・指摘の安定採番とサマリ集計）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
@@ -115,6 +118,9 @@ test/
   crossMatrixAnalysis.test.ts     # 多軸マトリクス監査決定的検査の共有純関数群の単体テスト
   auditCrossMatrix.test.ts        # renderCrossMatrixAudit()の単体テスト
   crossMatrixAuditCriteria.test.ts # 多軸マトリクス監査判定区分カタログ構造データの単体テスト
+  deliverableConsistencyAnalysis.test.ts # 成果物間整合性監査決定的検査の共有純関数群の単体テスト
+  auditDeliverableConsistency.test.ts # renderDeliverableConsistencyAudit()の単体テスト
+  deliverableConsistencyCriteria.test.ts # 成果物間整合性監査判定区分カタログ構造データの単体テスト
   idPopulationAuditCriteria.test.ts # ID母集団監査判定区分カタログ構造データの単体テスト
   thresholdChangeAnalysis.test.ts # 閾値変更影響再展開の決定的検査の共有純関数群の単体テスト
   reexpandThresholdChanges.test.ts # renderThresholdChangeReexpansion()の単体テスト

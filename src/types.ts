@@ -3226,3 +3226,229 @@ export interface ExecutionOrderAnalysisCriteria {
   }[];
   notes: string[];
 }
+
+// --- 成果物間整合性監査（audit_deliverable_consistency） ---
+
+export type ConsistencyDeliverableKind =
+  | "test-plan"
+  | "test-analysis"
+  | "test-design"
+  | "test-report"
+  | "other";
+
+export interface ConsistencyDeliverable {
+  name: string;
+  kind: ConsistencyDeliverableKind;
+  /** 他成果物から本成果物を指すときに使われる追加の呼称 */
+  aliases?: string[];
+  content: string;
+}
+
+export interface DeclaredReferencedDocumentSet {
+  deliverable: string;
+  readDocuments: string[];
+  unreadDocuments?: string[];
+}
+
+export interface DeliverableIdPrefixOwner {
+  /** テストベース文書の番号キー（例 "13"） */
+  documentKey: string;
+  prefixes: string[];
+}
+
+export interface DeliverableCountClaimSubject {
+  keyword: string;
+  idPrefix: string;
+}
+
+export interface AuditDeliverableConsistencyInput {
+  completedTools?: CompletedToolDeclaration[];
+  deliverables: ConsistencyDeliverable[];
+  declaredReferencedDocuments?: DeclaredReferencedDocumentSet[];
+  idPrefixOwners?: DeliverableIdPrefixOwner[];
+  crossRefIdPrefixes?: string[];
+  countClaimSubjects?: DeliverableCountClaimSubject[];
+  sharedItemKindIds?: string[];
+  idPatterns?: string[];
+}
+
+export type DeliverableConsistencyCheckId =
+  | "DCC-01"
+  | "DCC-02"
+  | "DCC-03"
+  | "DCC-04"
+  | "DCC-05"
+  | "DCC-06"
+  | "DCC-07"
+  | "DCC-08"
+  | "DCC-09"
+  | "DCC-10"
+  | "DCC-11"
+  | "DCC-12"
+  | "DCC-13"
+  | "DCC-14"
+  | "DCC-15";
+
+export type DeliverableConsistencySeverity = "high" | "medium" | "info";
+
+export interface DeliverableConsistencyPlace {
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  snippet: string; // 80字で「…」截断
+}
+
+export interface DeliverableConsistencyFinding {
+  no: string; // "DC-001" 連番
+  checkId: DeliverableConsistencyCheckId;
+  severity: DeliverableConsistencySeverity;
+  subject: string;
+  summary: string;
+  places: DeliverableConsistencyPlace[];
+  question: string; // 意味的層への確認依頼
+  assumption: string; // 暫定的な扱い
+}
+
+/** 参照テストベース文書の読了状態。read/unread の両方が現れた場合は both。 */
+export type ReferencedDocumentState = "read" | "unread" | "both" | "absent";
+
+export interface ReferencedDocumentOccurrence {
+  deliverable: string;
+  documentKey: string; // 2桁の文書番号
+  documentLabel: string;
+  lineIndex: number;
+  heading: string;
+  state: "read" | "unread";
+  snippet: string;
+}
+
+export interface ReferencedDocumentRow {
+  documentKey: string;
+  documentLabel: string;
+  states: { deliverable: string; state: ReferencedDocumentState }[];
+  occurrences: ReferencedDocumentOccurrence[];
+}
+
+export interface CrossRefIdOccurrenceRef {
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  lineText: string;
+  role: "definition" | "reference";
+}
+
+export interface CrossRefIdStatement {
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  statement: string;
+}
+
+export interface CrossRefIdEntry {
+  id: string;
+  prefix: string;
+  /** 入力順で最初に定義が現れた成果物。定義が無ければ undefined */
+  owner?: string;
+  /** 出現した成果物名（入力順） */
+  deliverables: string[];
+  references: CrossRefIdOccurrenceRef[];
+  statements: CrossRefIdStatement[];
+}
+
+export interface CorrespondenceClaim {
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  sentence: string;
+  targetDeliverable: string;
+  ids: string[];
+}
+
+export interface SectionReference {
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  snippet: string;
+  /** 参照本文に現れた成果物呼称。自成果物・呼称省略のときは undefined */
+  aliasRaw?: string;
+  /** 解決できた参照先成果物名。解決できなければ undefined */
+  targetDeliverable?: string;
+  sectionNo: string;
+  label?: string;
+}
+
+export interface IdStatementDiffRow {
+  id: string;
+  a: CrossRefIdStatement;
+  b: CrossRefIdStatement;
+  /** 両方に現れた単位で値集合が異なるもの */
+  unitConflicts: { unit: string; valuesA: string[]; valuesB: string[] }[];
+  bigramRatio: number;
+}
+
+export type CountClaimKind = "id-enumeration" | "ratio" | "subject";
+
+export interface CountClaim {
+  kind: CountClaimKind;
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  snippet: string;
+  /** id-enumeration / subject の宣言件数 */
+  declaredCount?: number;
+  /** id-enumeration で同一セル内に列挙されたID */
+  ids?: string[];
+  /** ratio の分子・分母・併記された率 */
+  numerator?: number;
+  denominator?: number;
+  percent?: number;
+  /** subject の対象キーワード */
+  keyword?: string;
+}
+
+export interface SharedItemOccurrence {
+  kindId: string;
+  kindLabel: string;
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  itemText: string;
+  normalizedKey: string;
+}
+
+export interface DeliverableConsistencySummary {
+  deliverableCount: number;
+  referencedDocumentCount: number;
+  crossRefIdCount: number;
+  sectionReferenceCount: number;
+  byCheckId: Record<string, number>;
+  bySeverity: Record<string, number>;
+  totalFindings: number;
+  highFindings: number;
+}
+
+// resource 型
+export interface DeliverableConsistencyCriteriaCategory {
+  id: DeliverableConsistencyCheckId;
+  nameJa: string;
+  severity: DeliverableConsistencySeverity;
+  definition: string;
+  recommendedAction: string;
+}
+
+export interface DeliverableSharedItemKind {
+  id: string; // "DSI-01".."DSI-06"
+  label: string;
+  headingKeywords: string[];
+  bodyKeywords: string[];
+}
+
+export interface DeliverableConsistencyCriteria {
+  name: string;
+  summary: string;
+  categories: DeliverableConsistencyCriteriaCategory[];
+  sharedItemKinds: DeliverableSharedItemKind[];
+  unreadStateWords: string[];
+  readStateWords: string[];
+  notes: string[];
+}

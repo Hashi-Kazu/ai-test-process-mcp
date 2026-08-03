@@ -25,6 +25,7 @@ import { registerAuditBasisContradictionsTool } from "./auditBasisContradictions
 import { registerGenerateBusinessRequirementModelTool } from "./generateBusinessRequirementModel.js";
 import { registerSelectRegressionSuiteTool } from "./selectRegressionSuite.js";
 import { registerAnalyzeExecutionOrderTool } from "./analyzeExecutionOrder.js";
+import { registerAuditDeliverableConsistencyTool } from "./auditDeliverableConsistency.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -53,4 +54,5 @@ export function registerTools(server: McpServer): void {
   registerGenerateBusinessRequirementModelTool(server);
   registerSelectRegressionSuiteTool(server);
   registerAnalyzeExecutionOrderTool(server);
+  registerAuditDeliverableConsistencyTool(server);
 }
