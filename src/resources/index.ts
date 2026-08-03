@@ -25,6 +25,7 @@ import { factorRalphFrame } from "./factorRalphFrame.js";
 import { testArchitectureDesignPrinciples } from "./testArchitectureDesignPrinciples.js";
 import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
+import { regressionSelectionAnalysisCriteria } from "./regressionSelectionCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
@@ -492,6 +493,35 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(configMatrixAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "regression-selection-analysis-criteria",
+    "testdesign://regression-selection/analysis-criteria",
+    {
+      title: "Regression Selection Analysis Criteria",
+      description:
+        "Judgment category catalog for select_regression_suite (RSC-01..RSC-20): out-of-population selection " +
+        "references, duplicate/conflicting decisions, missing reasons, high-risk items excluded from the suite, " +
+        "undecided population items, undeclared change-diff category, selected existing-unaffected items, " +
+        "non-selected or undecided impact-scope conditions, missing removal reasons for items actually dropped " +
+        "from the previous suite, removal reasons declared for items not actually dropped, previous-suite " +
+        "references outside the population, oversized large-test share, execution-time budget overrun, " +
+        "selected cases with no size classification input, impact-scope coverage claim mismatches, unknown " +
+        "selection criterion references, selected conditions with no backing test case, missing selection " +
+        "criteria declarations, previous-suite diff not computed, and population size cap overflow, with " +
+        "severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(regressionSelectionAnalysisCriteria, null, 2),
         },
       ],
     })
