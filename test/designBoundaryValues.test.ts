@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderBoundaryValues } from "../src/tools/designBoundaryValues.js";
 
 describe("renderBoundaryValues", () => {
@@ -52,7 +53,9 @@ describe("renderBoundaryValues", () => {
     const md = renderBoundaryValues({ variables: [{ name: "x", min: 5, max: 6 }] });
 
     // min+step (6) and max-step (5) both collide with existing boundary values.
-    const rows = md.split("\n").filter((l) => l.startsWith("| ") && l.includes("|", 2));
+    // 末尾の「次に実行すべきツール」節は境界値表ではないため対象外にする。
+    const body = md.split("## 次に実行すべきツール")[0];
+    const rows = body.split("\n").filter((l) => l.startsWith("| ") && l.includes("|", 2));
     const values = rows
       .map((l) => l.split("|")[1]?.trim())
       .filter((v): v is string => !!v && v !== "値");
@@ -69,5 +72,11 @@ describe("renderBoundaryValues", () => {
 
     expect(md).toContain("- bad: min が max を上回るため境界を列挙できません");
     expect(md).toContain("## ok（型: int, 範囲: 1〜5, 刻み: 1）");
+  });
+});
+
+describe("renderBoundaryValues 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderBoundaryValues({ variables: [{ name: "x", min: 1, max: 10 }] }));
   });
 });

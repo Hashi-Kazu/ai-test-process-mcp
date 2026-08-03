@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   testPlanTemplate,
@@ -25,6 +26,7 @@ const TBD = "_未記入_";
 const TBD_REQUIRED = "_未記入（必須）_";
 
 export const generateTestPlanInputShape = {
+  ...completedToolsInputShape,
   projectName: z.string().describe("Name of the project or system under test"),
   scope: z
     .string()
@@ -694,6 +696,14 @@ export function renderTestPlan(
       lines.push("");
     }
   });
+
+  lines.push(
+    ...renderNextToolsSection(
+      "create_test_plan",
+      lines.join("\n").includes("未記入") ? ["has-unfilled-fields"] : [],
+      input.completedTools
+    ).split("\n")
+  );
 
   return lines.join("\n").trimEnd() + "\n";
 }

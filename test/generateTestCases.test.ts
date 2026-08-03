@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestCases } from "../src/tools/generateTestCases.js";
 import type { GenerateTestCasesInput } from "../src/types.js";
 
@@ -531,5 +532,47 @@ describe("renderTestCases test basis grounding (4.8)", () => {
     const section2 = markdown.split("## 2. 網羅対象一覧(決定的層)")[1].split("## 3.")[0];
     expect(section2).toContain("CFG:MAIN:R1");
     expect(section2).toContain("config-matrix");
+  });
+});
+
+describe("renderTestCases 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestCases(baseInput));
+  });
+});
+
+describe("renderTestCases 次に実行すべきツール節の内容", () => {
+  function nextToolsSection(md: string): string {
+    return md.split("## 次に実行すべきツール")[1];
+  }
+
+  it("review_test_specification 行は常に出る", () => {
+    expect(nextToolsSection(renderTestCases(baseInput))).toContain(
+      "| 未実施 | review_test_specification |"
+    );
+  });
+
+  it("preconditions を持つケースがあると analyze_execution_order 行が出る", () => {
+    const withoutCases = nextToolsSection(renderTestCases(baseInput));
+    expect(withoutCases).not.toContain("| 未実施 | analyze_execution_order |");
+
+    const withCases = nextToolsSection(
+      renderTestCases({
+        ...baseInput,
+        testCases: [
+          {
+            caseId: "TCS-001",
+            title: "上限枚数で購入できる",
+            testConditionId: "TC-001",
+            derivedFrom: ["R-001"],
+            techniqueId: "boundary-value-analysis",
+            coverageTargets: ["BVA-枚数-max"],
+            preconditions: [{ name: "在庫", value: "十分" }],
+            steps: [{ no: 1, action: "MAX_TICKETS 枚を選ぶ", expected: "購入確認画面が表示される" }],
+          },
+        ],
+      })
+    );
+    expect(withCases).toContain("| 未実施 | analyze_execution_order |");
   });
 });

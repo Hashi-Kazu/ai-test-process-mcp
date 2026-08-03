@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestPlan } from "../src/tools/generateTestPlan.js";
 import { renderTestPlanReview, findAmbiguousExpressions } from "../src/tools/reviewTestPlan.js";
 import { testPlanReviewChecklist } from "../src/resources/testPlanReviewChecklist.js";
@@ -245,5 +246,19 @@ describe("renderTestPlanReview", () => {
     const findings = findAmbiguousExpressions(planMarkdown);
 
     expect(findings.length).toBe(0);
+  });
+});
+
+describe("renderTestPlanReview 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestPlanReview(renderTestPlan(minimalInput)));
+  });
+});
+
+describe("renderTestPlanReview 次に実行すべきツール節の内容", () => {
+  it("欠落章のある計画書で revise_test_plan 行が出る", () => {
+    const review = renderTestPlanReview("# テスト計画書: Sample\n");
+    const section = review.split("## 次に実行すべきツール")[1];
+    expect(section).toContain("| 未実施 | revise_test_plan |");
   });
 });

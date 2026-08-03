@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   testPerspectiveCatalog,
@@ -38,6 +39,7 @@ import {
 import type {
   ExtractTestConditionsInput,
   GuidewordDictionary,
+  NextToolCatalogEntry,
   RiskAnalysisFrame,
   TestConditionInput,
   TestPerspectiveCatalog,
@@ -643,10 +645,49 @@ export function renderTestConditions(
   );
   lines.push("");
 
+  // 推奨技法 → 対応ツールの技法由来エントリ。5節で構築した techniqueOrder / techniqueMap を再利用する。
+  const techniqueNextToolEntries: { toolName: string; techniqueIds: string[]; conditionIds: string[] }[] = [];
+  for (const mapping of testTechniqueToolMapping) {
+    if (!techniqueMap.has(mapping.techniqueId)) continue;
+    const conditionIds = techniqueMap.get(mapping.techniqueId) as string[];
+    const existing = techniqueNextToolEntries.find((e) => e.toolName === mapping.toolName);
+    if (existing) {
+      existing.techniqueIds.push(mapping.techniqueId);
+      for (const id of conditionIds) {
+        if (!existing.conditionIds.includes(id)) existing.conditionIds.push(id);
+      }
+      continue;
+    }
+    techniqueNextToolEntries.push({
+      toolName: mapping.toolName,
+      techniqueIds: [mapping.techniqueId],
+      conditionIds: [...conditionIds],
+    });
+  }
+  const techniqueEntries: NextToolCatalogEntry[] = techniqueNextToolEntries.map((e) => ({
+    toolName: e.toolName,
+    when: "always",
+    reason: `推奨技法 ${e.techniqueIds.join(", ")} が条件 ${e.conditionIds.join(", ")} に指定されている`,
+  }));
+
+  lines.push(
+    ...renderNextToolsSection(
+      "extract_test_conditions",
+      [
+        ...(testConditions.length > 0 ? ["has-conditions"] : []),
+        ...(testConditions.some((c) => c.priority === "高") ? ["has-high-priority-conditions"] : []),
+        ...(uncovered.length > 0 ? ["has-uncovered-requirements"] : []),
+      ],
+      input.completedTools,
+      techniqueEntries
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const extractTestConditionsInputShape = {
+  ...completedToolsInputShape,
   requirementIds: z
     .array(z.string())
     .min(1)

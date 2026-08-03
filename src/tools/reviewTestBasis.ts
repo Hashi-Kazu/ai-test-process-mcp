@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testBasisReviewChecklist } from "../resources/testBasisReviewChecklist.js";
 import { questionPriorityDefinitions } from "../resources/testPlanTemplate.js";
-import type { TestBasisDocument, TestBasisReviewChecklist } from "../types.js";
+import type { CompletedToolDeclaration, TestBasisDocument, TestBasisReviewChecklist } from "../types.js";
 import {
   buildDocumentDigests,
   findDocumentDigestFindings,
@@ -29,7 +30,8 @@ function place(document: string, lineIndex: number, heading: string): string {
 export function renderTestBasisReview(
   documents: TestBasisDocument[],
   options: TestBasisAnalysisOptions = {},
-  checklist: TestBasisReviewChecklist = testBasisReviewChecklist
+  checklist: TestBasisReviewChecklist = testBasisReviewChecklist,
+  completedTools: readonly CompletedToolDeclaration[] = []
 ): string {
   const occurrences = extractIdOccurrences(documents, options);
   const duplicates = findDuplicateIds(occurrences);
@@ -239,10 +241,21 @@ export function renderTestBasisReview(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "review_test_basis",
+      duplicates.length > 0 || unresolved.length > 0 || issues.length > 0 || ambiguousTotal > 0
+        ? ["has-basis-findings"]
+        : [],
+      completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const reviewTestBasisInputShape = {
+  ...completedToolsInputShape,
   documents: z
     .array(
       z.object({
@@ -271,8 +284,13 @@ export function registerReviewTestBasisTool(server: McpServer): void {
         "テストベース(要件・仕様)の欠陥をレビュー。ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現を決定的に検査し、意味的チェックリスト・依頼元への質問状雛形・改善提案を併せて返す。",
       inputSchema: reviewTestBasisInputShape,
     },
-    async ({ documents, idPatterns, additionalAmbiguousTerms }) => {
-      const markdown = renderTestBasisReview(documents, { idPatterns, additionalAmbiguousTerms });
+    async ({ documents, idPatterns, additionalAmbiguousTerms, completedTools }) => {
+      const markdown = renderTestBasisReview(
+        documents,
+        { idPatterns, additionalAmbiguousTerms },
+        undefined,
+        completedTools ?? []
+      );
       return { content: [{ type: "text" as const, text: markdown }] };
     }
   );

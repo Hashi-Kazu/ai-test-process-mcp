@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestPlan } from "../src/tools/generateTestPlan.js";
 import { testPlanTemplate } from "../src/resources/testPlanTemplate.js";
 import type { TestPlanInput, TestPlanTemplateSection } from "../src/types.js";
@@ -486,5 +487,20 @@ describe("sectionContent coverage (issue #17 / HSKZ-84)", () => {
       const block = extractSectionBlock(markdown, index);
       expect(block).toBe("_未記入_");
     }
+  });
+});
+
+describe("renderTestPlan 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestPlan({ projectName: "Sample", scope: "Login and checkout flows" }));
+  });
+});
+
+describe("renderTestPlan 次に実行すべきツール節の内容", () => {
+  it("未記入を含むドラフトで revise_test_plan 行が出る", () => {
+    const markdown = renderTestPlan({ projectName: "Sample", scope: "Login and checkout flows" });
+    expect(markdown).toContain("未記入");
+    const section = markdown.split("## 次に実行すべきツール")[1];
+    expect(section).toContain("| 未実施 | revise_test_plan |");
   });
 });

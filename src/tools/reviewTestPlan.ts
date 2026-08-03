@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testPlanTemplate } from "../resources/testPlanTemplate.js";
 import { testPlanReviewChecklist } from "../resources/testPlanReviewChecklist.js";
@@ -7,6 +8,7 @@ import type {
   AmbiguityCategory,
   AmbiguityLexicon,
   AmbiguityPrioritySection,
+  CompletedToolDeclaration,
   ReviewSeverity,
   TestPlanReviewChecklist,
   TestPlanTemplate,
@@ -237,7 +239,8 @@ export function findAmbiguousExpressions(
 export function renderTestPlanReview(
   planMarkdown: string,
   template: TestPlanTemplate = testPlanTemplate,
-  checklist: TestPlanReviewChecklist = testPlanReviewChecklist
+  checklist: TestPlanReviewChecklist = testPlanReviewChecklist,
+  completedTools: readonly CompletedToolDeclaration[] = []
 ): string {
   const headings = parseHeadings(planMarkdown);
 
@@ -330,10 +333,21 @@ export function renderTestPlanReview(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "review_test_plan",
+      missingSections.length > 0 || requiredTbdOccurrences.length > 0 || ambiguityPriorityTotal > 0
+        ? ["has-findings"]
+        : [],
+      completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const reviewTestPlanInputShape = {
+  ...completedToolsInputShape,
   planMarkdown: z
     .string()
     .describe("Markdown body of the test plan to review (e.g. create_test_plan output)"),
@@ -348,8 +362,8 @@ export function registerReviewTestPlanTool(server: McpServer): void {
         "テスト計画書の Markdown を JSTQB 観点でレビュー。15章の欠落・必須未記入・曖昧語を決定的に検査し、意味的レビュー用チェックリストを併せて返す。",
       inputSchema: reviewTestPlanInputShape,
     },
-    async ({ planMarkdown }) => {
-      const markdown = renderTestPlanReview(planMarkdown);
+    async ({ planMarkdown, completedTools }) => {
+      const markdown = renderTestPlanReview(planMarkdown, undefined, undefined, completedTools ?? []);
       return { content: [{ type: "text" as const, text: markdown }] };
     }
   );

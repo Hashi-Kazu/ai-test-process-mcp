@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { classifyTestSize, classifyTestSizes, buildTestSizeDistribution } from "../testSizeAnalysis.js";
 import { computeRiskScore, mapRiskScoreToBand } from "../testConditionAnalysis.js";
@@ -830,6 +831,14 @@ export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
     for (const line of guidanceLines) lines.push(line);
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "select_regression_suite",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -838,6 +847,7 @@ export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
 const regressionItemKindEnum = z.enum(["condition", "case"]);
 
 export const selectRegressionSuiteInputShape = {
+  ...completedToolsInputShape,
   suiteId: z.string().optional().describe("Suite id used in headings and summary (default REG)"),
   title: z.string().optional(),
   testConditions: z

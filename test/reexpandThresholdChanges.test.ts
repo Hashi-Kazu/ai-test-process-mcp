@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderThresholdChangeReexpansion } from "../src/tools/reexpandThresholdChanges.js";
 import type { ReexpandThresholdChangesInput } from "../src/types.js";
 
@@ -341,5 +342,14 @@ describe("renderThresholdChangeReexpansion", () => {
     const section6 = md.split("## 6.")[1];
     expect(section6).toContain("宣言漏れか対象外かを判断");
     expect(section6).toContain("大人料金");
+  });
+});
+
+describe("renderThresholdChangeReexpansion 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderThresholdChangeReexpansion({
+      parametersBefore: [{ name: "MAX_TICKETS", value: "10", unit: "枚" }],
+      parametersAfter: [{ name: "MAX_TICKETS", value: "20", unit: "枚" }],
+    }));
   });
 });

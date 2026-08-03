@@ -1,3 +1,26 @@
+/** 実施済みツールの申告。証跡(evidence)が無い申告は実施済みとして扱わない。 */
+export interface CompletedToolDeclaration {
+  toolName: string;
+  evidence?: string;
+}
+
+/** 「次に実行すべきツール」静的カタログの1エントリ。 */
+export interface NextToolCatalogEntry {
+  /** 後続ツール名 */
+  toolName: string;
+  /** 提示理由（日本語1文） */
+  reason: string;
+  /** シグナルキー。"always" は常に真 */
+  when: string;
+}
+
+/** 「次に実行すべきツール」節の1行。 */
+export interface NextToolRow {
+  status: "未実施" | "実施済み";
+  toolName: string;
+  reason: string;
+}
+
 export type JstqbTermCategory =
   | "test-level"
   | "test-type"
@@ -163,6 +186,7 @@ export interface TestPlanReviewChecklist {
 }
 
 export interface TestPlanInput {
+  completedTools?: CompletedToolDeclaration[];
   projectName: string;
   scope: string;
   objectives?: string[];
@@ -462,6 +486,7 @@ export interface RequirementsStakeholderInput {
 }
 
 export interface AnalyzeRequirementsInput {
+  completedTools?: CompletedToolDeclaration[];
   documents: TestBasisDocument[];
   idPatterns?: string[];
   additionalAmbiguousTerms?: string[];
@@ -667,6 +692,7 @@ export interface TestConditionRiskInput {
   riskCategoryId?: string;
 }
 export interface ExtractTestConditionsInput {
+  completedTools?: CompletedToolDeclaration[];
   requirementIds: string[];
   testConditions: TestConditionInput[];
   personas?: TestConditionPersonaInput[];
@@ -833,6 +859,7 @@ export interface DecisionTableRuleSpec {
   note?: string;
 }
 export interface DecisionTableSpec {
+  completedTools?: CompletedToolDeclaration[];
   tableId?: string;           // 網羅対象IDに使う。既定 "MAIN"
   title?: string;
   conditions: DecisionTableConditionSpec[];  // 1件以上
@@ -913,6 +940,7 @@ export interface PairwiseSeedRow {
   note?: string;
 }
 export interface PairwiseSpec {
+  completedTools?: CompletedToolDeclaration[];
   setId?: string;                  // 網羅対象IDに使う。既定 "MAIN"
   title?: string;
   factors: PairwiseFactorSpec[];   // 2件以上
@@ -998,6 +1026,7 @@ export interface ConfigMatrixExcludedCombination {
 export type ConfigMatrixCoveragePolicy = "single" | "pairwise" | "full";
 
 export interface ConfigMatrixSpec {
+  completedTools?: CompletedToolDeclaration[];
   matrixId?: string; // 既定 "MAIN"。CFG: prefix と網羅対象IDに使う
   title?: string;
   factors: ConfigMatrixFactorSpec[]; // 1件以上
@@ -1113,6 +1142,7 @@ export interface UseCaseSpec {
 export interface ScenarioTestConditionRef { id: string; statement?: string; featureIds?: string[]; }
 
 export interface ScenarioFlowSpec {
+  completedTools?: CompletedToolDeclaration[];
   title?: string;
   actors: ScenarioActorSpec[];     // 1件以上
   useCases: UseCaseSpec[];         // 1件以上
@@ -1203,6 +1233,7 @@ export interface TestCaseSourceCondition {
   sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
 }
 export interface GenerateTestCasesInput {
+  completedTools?: CompletedToolDeclaration[];
   testConditions: TestCaseSourceCondition[];       // 1件以上
   requirementIds?: string[];                       // derivedFrom の照合先
   riskIds?: string[];                              // derivedFrom の kind:"risk" 照合先
@@ -1332,6 +1363,7 @@ export interface TestLevelAllocationFinding {
 
 // --- テスト仕様書レビュー（review_test_specification） ---
 export interface ReviewTestSpecificationInput {
+  completedTools?: CompletedToolDeclaration[];
   testBasisDocuments: TestBasisDocument[];        // 1件以上・フォーマット不問の自由テキスト
   testSpecificationText: string;                  // テスト仕様書本文（フォーマット不問）
   testCases?: TestCaseSpec[];                     // 未指定なら ID 抽出ベースの簡易チェックのみ
@@ -1455,6 +1487,7 @@ export interface ExploratoryCharterInput {
 }
 
 export interface GenerateExploratoryChartersInput {
+  completedTools?: CompletedToolDeclaration[];
   testConditions: ExploratoryCharterTestConditionInput[]; // 1件以上
   risks?: TestConditionRiskInput[];
   charters?: ExploratoryCharterInput[];      // 未指定・空なら「生成指示のみ」モード
@@ -1585,6 +1618,7 @@ export interface UserStoryMapIdPrefixes {
   testRequirement?: string;
 }
 export interface GenerateUserStoryMapInput {
+  completedTools?: CompletedToolDeclaration[];
   subjectName?: string;
   domainAnalysis?: DomainAnalysisFindingInput[];
   personas: TestConditionPersonaInput[];
@@ -1614,6 +1648,7 @@ export interface IdPopulationExclusion {
 }
 
 export interface AuditIdPopulationInput {
+  completedTools?: CompletedToolDeclaration[];
   documents: TestBasisDocument[];
   declaredPopulations: DeclaredIdPopulation[];
   exclusions?: IdPopulationExclusion[];
@@ -1896,6 +1931,7 @@ export interface ThresholdExtractionCriteria {
 }
 
 export interface ReexpandThresholdChangesInput {
+  completedTools?: CompletedToolDeclaration[];
   parametersBefore: TestCaseParameter[];
   parametersAfter: TestCaseParameter[];
   documentsBefore?: TestBasisDocument[];
@@ -1965,6 +2001,7 @@ export interface CauseEffectConstraintInput {
 }
 
 export interface AnalyzeCauseEffectInput {
+  completedTools?: CompletedToolDeclaration[];
   sectionId: string;
   sectionTitle?: string;
   specText: string;
@@ -2102,6 +2139,7 @@ export interface TestArchitectureScope {
 }
 
 export interface TestArchitectureSpec {
+  completedTools?: CompletedToolDeclaration[];
   title?: string;
   scope?: TestArchitectureScope;
   decompositionAxisIds?: string[];     // 宣言した分割軸 TAX-xx
@@ -2270,6 +2308,7 @@ export interface TestDataCaseSpec {
 }
 
 export interface TestDataSpec {
+  completedTools?: CompletedToolDeclaration[];
   title?: string;
   dataClasses: DataClassSpec[];     // 1件以上
   dataItems?: DataItemSpec[];
@@ -2414,6 +2453,7 @@ export interface CrossMatrixAxisPopulation {
 }
 
 export interface AuditCrossMatrixInput {
+  completedTools?: CompletedToolDeclaration[];
   axes: CrossMatrixAxisSpec[];                        // 2件以上
   axisPairs?: CrossMatrixAxisPairSpec[];              // 省略時は全組合せ
   declaredCoverage?: CrossMatrixDeclaredCoverage[];
@@ -2637,6 +2677,7 @@ export interface BasisContradictionSummary {
 }
 
 export interface AuditBasisContradictionsInput {
+  completedTools?: CompletedToolDeclaration[];
   documents: TestBasisDocument[];
   declaredEntities?: BasisDeclaredEntity[];
   knownResolved?: BasisKnownResolved[];
@@ -2806,6 +2847,7 @@ export interface BusinessRequirementIdPrefixes {
 }
 
 export interface GenerateBusinessRequirementModelInput {
+  completedTools?: CompletedToolDeclaration[];
   subjectName?: string;
   roles?: BusinessRoleInput[];
   purposes?: BusinessPurposeInput[];
@@ -2925,6 +2967,7 @@ export interface RegressionRemovalReasonInput {
 }
 
 export interface RegressionSelectionSpec {
+  completedTools?: CompletedToolDeclaration[];
   suiteId?: string;
   title?: string;
   testConditions: RegressionSuiteTestConditionInput[]; // 1件以上
@@ -3086,6 +3129,7 @@ export interface ExecutionMonitoringCheckpointInput {
 }
 
 export interface ExecutionOrderSpec {
+  completedTools?: CompletedToolDeclaration[];
   planId?: string; // 既定 DEFAULT_EXECUTION_PLAN_ID
   title?: string;
   nodes: ExecutionNodeInput[]; // 1件以上

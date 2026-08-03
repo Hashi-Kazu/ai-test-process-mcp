@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderCrossMatrixAudit } from "../src/tools/auditCrossMatrix.js";
 import type {
   AuditCrossMatrixInput,
@@ -198,5 +199,11 @@ describe("renderCrossMatrixAudit", () => {
     expect(md).toContain("| ZZZ-99 | 差し替え区分 | info | 差し替えた定義 | 差し替えた対処 |");
     expect(md).toContain("- 差し替えた注記");
     expect(md).not.toContain("| CMX-01 | 未宣言IDへの紐づけ |");
+  });
+});
+
+describe("renderCrossMatrixAudit 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderCrossMatrixAudit(baseInput()));
   });
 });

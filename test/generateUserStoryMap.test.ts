@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderUserStoryMap } from "../src/tools/generateUserStoryMap.js";
 import { personaJourneyFrame } from "../src/resources/personaJourneyFrame.js";
 import type { GenerateUserStoryMapInput } from "../src/types.js";
@@ -248,5 +249,11 @@ describe("renderUserStoryMap in generation-instruction-only mode", () => {
     const snapshot = JSON.stringify(minimal);
     expect(renderUserStoryMap(minimal)).toBe(md);
     expect(JSON.stringify(minimal)).toBe(snapshot);
+  });
+});
+
+describe("renderUserStoryMap 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderUserStoryMap(input));
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestConditions } from "../src/tools/extractTestConditions.js";
 import { guidewordDictionary } from "../src/resources/guidewordDictionary.js";
 import { riskAnalysisFrame } from "../src/resources/riskAnalysisFrame.js";
@@ -450,5 +451,77 @@ describe("renderTestConditions with explicit-kind derivedFrom entries", () => {
     const section = markdown3.split("### 3.7 derivedFrom の未解決参照")[1].split("### 3.8")[0];
     expect(section).toContain("リスク:RK-999");
     expect(section).toContain("risks[].id");
+  });
+});
+
+describe("renderTestConditions 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestConditions(input));
+  });
+});
+
+describe("renderTestConditions 次に実行すべきツール節の内容", () => {
+  function conditionsInput(
+    conditions: ExtractTestConditionsInput["testConditions"]
+  ): ExtractTestConditionsInput {
+    return { requirementIds: ["R-001"], testConditions: conditions };
+  }
+
+  function nextToolsSection(md: string): string {
+    return md.split("## 次に実行すべきツール")[1];
+  }
+
+  it("優先度「高」の条件があると generate_exploratory_charters 行が出る", () => {
+    const md = renderTestConditions(
+      conditionsInput([
+        {
+          id: "TC-001",
+          target: "F-001",
+          perspectiveCategoryId: "TPC-01",
+          statement: "購入が完了する",
+          source: "testbase",
+          derivedFrom: ["R-001"],
+          priority: "高",
+        },
+      ])
+    );
+    expect(nextToolsSection(md)).toContain("| 未実施 | generate_exploratory_charters |");
+  });
+
+  it("優先度が全て「中」なら generate_exploratory_charters 行は出ない", () => {
+    const md = renderTestConditions(
+      conditionsInput([
+        {
+          id: "TC-001",
+          target: "F-001",
+          perspectiveCategoryId: "TPC-01",
+          statement: "購入が完了する",
+          source: "testbase",
+          derivedFrom: ["R-001"],
+          priority: "中",
+        },
+      ])
+    );
+    expect(nextToolsSection(md)).not.toContain("| 未実施 | generate_exploratory_charters |");
+  });
+
+  it("recommendedTechniques: decision-table で design_decision_table 行が技法由来理由付きで出る", () => {
+    const md = renderTestConditions(
+      conditionsInput([
+        {
+          id: "TC-001",
+          target: "F-001",
+          perspectiveCategoryId: "TPC-01",
+          statement: "購入が完了する",
+          source: "testbase",
+          derivedFrom: ["R-001"],
+          priority: "中",
+          recommendedTechniques: ["decision-table"],
+        },
+      ])
+    );
+    expect(nextToolsSection(md)).toContain(
+      "| 未実施 | design_decision_table | 推奨技法 decision-table が条件 TC-001 に指定されている |"
+    );
   });
 });

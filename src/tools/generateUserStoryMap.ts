@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { personaJourneyFrame } from "../resources/personaJourneyFrame.js";
 import {
@@ -486,6 +487,14 @@ export function renderUserStoryMap(
   }
   lines.push("");
 
+  lines.push(
+    ...renderNextToolsSection(
+      "generate_user_story_map",
+      [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -513,6 +522,7 @@ const personaShape = z.object({
 });
 
 export const generateUserStoryMapInputShape = {
+  ...completedToolsInputShape,
   subjectName: z.string().optional().describe("Target system / project name"),
   domainAnalysis: z
     .array(

@@ -30,6 +30,7 @@ import { executionOrderAnalysisCriteria } from "./executionOrderCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
+import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -728,6 +729,29 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(businessRequirementFrame, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "next-tool-catalog",
+    "toolchain://next-tools/catalog",
+    {
+      title: "Next Tool Catalog",
+      description:
+        "Static follow-up tool table used by every tool to render the '次に実行すべきツール' section: " +
+        "per-source-tool follow-up entries with the signal key that makes each entry applicable and the " +
+        "Japanese reason shown to the caller, plus the list of all tool names registered by this MCP server " +
+        "used to reject completedTools declarations naming tools that do not exist.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify({ registeredToolNames, nextToolCatalog }, null, 2),
         },
       ],
     })

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testTechniqueCatalog } from "../resources/testTechniqueCatalog.js";
 import {
@@ -684,6 +685,20 @@ export function renderTestCases(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "generate_test_cases",
+      [
+        ...(testCases.length > 0 ? ["has-cases"] : []),
+        ...(testCases.some((c) => (c.preconditions ?? []).length > 0) ? ["has-preconditions"] : []),
+        ...(unknownTargetRefs.length > 0 || unsubstantiatedTargets.length > 0
+          ? ["has-unknown-coverage-refs"]
+          : []),
+      ],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -759,6 +774,7 @@ export const testCaseSpecShape = z.object({
 });
 
 export const generateTestCasesInputShape = {
+  ...completedToolsInputShape,
   testConditions: z
     .array(
       z.object({

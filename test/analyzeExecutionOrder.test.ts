@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
   computeExecutionOrder,
   renderExecutionOrder,
@@ -329,5 +330,11 @@ describe("renderExecutionOrder", () => {
     for (let i = 1; i <= 27; i++) {
       expect(markdown).toContain(`EOC-${String(i).padStart(2, "0")}`);
     }
+  });
+});
+
+describe("renderExecutionOrder 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderExecutionOrder({ nodes: [{ id: "A", dependsOn: [] }] }));
   });
 });

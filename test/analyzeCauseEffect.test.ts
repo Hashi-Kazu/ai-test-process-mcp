@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderCauseEffectAnalysis } from "../src/tools/analyzeCauseEffect.js";
 import type { AnalyzeCauseEffectInput } from "../src/types.js";
 
@@ -226,5 +227,11 @@ describe("renderCauseEffectAnalysis", () => {
     expect(() => renderCauseEffectAnalysis(input)).not.toThrow();
     const md = renderCauseEffectAnalysis(input);
     expect(section(md, "### 3.9 仕様文のモデル化網羅")).toContain("モデル化率: 0/2 (0.0%)");
+  });
+});
+
+describe("renderCauseEffectAnalysis 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderCauseEffectAnalysis(baseInput()));
   });
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testSpecificationReviewChecklist } from "../resources/testSpecificationReviewChecklist.js";
 import { testCaseSpecShape } from "./generateTestCases.js";
@@ -450,10 +451,24 @@ export function renderTestSpecificationReview(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "review_test_specification",
+      uncoveredRequirementIds.length > 0 ||
+      unfoundedCases.length > 0 ||
+      uncoveredConditionIds.length > 0 ||
+      unknownConditionRefs.length > 0
+        ? ["has-spec-findings"]
+        : [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const reviewTestSpecificationInputShape = {
+  ...completedToolsInputShape,
   testBasisDocuments: z
     .array(
       z.object({

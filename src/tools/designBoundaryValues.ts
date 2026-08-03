@@ -1,12 +1,15 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   BoundaryValueMode,
+  CompletedToolDeclaration,
   BoundaryValueRow,
   BoundaryVariableSpec,
 } from "../types.js";
 
 export const designBoundaryValuesInputShape = {
+  ...completedToolsInputShape,
   variables: z
     .array(
       z.object({
@@ -126,6 +129,7 @@ export function computeBoundaryRows(
 export function renderBoundaryValues(input: {
   variables: BoundaryVariableSpec[];
   mode?: BoundaryValueMode;
+  completedTools?: CompletedToolDeclaration[];
 }): string {
   const mode = input.mode ?? "three";
   const results = input.variables.map((v) => computeVariable(v, mode));
@@ -172,6 +176,14 @@ export function renderBoundaryValues(input: {
   lines.push("");
   lines.push(`- 総ケース数: ${totalCases}`);
   lines.push(`- 有効: ${totalValid} 件 / 無効: ${totalInvalid} 件`);
+
+  lines.push(
+    ...renderNextToolsSection(
+      "design_boundary_values",
+      [],
+      input.completedTools
+    ).split("\n")
+  );
 
   return lines.join("\n").trimEnd() + "\n";
 }

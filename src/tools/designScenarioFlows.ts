@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   GeneratedScenario,
@@ -772,6 +773,14 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
     );
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "design_scenario_flows",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -783,6 +792,7 @@ const scenarioStepShape = z.object({
 });
 
 export const designScenarioFlowsInputShape = {
+  ...completedToolsInputShape,
   title: z.string().optional(),
   actors: z
     .array(

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   DecisionTableActionValue,
@@ -616,12 +617,21 @@ export function renderDecisionTable(spec: DecisionTableSpec): string {
     `- 条件数: ${result.conditionCount} / 全組合せ数: ${result.totalCombinationCount} / 無効: ${result.invalidCombinationCount} / 有効: ${result.validCombinationCount} / 動作定義済み: ${result.definedCombinationCount} / 未定義: ${result.undefinedCombinationIndexes.length} / 矛盾: ${result.conflictingCombinationIndexes.length} / 圧縮後列数: ${result.compressedRules.length} / 削減率: ${result.compressionRatioPercent.toFixed(1)}%`
   );
 
+  lines.push(
+    ...renderNextToolsSection(
+      "design_decision_table",
+      [],
+      spec.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 const decisionTableSelectorSchema = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
 
 export const designDecisionTableInputShape = {
+  ...completedToolsInputShape,
   tableId: z.string().optional().describe("Table id used to build coverage target ids (default MAIN)"),
   title: z.string().optional(),
   conditions: z

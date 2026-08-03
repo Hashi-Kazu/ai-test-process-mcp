@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { exploratoryCharterCatalog } from "../resources/exploratoryCharterCatalog.js";
 import {
@@ -351,6 +352,17 @@ export function renderExploratoryCharters(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "generate_exploratory_charters",
+      [
+        ...(charters.length > 0 ? ["has-charters"] : []),
+        ...(uncoveredConditionIds.length > 0 ? ["has-uncovered-high-priority-conditions"] : []),
+      ],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -377,6 +389,7 @@ const exploratoryCharterShape = z.object({
 });
 
 export const generateExploratoryChartersInputShape = {
+  ...completedToolsInputShape,
   testConditions: z
     .array(
       z.object({

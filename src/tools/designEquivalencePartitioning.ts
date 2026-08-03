@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { EquivalencePartitioningVariableSpec } from "../types.js";
+import type { CompletedToolDeclaration, EquivalencePartitioningVariableSpec } from "../types.js";
 
 const classShape = z.object({
   label: z.string().describe("クラス名"),
@@ -9,6 +10,7 @@ const classShape = z.object({
 });
 
 export const designEquivalencePartitioningInputShape = {
+  ...completedToolsInputShape,
   variables: z
     .array(
       z.object({
@@ -51,6 +53,7 @@ export function listEquivalenceClasses(
 
 export function renderEquivalencePartitioning(input: {
   variables: EquivalencePartitioningVariableSpec[];
+  completedTools?: CompletedToolDeclaration[];
 }): string {
   const { variables } = input;
 
@@ -158,6 +161,14 @@ export function renderEquivalencePartitioning(input: {
       lines.push(`  - ${u}`);
     }
   }
+
+  lines.push(
+    ...renderNextToolsSection(
+      "design_equivalence_partitioning",
+      [],
+      input.completedTools
+    ).split("\n")
+  );
 
   return lines.join("\n").trimEnd() + "\n";
 }

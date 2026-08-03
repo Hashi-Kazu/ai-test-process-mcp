@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { thresholdChangeImpactCriteria } from "../resources/thresholdChangeImpactCriteria.js";
 import { thresholdExtractionCriteria } from "../resources/thresholdExtractionCriteria.js";
@@ -417,6 +418,14 @@ export function renderThresholdChangeReexpansion(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "reexpand_threshold_changes",
+      [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -440,6 +449,7 @@ const stateVariableShape = z.object({
 });
 
 export const reexpandThresholdChangesInputShape = {
+  ...completedToolsInputShape,
   parametersBefore: z
     .array(parameterShape)
     .describe("Threshold parameter table snapshot before the change; empty array means all parameters are additions"),

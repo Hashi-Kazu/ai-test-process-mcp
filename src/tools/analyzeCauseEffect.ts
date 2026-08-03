@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { causeEffectAnalysisCriteria } from "../resources/causeEffectCriteria.js";
 import {
@@ -477,10 +478,19 @@ export function renderCauseEffectAnalysis(
     lines.push("");
   }
 
+  lines.push(
+    ...renderNextToolsSection(
+      "analyze_cause_effect",
+      [],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const analyzeCauseEffectInputShape = {
+  ...completedToolsInputShape,
   sectionId: z.string().min(1).describe("Identifier of the specification section being modeled"),
   sectionTitle: z.string().optional().describe("Human readable title of the specification section"),
   specText: z

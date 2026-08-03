@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { idPopulationAuditCriteria } from "../resources/idPopulationAuditCriteria.js";
 import {
@@ -202,10 +203,22 @@ export function renderIdPopulationAudit(
   );
   lines.push("");
 
+  lines.push(
+    ...renderNextToolsSection(
+      "audit_id_population",
+      [
+        ...(neverDeclared.length > 0 ? ["has-never-declared-ids"] : []),
+        ...(undefinedIds.length > 0 || missingDocuments.length > 0 ? ["has-undefined-population-ids"] : []),
+      ],
+      input.completedTools
+    ).split("\n")
+  );
+
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export const auditIdPopulationInputShape = {
+  ...completedToolsInputShape,
   documents: z
     .array(
       z.object({

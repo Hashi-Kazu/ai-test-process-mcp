@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderTestSpecificationReview } from "../src/tools/reviewTestSpecification.js";
 import { testSpecificationReviewChecklist } from "../src/resources/testSpecificationReviewChecklist.js";
 import type {
@@ -424,5 +425,11 @@ describe("renderTestSpecificationReview - 入力ダイジェストと事実照�
     expect(section).toContain("- 照合対象: 引用 2件 / ID 0件 / 未照合 1件");
     expect(markdown).toContain("事実照合指摘数: 1");
     expect(markdown).toContain("ダイジェスト指摘数: 0");
+  });
+});
+
+describe("renderTestSpecificationReview 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestSpecificationReview(baseInput()));
   });
 });

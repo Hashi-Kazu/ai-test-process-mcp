@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
   DEFAULT_DECISION_TABLE_ID,
   buildDecisionTableCoverageTargets,
@@ -232,5 +233,11 @@ describe("renderDecisionTable", () => {
       rules: [{ when: { CX: "おとな" }, actions: { A1: "Y" } }],
     });
     expect(md).toContain("- 未算出(理由:");
+  });
+});
+
+describe("renderDecisionTable 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderDecisionTable(baseSpec()));
   });
 });

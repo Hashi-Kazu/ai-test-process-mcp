@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
   computeTestArchitecture,
   renderTestArchitecture,
@@ -494,5 +495,11 @@ describe("renderTestArchitecture", () => {
 
   it("points to the design principles resource in the summary", () => {
     expect(renderTestArchitecture(baseSpec())).toContain("testarch://container/design-principles");
+  });
+});
+
+describe("renderTestArchitecture 次に実行すべきツール節", () => {
+  it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
+    expectNextToolsSection(renderTestArchitecture(baseSpec()));
   });
 });
