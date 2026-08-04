@@ -71,6 +71,8 @@ function dedupe(values: string[]): string[] {
   return out;
 }
 
+const normalizeTrigger = (v: string | undefined): string => (v ?? "").trim().replace(/\s+/g, " ");
+
 function checkStepNumbering(
   steps: ScenarioStepSpec[],
   label: string,
@@ -271,12 +273,11 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
     semiNormalCount: 0,
     abnormalCount: 0,
     flowCount,
-    coveredFlowCount: 0,
-    flowCoverageRatioPercent: 0,
+    expandedFlowCount: 0,
+    flowExpansionRatioPercent: 0,
     declaredFeatureIds,
     passedFeatureIds: [],
     uncoveredFeatureIds: [...declaredFeatureIds],
-    undeclaredFeatureIds: [],
     featureCoverageBasis: "unavailable",
     findings,
   });
@@ -319,7 +320,7 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
       useCaseId: uc.id,
       nameJa: `${uc.nameJa} ${MAIN_FLOW_LABEL}`,
       outcomeClass: "normal",
-      passedFlowIds: [MAIN_FLOW_ID],
+      passedFlowIds: dedupe(mainSteps.map((s) => s.flowId)),
       steps: mainSteps,
       featureIds: dedupe(mainSteps.flatMap((s) => s.featureIds)),
     });
@@ -344,7 +345,7 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
         branchId: branch.id,
         trigger: branch.trigger,
         outcomeClass: outcomeClassOf(branch),
-        passedFlowIds: [MAIN_FLOW_ID, branch.id],
+        passedFlowIds: dedupe(steps.map((s) => s.flowId)),
         steps,
         featureIds: dedupe(steps.flatMap((s) => s.featureIds)),
       });
@@ -354,19 +355,21 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
       for (const featureId of scenario.featureIds) passedFeatureIdsAll.push(featureId);
     }
 
-    const covered = new Set<string>();
+    const expanded = new Set<string>();
     for (const scenario of scenarios) {
-      for (const flowId of scenario.passedFlowIds) covered.add(flowId);
+      for (const flowId of scenario.passedFlowIds) expanded.add(flowId);
     }
 
-    // 重複シナリオ（通過ステップ列が完全一致）。
-    // 分岐IDそのものは鍵に含めず、フローの役割(主フロー/分岐)・ステップ番号・操作内容の並びで比較する。
+    // 重複シナリオ（通過ステップ列・分岐条件・分類が完全一致）。
+    // 分岐IDそのものは鍵に含めないが、分岐条件(trigger)と分類(終了状態)は含める。
     // 分岐IDを鍵に含めると別IDというだけで常に相異なってしまい、実体として同じ経路になる二重宣言を検出できないため。
+    // 一方、ステップ列が同じでも入る条件や終わり方が違えば別シナリオとして扱う。
     const seenSequences = new Map<string, string>();
     for (const scenario of scenarios) {
-      const key = scenario.steps
-        .map((s) => `${s.flowId === MAIN_FLOW_ID ? "MAIN" : "BRANCH"}#${s.stepNo}:${s.action}`)
+      const stepKey = scenario.steps
+        .map((s) => `${s.flowId === MAIN_FLOW_ID ? "MAIN" : "BRANCH"}#${s.stepNo}:${s.actor}:${s.action}`)
         .join(">");
+      const key = `${scenario.outcomeClass}|${normalizeTrigger(scenario.trigger)}|${stepKey}`;
       const first = seenSequences.get(key);
       if (first === undefined) {
         seenSequences.set(key, scenario.id);
@@ -376,7 +379,17 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
         categoryId: "SFC-13",
         severity: "medium",
         target: scenario.id,
-        detail: `シナリオ「${scenario.nameJa}」の通過ステップ列が ${first} と完全に一致している。`,
+        detail: `シナリオ「${scenario.nameJa}」の通過ステップ列・分岐条件・分類が ${first} と完全に一致している。`,
+      });
+    }
+
+    for (const flowId of flowIds) {
+      if (expanded.has(flowId)) continue;
+      findings.push({
+        categoryId: "SFC-15",
+        severity: "medium",
+        target: useCaseFlowTargetId(uc.id, flowId),
+        detail: `フロー「${flowLabel(uc, flowId)}」にステップが1件も無く、生成シナリオのステップ列に実体として現れない。`,
       });
     }
 
@@ -385,7 +398,7 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
       nameJa: uc.nameJa,
       primaryActor: uc.primaryActor,
       flowIds,
-      coveredFlowIds: flowIds.filter((id) => covered.has(id)),
+      expandedFlowIds: flowIds.filter((id) => expanded.has(id)),
       scenarios,
       normalCount: scenarios.filter((s) => s.outcomeClass === "normal").length,
       semiNormalCount: scenarios.filter((s) => s.outcomeClass === "semi-normal").length,
@@ -397,9 +410,9 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
   const normalCount = results.reduce((n, r) => n + r.normalCount, 0);
   const semiNormalCount = results.reduce((n, r) => n + r.semiNormalCount, 0);
   const abnormalCount = results.reduce((n, r) => n + r.abnormalCount, 0);
-  const coveredFlowCount = results.reduce((n, r) => n + r.coveredFlowIds.length, 0);
-  const flowCoverageRatioPercent =
-    flowCount === 0 ? 0 : Math.round((coveredFlowCount / flowCount) * 1000) / 10;
+  const expandedFlowCount = results.reduce((n, r) => n + r.expandedFlowIds.length, 0);
+  const flowExpansionRatioPercent =
+    flowCount === 0 ? 0 : Math.round((expandedFlowCount / flowCount) * 1000) / 10;
 
   if (scenarioCount > 0 && (semiNormalCount === 0 || abnormalCount === 0)) {
     const lacking = [
@@ -417,10 +430,6 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
   // --- 5. 機能IDの宣言と実体の双方向照合 ---
   const passedFeatureIds = dedupe(passedFeatureIdsAll);
   const uncoveredFeatureIds = declaredFeatureIds.filter((id) => !passedFeatureIds.includes(id));
-  const undeclaredFeatureIds =
-    declaredFeatureIds.length > 0
-      ? passedFeatureIds.filter((id) => !declaredFeatureIds.includes(id))
-      : [];
 
   for (const featureId of uncoveredFeatureIds) {
     findings.push({
@@ -475,12 +484,11 @@ export function computeScenarioFlows(spec: ScenarioFlowSpec): ScenarioFlowResult
     semiNormalCount,
     abnormalCount,
     flowCount,
-    coveredFlowCount,
-    flowCoverageRatioPercent,
+    expandedFlowCount,
+    flowExpansionRatioPercent,
     declaredFeatureIds,
     passedFeatureIds,
     uncoveredFeatureIds,
-    undeclaredFeatureIds,
     featureCoverageBasis,
     featureCoverageRatioPercent,
     findings,
@@ -647,11 +655,6 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
       }`
     );
     lines.push(
-      `- 母集団外の参照(${result.undeclaredFeatureIds.length}件): ${
-        result.undeclaredFeatureIds.length === 0 ? "なし" : result.undeclaredFeatureIds.join(", ")
-      }`
-    );
-    lines.push(
       `- 機能ID被覆率: ${(result.featureCoverageRatioPercent as number).toFixed(1)}%（分母: 宣言母集団 ${
         result.declaredFeatureIds.length
       } 件、分子: シナリオのステップが実際に通過した機能ID ${
@@ -759,16 +762,20 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
           } 件）`
         : "機能ID被覆率: 未算出(理由: 機能ID母集団が未宣言)";
     lines.push(
-      `- ユースケース数: ${result.useCases.length} / フロー数: ${result.flowCount} / 被覆フロー数: ${
-        result.coveredFlowCount
-      } / フロー被覆率: ${result.flowCoverageRatioPercent.toFixed(1)}% / シナリオ数: ${
+      `- ユースケース数: ${result.useCases.length} / フロー数: ${result.flowCount} / 実体化フロー数: ${
+        result.expandedFlowCount
+      } / フロー展開率: ${result.flowExpansionRatioPercent.toFixed(1)}%（分母: 宣言フロー ${
+        result.flowCount
+      } 件、分子: 生成シナリオのステップ列に実際に現れたフロー ${
+        result.expandedFlowCount
+      } 件） / シナリオ数: ${
         result.scenarioCount
       }（正常系 ${result.normalCount} / 準正常系 ${result.semiNormalCount} / 異常系 ${
         result.abnormalCount
       }） / ${featureText} / 指摘: ${result.findings.length} 件`
     );
     lines.push(
-      "- フロー被覆率は生成したシナリオに対する値であり、テストケースに対する実被覆は generate_test_cases の UC: / SC: 網羅対象で数えること。"
+      "- フロー展開率は「宣言した各フローがシナリオのステップ列に実体として現れたか」を照合した構造的な指標であり、テストの網羅度ではない。シナリオ展開は宣言された各フローを必ず1件以上のシナリオへ含めるため、全フローにステップが宣言されていれば 100% になる。テストケースに対する実被覆は generate_test_cases の UC: / SC: 網羅対象で数えること。"
     );
   }
 

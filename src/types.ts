@@ -1119,7 +1119,7 @@ export interface GeneratedScenario {
 export interface ScenarioFlowUseCaseResult {
   useCaseId: string; nameJa: string; primaryActor: string;
   flowIds: string[];              // ["MAIN", ...branch ids]（宣言順）
-  coveredFlowIds: string[];
+  expandedFlowIds: string[];      // flowIds のうち、生成シナリオのステップ列に実際に現れたフローID（宣言順）
   scenarios: GeneratedScenario[];
   normalCount: number; semiNormalCount: number; abnormalCount: number;
 }
@@ -1136,12 +1136,13 @@ export interface ScenarioFlowResult {
   scenarioCount: number;
   normalCount: number; semiNormalCount: number; abnormalCount: number;
   flowCount: number;                       // 全ユースケース合計（UC: 網羅対象の母数）
-  coveredFlowCount: number;
-  flowCoverageRatioPercent: number;        // covered/flowCount*100、小数第1位。0件なら 0
+  expandedFlowCount: number;
+  // expandedFlowCount/flowCount*100、小数第1位。0件なら 0。
+  // テスト網羅度ではなく、宣言フローがシナリオのステップ列に実体化した割合。
+  flowExpansionRatioPercent: number;
   declaredFeatureIds: string[];
   passedFeatureIds: string[];              // シナリオのステップに現れた機能ID（初出順）
   uncoveredFeatureIds: string[];           // 宣言母集団 - passed
-  undeclaredFeatureIds: string[];          // passed - 宣言母集団
   featureCoverageBasis: "declared-population" | "unavailable";
   featureCoverageRatioPercent?: number;    // basis が declared-population のときのみ
   findings: ScenarioFlowFinding[];

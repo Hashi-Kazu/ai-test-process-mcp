@@ -12,8 +12,8 @@ describe("scenarioFlowAnalysisCriteria", () => {
     expect(ids).toEqual([...ids].sort());
   });
 
-  it("has 14 categories (SFC-01..SFC-14)", () => {
-    expect(scenarioFlowAnalysisCriteria.categories).toHaveLength(14);
+  it("has 15 categories (SFC-01..SFC-15)", () => {
+    expect(scenarioFlowAnalysisCriteria.categories).toHaveLength(15);
     expect(scenarioFlowAnalysisCriteria.categories.map((c) => c.id)).toEqual([
       "SFC-01",
       "SFC-02",
@@ -29,6 +29,7 @@ describe("scenarioFlowAnalysisCriteria", () => {
       "SFC-12",
       "SFC-13",
       "SFC-14",
+      "SFC-15",
     ]);
   });
 
@@ -54,6 +55,7 @@ describe("scenarioFlowAnalysisCriteria", () => {
       "SFC-12": "medium",
       "SFC-13": "medium",
       "SFC-14": "info",
+      "SFC-15": "medium",
     };
     for (const c of scenarioFlowAnalysisCriteria.categories) {
       expect(c.severity).toBe(expected[c.id]);

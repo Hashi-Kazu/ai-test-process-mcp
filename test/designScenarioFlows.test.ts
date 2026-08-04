@@ -97,7 +97,18 @@ describe("computeScenarioFlows", () => {
     expect(uc.scenarios[1].trigger).toBe("来園者が電子マネー払いを選ぶ");
     expect(uc.scenarios[1].passedFlowIds).toEqual([MAIN_FLOW_ID, "AF-01"]);
     expect(uc.flowIds).toEqual([MAIN_FLOW_ID, "AF-01", "EF-01"]);
-    expect(uc.coveredFlowIds).toEqual([MAIN_FLOW_ID, "AF-01", "EF-01"]);
+    expect(uc.expandedFlowIds).toEqual([MAIN_FLOW_ID, "AF-01", "EF-01"]);
+  });
+
+  it("derives passedFlowIds from the actual step sequence, not from the declaration", () => {
+    const uc = computeScenarioFlows(baseSpec()).useCases[0];
+    expect(uc.scenarios[1].passedFlowIds).toEqual([MAIN_FLOW_ID, "AF-01"]);
+
+    const spec = baseSpec();
+    (spec.useCases[0].branches ?? [])[0].steps = [];
+    const emptied = computeScenarioFlows(spec).useCases[0];
+    expect(emptied.scenarios[1].branchId).toBe("AF-01");
+    expect(emptied.scenarios[1].passedFlowIds).toEqual([MAIN_FLOW_ID]);
   });
 
   it("orders branch scenario steps as main<=fromStepNo, branch steps, main>=rejoinStepNo", () => {
@@ -144,12 +155,12 @@ describe("computeScenarioFlows", () => {
     expect(first).toBe(second);
   });
 
-  it("reports no findings for the base spec and reaches 100% flow coverage", () => {
+  it("reports no findings for the base spec and expands every declared flow", () => {
     const result = computeScenarioFlows(baseSpec());
     expect(result.findings).toEqual([]);
     expect(result.flowCount).toBe(3);
-    expect(result.coveredFlowCount).toBe(3);
-    expect(result.flowCoverageRatioPercent).toBe(100);
+    expect(result.expandedFlowCount).toBe(3);
+    expect(result.flowExpansionRatioPercent).toBe(100);
     expect(result.scenarioCount).toBe(3);
   });
 
@@ -159,7 +170,6 @@ describe("computeScenarioFlows", () => {
     expect(result.featureCoverageRatioPercent).toBe(100);
     expect(result.passedFeatureIds).toEqual(["F-PURCHASE", "F-ISSUE", "F-ENTRY"]);
     expect(result.uncoveredFeatureIds).toEqual([]);
-    expect(result.undeclaredFeatureIds).toEqual([]);
   });
 
   it("leaves feature coverage unavailable when the population is not declared", () => {
@@ -310,6 +320,34 @@ describe("computeScenarioFlows", () => {
     expect(finding?.detail).toContain(scenarioTargetId("UC-01", 2));
   });
 
+  it("SFC-13: does not flag branches whose steps match but whose trigger differs", () => {
+    const spec = baseSpec();
+    const branches = spec.useCases[0].branches ?? [];
+    branches.push({
+      ...branches[0],
+      id: "AF-02",
+      nameJa: "QRコードで支払う",
+      trigger: "来園者がQRコード払いを選ぶ",
+      steps: branches[0].steps.map((s) => ({ ...s })),
+    });
+    const findings = computeScenarioFlows(spec).findings.filter((f) => f.categoryId === "SFC-13");
+    expect(findings).toEqual([]);
+  });
+
+  it("SFC-13: does not flag branches whose steps and trigger match but whose outcome differs", () => {
+    const spec = baseSpec();
+    const branches = spec.useCases[0].branches ?? [];
+    branches.push({
+      ...branches[0],
+      id: "AF-03",
+      nameJa: "電子マネーの引き落としに失敗する",
+      outcome: "aborted",
+      steps: branches[0].steps.map((s) => ({ ...s })),
+    });
+    const findings = computeScenarioFlows(spec).findings.filter((f) => f.categoryId === "SFC-13");
+    expect(findings).toEqual([]);
+  });
+
   it("SFC-14: skips generation when the scenario cap is exceeded", () => {
     const spec = { ...baseSpec(), maxScenariosPerUseCase: 1 };
     const result = computeScenarioFlows(spec);
@@ -318,6 +356,19 @@ describe("computeScenarioFlows", () => {
     const finding = result.findings.find((f) => f.categoryId === "SFC-14");
     expect(finding?.severity).toBe("info");
     expect(result.skipReason).toContain("上限 1 件");
+  });
+
+  it("SFC-15: flags declared flows whose steps never appear in any scenario", () => {
+    const spec = baseSpec();
+    (spec.useCases[0].branches ?? [])[0].steps = [];
+    const result = computeScenarioFlows(spec);
+    expect(result.flowCount).toBe(3);
+    expect(result.expandedFlowCount).toBe(2);
+    expect(result.flowExpansionRatioPercent).toBe(66.7);
+    const finding = result.findings.find((f) => f.categoryId === "SFC-15");
+    expect(finding?.severity).toBe("medium");
+    expect(finding?.target).toBe(useCaseFlowTargetId("UC-01", "AF-01"));
+    expect(result.useCases[0].expandedFlowIds).toEqual([MAIN_FLOW_ID, "EF-01"]);
   });
 });
 
@@ -396,6 +447,18 @@ describe("renderScenarioFlows", () => {
     const md = renderScenarioFlows(spec);
     expect(md).toContain("未算出(理由:");
     expect(md).toContain("[high] SFC-01");
+  });
+
+  it("renders the flow expansion ratio with its denominator and numerator", () => {
+    const md = renderScenarioFlows(baseSpec());
+    expect(md).toContain(
+      "フロー展開率: 100.0%（分母: 宣言フロー 3 件、分子: 生成シナリオのステップ列に実際に現れたフロー 3 件）"
+    );
+    expect(md).not.toContain("フロー被覆率");
+  });
+
+  it("no longer renders the unreachable out-of-population feature id line", () => {
+    expect(renderScenarioFlows(baseSpec())).not.toContain("母集団外の参照");
   });
 
   it("is deterministic for the same input", () => {
