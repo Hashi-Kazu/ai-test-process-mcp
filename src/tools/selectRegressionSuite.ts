@@ -2,7 +2,7 @@ import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { classifyTestSize, classifyTestSizes, buildTestSizeDistribution } from "../testSizeAnalysis.js";
-import { computeRiskScore, mapRiskScoreToBand } from "../testConditionAnalysis.js";
+import { computeRiskScore, mapRiskScoreToBand, resolveEffectiveRiskAxes } from "../testConditionAnalysis.js";
 import { riskAnalysisFrame } from "../resources/riskAnalysisFrame.js";
 import { testSizeClassificationCriteria } from "../resources/testSizeClassificationCriteria.js";
 import { regressionSelectionAnalysisCriteria } from "../resources/regressionSelectionCriteria.js";
@@ -147,8 +147,9 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
   const items: RegressionSuiteItemRow[] = [];
 
   for (const c of testConditions) {
-    const hasBoth = typeof c.impact === "number" && typeof c.likelihood === "number";
-    const riskScore = hasBoth ? computeRiskScore(c.impact as number, c.likelihood as number, c.changeCategory, riskAnalysisFrame) : undefined;
+    const effective = resolveEffectiveRiskAxes(c, riskAnalysisFrame);
+    const hasBoth = typeof effective.impact === "number" && typeof effective.likelihood === "number";
+    const riskScore = hasBoth ? computeRiskScore(effective.impact as number, effective.likelihood as number, c.changeCategory, riskAnalysisFrame) : undefined;
     const riskBandId = riskScore !== undefined ? mapRiskScoreToBand(riskScore, riskAnalysisFrame)?.id : undefined;
     const isHighRisk = (riskScore !== undefined && riskScore >= highRiskMinScore) || c.priority === "高";
     const sel = effectiveSelection("condition", c.id);
@@ -172,9 +173,18 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
       tc.testConditionId !== undefined ? conditionById.get(tc.testConditionId) : undefined;
     const changeCategory = parentCondition?.changeCategory;
     const priority: TestConditionPriority | undefined = parentCondition?.priority;
-    const hasBoth = parentCondition && typeof parentCondition.impact === "number" && typeof parentCondition.likelihood === "number";
+    const parentEffective = parentCondition ? resolveEffectiveRiskAxes(parentCondition, riskAnalysisFrame) : undefined;
+    const hasBoth =
+      parentEffective !== undefined &&
+      typeof parentEffective.impact === "number" &&
+      typeof parentEffective.likelihood === "number";
     const riskScore = hasBoth
-      ? computeRiskScore(parentCondition!.impact as number, parentCondition!.likelihood as number, parentCondition!.changeCategory, riskAnalysisFrame)
+      ? computeRiskScore(
+          parentEffective!.impact as number,
+          parentEffective!.likelihood as number,
+          parentCondition!.changeCategory,
+          riskAnalysisFrame
+        )
       : undefined;
     const riskBandId = riskScore !== undefined ? mapRiskScoreToBand(riskScore, riskAnalysisFrame)?.id : undefined;
     const isHighRisk = (riskScore !== undefined && riskScore >= highRiskMinScore) || priority === "高";

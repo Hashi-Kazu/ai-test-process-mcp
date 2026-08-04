@@ -13,6 +13,10 @@ import type {
   RiskAnalysisFrame,
   RiskCategoryDistributionRow,
   RiskLevelBand,
+  RiskLikelihoodDetailInput,
+  RiskSeverityGrade,
+  RiskSeverityInput,
+  RiskStakeholderImpactMatrix,
   TestBasisSourceRef,
   TestConditionDuplicateId,
   TestConditionInput,
@@ -25,6 +29,8 @@ import type {
   TestConditionUnresolvedRef,
   TestPerspectiveCatalog,
   UnknownRiskCategoryRef,
+  UnknownRiskPronenessFactorRef,
+  UnknownRiskStakeholderFrameRef,
 } from "./types.js";
 
 // extract_test_conditions 固有の決定的検査ロジック。
@@ -371,24 +377,135 @@ export function mapRiskScoreToBand(
   return frame.bands.find((b) => score >= b.minScore && score <= b.maxScore);
 }
 
+/**
+ * 記入済み重篤度サブ軸（RA-SEV-01..04）の最大値を重篤度として返す。全て未記入なら undefined。
+ * 入力は破壊しない純関数。
+ */
+export function deriveSeverity(severity?: RiskSeverityInput): number | undefined {
+  if (!severity) return undefined;
+  const values = [severity.direct, severity.ripple, severity.shortTermFinancial, severity.longTermFinancial].filter(
+    (v): v is number => typeof v === "number"
+  );
+  if (values.length === 0) return undefined;
+  return Math.max(...values);
+}
+
+/** 重篤度の値が属する重篤度区分（S/A/B）を返す。 */
+export function mapSeverityToGrade(
+  severity: number,
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): RiskSeverityGrade | undefined {
+  return frame.severityGrades.find((g) => severity >= g.minSeverity && severity <= g.maxSeverity);
+}
+
+/**
+ * 利用頻度と発生しやすさ係数の幾何平均を切り上げ、1..5 に丸めて発生可能性を導出する。
+ * 片方のみの記入では undefined を返す。
+ */
+export function deriveLikelihoodFromDetail(detail?: RiskLikelihoodDetailInput): number | undefined {
+  if (!detail) return undefined;
+  const { usageFrequency, defectProneness } = detail;
+  if (typeof usageFrequency !== "number" || typeof defectProneness !== "number") return undefined;
+  return Math.min(5, Math.max(1, Math.ceil(Math.sqrt(usageFrequency * defectProneness))));
+}
+
+/**
+ * 影響度・発生可能性の実効値を、宣言値優先で任意軸(重篤度サブ軸・発生頻度サブ軸)から解決する。
+ * 宣言値と導出値が両方存在し不一致のときはスコア算出には宣言値を用い、不整合フラグを立てる。
+ */
+export function resolveEffectiveRiskAxes(
+  item: {
+    impact?: number;
+    likelihood?: number;
+    severity?: RiskSeverityInput;
+    likelihoodDetail?: RiskLikelihoodDetailInput;
+  },
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): {
+  impact?: number;
+  impactSource?: "declared" | "derived";
+  likelihood?: number;
+  likelihoodSource?: "declared" | "derived";
+  severity?: number;
+  severityGradeId?: string;
+  impactSeverityConflict: boolean;
+  likelihoodDetailConflict: boolean;
+  missingPronenessRationale: boolean;
+} {
+  const derivedSeverity = deriveSeverity(item.severity);
+  const severityGradeId =
+    derivedSeverity !== undefined ? mapSeverityToGrade(derivedSeverity, frame)?.id : undefined;
+  const derivedLikelihood = deriveLikelihoodFromDetail(item.likelihoodDetail);
+
+  const declaredImpact = typeof item.impact === "number" ? item.impact : undefined;
+  const impact = declaredImpact ?? derivedSeverity;
+  const impactSource: "declared" | "derived" | undefined =
+    declaredImpact !== undefined ? "declared" : derivedSeverity !== undefined ? "derived" : undefined;
+
+  const declaredLikelihood = typeof item.likelihood === "number" ? item.likelihood : undefined;
+  const likelihood = declaredLikelihood ?? derivedLikelihood;
+  const likelihoodSource: "declared" | "derived" | undefined =
+    declaredLikelihood !== undefined ? "declared" : derivedLikelihood !== undefined ? "derived" : undefined;
+
+  const impactSeverityConflict =
+    declaredImpact !== undefined && derivedSeverity !== undefined && declaredImpact !== derivedSeverity;
+  const likelihoodDetailConflict =
+    declaredLikelihood !== undefined && derivedLikelihood !== undefined && declaredLikelihood !== derivedLikelihood;
+
+  const defectProneness = item.likelihoodDetail?.defectProneness;
+  const hasPronenessRationale = Boolean(item.likelihoodDetail?.pronenessRationale?.trim());
+  const hasPronenessFactorIds = Boolean(item.likelihoodDetail?.pronenessFactorIds?.length);
+  const missingPronenessRationale =
+    typeof defectProneness === "number" &&
+    defectProneness !== 3 &&
+    !hasPronenessRationale &&
+    !hasPronenessFactorIds;
+
+  return {
+    impact,
+    impactSource,
+    likelihood,
+    likelihoodSource,
+    severity: derivedSeverity,
+    severityGradeId,
+    impactSeverityConflict,
+    likelihoodDetailConflict,
+    missingPronenessRationale,
+  };
+}
+
 export function evaluateRisks(
   conditions: TestConditionInput[],
   frame: RiskAnalysisFrame = riskAnalysisFrame
 ): TestConditionRiskEvaluation[] {
   return conditions.map((c) => {
-    const hasBoth = typeof c.impact === "number" && typeof c.likelihood === "number";
+    const effective = resolveEffectiveRiskAxes(c, frame);
+    const hasBoth = typeof effective.impact === "number" && typeof effective.likelihood === "number";
+    const declaredPriority = c.priority;
+
+    const optionalFields: Partial<TestConditionRiskEvaluation> = {};
+    if (effective.severity !== undefined) optionalFields.severity = effective.severity;
+    if (effective.severityGradeId !== undefined) optionalFields.severityGradeId = effective.severityGradeId;
+    if (effective.impactSource !== undefined) optionalFields.impactSource = effective.impactSource;
+    if (effective.likelihoodSource !== undefined) optionalFields.likelihoodSource = effective.likelihoodSource;
+    if (effective.impactSeverityConflict) optionalFields.impactSeverityConflict = true;
+    if (effective.likelihoodDetailConflict) optionalFields.likelihoodDetailConflict = true;
+    if (effective.missingPronenessRationale) optionalFields.missingPronenessRationale = true;
+
     if (!hasBoth) {
       return {
         conditionId: c.id,
-        declaredPriority: c.priority,
+        declaredPriority,
         deviates: false,
         incomplete: true,
+        ...optionalFields,
       };
     }
-    const score = computeRiskScore(c.impact as number, c.likelihood as number, c.changeCategory, frame);
+    const score = computeRiskScore(effective.impact as number, effective.likelihood as number, c.changeCategory, frame);
     const band = mapRiskScoreToBand(score, frame);
     const derivedPriority: TestConditionPriority | undefined = band?.priority;
-    const declaredPriority = c.priority;
+    const severityEscalation = effective.severityGradeId === "S" && derivedPriority === "低";
+    if (severityEscalation) optionalFields.severityEscalation = true;
     return {
       conditionId: c.id,
       score,
@@ -397,6 +514,7 @@ export function evaluateRisks(
       declaredPriority,
       deviates: Boolean(derivedPriority && declaredPriority && derivedPriority !== declaredPriority),
       incomplete: false,
+      ...optionalFields,
     };
   });
 }
@@ -427,6 +545,102 @@ export function findUnusedRiskCategories(
   return buildRiskCategoryDistribution(risks, conditions, frame)
     .filter((row) => row.count === 0)
     .map((row) => ({ id: row.categoryId, nameJa: row.nameJa }));
+}
+
+/**
+ * リスク×ステークホルダ影響行列を構築する。列は frame の stakeholderFrames を先頭固定(fromFrame=true)とし、
+ * stakeholderFrameId を持たず stakeholderLabel のみを持つセルのラベルを出現順で追加列(fromFrame=false)にする。
+ * 行は risks の入力順。stakeholderImpacts 未指定のリスクも行として出し、全セル未記入とする。
+ */
+export function buildRiskStakeholderImpactMatrix(
+  risks: TestConditionRiskInput[],
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): RiskStakeholderImpactMatrix {
+  const frameColumns = frame.stakeholderFrames.map((sf) => ({ key: sf.id, label: sf.nameJa, fromFrame: true }));
+  const extraColumns: { key: string; label: string; fromFrame: boolean }[] = [];
+  const seenExtraKeys = new Set<string>();
+  for (const r of risks) {
+    for (const si of r.stakeholderImpacts ?? []) {
+      if (si.stakeholderFrameId) continue;
+      const label = si.stakeholderLabel ?? "";
+      if (label === "" || seenExtraKeys.has(label)) continue;
+      seenExtraKeys.add(label);
+      extraColumns.push({ key: label, label, fromFrame: false });
+    }
+  }
+  const columns = [...frameColumns, ...extraColumns];
+
+  const rows: RiskStakeholderImpactMatrix["rows"] = risks.map((r) => {
+    const impacts = r.stakeholderImpacts ?? [];
+    const cells = columns.map((col) => {
+      const match = impacts.find((si) =>
+        col.fromFrame ? si.stakeholderFrameId === col.key : !si.stakeholderFrameId && si.stakeholderLabel === col.key
+      );
+      return {
+        stakeholderKey: col.key,
+        label: col.label,
+        level: match?.level,
+        note: match?.note,
+      };
+    });
+    const missingStakeholderKeys = columns.filter((c) => c.fromFrame).filter((col) => {
+      const cell = cells.find((c) => c.stakeholderKey === col.key);
+      return cell?.level === undefined;
+    }).map((c) => c.key);
+    const levels = cells.map((c) => c.level).filter((v): v is number => typeof v === "number");
+    const maxLevel = levels.length > 0 ? Math.max(...levels) : undefined;
+    const effectiveImpact = resolveEffectiveRiskAxes(r, frame).impact;
+    const exceedsEffectiveImpact =
+      maxLevel !== undefined && effectiveImpact !== undefined && maxLevel > effectiveImpact;
+    return { riskId: r.id, cells, missingStakeholderKeys, maxLevel, effectiveImpact, exceedsEffectiveImpact };
+  });
+
+  return { columns, rows };
+}
+
+/** stakeholderFrameId が frame に存在しないリスクを列挙する(入力順)。 */
+export function findUnknownRiskStakeholderFrameIds(
+  risks: TestConditionRiskInput[],
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): UnknownRiskStakeholderFrameRef[] {
+  const known = new Set(frame.stakeholderFrames.map((sf) => sf.id));
+  const result: UnknownRiskStakeholderFrameRef[] = [];
+  for (const r of risks) {
+    for (const si of r.stakeholderImpacts ?? []) {
+      if (si.stakeholderFrameId && !known.has(si.stakeholderFrameId)) {
+        result.push({ riskId: r.id, stakeholderFrameId: si.stakeholderFrameId });
+      }
+    }
+  }
+  return result;
+}
+
+/** pronenessFactorIds が frame の pronenessFactors に存在しない参照を、リスク→条件の順に列挙する。 */
+export function findUnknownRiskPronenessFactorIds(
+  risks: TestConditionRiskInput[],
+  conditions: TestConditionInput[],
+  frame: RiskAnalysisFrame = riskAnalysisFrame
+): UnknownRiskPronenessFactorRef[] {
+  const known = new Set(frame.pronenessFactors.map((f) => f.id));
+  const result: UnknownRiskPronenessFactorRef[] = [];
+  for (const r of risks) {
+    for (const id of r.likelihoodDetail?.pronenessFactorIds ?? []) {
+      if (!known.has(id)) result.push({ ownerKind: "risk", ownerId: r.id, factorId: id });
+    }
+  }
+  for (const c of conditions) {
+    for (const id of c.likelihoodDetail?.pronenessFactorIds ?? []) {
+      if (!known.has(id)) result.push({ ownerKind: "condition", ownerId: c.id, factorId: id });
+    }
+  }
+  return result;
+}
+
+/** sourceRefs も targetIds も空のリスクIDを入力順で返す。 */
+export function findRisksWithoutBasis(risks: TestConditionRiskInput[]): string[] {
+  return risks
+    .filter((r) => (r.sourceRefs?.length ?? 0) === 0 && (r.targetIds?.length ?? 0) === 0)
+    .map((r) => r.id);
 }
 
 export function findUnknownRiskCategoryIds(

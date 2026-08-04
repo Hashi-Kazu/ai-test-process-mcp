@@ -84,7 +84,8 @@ export const riskAnalysisFrame: RiskAnalysisFrame = {
     },
   ],
   formula:
-    "riskScore = impact(1..5) × likelihood(1..5) × changeWeight(1..3)（範囲 1..75）。changeWeight は変更差分軸の value を用い、changeCategory 未指定時は 2 を既定とする。",
+    "riskScore = impact(1..5) × likelihood(1..5) × changeWeight(1..3)（範囲 1..75）。changeWeight は変更差分軸の value を用い、changeCategory 未指定時は 2 を既定とする。" +
+    "impact が未指定の場合は重篤度サブ軸の最大値を、likelihood が未指定の場合は利用頻度と発生しやすさ係数からの導出値を代わりに用いる。",
   bands: [
     { id: "R1", minScore: 30, maxScore: 75, priority: "高", guidance: "最優先で条件を詳細化し、複数技法で厚めに設計する。" },
     { id: "R2", minScore: 15, maxScore: 29, priority: "中", guidance: "代表的な条件を確実に押さえ、境界・異常系を1件以上含める。" },
@@ -144,6 +145,145 @@ export const riskAnalysisFrame: RiskAnalysisFrame = {
       relatedPerspectiveCategoryIds: ["TPC-09", "TPC-10"],
     },
   ],
+  severitySubAxes: [
+    {
+      id: "RA-SEV-01",
+      key: "direct",
+      nameJa: "直接的な影響度",
+      description: "その不具合が発生した処理・利用者自身に対して直接的にどれだけの打撃を与えるか。",
+      levels: [
+        { value: 1, label: "実質無影響", criteria: "利用者は気付かず、処理も正しく完了する。" },
+        { value: 2, label: "軽微な不便", criteria: "見た目の乱れなど軽微な不便はあるが、目的の処理は達成できる。" },
+        { value: 3, label: "目的処理の一部失敗", criteria: "目的の処理の一部が失敗し、やり直しや手作業が必要になる。" },
+        { value: 4, label: "目的処理の全面失敗", criteria: "目的の処理全体が失敗し、利用者が意図した結果を得られない。" },
+        { value: 5, label: "利用者に直接的な損害", criteria: "利用者本人に金銭的損害や個人情報漏洩など直接的な損害が生じる。" },
+      ],
+    },
+    {
+      id: "RA-SEV-02",
+      key: "ripple",
+      nameJa: "関連機能への波及影響度",
+      description: "その不具合が発生源以外の機能・データ・他利用者へどれだけ波及するか。",
+      levels: [
+        { value: 1, label: "波及なし", criteria: "発生源の処理内で完結し、他の機能・データへ影響しない。" },
+        { value: 2, label: "隣接機能への軽微な波及", criteria: "隣接する一部の機能で軽微な表示不整合などが生じる。" },
+        { value: 3, label: "複数機能への波及", criteria: "複数の機能・画面にわたって不整合や再実行が必要になる。" },
+        { value: 4, label: "共有データの汚染", criteria: "他利用者や他プロセスが参照する共有データが汚染される。" },
+        { value: 5, label: "システム全体への波及", criteria: "システム全体または多数の利用者・連携先に影響が及ぶ。" },
+      ],
+    },
+    {
+      id: "RA-SEV-03",
+      key: "shortTermFinancial",
+      nameJa: "短期的な金銭的影響度",
+      description: "発生直後（当日〜数週間程度）に生じる金銭的な損失規模。",
+      levels: [
+        { value: 1, label: "金銭的影響なし", criteria: "直接の金銭的な発生・損失が生じない。" },
+        { value: 2, label: "軽微な補償対応", criteria: "個別対応レベルの少額な返金・補償で収まる。" },
+        { value: 3, label: "限定的な売上・請求誤り", criteria: "一部の取引・請求に誤りが生じ、限定的な補正作業が必要になる。" },
+        { value: 4, label: "広範な売上・請求誤り", criteria: "多数の取引・請求に誤りが生じ、広範な補正・返金対応が必要になる。" },
+        { value: 5, label: "重大な即時損失", criteria: "即時に重大な金銭的損失や不正取引の発生につながる。" },
+      ],
+    },
+    {
+      id: "RA-SEV-04",
+      key: "longTermFinancial",
+      nameJa: "長期的な金銭的影響度",
+      description: "発生後、継続的（数ヶ月〜）に生じる金銭的・事業的な影響規模。",
+      levels: [
+        { value: 1, label: "長期的影響なし", criteria: "短期対応で完結し、その後の事業運営に影響を残さない。" },
+        { value: 2, label: "軽微な信用低下", criteria: "軽微な問い合わせ増加はあるが、契約・売上には影響しない。" },
+        { value: 3, label: "限定的な契約・売上への影響", criteria: "一部の顧客・契約で解約や条件見直しの申し出が生じる。" },
+        { value: 4, label: "広範な契約・売上への影響", criteria: "複数の主要顧客・契約で解約や条件見直しが生じ、売上に影響する。" },
+        { value: 5, label: "事業継続に関わる影響", criteria: "対外的な説明責任・法令対応が発生し、事業継続に関わる規模となる。" },
+      ],
+    },
+  ],
+  severityGrades: [
+    {
+      id: "S",
+      minSeverity: 5,
+      maxSeverity: 5,
+      label: "S（最重篤）",
+      guidance: "impactAxis の value 5 相当。最優先で条件を詳細化し、複数技法で厚めに設計する。",
+    },
+    {
+      id: "A",
+      minSeverity: 3,
+      maxSeverity: 4,
+      label: "A（重篤）",
+      guidance: "impactAxis の value 3〜4 相当。代表的な条件を確実に押さえ、境界・異常系を1件以上含める。",
+    },
+    {
+      id: "B",
+      minSeverity: 1,
+      maxSeverity: 2,
+      label: "B（軽微）",
+      guidance: "impactAxis の value 1〜2 相当。代表条件のみに絞ってよい。",
+    },
+  ],
+  usageFrequencyAxis: {
+    id: "RA-USAGE",
+    nameJa: "利用頻度",
+    description: "対象機能が実運用でどれだけの頻度で使われるか。",
+    levels: [
+      { value: 1, label: "ほぼ使われない", criteria: "特殊な状況でのみ使われ、通常運用では使われない。" },
+      { value: 2, label: "稀に使われる", criteria: "月に数回程度、限られた利用者だけが使う。" },
+      { value: 3, label: "ときどき使われる", criteria: "週に数回程度、通常運用の中で使われる。" },
+      { value: 4, label: "頻繁に使われる", criteria: "日常的に利用される主要な経路の一部である。" },
+      { value: 5, label: "常に使われる", criteria: "ほぼ全利用者が毎回通過する主要経路である。" },
+    ],
+  },
+  defectPronenessAxis: {
+    id: "RA-PRONENESS",
+    nameJa: "発生しやすさ係数",
+    description: "対象機能で障害が発生しやすい事情（実装の複雑さ・変更履歴・体制の習熟度等）をどれだけ抱えているか。",
+    levels: [
+      { value: 1, label: "非常に発生しにくい", criteria: "枯れた実装で長期間安定稼働しており、発生しやすさを高める事情が無い。" },
+      { value: 2, label: "発生しにくい", criteria: "発生しやすさを高める事情がほとんど無い。" },
+      { value: 3, label: "標準", criteria: "特筆すべき事情がない既定値。発生しやすさを特に高める・低める事情がどちらも無い。" },
+      { value: 4, label: "発生しやすい", criteria: "pronenessFactors のうち発生しやすさを高める事情が1件以上該当する。" },
+      { value: 5, label: "非常に発生しやすい", criteria: "pronenessFactors のうち発生しやすさを高める事情が複数件重なって該当する。" },
+    ],
+  },
+  pronenessFactors: [
+    {
+      id: "RA-PF-01",
+      nameJa: "過去に障害が発生した機能である",
+      direction: "increase",
+      description: "対象機能自体で過去に障害が発生した記録がある。",
+    },
+    {
+      id: "RA-PF-02",
+      nameJa: "過去に障害となった構成と類似した作りを採用している",
+      direction: "increase",
+      description: "別の機能で障害の原因となった設計・実装パターンと類似した作りを今回も採用している。",
+    },
+    {
+      id: "RA-PF-03",
+      nameJa: "今回初めて採用する技術・外部部品である",
+      direction: "increase",
+      description: "実績のない技術・ライブラリ・外部サービスを今回初めて採用している。",
+    },
+    {
+      id: "RA-PF-04",
+      nameJa: "実装・レビュー体制の習熟が浅い",
+      direction: "increase",
+      description: "担当者・レビュー体制がこの領域の実装・レビューに習熟していない。",
+    },
+    {
+      id: "RA-PF-05",
+      nameJa: "長期間変更がなく本番実績が積み上がっている",
+      direction: "decrease",
+      description: "長期間変更されておらず、本番環境での稼働実績が十分に積み上がっている。",
+    },
+  ],
+  severityAggregationRule:
+    "重篤度は記入済みの重篤度サブ軸（RA-SEV-01〜RA-SEV-04）の最大値とする。全サブ軸が未記入の場合は重篤度を導出しない。",
+  likelihoodDerivationRule:
+    "発生可能性は利用頻度(RA-USAGE)と発生しやすさ係数(RA-PRONENESS)の幾何平均を切り上げて 1..5 に丸めた値とする。いずれか一方のみの記入では導出しない。",
+  optionalAxisPolicy:
+    "必須軸は影響度・発生可能性・変更差分の3軸である。重篤度サブ軸・発生頻度サブ軸・ステークホルダ別影響行列は任意軸であり、未記入でも既存3軸のスコアで評価が完結する。記入コストを理由に任意軸を省略してよいが、省略した軸については分解能が得られない。",
   controlFlawFrame: {
     name: "制御不全パターン枠（自作整理）",
     note: "制御ループの捉え方とパターン分類は自作の整理であり、外部の分析手法・規格の逐語転載やそれらへの適合を主張するものではない。",

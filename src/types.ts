@@ -580,6 +580,28 @@ export interface ControlFlawFrame {
   loopElements: ControlLoopElement[];  // 制御ループ構成要素4件
   patterns: ControlFlawPattern[];      // "RCF-01".."RCF-04"
 }
+
+// --- リスク分析フレーム（重篤度4サブ軸・発生頻度2サブ軸・任意軸運用方針） ---
+export type RiskSeverityKey = "direct" | "ripple" | "shortTermFinancial" | "longTermFinancial";
+export interface RiskSeveritySubAxis {
+  id: string;              // "RA-SEV-01".."RA-SEV-04"
+  key: RiskSeverityKey;
+  nameJa: string;
+  description: string;
+  levels: RiskAxisLevel[]; // value 1..5、重複なし
+}
+export interface RiskSeverityGrade {
+  id: "S" | "A" | "B";
+  minSeverity: number; maxSeverity: number;   // 1..5 を連続被覆・重複なし
+  label: string; guidance: string;
+}
+export interface RiskPronenessFactor {
+  id: string;              // "RA-PF-01"..
+  nameJa: string;
+  direction: "increase" | "decrease";
+  description: string;
+}
+
 export interface RiskAnalysisFrame {
   name: string; note: string;
   impactAxis: RiskAxis;             // "RA-IMPACT" value 1..5
@@ -590,6 +612,14 @@ export interface RiskAnalysisFrame {
   bands: RiskLevelBand[];           // minScore 降順で定義、区間は連続かつ重複なし
   riskCategories: RiskCategory[];   // "RC-01".. 5区分程度、非破壊拡張
   controlFlawFrame: ControlFlawFrame;
+  severitySubAxes: RiskSeveritySubAxis[];   // 4件、direct → ripple → shortTermFinancial → longTermFinancial 順
+  severityGrades: RiskSeverityGrade[];      // S/A/B、minSeverity 降順
+  usageFrequencyAxis: RiskAxis;             // id "RA-USAGE"、value 1..5
+  defectPronenessAxis: RiskAxis;            // id "RA-PRONENESS"、value 1..5、value 3 が標準
+  pronenessFactors: RiskPronenessFactor[];  // 5件以上、increase / decrease 双方を含む
+  severityAggregationRule: string;          // 「記入済みサブ軸の最大値を重篤度とする」旨
+  likelihoodDerivationRule: string;         // 「利用頻度×発生しやすさ係数の幾何平均を切り上げ、1..5 に丸める」旨
+  optionalAxisPolicy: string;               // 必須軸/任意軸の区別と退避規則の説明
 }
 
 // --- 因子分解フレーム（testcondition://factor/ralph-frame） ---
@@ -669,6 +699,25 @@ export interface TestConditionInput {
   rationale?: string;                // 導出根拠の補足
   priorityDeviationReason?: string;  // 優先度基準からの逸脱理由
   sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
+  severity?: RiskSeverityInput;      // 重篤度4サブ軸（任意軸。未指定なら impact をそのまま使う）
+  likelihoodDetail?: RiskLikelihoodDetailInput; // 発生頻度2サブ軸（任意軸。未指定なら likelihood をそのまま使う）
+}
+
+// --- リスク分析フレーム 任意軸の入力（重篤度4サブ軸・発生頻度2サブ軸・ステークホルダ別影響） ---
+export interface RiskSeverityInput {
+  direct?: number; ripple?: number; shortTermFinancial?: number; longTermFinancial?: number; // 各 1..5
+}
+export interface RiskLikelihoodDetailInput {
+  usageFrequency?: number;        // 1..5
+  defectProneness?: number;       // 1..5、3 が標準
+  pronenessRationale?: string;
+  pronenessFactorIds?: string[];  // RA-PF-xx
+}
+export interface RiskStakeholderImpactInput {
+  stakeholderFrameId?: string;    // RSF-xx（frame の枠を使う場合）
+  stakeholderLabel?: string;      // 枠外のステークホルダー名
+  level: number;                  // 1..5
+  note?: string;
 }
 /**
  * ペルソナ入力。Demographics / Says&Thinks / Goals / PainPoint の4象限で表現する。
@@ -690,6 +739,11 @@ export interface TestConditionRiskInput {
   id: string; description: string;
   impact?: number; likelihood?: number; changeCategory?: RequirementsChangeCategory;
   riskCategoryId?: string;
+  severity?: RiskSeverityInput;
+  likelihoodDetail?: RiskLikelihoodDetailInput;
+  stakeholderImpacts?: RiskStakeholderImpactInput[];
+  sourceRefs?: TestBasisSourceRef[];
+  targetIds?: string[];
 }
 export interface ExtractTestConditionsInput {
   completedTools?: CompletedToolDeclaration[];
@@ -715,7 +769,37 @@ export interface TestConditionRiskEvaluation {
   declaredPriority?: TestConditionPriority;
   deviates: boolean;               // derivedPriority と declaredPriority が両方あり不一致
   incomplete: boolean;             // impact / likelihood が欠けてスコア算出不可
+  severity?: number;
+  severityGradeId?: string;                  // "S" | "A" | "B"
+  impactSource?: "declared" | "derived";
+  likelihoodSource?: "declared" | "derived";
+  impactSeverityConflict?: boolean;          // 宣言 impact ≠ max(severity)
+  likelihoodDetailConflict?: boolean;        // 宣言 likelihood ≠ 導出値
+  missingPronenessRationale?: boolean;       // defectProneness !== 3 かつ根拠未記入
+  severityEscalation?: boolean;              // severityGradeId==="S" かつ導出優先度が「低」
 }
+
+// --- リスク×ステークホルダ影響行列（extract_test_conditions） ---
+export interface RiskStakeholderImpactCell {
+  stakeholderKey: string;   // RSF-xx または stakeholderLabel
+  label: string;
+  level?: number;
+  note?: string;
+}
+export interface RiskStakeholderImpactMatrixRow {
+  riskId: string;
+  cells: RiskStakeholderImpactCell[];      // columns と同順・同数
+  missingStakeholderKeys: string[];        // frame 由来列のうち level 未記入
+  maxLevel?: number;
+  effectiveImpact?: number;
+  exceedsEffectiveImpact: boolean;         // maxLevel > effectiveImpact（片方 undefined なら false）
+}
+export interface RiskStakeholderImpactMatrix {
+  columns: { key: string; label: string; fromFrame: boolean }[]; // RSF-01..05 固定＋入力由来ラベルを出現順で追加
+  rows: RiskStakeholderImpactMatrixRow[];  // risks の入力順
+}
+export interface UnknownRiskStakeholderFrameRef { riskId: string; stakeholderFrameId: string; }
+export interface UnknownRiskPronenessFactorRef { ownerKind: "risk" | "condition"; ownerId: string; factorId: string; }
 export interface RiskCategoryDistributionRow {
   categoryId: string;      // RC-XX
   nameJa: string;

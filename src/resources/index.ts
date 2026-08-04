@@ -241,7 +241,11 @@ export function registerResources(server: McpServer): void {
     {
       title: "Risk Analysis Frame",
       description:
-        "Impact / likelihood / change-difference axes, stakeholder impact questions, the risk score formula, and the score-to-priority mapping used to prioritize test conditions.",
+        "Impact / likelihood / change-difference axes, stakeholder impact questions, the risk score formula, and the score-to-priority mapping used to prioritize test conditions. " +
+        "Also includes optional axes for finer-grained risk analysis: 4 severity sub-axes (direct / ripple / short-term financial / long-term financial impact, RA-SEV-01..04) " +
+        "aggregated into S/A/B severity grades, 2 likelihood sub-axes (usage frequency and a defect-proneness factor with 5 supporting factors, RA-USAGE / RA-PRONENESS / RA-PF-xx) " +
+        "whose geometric mean derives the likelihood, and a risk x stakeholder impact matrix built on the same stakeholder frame columns. " +
+        "All optional axes fall back to the existing impact/likelihood/change-diff score when left unfilled.",
       mimeType: "application/json",
     },
     async (uri) => ({

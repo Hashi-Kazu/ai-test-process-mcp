@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildRequirementCoverageMatrix,
   buildRiskCategoryDistribution,
+  buildRiskStakeholderImpactMatrix,
   buildSourceDistribution,
   computeRiskScore,
+  deriveLikelihoodFromDetail,
+  deriveSeverity,
   evaluateRisks,
   findConditionsWithoutPriority,
   findConditionsWithoutSourceRefs,
@@ -11,13 +14,18 @@ import {
   findIncompletePersonaQuadrants,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
+  findRisksWithoutBasis,
   findUncoveredRequirementIds,
   findUnknownRiskCategoryIds,
+  findUnknownRiskPronenessFactorIds,
+  findUnknownRiskStakeholderFrameIds,
   findUnresolvedDerivedFromRefs,
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
   formatPersonaQuadrantCell,
   mapRiskScoreToBand,
+  mapSeverityToGrade,
+  resolveEffectiveRiskAxes,
   resolveSourceRefs,
 } from "../src/testConditionAnalysis.js";
 import { riskAnalysisFrame } from "../src/resources/riskAnalysisFrame.js";
@@ -516,5 +524,256 @@ describe("formatPersonaQuadrantCell", () => {
     const persona = { id: "P-002", role: "運用担当", concerns: "障害対応が煩雑" };
     expect(formatPersonaQuadrantCell(persona, "painPoints")).toBe("障害対応が煩雑");
     expect(formatPersonaQuadrantCell(persona, "goals")).toBe("未記入(要確認)");
+  });
+});
+
+describe("deriveSeverity", () => {
+  it("returns undefined when severity is undefined or all sub-axes are unfilled", () => {
+    expect(deriveSeverity(undefined)).toBeUndefined();
+    expect(deriveSeverity({})).toBeUndefined();
+  });
+
+  it("returns the max of the filled sub-axes", () => {
+    expect(deriveSeverity({ direct: 2, ripple: 4 })).toBe(4);
+    expect(deriveSeverity({ direct: 5, ripple: 1, shortTermFinancial: 3, longTermFinancial: 2 })).toBe(5);
+  });
+});
+
+describe("mapSeverityToGrade", () => {
+  it("maps severity values to the S/A/B grades", () => {
+    expect(mapSeverityToGrade(5)?.id).toBe("S");
+    expect(mapSeverityToGrade(4)?.id).toBe("A");
+    expect(mapSeverityToGrade(3)?.id).toBe("A");
+    expect(mapSeverityToGrade(2)?.id).toBe("B");
+    expect(mapSeverityToGrade(1)?.id).toBe("B");
+  });
+});
+
+describe("deriveLikelihoodFromDetail", () => {
+  it("returns undefined when detail is undefined or only one sub-axis is filled", () => {
+    expect(deriveLikelihoodFromDetail(undefined)).toBeUndefined();
+    expect(deriveLikelihoodFromDetail({ usageFrequency: 3 })).toBeUndefined();
+    expect(deriveLikelihoodFromDetail({ defectProneness: 3 })).toBeUndefined();
+  });
+
+  it("computes the ceiling of the geometric mean, clamped to 1..5", () => {
+    // sqrt(1*1) = 1
+    expect(deriveLikelihoodFromDetail({ usageFrequency: 1, defectProneness: 1 })).toBe(1);
+    // sqrt(5*5) = 5
+    expect(deriveLikelihoodFromDetail({ usageFrequency: 5, defectProneness: 5 })).toBe(5);
+    // sqrt(2*3) = 2.449 -> ceil 3
+    expect(deriveLikelihoodFromDetail({ usageFrequency: 2, defectProneness: 3 })).toBe(3);
+    // sqrt(3*3) = 3 -> ceil 3
+    expect(deriveLikelihoodFromDetail({ usageFrequency: 3, defectProneness: 3 })).toBe(3);
+    // sqrt(1*2) = 1.414 -> ceil 2
+    expect(deriveLikelihoodFromDetail({ usageFrequency: 1, defectProneness: 2 })).toBe(2);
+  });
+});
+
+describe("resolveEffectiveRiskAxes", () => {
+  it("falls back to derived severity/likelihood when impact/likelihood are omitted", () => {
+    const result = resolveEffectiveRiskAxes({
+      severity: { direct: 4, ripple: 2 },
+      likelihoodDetail: { usageFrequency: 4, defectProneness: 4 },
+    });
+    expect(result.impact).toBe(4);
+    expect(result.impactSource).toBe("derived");
+    expect(result.severity).toBe(4);
+    expect(result.severityGradeId).toBe("A");
+    expect(result.likelihood).toBe(4);
+    expect(result.likelihoodSource).toBe("derived");
+    expect(result.impactSeverityConflict).toBe(false);
+    expect(result.likelihoodDetailConflict).toBe(false);
+  });
+
+  it("prefers the declared impact/likelihood over the derived value and flags conflicts", () => {
+    const result = resolveEffectiveRiskAxes({
+      impact: 2,
+      likelihood: 1,
+      severity: { direct: 5 },
+      likelihoodDetail: { usageFrequency: 5, defectProneness: 5 },
+    });
+    expect(result.impact).toBe(2);
+    expect(result.impactSource).toBe("declared");
+    expect(result.likelihood).toBe(1);
+    expect(result.likelihoodSource).toBe("declared");
+    expect(result.impactSeverityConflict).toBe(true);
+    expect(result.likelihoodDetailConflict).toBe(true);
+  });
+
+  it("produces the same impact/likelihood as before when optional axes are omitted", () => {
+    const result = resolveEffectiveRiskAxes({ impact: 3, likelihood: 4 });
+    expect(result.impact).toBe(3);
+    expect(result.impactSource).toBe("declared");
+    expect(result.likelihood).toBe(4);
+    expect(result.likelihoodSource).toBe("declared");
+    expect(result.severity).toBeUndefined();
+    expect(result.severityGradeId).toBeUndefined();
+    expect(result.impactSeverityConflict).toBe(false);
+    expect(result.likelihoodDetailConflict).toBe(false);
+    expect(result.missingPronenessRationale).toBe(false);
+  });
+
+  it("flags missingPronenessRationale when defectProneness deviates from 3 without rationale or factor ids", () => {
+    const deviatingWithoutRationale = resolveEffectiveRiskAxes({
+      likelihoodDetail: { usageFrequency: 3, defectProneness: 5 },
+    });
+    expect(deviatingWithoutRationale.missingPronenessRationale).toBe(true);
+
+    const deviatingWithRationale = resolveEffectiveRiskAxes({
+      likelihoodDetail: { usageFrequency: 3, defectProneness: 5, pronenessRationale: "既知の障害多発領域" },
+    });
+    expect(deviatingWithRationale.missingPronenessRationale).toBe(false);
+
+    const deviatingWithFactorIds = resolveEffectiveRiskAxes({
+      likelihoodDetail: { usageFrequency: 3, defectProneness: 5, pronenessFactorIds: ["RA-PF-01"] },
+    });
+    expect(deviatingWithFactorIds.missingPronenessRationale).toBe(false);
+
+    const standardProneness = resolveEffectiveRiskAxes({
+      likelihoodDetail: { usageFrequency: 3, defectProneness: 3 },
+    });
+    expect(standardProneness.missingPronenessRationale).toBe(false);
+  });
+});
+
+describe("evaluateRisks with optional severity/likelihoodDetail axes", () => {
+  it("produces identical scores when optional axes are omitted (backward compatibility)", () => {
+    const withoutOptional = [
+      condition({ id: "TC-001", impact: 5, likelihood: 5, changeCategory: "new", priority: "高" }),
+      condition({ id: "TC-002", impact: 1, likelihood: 1, changeCategory: "existing-unaffected", priority: "高" }),
+    ];
+    expect(evaluateRisks(withoutOptional)).toEqual(
+      evaluateRisks(withoutOptional.map((c) => ({ ...c })))
+    );
+    const result = evaluateRisks(withoutOptional);
+    expect(result[0]).toMatchObject({ score: 75, bandId: "R1", impactSource: "declared", likelihoodSource: "declared" });
+    expect(result[0].severity).toBeUndefined();
+    expect(result[0].severityGradeId).toBeUndefined();
+  });
+
+  it("derives impact/likelihood from severity/likelihoodDetail when impact/likelihood are omitted", () => {
+    const conditions = [
+      condition({
+        id: "TC-001",
+        severity: { direct: 5 },
+        likelihoodDetail: { usageFrequency: 5, defectProneness: 5 },
+        changeCategory: "new",
+      }),
+    ];
+    const result = evaluateRisks(conditions);
+    expect(result[0].incomplete).toBe(false);
+    expect(result[0].score).toBe(computeRiskScore(5, 5, "new"));
+    expect(result[0].impactSource).toBe("derived");
+    expect(result[0].likelihoodSource).toBe("derived");
+    expect(result[0].severity).toBe(5);
+    expect(result[0].severityGradeId).toBe("S");
+  });
+
+  it("flags severityEscalation when severity grade is S but the derived priority is low", () => {
+    const conditions = [
+      condition({
+        id: "TC-001",
+        severity: { direct: 5 },
+        impact: 1,
+        likelihood: 1,
+        changeCategory: "existing-unaffected",
+      }),
+    ];
+    const result = evaluateRisks(conditions);
+    expect(result[0].derivedPriority).toBe("低");
+    expect(result[0].severityGradeId).toBe("S");
+    expect(result[0].severityEscalation).toBe(true);
+  });
+
+  it("treats missing effective impact or likelihood as incomplete", () => {
+    const conditions = [condition({ id: "TC-001", severity: { direct: 3 } })];
+    const result = evaluateRisks(conditions);
+    expect(result[0].incomplete).toBe(true);
+    expect(result[0].score).toBeUndefined();
+    expect(result[0].impactSource).toBe("derived");
+    expect(result[0].likelihoodSource).toBeUndefined();
+  });
+});
+
+describe("buildRiskStakeholderImpactMatrix / findUnknownRiskStakeholderFrameIds", () => {
+  it("uses the frame stakeholder columns as fixed leading columns and fills missing cells", () => {
+    const risks = [risk({ id: "RK-001", stakeholderImpacts: [{ stakeholderFrameId: "RSF-01", level: 4 }] })];
+    const matrix = buildRiskStakeholderImpactMatrix(risks);
+    expect(matrix.columns.slice(0, 5).map((c) => c.key)).toEqual(["RSF-01", "RSF-02", "RSF-03", "RSF-04", "RSF-05"]);
+    expect(matrix.columns.every((c, i) => (i < 5 ? c.fromFrame : true))).toBe(true);
+    const row = matrix.rows[0];
+    expect(row.riskId).toBe("RK-001");
+    expect(row.cells[0].level).toBe(4);
+    expect(row.missingStakeholderKeys).toEqual(["RSF-02", "RSF-03", "RSF-04", "RSF-05"]);
+    expect(row.maxLevel).toBe(4);
+  });
+
+  it("adds out-of-frame stakeholder labels as extra columns in first-appearance order", () => {
+    const risks = [
+      risk({
+        id: "RK-001",
+        stakeholderImpacts: [{ stakeholderLabel: "外部委託先", level: 3 }],
+      }),
+    ];
+    const matrix = buildRiskStakeholderImpactMatrix(risks);
+    const extra = matrix.columns.find((c) => c.key === "外部委託先");
+    expect(extra).toEqual({ key: "外部委託先", label: "外部委託先", fromFrame: false });
+  });
+
+  it("creates a row with all cells empty for a risk without stakeholderImpacts", () => {
+    const risks = [risk({ id: "RK-001" })];
+    const matrix = buildRiskStakeholderImpactMatrix(risks);
+    const row = matrix.rows[0];
+    expect(row.cells.every((c) => c.level === undefined)).toBe(true);
+    expect(row.missingStakeholderKeys.length).toBe(5);
+    expect(row.maxLevel).toBeUndefined();
+    expect(row.exceedsEffectiveImpact).toBe(false);
+  });
+
+  it("flags exceedsEffectiveImpact when the max stakeholder level exceeds the effective impact", () => {
+    const risks = [
+      risk({
+        id: "RK-001",
+        impact: 2,
+        likelihood: 3,
+        stakeholderImpacts: [{ stakeholderFrameId: "RSF-01", level: 5 }],
+      }),
+    ];
+    const matrix = buildRiskStakeholderImpactMatrix(risks);
+    expect(matrix.rows[0].exceedsEffectiveImpact).toBe(true);
+    expect(matrix.rows[0].maxLevel).toBe(5);
+    expect(matrix.rows[0].effectiveImpact).toBe(2);
+  });
+
+  it("detects stakeholder frame ids that do not exist in the frame", () => {
+    const risks = [risk({ id: "RK-001", stakeholderImpacts: [{ stakeholderFrameId: "RSF-99", level: 3 }] })];
+    expect(findUnknownRiskStakeholderFrameIds(risks)).toEqual([{ riskId: "RK-001", stakeholderFrameId: "RSF-99" }]);
+  });
+});
+
+describe("findUnknownRiskPronenessFactorIds", () => {
+  it("finds unknown factor ids from risks before conditions, in input order", () => {
+    const risks = [risk({ id: "RK-001", likelihoodDetail: { pronenessFactorIds: ["RA-PF-99"] } })];
+    const conditions = [condition({ id: "TC-001", likelihoodDetail: { pronenessFactorIds: ["RA-PF-98"] } })];
+    expect(findUnknownRiskPronenessFactorIds(risks, conditions)).toEqual([
+      { ownerKind: "risk", ownerId: "RK-001", factorId: "RA-PF-99" },
+      { ownerKind: "condition", ownerId: "TC-001", factorId: "RA-PF-98" },
+    ]);
+  });
+
+  it("returns an empty array when no factor ids are referenced", () => {
+    expect(findUnknownRiskPronenessFactorIds([risk({ id: "RK-001" })], [condition({ id: "TC-001" })])).toEqual([]);
+  });
+});
+
+describe("findRisksWithoutBasis", () => {
+  it("returns risk ids with neither sourceRefs nor targetIds, in input order", () => {
+    const risks = [
+      risk({ id: "RK-001" }),
+      risk({ id: "RK-002", targetIds: ["F-001"] }),
+      risk({ id: "RK-003", sourceRefs: [{ document: "doc.md", startLine: 1 }] }),
+    ];
+    expect(findRisksWithoutBasis(risks)).toEqual(["RK-001"]);
   });
 });

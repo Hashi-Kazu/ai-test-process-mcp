@@ -241,7 +241,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 - E-2 `testcondition://factor/ralph-frame`（信号因子／誤差因子／状態因子／制御因子への分解フレーム。B-1/B-2 の入力を体系的に供給する）→ #14
 - E-3 `testplan://purpose/derivation-frame`（依頼者の期待→テスト要求→テスト目的の導出型。目的IDを以降の観点・タイプ・優先度に貫通させる）→ #1
 - E-4 ステークホルダー影響力×関心度の2軸評価を persona frame に追加 → #2 ✅ 完了（GitHub Issue #89 / Jira `HSKZ-133`。`testcondition://persona/journey-frame` に `stakeholderWeightingFrame` を追加。影響力 `SW-INFLUENCE`／関心度 `SW-INTEREST` の4段階定義、4段の分析ステップ `SWS-01`〜`SWS-04`、扱いクラス `SWC-01`〜`SWC-03`（重点／通常／参考）と4×4・全16組合せの対応表、`extract_test_conditions` への引き渡し規約を付与）
-- E-5 リスクフレームを重篤度4軸×発生頻度2軸＋ステークホルダ別影響行列へ拡張 → #12 #13
+- E-5 リスクフレームを重篤度4軸×発生頻度2軸＋ステークホルダ別影響行列へ拡張 → #12 #13 ✅ 完了（GitHub Issue #86 / Jira `HSKZ-130`。`testcondition://risk/frame` に重篤度4サブ軸`RA-SEV-01`〜`RA-SEV-04`とS/A/B重篤度区分、発生頻度2サブ軸`RA-USAGE`／`RA-PRONENESS`と係数調整要因`RA-PF-xx`、リスク×ステークホルダ影響行列を追加。すべて任意軸で、未記入時は既存の影響度×発生可能性×変更差分の3軸スコアへ退避するため既存入力のスコア・出力は不変。`extract_test_conditions` の4.1節に軸表、新設4.5節に宣言・実体の不整合検査、8節に行列表を追加）
 - E-6 `audit_basis_contradictions`（文書間で同一対象について異なる記述をしている箇所の検出。同一ID・同一画面IDに対する記述の差分、遷移先の不一致など）→ #32
 - E-7 `analyze_cause_effect`（仕様文の論理関係を原因・結果・制約に構造化し、デシジョンテーブルへ橋渡し。B-1 の上流）→ #25 #7 ✅ 完了（#90 / `HSKZ-134`。決定的層20区分の判定カタログ `testbasis://cause-effect/analysis-criteria` 付き。`design_decision_table` への引き渡しは生成JSONを実データと照合するCEG-20まで実装済み）
 - E-8 `testcondition://business/requirement-frame` + `generate_business_requirement_model`（業務側の「システム化の目的→業務ユースケース→業務フロー→駆動する情報」4層モデルを、機能IDの章立てに従属せず再構成する。決定的層15区分 `BRC-01`〜`BRC-15` で目的↔業務ユースケースの相互紐づけ・機能ID母集団との双方向照合・宣言済み機能ID被覆率と算出値の一致・`hasStates`宣言とstates実体の照合等を検査し、`design_scenario_flows`/`design_test_data`/`audit_cross_matrix`への引き渡し表と`testcondition://persona/journey-frame`との役割分担を出力）→ #6 ✅ 完了（GitHub Issue #93 / Jira `HSKZ-137`）

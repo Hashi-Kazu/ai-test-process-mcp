@@ -454,6 +454,129 @@ describe("renderTestConditions with explicit-kind derivedFrom entries", () => {
   });
 });
 
+describe("renderTestConditions 4.5 optional axis breakdown (no optional axes declared)", () => {
+  it("states that only the existing 3-axis score was used and prints no achievement ratio", () => {
+    const section = markdown.split("### 4.5 任意軸の内訳と宣言・実体の照合")[1].split("## 5.")[0];
+    expect(section).toContain("任意軸の記入がないため、既存3軸のスコアのみで評価している。");
+    expect(section).not.toMatch(/率/);
+  });
+
+  it("does not change the existing 4.1..4.4 heading text", () => {
+    for (const heading of [
+      "### 4.1 リスクレベル算出式",
+      "### 4.2 リスクスコア → 優先度の写像",
+      "### 4.3 宣言された優先度基準",
+      "### 4.4 優先度の導出結果と逸脱",
+    ]) {
+      expect(markdown).toContain(heading);
+    }
+  });
+});
+
+describe("renderTestConditions with optional severity/likelihoodDetail axes", () => {
+  const inputOptional: ExtractTestConditionsInput = {
+    requirementIds: ["R-001"],
+    risks: [
+      {
+        id: "RK-001",
+        description: "重篤度Sで導出優先度が低くなるリスク",
+        impact: 1,
+        likelihood: 1,
+        changeCategory: "existing-unaffected",
+        severity: { direct: 5 },
+        stakeholderImpacts: [
+          { stakeholderFrameId: "RSF-01", level: 3 },
+          { stakeholderFrameId: "RSF-99", level: 2 },
+          { stakeholderLabel: "外部委託先", level: 4 },
+        ],
+      },
+    ],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "F-001",
+        perspectiveCategoryId: "TPC-01",
+        statement: "重篤度と発生頻度サブ軸を使う条件",
+        source: "testbase",
+        derivedFrom: ["R-001"],
+        priority: "高",
+        impact: 2,
+        likelihood: 1,
+        severity: { direct: 5 },
+        likelihoodDetail: { usageFrequency: 3, defectProneness: 5 },
+      },
+    ],
+  };
+  const markdownOptional = renderTestConditions(inputOptional);
+
+  it("renders the 4.5 breakdown table with the declared sub-axis values and derived severity/grade", () => {
+    const section = markdownOptional.split("### 4.5 任意軸の内訳と宣言・実体の照合")[1].split("## 5.")[0];
+    expect(section).toContain(
+      "| 条件ID | 直接影響 | 波及影響 | 短期金銭 | 長期金銭 | 重篤度 | 重篤度区分 | 影響度出所 | 利用頻度 | 発生しやすさ | 発生可能性出所 |"
+    );
+    expect(section).toContain("| TC-001 | 5 | - | - | - | 5 | S | declared | 3 | 5 | declared |");
+  });
+
+  it("flags impactSeverityConflict, likelihoodDetailConflict, and missingPronenessRationale for TC-001", () => {
+    const section = markdownOptional.split("### 4.5 任意軸の内訳と宣言・実体の照合")[1].split("## 5.")[0];
+    expect(section).toContain("[high] TC-001: 宣言した影響度と重篤度サブ軸の最大値が一致しない(impactSeverityConflict)。");
+    expect(section).toContain(
+      "[high] TC-001: 宣言した発生可能性と利用頻度×発生しやすさ係数からの導出値が一致しない(likelihoodDetailConflict)。"
+    );
+    expect(section).toContain("[medium] TC-001: 発生しやすさ係数が標準(3)から逸脱しているが");
+  });
+
+  it("renders section 8.1 severity/frequency breakdown and 8.2 the risk x stakeholder impact matrix", () => {
+    const section = markdownOptional
+      .split("## 8. リスク分析フレームの適用指示(意味的層)")[1]
+      .split("## 9.")[0];
+    expect(section).toContain("### 8.1 リスクの重篤度・発生頻度内訳");
+    expect(section).toContain("| RK-001 | 5 | - | - | - | 5 | S | - | - |");
+    expect(section).toContain("### 8.2 リスク×ステークホルダ影響行列");
+    expect(section).toContain("外部委託先");
+  });
+
+  it("keeps the existing 6-column risk table header unchanged", () => {
+    expect(markdownOptional).toContain("| リスクID | 内容 | 区分 | 影響度 | 発生可能性 | 変更区分 |");
+  });
+
+  it("flags an unknown RSF-xx reference and the exceeded-impact warning under section 8.3", () => {
+    const section = markdownOptional
+      .split("## 8. リスク分析フレームの適用指示(意味的層)")[1]
+      .split("## 9.")[0];
+    expect(section).toContain("「RSF-99」はリスク分析フレームに存在しないステークホルダ枠IDである。");
+    expect(section).toContain("ステークホルダ影響の最大値(4)が実効影響度(1)を超えている。影響度の見直しを検討すること。");
+  });
+
+  it("flags the severity escalation warning for TC-001 under section 4.5 (severity S, derived priority low)", () => {
+    const section = markdownOptional.split("### 4.5 任意軸の内訳と宣言・実体の照合")[1].split("## 5.")[0];
+    expect(section).toContain(
+      "[high] TC-001: 重篤度区分がS(最重篤)であるにもかかわらず、導出優先度が低となっている。優先度を見直すこと。"
+    );
+  });
+
+  it("lists RK-001 as a risk without a declared basis under section 8.3", () => {
+    const section = markdownOptional
+      .split("## 8. リスク分析フレームの適用指示(意味的層)")[1]
+      .split("## 9.")[0];
+    expect(section).toContain("RK-001: sourceRefs / targetIds のいずれも未記入で根拠が示されていない。");
+  });
+
+  it("renders section 8.4 with '-' for the missing source refs / target ids", () => {
+    const section = markdownOptional
+      .split("## 8. リスク分析フレームの適用指示(意味的層)")[1]
+      .split("## 9.")[0];
+    expect(section).toContain("### 8.4 リスクの根拠位置・対象ID");
+    expect(section).toContain("| RK-001 | - | - |");
+  });
+
+  it("is deterministic and does not mutate the input", () => {
+    const snapshot = JSON.stringify(inputOptional);
+    expect(renderTestConditions(inputOptional)).toBe(markdownOptional);
+    expect(JSON.stringify(inputOptional)).toBe(snapshot);
+  });
+});
+
 describe("renderTestConditions 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestConditions(input));
