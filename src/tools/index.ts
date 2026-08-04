@@ -26,6 +26,7 @@ import { registerGenerateBusinessRequirementModelTool } from "./generateBusiness
 import { registerSelectRegressionSuiteTool } from "./selectRegressionSuite.js";
 import { registerAnalyzeExecutionOrderTool } from "./analyzeExecutionOrder.js";
 import { registerAuditDeliverableConsistencyTool } from "./auditDeliverableConsistency.js";
+import { registerAnalyzeDataFlowTimingTool } from "./analyzeDataFlowTiming.js";
 
 export function registerTools(server: McpServer): void {
   registerGenerateTestPlanTool(server);
@@ -55,4 +56,5 @@ export function registerTools(server: McpServer): void {
   registerSelectRegressionSuiteTool(server);
   registerAnalyzeExecutionOrderTool(server);
   registerAuditDeliverableConsistencyTool(server);
+  registerAnalyzeDataFlowTimingTool(server);
 }

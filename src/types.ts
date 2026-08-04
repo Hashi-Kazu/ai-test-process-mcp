@@ -3453,3 +3453,208 @@ export interface DeliverableConsistencyCriteria {
   readStateWords: string[];
   notes: string[];
 }
+
+// --- データフロー・タイミング分析(analyze_data_flow_timing) ---
+
+export type DataFlowComponentKind =
+  | "device"
+  | "service"
+  | "hub"
+  | "cloud"
+  | "store"
+  | "actor"
+  | "other";
+
+/** 通信の送信契機。undefined は「テストベース上でタイミングが定義されていない」ことの明示。 */
+export type DataFlowTimingKind = "periodic" | "event" | "on-demand" | "batch" | "undefined";
+
+export type DataFlowAckKind = "none" | "application-ack" | "transport-ack" | "undeclared";
+
+export interface DataFlowComponentInput {
+  id: string; // "CP-01" 形式。入力全体で一意
+  nameJa: string;
+  kind?: DataFlowComponentKind;
+  note?: string;
+}
+
+export interface DataFlowDataItemInput {
+  id: string; // "DI-01" 形式。入力全体で一意
+  nameJa: string;
+  note?: string;
+}
+
+/** テストベース上の根拠位置。 */
+export interface DataFlowSourceRef {
+  document: string;
+  startLine?: number;
+  heading?: string;
+  label?: string;
+}
+
+export interface DataFlowTimingInput {
+  kind: DataFlowTimingKind;
+  intervalSeconds?: number; // periodic / batch / on-demand の周期
+  trigger?: string; // event の契機
+}
+
+export interface DataFlowRetryInput {
+  maxCount: number;
+  intervalSeconds?: number;
+}
+
+export interface DataFlowCommunicationInput {
+  id: string; // "CM-01" 形式。入力全体で一意
+  fromId: string; // components[].id
+  toId: string; // components[].id
+  dataItemIds: string[]; // 1件以上。dataItems[].id
+  timing: DataFlowTimingInput;
+  transmissionLatencySeconds?: number; // 既定 0
+  ackKind?: DataFlowAckKind;
+  timeoutSeconds?: number;
+  retry?: DataFlowRetryInput;
+  requirementIds?: string[]; // extract_test_conditions の derivedFrom へ引き渡す根拠要件ID
+  sourceRef?: DataFlowSourceRef;
+  note?: string;
+}
+
+/** 「宣言」側の伝播先。実体(部分グラフの到達性・算出値)と照合する。 */
+export interface DataFlowPropagationTargetInput {
+  id: string;
+  dataItemId: string;
+  originComponentId: string;
+  terminalComponentIds: string[];
+  claimedMaxLatencySeconds?: number;
+}
+
+export interface DataFlowClaimedSkewInput {
+  dataItemId: string;
+  originComponentId: string;
+  seconds: number;
+}
+
+export interface DataFlowTestConditionInput {
+  id: string;
+  statement?: string;
+  dataItemIds?: string[];
+  communicationIds?: string[];
+  coveredDelayWindowIds?: string[]; // "DFW:" / "DSW:" の窓ID
+  expectsImmediate?: boolean;
+}
+
+export interface DataFlowTimingSpec {
+  completedTools?: CompletedToolDeclaration[];
+  title?: string;
+  components: DataFlowComponentInput[]; // 1件以上
+  dataItems: DataFlowDataItemInput[]; // 1件以上
+  communications: DataFlowCommunicationInput[]; // 1件以上
+  propagationTargets?: DataFlowPropagationTargetInput[];
+  claimedMaxSkewSeconds?: DataFlowClaimedSkewInput[];
+  testConditions?: DataFlowTestConditionInput[];
+  claimedDelayWindowCoveragePercent?: number;
+  maxCommunications?: number; // 既定 DEFAULT_MAX_DATA_FLOW_COMMUNICATIONS
+  maxPathsPerPair?: number; // 既定 DEFAULT_MAX_DATA_FLOW_PATHS_PER_PAIR
+}
+
+export interface DataFlowTimingFinding {
+  categoryId: string; // "DFT-01" 形式
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+
+/** 辺(通信)1本あたりの最大／最小遅延。computed:false は「latency 不定」で 0 秒代替をしない。 */
+export interface DataFlowEdgeLatency {
+  communicationId: string;
+  computed: boolean;
+  maxSeconds?: number;
+  minSeconds?: number;
+  reason?: string;
+}
+
+export interface DataFlowPathResult {
+  terminalId: string;
+  communicationIds: string[];
+  componentIds: string[];
+  computed: boolean;
+  maxSeconds?: number;
+  minSeconds?: number;
+  undefinedCommunicationIds: string[];
+}
+
+export interface DataFlowDelayWindowRow {
+  windowId: string; // "DFW:<dataItemId>:<originId>:<terminalId>"
+  dataItemId: string;
+  originId: string;
+  terminalId: string;
+  computed: boolean;
+  maxLatencySeconds?: number;
+  minLatencySeconds?: number;
+  criticalPathCommunicationIds: string[];
+  pathCount: number;
+  skipReason?: string;
+}
+
+export interface DataFlowSkewWindowRow {
+  windowId: string; // "DSW:<dataItemId>:<originId>"
+  dataItemId: string;
+  originId: string;
+  observerCount: number;
+  computed: boolean;
+  maxSkewSeconds?: number;
+  slowestTerminalId?: string;
+  slowestPathCommunicationIds: string[];
+  fastestTerminalId?: string;
+  fastestPathCommunicationIds: string[];
+  skipReason?: string;
+}
+
+export type DataFlowCoverageBasis = "computed" | "unavailable";
+
+export interface DataFlowCoverage {
+  basis: DataFlowCoverageBasis;
+  denominator: number;
+  numerator?: number;
+  percent?: number;
+  reason?: string;
+  claimedPercent?: number;
+  claimMismatch: boolean;
+}
+
+export interface DataFlowHandoverRow {
+  proposedConditionId: string; // "DFT-DELAY:..." / "DFT-SKEW:..."
+  windowKind: "delay" | "skew";
+  windowId: string;
+  target: string;
+  statement: string;
+  source: "testbase";
+  derivedFrom: { kind: "requirement"; id: string }[];
+  recommendedTechniques: string[];
+}
+
+export interface DataFlowTimingResult {
+  generated: boolean; // 通信件数の上限超過で算出を打ち切ったとき false
+  skipReason?: string;
+  edgeLatencies: DataFlowEdgeLatency[]; // communications 入力順
+  delayWindows: DataFlowDelayWindowRow[];
+  skewWindows: DataFlowSkewWindowRow[];
+  isolatedComponentIds: string[];
+  uncarriedDataItemIds: string[];
+  handoverRows: DataFlowHandoverRow[];
+  coverage: DataFlowCoverage;
+  truncated: boolean;
+  findings: DataFlowTimingFinding[];
+}
+
+// resource 型
+export interface DataFlowTimingAnalysisCriteria {
+  name: string;
+  summary: string;
+  categories: {
+    id: string;
+    nameJa: string;
+    severity: "high" | "medium" | "info";
+    definition: string;
+    recommendedAction: string;
+  }[];
+  notes: string[];
+}

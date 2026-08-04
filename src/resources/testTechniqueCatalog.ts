@@ -210,7 +210,9 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
       requiredInputs: ["処理の想定順序", "タイムアウト・締め時刻等の時刻境界"],
       deterministic: false,
       selectionRationale: "処理順序の入れ替わりや時刻・タイムアウトの境界で振る舞いが変わり得る場合に選ぶ。",
-      note: "順序パターン自動生成エンジンは未実装。additionalCoverageTargets でパターン単位の網羅対象を宣言する運用とする。",
+      note:
+        "順序パターン自動生成エンジンは未実装。additionalCoverageTargets でパターン単位の網羅対象を宣言する運用とする。" +
+        "ただし構成要素間の通信仕様から導く遅延窓・乖離窓(最大伝播遅延・最大乖離時間)の導出は analyze_data_flow_timing が担う。",
     },
     {
       id: "TTK-11",

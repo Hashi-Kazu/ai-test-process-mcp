@@ -727,7 +727,7 @@ export const testTechniqueToolMapping: { techniqueId: TestTechniqueId; toolName:
   { techniqueId: "long-run-test", toolName: "generate_test_cases" },
   { techniqueId: "fault-injection", toolName: "generate_test_cases" },
   { techniqueId: "concurrency-test", toolName: "generate_test_cases" },
-  { techniqueId: "timing-order-test", toolName: "generate_test_cases" },
+  { techniqueId: "timing-order-test", toolName: "analyze_data_flow_timing" },
   { techniqueId: "data-lifecycle-test", toolName: "generate_test_cases" },
   { techniqueId: "config-matrix", toolName: "generate_test_cases" },
   { techniqueId: "regression-selection", toolName: "generate_test_cases" },

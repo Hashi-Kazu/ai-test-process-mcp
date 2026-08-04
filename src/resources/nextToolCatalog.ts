@@ -34,6 +34,7 @@ export const registeredToolNames: readonly string[] = [
   "select_regression_suite",
   "analyze_execution_order",
   "audit_deliverable_consistency",
+  "analyze_data_flow_timing",
 ];
 
 const DESIGN_FOLLOWUPS: NextToolCatalogEntry[] = [
@@ -310,6 +311,23 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "review_test_specification",
       when: "always",
       reason: "選択結果の第三者レビューが未実施である",
+    },
+  ],
+  analyze_data_flow_timing: [
+    {
+      toolName: "extract_test_conditions",
+      when: "has-delay-windows",
+      reason: "算出した遅延窓・乖離窓のテスト条件化が未実施である",
+    },
+    {
+      toolName: "generate_test_cases",
+      when: "has-uncovered-delay-windows",
+      reason: "テスト条件が対応していない遅延窓・乖離窓が残っている",
+    },
+    {
+      toolName: "review_test_basis",
+      when: "has-undefined-timing",
+      reason: "タイミングが未定義の通信があり、テストベース自体の確認が必要",
     },
   ],
   analyze_execution_order: [

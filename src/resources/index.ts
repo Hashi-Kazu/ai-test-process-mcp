@@ -27,6 +27,7 @@ import { testDataDesignCriteria } from "./testDataDesignCriteria.js";
 import { configMatrixAnalysisCriteria } from "./configMatrixCriteria.js";
 import { regressionSelectionAnalysisCriteria } from "./regressionSelectionCriteria.js";
 import { executionOrderAnalysisCriteria } from "./executionOrderCriteria.js";
+import { dataFlowTimingAnalysisCriteria } from "./dataFlowTimingCriteria.js";
 import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
@@ -554,6 +555,36 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(executionOrderAnalysisCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "data-flow-timing-analysis-criteria",
+    "testdesign://data-flow-timing/analysis-criteria",
+    {
+      title: "Data Flow Timing Analysis Criteria",
+      description:
+        "Judgment category catalog for analyze_data_flow_timing (DFT-01..DFT-20): duplicate component / data item / " +
+        "communication ids, out-of-population and self-referencing communications, undefined send timing " +
+        "(undefined kind, periodic without interval, event without trigger), undeclared ack and missing timeout " +
+        "declarations, propagation delay that cannot be computed because a path contains an undefined-timing edge, " +
+        "claimed maximum latency and claimed maximum skew that disagree with the computed values, declared terminals " +
+        "unreachable in the data item subgraph, delay and skew windows no test condition covers (and test conditions " +
+        "referencing windows that do not exist), test conditions expecting immediate reflection against a non-zero " +
+        "delay window, data items carried by no communication, communications carrying no data item, isolated " +
+        "components, communications with no test basis source reference, mismatched periodic intervals across paths " +
+        "for the same data item, population and path enumeration cap overflow, and delay window coverage claim " +
+        "mismatches, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(dataFlowTimingAnalysisCriteria, null, 2),
         },
       ],
     })
