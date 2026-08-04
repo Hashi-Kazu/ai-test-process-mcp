@@ -202,7 +202,7 @@ ID母集団監査の判定区分カタログ（自作パラフレーズ、未宣
 
 ### Resource: `testcondition://persona/journey-frame`
 
-上流の利用状況モデリング用フレーム（自作パラフレーズ）を構造化データ（JSON）として公開する。ドメイン分析の観点（`DOM-xx`、提供サービス・利用者/従業員構成・業務フロー・IT化傾向・法規制・季節性）、ペルソナ4象限の定義（`PQ-01`〜`PQ-04`、質問例・避ける書き方付き）、ユーザーストーリーマップの5階層（`USM-01`〜`USM-05`、粒度の目安付き）、現状(Before)/将来(After)/テスト要求の3列定義と `extract_test_conditions` への引き渡し規約を含む。`generate_user_story_map` が利用する。
+上流の利用状況モデリング用フレーム（自作パラフレーズ）を構造化データ（JSON）として公開する。ドメイン分析の観点（`DOM-xx`、提供サービス・利用者/従業員構成・業務フロー・IT化傾向・法規制・季節性）、ペルソナ4象限の定義（`PQ-01`〜`PQ-04`、質問例・避ける書き方付き）、ユーザーストーリーマップの5階層（`USM-01`〜`USM-05`、粒度の目安付き）、現状(Before)/将来(After)/テスト要求の3列定義と `extract_test_conditions` への引き渡し規約に加え、ステークホルダー2軸評価フレーム（影響力 `SW-INFLUENCE` ／関心度 `SW-INTEREST` の4段階定義、4段の分析ステップ `SWS-01`〜`SWS-04`、扱いクラス `SWC-01`〜`SWC-03`（重点／通常／参考）と4×4・全16組合せの対応表、`extract_test_conditions` への引き渡し規約）を含む。`generate_user_story_map` が利用する。
 
 ### Tool: `analyze_cause_effect`
 

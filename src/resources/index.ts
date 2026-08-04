@@ -347,7 +347,11 @@ export function registerResources(server: McpServer): void {
         "Paraphrased upstream usage-modeling frame: domain analysis aspects, the four persona quadrants " +
         "(demographics / says&thinks / goals / pain points), the five user story map levels " +
         "(persona / product goal / activity / task / user story), and the before/after/test-requirement " +
-        "derivation columns with the handover convention to extract_test_conditions.",
+        "derivation columns with the handover convention to extract_test_conditions, plus a stakeholder " +
+        "weighting frame that scores influence (SW-INFLUENCE) x interest (SW-INTEREST) on 4-level scales, " +
+        "a 4-step analysis flow (SWS-01..SWS-04), three handling classes (SWC-01..SWC-03 = focus / standard " +
+        "/ reference), an explicit 4x4 (16-combination) matrix mapping influence/interest pairs to those " +
+        "classes, and its own handover convention to extract_test_conditions.",
       mimeType: "application/json",
     },
     async (uri) => ({

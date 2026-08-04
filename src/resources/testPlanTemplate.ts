@@ -261,7 +261,10 @@ export const testPlanTemplate: TestPlanTemplate = {
       level: 2,
       required: false,
       fieldKey: "stakeholders",
-      guidance: "関係するステークホルダーと連絡先を記述する。",
+      guidance:
+        "関係するステークホルダーと連絡先を記述する。あわせて testcondition://persona/journey-frame の" +
+        "ステークホルダー2軸評価（影響力 SW-INFLUENCE ／ 関心度 SW-INTEREST）に基づく評価値・スコア・" +
+        "扱いクラス（重点／通常／参考）を列として持たせ、重視対象とその根拠が読み取れる表にする。",
     },
 
     {
