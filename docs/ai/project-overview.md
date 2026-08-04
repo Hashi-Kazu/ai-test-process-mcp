@@ -65,7 +65,7 @@ src/
     analyzeCauseEffect.ts # analyze_cause_effect ツール（仕様文＋原因・結果・制約モデルの整合性と仕様文本文による裏付けを決定的に検査、mermaid図と design_decision_table にそのまま渡せる DecisionTableSpec 形式の引き渡しJSON（同ツールの算出ロジックで往復照合済み）を出力、renderCauseEffectAnalysis純関数）
     designDecisionTable.ts # design_decision_table ツール（条件・水準・無効組合せ・ルールから全組合せ列挙→無効組合せ除外→同一動作列の圧縮(don't care導出)を決定的に行う、renderDecisionTable純関数 + 再利用用 computeDecisionTableRows / buildDecisionTableCoverageTargets export）
     designPairwise.ts    # design_pairwise ツール（因子・水準・禁則・seed行から全水準ペア列挙→禁則による到達不能ペア判定→ペア被覆組合せの決定的な貪欲法生成を行う、renderPairwise純関数 + 再利用用 computePairwiseRows / buildPairwiseCoverageTargets export）
-    designScenarioFlows.ts # design_scenario_flows ツール（アクター・主フロー・代替/例外フローからシナリオ一覧を正常系/準正常系/異常系分類つきで決定的に展開し、フロー被覆・機能ID通過・テスト条件との突合を検査する、renderScenarioFlows純関数 + 再利用用 computeScenarioFlows / buildScenarioFlowCoverageTargets export）
+    designScenarioFlows.ts # design_scenario_flows ツール（アクター・主フロー・代替/例外フローからシナリオ一覧を正常系/準正常系/異常系分類つきで決定的に展開し、フロー展開・機能ID通過・テスト条件との突合を検査する、renderScenarioFlows純関数 + 再利用用 computeScenarioFlows / buildScenarioFlowCoverageTargets export）
     designTestArchitecture.ts # design_test_architecture ツール（テスト条件群をテストコンテナへ束ね、責務・テストレベル・テストタイプ・優先度クラス・担当観点カテゴリ・テストスコープの宣言と帰属実体を双方向で照合し、帰属率・レベル/タイプ/優先度クラスの分布・コンテナ別テストサイズ分布・条件→ケースのトレーサビリティを分母つきで算出する、renderTestArchitecture純関数 + 再利用用 computeTestArchitecture export）
     designTestData.ts    # design_test_data ツール（データ区分ごとのライフサイクル状態・遷移から、データ区分×状態マトリクス・未使用状態/遷移の検出・データ↔ケースの供給トレーサビリティ・同一データを更新する複数ケースの排他検出・状態/遷移被覆を決定的に算出する、renderTestData純関数 + 再利用用 computeTestDataDesign / buildTestDataCoverageTargets export）
     auditCrossMatrix.ts  # audit_cross_matrix ツール（任意の2軸以上を汎用の軸データとして受け取り、軸ペアの直積表を決定的に生成して空行・空列＝片側にしかない要素を列挙する。充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合する、renderCrossMatrixAudit純関数）
