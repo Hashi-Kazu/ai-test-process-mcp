@@ -113,4 +113,111 @@ describe("riskAnalysisFrame", () => {
       expect(allText).not.toContain(term);
     }
   });
+
+  it("has 4 unique severity sub-axes with values 1..5 without duplicates, in direct/ripple/shortTerm/longTerm order", () => {
+    const axes = riskAnalysisFrame.severitySubAxes;
+    expect(axes.map((a) => a.key)).toEqual(["direct", "ripple", "shortTermFinancial", "longTermFinancial"]);
+    const seenIds = new Set<string>();
+    for (const axis of axes) {
+      expect(axis.id).toMatch(/^RA-SEV-0[1-4]$/);
+      expect(seenIds.has(axis.id)).toBe(false);
+      seenIds.add(axis.id);
+      const values = axis.levels.map((l) => l.value).sort((a, b) => a - b);
+      expect(values).toEqual([1, 2, 3, 4, 5]);
+      for (const level of axis.levels) {
+        expect(level.label.trim().length).toBeGreaterThan(0);
+        expect(level.criteria.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("covers severity 1..5 with contiguous non-overlapping S/A/B grades", () => {
+    const grades = riskAnalysisFrame.severityGrades;
+    expect(grades.map((g) => g.id)).toEqual(["S", "A", "B"]);
+    expect(grades[0].maxSeverity).toBe(5);
+    expect(grades[grades.length - 1].minSeverity).toBe(1);
+    for (let i = 0; i < grades.length; i++) {
+      expect(grades[i].minSeverity).toBeLessThanOrEqual(grades[i].maxSeverity);
+      if (i > 0) {
+        expect(grades[i - 1].minSeverity).toBe(grades[i].maxSeverity + 1);
+      }
+    }
+    for (let severity = 1; severity <= 5; severity++) {
+      const matched = grades.filter((g) => severity >= g.minSeverity && severity <= g.maxSeverity);
+      expect(matched).toHaveLength(1);
+    }
+  });
+
+  it("has usage frequency and defect proneness axes with values 1..5, and proneness value 3 marked as standard", () => {
+    for (const axis of [riskAnalysisFrame.usageFrequencyAxis, riskAnalysisFrame.defectPronenessAxis]) {
+      const values = axis.levels.map((l) => l.value).sort((a, b) => a - b);
+      expect(values).toEqual([1, 2, 3, 4, 5]);
+    }
+    const standard = riskAnalysisFrame.defectPronenessAxis.levels.find((l) => l.value === 3);
+    expect(standard).toBeDefined();
+    expect(standard?.label).toContain("標準");
+    expect(standard?.criteria).toContain("既定値");
+  });
+
+  it("has 5+ proneness factors covering both increase and decrease directions", () => {
+    const factors = riskAnalysisFrame.pronenessFactors;
+    expect(factors.length).toBeGreaterThanOrEqual(5);
+    expect(factors.some((f) => f.direction === "increase")).toBe(true);
+    expect(factors.some((f) => f.direction === "decrease")).toBe(true);
+    const seen = new Set<string>();
+    for (const f of factors) {
+      expect(f.id).toMatch(/^RA-PF-\d{2}$/);
+      expect(seen.has(f.id)).toBe(false);
+      seen.add(f.id);
+    }
+  });
+
+  it("keeps the existing 3-axis / bands / RSF / RC / RCL / RCF ids and counts unchanged", () => {
+    expect(riskAnalysisFrame.impactAxis.id).toBe("RA-IMPACT");
+    expect(riskAnalysisFrame.likelihoodAxis.id).toBe("RA-LIKELIHOOD");
+    expect(riskAnalysisFrame.changeAxis.id).toBe("RA-CHANGE");
+    expect(riskAnalysisFrame.bands.map((b) => b.id)).toEqual(["R1", "R2", "R3", "R4"]);
+    expect(riskAnalysisFrame.stakeholderFrames.map((sf) => sf.id)).toEqual([
+      "RSF-01",
+      "RSF-02",
+      "RSF-03",
+      "RSF-04",
+      "RSF-05",
+    ]);
+    expect(riskAnalysisFrame.riskCategories.map((rc) => rc.id)).toEqual([
+      "RC-01",
+      "RC-02",
+      "RC-03",
+      "RC-04",
+      "RC-05",
+    ]);
+    expect(riskAnalysisFrame.controlFlawFrame.loopElements.map((el) => el.id)).toEqual([
+      "RCL-01",
+      "RCL-02",
+      "RCL-03",
+      "RCL-04",
+    ]);
+    expect(riskAnalysisFrame.controlFlawFrame.patterns.map((p) => p.id)).toEqual([
+      "RCF-01",
+      "RCF-02",
+      "RCF-03",
+      "RCF-04",
+    ]);
+  });
+
+  it("does not name external methods or standards in the newly added optional axes", () => {
+    const allText = JSON.stringify({
+      severitySubAxes: riskAnalysisFrame.severitySubAxes,
+      severityGrades: riskAnalysisFrame.severityGrades,
+      usageFrequencyAxis: riskAnalysisFrame.usageFrequencyAxis,
+      defectPronenessAxis: riskAnalysisFrame.defectPronenessAxis,
+      pronenessFactors: riskAnalysisFrame.pronenessFactors,
+      severityAggregationRule: riskAnalysisFrame.severityAggregationRule,
+      likelihoodDerivationRule: riskAnalysisFrame.likelihoodDerivationRule,
+      optionalAxisPolicy: riskAnalysisFrame.optionalAxisPolicy,
+    });
+    for (const term of ["STAMP", "STPA", "HAZOP", "FMEA", "FTA", "JSTQB", "ISO", "IEC", "IEEE"]) {
+      expect(allText).not.toContain(term);
+    }
+  });
 });

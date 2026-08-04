@@ -11,12 +11,16 @@ import {
   DEFAULT_CONDITION_ID_PREFIX,
   buildRequirementCoverageMatrix,
   buildRiskCategoryDistribution,
+  buildRiskStakeholderImpactMatrix,
   buildSourceDistribution,
   evaluateRisks,
   findConditionsWithoutPriority,
   findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
   findIncompletePersonaQuadrants,
+  findRisksWithoutBasis,
+  findUnknownRiskPronenessFactorIds,
+  findUnknownRiskStakeholderFrameIds,
   formatPersonaQuadrantCell,
   personaQuadrantColumns,
   findMissingConditionNumbers,
@@ -26,6 +30,7 @@ import {
   findUnresolvedDerivedFromRefs,
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
+  resolveEffectiveRiskAxes,
   resolveSourceRefs,
   testConditionSourceLabels,
 } from "../testConditionAnalysis.js";
@@ -110,6 +115,10 @@ export function renderTestConditions(
   const unusedRiskCategories = findUnusedRiskCategories(risks ?? [], testConditions, frame);
   const unknownRiskCategoryRefs = findUnknownRiskCategoryIds(risks ?? [], testConditions, frame);
   const incompletePersonaQuadrants = findIncompletePersonaQuadrants(personas ?? []);
+  const stakeholderImpactMatrix = buildRiskStakeholderImpactMatrix(risks ?? [], frame);
+  const unknownRiskStakeholderFrameRefs = findUnknownRiskStakeholderFrameIds(risks ?? [], frame);
+  const unknownRiskPronenessFactorRefs = findUnknownRiskPronenessFactorIds(risks ?? [], testConditions, frame);
+  const risksWithoutBasis = findRisksWithoutBasis(risks ?? []);
 
   const known = knownTechniqueIds(catalog);
   const unknownTechniques: { conditionId: string; techniqueId: string }[] = [];
@@ -416,6 +425,61 @@ export function renderTestConditions(
   lines.push("changeCategory が未指定の場合、changeWeight は既定値 2 として計算する。");
   lines.push("");
 
+  lines.push("重篤度サブ軸(任意軸。未記入時は既存の影響度軸を使う):");
+  lines.push("");
+  for (const axis of frame.severitySubAxes) {
+    lines.push(`#### ${axis.id} ${axis.nameJa}`);
+    lines.push("");
+    lines.push(escapeCell(axis.description));
+    lines.push("");
+    lines.push("| 値 | レベル | 判定基準 |");
+    lines.push("| --- | --- | --- |");
+    for (const level of axis.levels) {
+      lines.push(`| ${level.value} | ${escapeCell(level.label)} | ${escapeCell(level.criteria)} |`);
+    }
+    lines.push("");
+  }
+  lines.push(frame.severityAggregationRule);
+  lines.push("");
+  lines.push("重篤度区分:");
+  lines.push("");
+  lines.push("| 区分 | 重篤度範囲 | 名称 | 指針 |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const g of frame.severityGrades) {
+    lines.push(
+      `| ${escapeCell(g.id)} | ${g.minSeverity}..${g.maxSeverity} | ${escapeCell(g.label)} | ${escapeCell(g.guidance)} |`
+    );
+  }
+  lines.push("");
+  lines.push("発生頻度サブ軸(任意軸。未記入時は既存の発生可能性軸を使う):");
+  lines.push("");
+  for (const axis of [frame.usageFrequencyAxis, frame.defectPronenessAxis]) {
+    lines.push(`#### ${axis.id} ${axis.nameJa}`);
+    lines.push("");
+    lines.push(escapeCell(axis.description));
+    lines.push("");
+    lines.push("| 値 | レベル | 判定基準 |");
+    lines.push("| --- | --- | --- |");
+    for (const level of axis.levels) {
+      lines.push(`| ${level.value} | ${escapeCell(level.label)} | ${escapeCell(level.criteria)} |`);
+    }
+    lines.push("");
+  }
+  lines.push(frame.likelihoodDerivationRule);
+  lines.push("");
+  lines.push("発生しやすさ係数調整要因(係数逸脱時の根拠として pronenessFactorIds に指定する):");
+  lines.push("");
+  lines.push("| 要因ID | 要因 | 方向 | 説明 |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const f of frame.pronenessFactors) {
+    lines.push(
+      `| ${escapeCell(f.id)} | ${escapeCell(f.nameJa)} | ${f.direction === "increase" ? "増加" : "減少"} | ${escapeCell(f.description)} |`
+    );
+  }
+  lines.push("");
+  lines.push(frame.optionalAxisPolicy);
+  lines.push("");
+
   lines.push("### 4.2 リスクスコア → 優先度の写像");
   lines.push("");
   lines.push("| リスクレベル | スコア範囲 | 優先度 | 指針 |");
@@ -425,6 +489,10 @@ export function renderTestConditions(
       `| ${band.id} | ${band.minScore}..${band.maxScore} | ${band.priority} | ${escapeCell(band.guidance)} |`
     );
   }
+  lines.push("");
+  lines.push(
+    "任意軸を追加してもスコア範囲 1..75 と R1〜R4 の区分は変更しない。追加軸は実効影響度・実効発生可能性の供給元としてのみ働き、内訳と不整合は 4.5 に示す。"
+  );
   lines.push("");
 
   lines.push("### 4.3 宣言された優先度基準");
@@ -461,6 +529,93 @@ export function renderTestConditions(
       lines.push(
         `- ${c.id}: ${reason ? `逸脱理由: ${escapeCell(reason)}` : "逸脱理由: 未記入(要記入)"}`
       );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 4.5 任意軸の内訳と宣言・実体の照合");
+  lines.push("");
+  const anySeverityOrLikelihoodDetail = testConditions.some(
+    (c) => c.severity !== undefined || c.likelihoodDetail !== undefined
+  );
+  if (!anySeverityOrLikelihoodDetail) {
+    lines.push("任意軸の記入がないため、既存3軸のスコアのみで評価している。");
+  } else {
+    lines.push(
+      "| 条件ID | 直接影響 | 波及影響 | 短期金銭 | 長期金銭 | 重篤度 | 重篤度区分 | 影響度出所 | 利用頻度 | 発生しやすさ | 発生可能性出所 |"
+    );
+    lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const c of testConditions) {
+      const effective = resolveEffectiveRiskAxes(c, frame);
+      lines.push(
+        `| ${escapeCell(c.id)} | ${c.severity?.direct ?? "-"} | ${c.severity?.ripple ?? "-"} | ${
+          c.severity?.shortTermFinancial ?? "-"
+        } | ${c.severity?.longTermFinancial ?? "-"} | ${effective.severity ?? "-"} | ${
+          effective.severityGradeId ?? "-"
+        } | ${effective.impactSource ?? "-"} | ${c.likelihoodDetail?.usageFrequency ?? "-"} | ${
+          c.likelihoodDetail?.defectProneness ?? "-"
+        } | ${effective.likelihoodSource ?? "-"} |`
+      );
+    }
+    lines.push("");
+
+    const conflictConditions = testConditions.filter((c) => resolveEffectiveRiskAxes(c, frame).impactSeverityConflict);
+    if (conflictConditions.length === 0) {
+      lines.push("- 影響度と重篤度サブ軸の不整合(impactSeverityConflict): なし");
+    } else {
+      for (const c of conflictConditions) {
+        lines.push(`- [high] ${c.id}: 宣言した影響度と重篤度サブ軸の最大値が一致しない(impactSeverityConflict)。`);
+      }
+    }
+
+    const likelihoodConflictConditions = testConditions.filter(
+      (c) => resolveEffectiveRiskAxes(c, frame).likelihoodDetailConflict
+    );
+    if (likelihoodConflictConditions.length === 0) {
+      lines.push("- 発生可能性と発生頻度サブ軸の不整合(likelihoodDetailConflict): なし");
+    } else {
+      for (const c of likelihoodConflictConditions) {
+        lines.push(
+          `- [high] ${c.id}: 宣言した発生可能性と利用頻度×発生しやすさ係数からの導出値が一致しない(likelihoodDetailConflict)。`
+        );
+      }
+    }
+
+    const missingRationaleConditions = testConditions.filter(
+      (c) => resolveEffectiveRiskAxes(c, frame).missingPronenessRationale
+    );
+    if (missingRationaleConditions.length === 0) {
+      lines.push("- 発生しやすさ係数の逸脱に対する根拠未記入(missingPronenessRationale): なし");
+    } else {
+      for (const c of missingRationaleConditions) {
+        lines.push(
+          `- [medium] ${c.id}: 発生しやすさ係数が標準(3)から逸脱しているが、pronenessRationale / pronenessFactorIds のいずれも未記入。`
+        );
+      }
+    }
+
+    const escalationConditions = testConditions.filter((c) => {
+      const ev = evaluationById.get(c.id);
+      return ev?.severityEscalation;
+    });
+    if (escalationConditions.length === 0) {
+      lines.push("- 重篤度S かつ導出優先度が低のエスカレーション(severityEscalation): なし");
+    } else {
+      for (const c of escalationConditions) {
+        lines.push(
+          `- [high] ${c.id}: 重篤度区分がS(最重篤)であるにもかかわらず、導出優先度が低となっている。優先度を見直すこと。`
+        );
+      }
+    }
+
+    if (unknownRiskPronenessFactorRefs.length === 0) {
+      lines.push("- 不存在の発生しやすさ係数調整要因ID(RA-PF-xx)参照: なし");
+    } else {
+      for (const ref of unknownRiskPronenessFactorRefs) {
+        lines.push(
+          `- [medium] ${ref.ownerId}: 「${escapeCell(ref.factorId)}」はリスク分析フレームに存在しない発生しやすさ係数調整要因IDである。`
+        );
+      }
     }
   }
   lines.push("");
@@ -616,6 +771,87 @@ export function renderTestConditions(
       );
     }
     lines.push("");
+
+    lines.push("### 8.1 リスクの重篤度・発生頻度内訳");
+    lines.push("");
+    lines.push("| リスクID | 直接影響 | 波及影響 | 短期金銭 | 長期金銭 | 重篤度 | 重篤度区分 | 利用頻度 | 発生しやすさ |");
+    lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const r of risks) {
+      const effective = resolveEffectiveRiskAxes(r, frame);
+      lines.push(
+        `| ${escapeCell(r.id)} | ${r.severity?.direct ?? "-"} | ${r.severity?.ripple ?? "-"} | ${
+          r.severity?.shortTermFinancial ?? "-"
+        } | ${r.severity?.longTermFinancial ?? "-"} | ${effective.severity ?? "-"} | ${
+          effective.severityGradeId ?? "-"
+        } | ${r.likelihoodDetail?.usageFrequency ?? "-"} | ${r.likelihoodDetail?.defectProneness ?? "-"} |`
+      );
+    }
+    lines.push("");
+
+    lines.push("### 8.2 リスク×ステークホルダ影響行列");
+    lines.push("");
+    lines.push(
+      `| リスクID | ${stakeholderImpactMatrix.columns.map((c) => escapeCell(c.label)).join(" | ")} |`
+    );
+    lines.push(`| --- | ${stakeholderImpactMatrix.columns.map(() => "---").join(" | ")} |`);
+    for (const row of stakeholderImpactMatrix.rows) {
+      lines.push(
+        `| ${escapeCell(row.riskId)} | ${row.cells.map((c) => (c.level !== undefined ? String(c.level) : "-")).join(" | ")} |`
+      );
+    }
+    lines.push("");
+
+    lines.push("### 8.3 リスク×ステークホルダ影響行列の指摘");
+    lines.push("");
+    const rowsWithMissingCells = stakeholderImpactMatrix.rows.filter((r) => r.missingStakeholderKeys.length > 0);
+    if (rowsWithMissingCells.length === 0) {
+      lines.push("- 未記入セル: なし");
+    } else {
+      for (const row of rowsWithMissingCells) {
+        lines.push(
+          `- [medium] ${row.riskId}: 未記入のステークホルダ枠 ${escapeCell(row.missingStakeholderKeys.join(", "))}`
+        );
+      }
+    }
+    if (unknownRiskStakeholderFrameRefs.length === 0) {
+      lines.push("- 不存在のステークホルダ枠ID(RSF-xx)参照: なし");
+    } else {
+      for (const ref of unknownRiskStakeholderFrameRefs) {
+        lines.push(
+          `- [medium] ${ref.riskId}: 「${escapeCell(ref.stakeholderFrameId)}」はリスク分析フレームに存在しないステークホルダ枠IDである。`
+        );
+      }
+    }
+    const exceedingRows = stakeholderImpactMatrix.rows.filter((r) => r.exceedsEffectiveImpact);
+    if (exceedingRows.length === 0) {
+      lines.push("- ステークホルダ影響が実効影響度を超える(exceedsEffectiveImpact): なし");
+    } else {
+      for (const row of exceedingRows) {
+        lines.push(
+          `- [high] ${row.riskId}: ステークホルダ影響の最大値(${row.maxLevel})が実効影響度(${row.effectiveImpact})を超えている。影響度の見直しを検討すること。`
+        );
+      }
+    }
+    if (risksWithoutBasis.length === 0) {
+      lines.push("- 根拠位置・対象IDが未記入のリスク: なし");
+    } else {
+      for (const riskId of risksWithoutBasis) {
+        lines.push(`- [medium] ${riskId}: sourceRefs / targetIds のいずれも未記入で根拠が示されていない。`);
+      }
+    }
+    lines.push("");
+
+    lines.push("### 8.4 リスクの根拠位置・対象ID");
+    lines.push("");
+    lines.push("| リスクID | 根拠位置(sourceRefs) | 対象ID(targetIds) |");
+    lines.push("| --- | --- | --- |");
+    for (const r of risks) {
+      const sourceRefs = r.sourceRefs ?? [];
+      const sourceCitation = sourceRefs.length > 0 ? sourceRefs.map((ref) => formatSourceCitation(ref)).join("; ") : "-";
+      const targetIds = r.targetIds && r.targetIds.length > 0 ? r.targetIds.join(", ") : "-";
+      lines.push(`| ${escapeCell(r.id)} | ${escapeCell(sourceCitation)} | ${escapeCell(targetIds)} |`);
+    }
+    lines.push("");
   }
 
   // --- 9. ステークホルダー／ペルソナ視点 ---
@@ -686,6 +922,61 @@ export function renderTestConditions(
   return lines.join("\n").trimEnd() + "\n";
 }
 
+const riskSeverityInputSchema = z
+  .object({
+    direct: z.number().int().min(1).max(5).optional().describe("Direct impact sub-axis (1..5)"),
+    ripple: z.number().int().min(1).max(5).optional().describe("Ripple impact to related features sub-axis (1..5)"),
+    shortTermFinancial: z
+      .number()
+      .int()
+      .min(1)
+      .max(5)
+      .optional()
+      .describe("Short-term financial impact sub-axis (1..5)"),
+    longTermFinancial: z
+      .number()
+      .int()
+      .min(1)
+      .max(5)
+      .optional()
+      .describe("Long-term financial impact sub-axis (1..5)"),
+  })
+  .optional()
+  .describe("Optional severity sub-axes (RA-SEV-01..04); falls back to impact when omitted");
+
+const riskLikelihoodDetailInputSchema = z
+  .object({
+    usageFrequency: z.number().int().min(1).max(5).optional().describe("Usage frequency sub-axis (1..5)"),
+    defectProneness: z
+      .number()
+      .int()
+      .min(1)
+      .max(5)
+      .optional()
+      .describe("Defect proneness factor sub-axis (1..5, 3 is standard)"),
+    pronenessRationale: z
+      .string()
+      .optional()
+      .describe("Rationale text when defectProneness deviates from the standard value 3"),
+    pronenessFactorIds: z
+      .array(z.string())
+      .optional()
+      .describe("Proneness factor ids (RA-PF-xx) backing a defectProneness deviation"),
+  })
+  .optional()
+  .describe("Optional likelihood sub-axes (RA-USAGE / RA-PRONENESS); falls back to likelihood when omitted");
+
+const riskStakeholderImpactInputSchema = z
+  .object({
+    stakeholderFrameId: z.string().optional().describe("Stakeholder frame id from the risk analysis frame, e.g. RSF-01"),
+    stakeholderLabel: z.string().optional().describe("Stakeholder label outside the risk analysis frame"),
+    level: z.number().int().min(1).max(5).describe("Impact level on this stakeholder (1..5)"),
+    note: z.string().optional().describe("Free-text note on this impact"),
+  })
+  .refine((v) => Boolean(v.stakeholderFrameId) || Boolean(v.stakeholderLabel), {
+    message: "Either stakeholderFrameId or stakeholderLabel must be provided",
+  });
+
 export const extractTestConditionsInputShape = {
   ...completedToolsInputShape,
   requirementIds: z
@@ -740,6 +1031,8 @@ export const extractTestConditionsInputShape = {
           )
           .optional()
           .describe("Explicit source locations in the test basis; takes precedence over requirementSources lookup"),
+        severity: riskSeverityInputSchema,
+        likelihoodDetail: riskLikelihoodDetailInputSchema,
       })
     )
     .min(1)
@@ -788,6 +1081,28 @@ export const extractTestConditionsInputShape = {
           .string()
           .optional()
           .describe("Risk category id from the risk analysis frame, e.g. RC-04"),
+        severity: riskSeverityInputSchema,
+        likelihoodDetail: riskLikelihoodDetailInputSchema,
+        stakeholderImpacts: z
+          .array(riskStakeholderImpactInputSchema)
+          .optional()
+          .describe("Per-stakeholder impact levels for the risk x stakeholder impact matrix"),
+        sourceRefs: z
+          .array(
+            z.object({
+              document: z.string().describe("Test basis document name"),
+              startLine: z.number().int().min(1).describe("1-based start line in the document"),
+              endLine: z.number().int().min(1).optional().describe("1-based end line in the document"),
+              heading: z.string().optional().describe("Nearest heading in the document"),
+              label: z.string().optional().describe("Display label, e.g. 'EH-100 Ticket gate startup'"),
+            })
+          )
+          .optional()
+          .describe("Explicit source locations in the test basis backing this risk"),
+        targetIds: z
+          .array(z.string())
+          .optional()
+          .describe("Feature/screen ids this risk applies to"),
       })
     )
     .optional()
