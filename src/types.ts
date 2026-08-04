@@ -1580,6 +1580,53 @@ export interface TestRequirementFrame {
   columns: TestRequirementFrameColumn[];
   handoverConvention: string[]; // extract_test_conditions への引き渡し規約
 }
+export type StakeholderHandlingClassKey = "focus" | "standard" | "reference";
+
+export interface StakeholderWeightingAxisLevel {
+  value: number;               // 1..4
+  label: string;
+  criteria: string;            // 段階ごとの判定基準（RA-IMPACT と同じ書き方）
+}
+export interface StakeholderWeightingAxis {
+  id: string;                  // "SW-INFLUENCE" / "SW-INTEREST"
+  nameJa: string;
+  description: string;
+  levels: StakeholderWeightingAxisLevel[];
+}
+export interface StakeholderAnalysisStep {
+  id: string;                  // "SWS-01".."SWS-04"
+  nameJa: string;
+  definition: string;
+  outputArtifact: string;      // その段で残す成果物
+}
+export interface StakeholderHandlingClass {
+  id: string;                  // "SWC-01".."SWC-03"
+  key: StakeholderHandlingClassKey;
+  nameJa: string;              // "重点" / "通常" / "参考"
+  definition: string;
+  rule: string;                // 2軸の値から本クラスになる条件（文章）
+  defaultConditionPriority: "高" | "中" | "低";
+  guidance: string;
+}
+/** 影響力×関心度の全組合せ（4×4=16件）を明示列挙した対応表のセル */
+export interface StakeholderWeightingMatrixCell {
+  influence: number;           // 1..4
+  interest: number;            // 1..4
+  score: number;               // influence * interest（1..16）
+  classKey: StakeholderHandlingClassKey;
+}
+export interface StakeholderWeightingFrame {
+  name: string;
+  note: string;
+  highThreshold: number;       // 「高評価」と見なす軸の値の下限（3）
+  steps: StakeholderAnalysisStep[];
+  influenceAxis: StakeholderWeightingAxis;
+  interestAxis: StakeholderWeightingAxis;
+  formula: string;
+  handlingClasses: StakeholderHandlingClass[];
+  matrix: StakeholderWeightingMatrixCell[];
+  handoverConvention: string[];
+}
 export interface PersonaJourneyFrame {
   name: string;
   note: string;                // 自作整理であり外部文献の逐語転載・特定基準への適合を主張しない旨
@@ -1587,6 +1634,7 @@ export interface PersonaJourneyFrame {
   personaQuadrants: PersonaQuadrantDefinition[];
   storyMapLevels: StoryMapLevelDefinition[];
   testRequirementFrame: TestRequirementFrame;
+  stakeholderWeightingFrame: StakeholderWeightingFrame;
 }
 
 export interface DomainAnalysisFindingInput { aspectId: string; findings: string[]; }

@@ -79,12 +79,91 @@ describe("personaJourneyFrame", () => {
   });
 
   it("keeps every id unique across the whole frame", () => {
+    const swf = personaJourneyFrame.stakeholderWeightingFrame;
     const ids = [
       ...personaJourneyFrame.domainAnalysisAspects.map((a) => a.id),
       ...personaJourneyFrame.personaQuadrants.map((q) => q.id),
       ...personaJourneyFrame.storyMapLevels.map((l) => l.id),
       ...personaJourneyFrame.testRequirementFrame.columns.map((c) => c.id),
+      ...swf.steps.map((s) => s.id),
+      ...swf.handlingClasses.map((c) => c.id),
+      swf.influenceAxis.id,
+      swf.interestAxis.id,
     ];
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("personaJourneyFrame.stakeholderWeightingFrame", () => {
+  const swf = personaJourneyFrame.stakeholderWeightingFrame;
+
+  it("declares that it is an original paraphrased summary, not a verbatim reproduction", () => {
+    expect(swf.note).toContain("逐語転載");
+    expect(swf.note).toContain("主張するものでもない");
+    expect(swf.name).toContain("自作整理");
+  });
+
+  it("has exactly four analysis steps with SWS-0x ids and non-empty content", () => {
+    expect(swf.steps.map((s) => s.id)).toEqual(["SWS-01", "SWS-02", "SWS-03", "SWS-04"]);
+    for (const step of swf.steps) {
+      expect(step.definition.length).toBeGreaterThan(0);
+      expect(step.outputArtifact.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("defines influence and interest axes with four ascending levels each", () => {
+    expect(swf.influenceAxis.id).toBe("SW-INFLUENCE");
+    expect(swf.interestAxis.id).toBe("SW-INTEREST");
+    for (const axis of [swf.influenceAxis, swf.interestAxis]) {
+      expect(axis.levels.map((l) => l.value)).toEqual([1, 2, 3, 4]);
+      for (const level of axis.levels) {
+        expect(level.label.length).toBeGreaterThan(0);
+        expect(level.criteria.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("defines three handling classes with the expected keys, names and priorities", () => {
+    expect(swf.handlingClasses.map((c) => c.id)).toEqual(["SWC-01", "SWC-02", "SWC-03"]);
+    expect(swf.handlingClasses.map((c) => c.key)).toEqual(["focus", "standard", "reference"]);
+    expect(swf.handlingClasses.map((c) => c.nameJa)).toEqual(["重点", "通常", "参考"]);
+    expect(swf.handlingClasses.map((c) => c.defaultConditionPriority)).toEqual(["高", "中", "低"]);
+  });
+
+  it("exhaustively enumerates all 16 influence x interest combinations without duplicates", () => {
+    expect(swf.matrix).toHaveLength(16);
+    const pairs = new Set(swf.matrix.map((cell) => `${cell.influence}-${cell.interest}`));
+    expect(pairs.size).toBe(16);
+    for (const influence of [1, 2, 3, 4]) {
+      for (const interest of [1, 2, 3, 4]) {
+        expect(pairs.has(`${influence}-${interest}`)).toBe(true);
+      }
+    }
+  });
+
+  it("computes score as influence * interest for every matrix cell", () => {
+    for (const cell of swf.matrix) {
+      expect(cell.score).toBe(cell.influence * cell.interest);
+    }
+  });
+
+  it("assigns classKey consistently with the highThreshold rule for every matrix cell", () => {
+    const validKeys = new Set(swf.handlingClasses.map((c) => c.key));
+    for (const cell of swf.matrix) {
+      const influenceHigh = cell.influence >= swf.highThreshold;
+      const interestHigh = cell.interest >= swf.highThreshold;
+      const expectedKey =
+        influenceHigh && interestHigh ? "focus" : influenceHigh || interestHigh ? "standard" : "reference";
+      expect(cell.classKey).toBe(expectedKey);
+      expect(validKeys.has(cell.classKey)).toBe(true);
+    }
+  });
+
+  it("defines the handover convention including the stakeholder-specific handoff rules", () => {
+    const convention = swf.handoverConvention.join("\n");
+    expect(convention).toContain("extract_test_conditions");
+    expect(convention).toContain('source="stakeholder"');
+    expect(convention).toContain("personas[].id");
+    expect(convention).toContain("SWC-01");
   });
 });

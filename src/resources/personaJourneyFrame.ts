@@ -218,4 +218,162 @@ export const personaJourneyFrame: PersonaJourneyFrame = {
       "テスト要求IDは条件の rationale などに残し、テスト要求 → テスト条件の追跡を切らさない。",
     ],
   },
+  stakeholderWeightingFrame: {
+    name: "ステークホルダー2軸評価フレーム（自作整理）",
+    note:
+      "ステークホルダーを影響力・関心度の2軸で段階評価し、扱いクラスへ落とすための定義・対応表を独自に整理したものであり、" +
+      "外部文献の逐語転載ではなく、特定の外部基準・手法への適合を主張するものでもない。" +
+      "評価値・扱いクラスの判断根拠は、対象プロジェクトの一次情報で必ず裏取りすること。",
+    highThreshold: 3,
+    steps: [
+      {
+        id: "SWS-01",
+        nameJa: "特定",
+        definition:
+          "対象システムの意思決定・利用・運用・外部連携に関与する人と組織を、直接の利用者に限らず漏れなく列挙する段。",
+        outputArtifact: "役割付きのステークホルダー一覧（各件がペルソナIDまたは役割名で識別できる状態）",
+      },
+      {
+        id: "SWS-02",
+        nameJa: "ニーズと期待の抽出",
+        definition:
+          "各ステークホルダーがシステムに何を求め、何が損なわれると困るのかを本人の言葉に寄せて言語化する段。",
+        outputArtifact: "ステークホルダーごとのニーズ・期待の記述（ペルソナ4象限の目標・不満点へ接続する）",
+      },
+      {
+        id: "SWS-03",
+        nameJa: "2軸評価と得点化",
+        definition:
+          "影響力・関心度の段階定義に照らして各ステークホルダーを1〜4で評価し、その値を選んだ根拠となる事実を添えて得点化する段。",
+        outputArtifact: "影響力・関心度・スコア・扱いクラスと根拠を持つ評価表",
+      },
+      {
+        id: "SWS-04",
+        nameJa: "絞り込みと要求導出",
+        definition:
+          "扱いクラスに従って重視対象を絞り、重点クラスからテスト要求・テスト条件を導出する段。落とした対象は落とした事実と理由を残す。",
+        outputArtifact: "重点クラス起点のテスト要求と、参考クラスとして絞り込みで外した対象の記録",
+      },
+    ],
+    influenceAxis: {
+      id: "SW-INFLUENCE",
+      nameJa: "影響力",
+      description:
+        "そのステークホルダーが、システムの仕様決定・受け入れ判断・リリース可否にどれだけ影響を与えられるか。",
+      levels: [
+        {
+          value: 1,
+          label: "決定に関与しない",
+          criteria: "仕様や受け入れ可否の決定に加わらず、意見を述べても結果が変わらない。",
+        },
+        {
+          value: 2,
+          label: "意見を求められる",
+          criteria: "意見を聞かれることはあるが、決定を覆す権限はなく、反対しても差し戻しにはならない。",
+        },
+        {
+          value: 3,
+          label: "決定に強く関与する",
+          criteria: "仕様・受け入れ条件の決定に参加し、反対すれば見直しや再調整が必要になる。",
+        },
+        {
+          value: 4,
+          label: "決定権を持つ",
+          criteria: "リリース可否や受け入れ判定を単独で覆せる、または最終承認を行う立場にある。",
+        },
+      ],
+    },
+    interestAxis: {
+      id: "SW-INTEREST",
+      nameJa: "関心度",
+      description:
+        "システムの品質が低下したとき、そのステークホルダーがどれだけ直接に影響を受けるか（システムとの関与の度合いを含む）。",
+      levels: [
+        {
+          value: 1,
+          label: "ほぼ影響を受けない",
+          criteria: "日常的に利用せず、品質が低下しても自身の業務や利益がほぼ変わらない。",
+        },
+        {
+          value: 2,
+          label: "間接的に影響を受ける",
+          criteria: "影響は他者を経由して及ぶ程度で、自身の業務は回避策で継続できる。",
+        },
+        {
+          value: 3,
+          label: "直接影響を受ける",
+          criteria: "日常的に利用または依存しており、品質低下によって自身の業務が滞る。",
+        },
+        {
+          value: 4,
+          label: "業務・事業が成立しなくなる",
+          criteria: "品質低下によって本人の業務や事業そのものが止まる、または金銭的・法的な不利益を直接負う。",
+        },
+      ],
+    },
+    formula:
+      "stakeholderScore = influence(1..4) × interest(1..4)（範囲 1..16）。扱いクラスは score だけでは決めず、" +
+      "matrix の (influence, interest) の組合せで決める。score は同一クラス内の並び順の判断にのみ用いる。",
+    handlingClasses: [
+      {
+        id: "SWC-01",
+        key: "focus",
+        nameJa: "重点",
+        definition: "影響力・関心度の双方が高く、テスト要求・テスト条件を必ず導出する対象。",
+        rule: "影響力・関心度の双方が highThreshold(3) 以上。",
+        defaultConditionPriority: "高",
+        guidance:
+          "テスト要求とテスト条件を必ず導出し、Before/After のテスト要求列を最初に埋める対象とする。工数不足でも縮小対象にしない。",
+      },
+      {
+        id: "SWC-02",
+        key: "standard",
+        nameJa: "通常",
+        definition: "影響力・関心度のいずれか一方だけが高く、代表的なテスト要求を押さえる対象。",
+        rule: "影響力・関心度のいずれか一方だけが highThreshold(3) 以上。",
+        defaultConditionPriority: "中",
+        guidance:
+          "代表的なテスト要求を押さえる。高評価側の軸に対応する観点（影響力が高いなら受け入れ判断に関わる確認、" +
+          "関心度が高いなら日常利用経路の確認）を優先する。",
+      },
+      {
+        id: "SWC-03",
+        key: "reference",
+        nameJa: "参考",
+        definition: "影響力・関心度の双方が低く、工数不足時の縮小候補となる対象。",
+        rule: "影響力・関心度の双方が highThreshold(3) 未満。",
+        defaultConditionPriority: "低",
+        guidance:
+          "影響の確認のみとし、工数不足時の縮小候補とする。テスト条件0件でもよいが、その判断は記録に残す。",
+      },
+    ],
+    matrix: [
+      { influence: 1, interest: 1, score: 1, classKey: "reference" },
+      { influence: 1, interest: 2, score: 2, classKey: "reference" },
+      { influence: 1, interest: 3, score: 3, classKey: "standard" },
+      { influence: 1, interest: 4, score: 4, classKey: "standard" },
+      { influence: 2, interest: 1, score: 2, classKey: "reference" },
+      { influence: 2, interest: 2, score: 4, classKey: "reference" },
+      { influence: 2, interest: 3, score: 6, classKey: "standard" },
+      { influence: 2, interest: 4, score: 8, classKey: "standard" },
+      { influence: 3, interest: 1, score: 3, classKey: "standard" },
+      { influence: 3, interest: 2, score: 6, classKey: "standard" },
+      { influence: 3, interest: 3, score: 9, classKey: "focus" },
+      { influence: 3, interest: 4, score: 12, classKey: "focus" },
+      { influence: 4, interest: 1, score: 4, classKey: "standard" },
+      { influence: 4, interest: 2, score: 8, classKey: "standard" },
+      { influence: 4, interest: 3, score: 12, classKey: "focus" },
+      { influence: 4, interest: 4, score: 16, classKey: "focus" },
+    ],
+    handoverConvention: [
+      "すべてのペルソナ（personas[].id）について影響力・関心度の両軸を 1..4 で評価する。未評価のペルソナを絞り込み済みとして扱ってはならない。",
+      "評価値は各軸の levels の value をそのまま用い、その値を選んだ根拠となる事実（一次情報・役割・依存関係）を1件以上添える。",
+      "扱いクラスは matrix の (influence, interest) 対応で決める。stakeholderScore だけで重点／通常／参考を判定しない。",
+      "重点クラス（SWC-01）のペルソナには extract_test_conditions のテスト条件を1件以上必ず紐づける。条件は source=\"stakeholder\" とし、derivedFrom に当該ペルソナID（personas[].id）を書く。",
+      "重点クラス由来のテスト条件は handlingClasses の defaultConditionPriority を既定の priority とする。引き下げる場合は rationale に引き下げの理由を明記する。",
+      "参考クラス（SWC-03）のペルソナはテスト条件0件でよいが、絞り込みで対象外にした事実と理由を成果物に残す。",
+      "リスク分析（RA-IMPACT / RA-LIKELIHOOD）由来の優先度と扱いクラス由来の優先度が食い違う場合はリスク側を優先し、差分の理由を rationale に残す。",
+      "テスト計画書11.2 ステークホルダーの表には、名前・役割・連絡先に加えて影響力・関心度・スコア・扱いクラスの列を持たせる。",
+    ],
+  },
 };
