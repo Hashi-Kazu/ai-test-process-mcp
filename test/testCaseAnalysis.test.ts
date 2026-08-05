@@ -993,7 +993,7 @@ describe("findUnsubstantiatedCoverageTargets", () => {
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 
-  it("reports nothing for a SC: branch scenario when the trigger appears in the case body", () => {
+  it("reports nothing for a SC: branch scenario when the passed step sequence appears in the case body", () => {
     const input: GenerateTestCasesInput = {
       testConditions: [],
       scenarioFlows: scenarioFlowsSpec(),
@@ -1003,7 +1003,8 @@ describe("findUnsubstantiatedCoverageTargets", () => {
           techniqueId: "scenario-based",
           coverageTargets: ["SC:UC-01:S2"],
           steps: [
-            { no: 1, action: "決済が承認されない状態で購入操作を行う", expected: "購入が取り消される" },
+            { no: 1, action: "券売機で入場券を購入する", expected: "購入操作を行う" },
+            { no: 2, action: "決済失敗を表示し購入を取り消す", expected: "購入が取り消される" },
           ],
         }),
       ],
@@ -1045,6 +1046,7 @@ describe("findUnsubstantiatedCoverageTargets", () => {
           coverageTargets: ["UC:UC-01:MAIN"],
           steps: [
             { no: 1, action: "券売機で入場券を購入する", expected: "入場券が発券される" },
+            { no: 2, action: "入場ゲートに入場券をかざす", expected: "入場できる" },
           ],
         }),
       ],
@@ -1112,6 +1114,137 @@ describe("findUnsubstantiatedCoverageTargets", () => {
       ],
     };
     expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags a DL:S: target when only the data class name appears in the case body", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      testData: testDataSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-106",
+          techniqueId: "data-lifecycle-test",
+          coverageTargets: ["DL:S:DC-RSV:S-DRAFT"],
+          preconditions: [{ name: "state", value: "予約データを1件用意する" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-106",
+      targetId: "DL:S:DC-RSV:S-DRAFT",
+      techniqueId: "data-lifecycle-test",
+      missing: "data-state",
+    });
+  });
+
+  it("flags a DL:T: target when only the data class name and the event appear but the from-state does not", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      testData: testDataSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-107",
+          techniqueId: "data-lifecycle-test",
+          coverageTargets: ["DL:T:DC-RSV:T-CONFIRM"],
+          preconditions: [{ name: "state", value: "予約データに対し予約を確定する" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-107",
+      targetId: "DL:T:DC-RSV:T-CONFIRM",
+      techniqueId: "data-lifecycle-test",
+      missing: "data-transition",
+    });
+  });
+
+  it("reports nothing for a DL:T: target when the from-state and the event both appear", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      testData: testDataSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-108",
+          techniqueId: "data-lifecycle-test",
+          coverageTargets: ["DL:T:DC-RSV:T-CONFIRM"],
+          preconditions: [{ name: "state", value: "未確定の予約データに対し予約を確定する" }],
+        }),
+      ],
+    };
+    expect(findUnsubstantiatedCoverageTargets(input)).toEqual([]);
+  });
+
+  it("flags a UC: flow when only the first step action appears", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-109",
+          techniqueId: "use-case-based",
+          coverageTargets: ["UC:UC-01:MAIN"],
+          steps: [{ no: 1, action: "券売機で入場券を購入する", expected: "入場券が発券される" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-109",
+      targetId: "UC:UC-01:MAIN",
+      techniqueId: "use-case-based",
+      missing: "use-case-flow",
+    });
+  });
+
+  it("flags a SC: branch scenario when only the trigger appears", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-110",
+          techniqueId: "scenario-based",
+          coverageTargets: ["SC:UC-01:S2"],
+          steps: [{ no: 1, action: "決済が承認されない状態で購入操作を行う", expected: "購入が取り消される" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-110",
+      targetId: "SC:UC-01:S2",
+      techniqueId: "scenario-based",
+      missing: "scenario-flow",
+    });
+  });
+
+  it("flags a SC: main-flow scenario when only the use case name appears", () => {
+    const input: GenerateTestCasesInput = {
+      testConditions: [],
+      scenarioFlows: scenarioFlowsSpec(),
+      testCases: [
+        baseCase({
+          caseId: "TCS-111",
+          techniqueId: "scenario-based",
+          coverageTargets: ["SC:UC-01:S1"],
+          steps: [{ no: 1, action: "入場券を購入して入場する", expected: "入場できる" }],
+        }),
+      ],
+    };
+    const findings = findUnsubstantiatedCoverageTargets(input);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      caseId: "TCS-111",
+      targetId: "SC:UC-01:S1",
+      techniqueId: "scenario-based",
+      missing: "scenario-flow",
+    });
   });
 });
 

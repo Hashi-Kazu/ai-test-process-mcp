@@ -8,7 +8,12 @@ import {
   buildScenarioFlowCoverageTargets,
   computeScenarioFlows,
 } from "./tools/designScenarioFlows.js";
-import { buildTestDataCoverageTargets, computeTestDataDesign } from "./tools/designTestData.js";
+import {
+  buildTestDataCoverageTargets,
+  computeTestDataDesign,
+  isDataStateSubstantiated,
+  isDataTransitionSubstantiated,
+} from "./tools/designTestData.js";
 import { testTechniqueCatalog } from "./resources/testTechniqueCatalog.js";
 import { guidewordDictionary } from "./resources/guidewordDictionary.js";
 import { resolveSourceRefs } from "./testConditionAnalysis.js";
@@ -597,6 +602,25 @@ function equivalenceRepresentative(
   return matched ? matched[1] : undefined;
 }
 
+/** フロー／シナリオの本文裏付け規則。
+ *  最終ステップの操作が本文に現れ、かつステップの過半数が一致していることを必須にする。
+ *  フロー名・ユースケース名・分岐条件は補助証跡であり、単独では成立させない。 */
+function evaluateFlowSubstantiation(
+  text: string,
+  actions: string[]
+): { applicable: boolean; hit: boolean; matched: number; total: number; lastAction: string; lastHit: boolean } {
+  const nonEmpty = actions.filter((a) => a.length > 0);
+  const total = nonEmpty.length;
+  if (total === 0) {
+    return { applicable: false, hit: false, matched: 0, total: 0, lastAction: "", lastHit: false };
+  }
+  const matched = nonEmpty.filter((a) => text.includes(a)).length;
+  const lastAction = nonEmpty[nonEmpty.length - 1];
+  const lastHit = text.includes(lastAction);
+  const hit = lastHit && matched * 2 >= total;
+  return { applicable: true, hit, matched, total, lastAction, lastHit };
+}
+
 export function findUnsubstantiatedCoverageTargets(
   input: GenerateTestCasesInput,
   universe: TestCaseCoverageTarget[] = buildCoverageUniverse(input)
@@ -772,41 +796,20 @@ export function findUnsubstantiatedCoverageTargets(
         if (!found) continue; // 引けないシナリオは検査対象外
         const scenario: GeneratedScenario = found;
 
-        const useCase = input.scenarioFlows?.useCases.find((u) => u.id === scenario.useCaseId);
-        if (scenario.branchId !== undefined) {
-          const branch = (useCase?.branches ?? []).find((b) => b.id === scenario.branchId);
-          const evidence: string[] = [];
-          if (scenario.trigger) evidence.push(scenario.trigger);
-          if (branch) {
-            evidence.push(branch.nameJa);
-            for (const s of branch.steps) evidence.push(s.action);
-          }
-          const hit = evidence.some((e) => e.length > 0 && text.includes(e));
-          if (hit) continue;
-          findings.push({
-            caseId: c.caseId,
-            targetId,
-            techniqueId: target.techniqueId,
-            missing: "scenario-flow",
-            detail: `分岐シナリオ「${scenario.nameJa}」の分岐条件・分岐フローの操作がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
-          });
-        } else {
-          const evidence: string[] = [];
-          if (useCase) {
-            evidence.push(useCase.nameJa);
-            const lastStep = useCase.mainFlow[useCase.mainFlow.length - 1];
-            if (lastStep) evidence.push(lastStep.action);
-          }
-          const hit = evidence.some((e) => e.length > 0 && text.includes(e));
-          if (hit) continue;
-          findings.push({
-            caseId: c.caseId,
-            targetId,
-            techniqueId: target.techniqueId,
-            missing: "scenario-flow",
-            detail: `主フローシナリオ「${scenario.nameJa}」のユースケース名・主フロー最終ステップの操作がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
-          });
-        }
+        const actions = scenario.steps.map((s) => s.action);
+        const evalResult = evaluateFlowSubstantiation(text, actions);
+        if (!evalResult.applicable || evalResult.hit) continue;
+        const detail =
+          scenario.branchId !== undefined
+            ? `分岐シナリオ「${scenario.nameJa}」のステップ列(${evalResult.matched}/${evalResult.total}件一致)がケース本文から裏付けられない。最終ステップの操作「${evalResult.lastAction}」が本文に現れない。${SUBSTANTIATION_ADVICE}`
+            : `主フローシナリオ「${scenario.nameJa}」のステップ列(${evalResult.matched}/${evalResult.total}件一致)がケース本文から裏付けられない。最終ステップの操作「${evalResult.lastAction}」が本文に現れない。${SUBSTANTIATION_ADVICE}`;
+        findings.push({
+          caseId: c.caseId,
+          targetId,
+          techniqueId: target.techniqueId,
+          missing: "scenario-flow",
+          detail,
+        });
         continue;
       }
 
@@ -819,23 +822,22 @@ export function findUnsubstantiatedCoverageTargets(
         const flowId = targetId.slice(prefix.length);
         if (flowId.length === 0) continue;
 
-        const evidence: string[] = [];
+        let actions: string[];
         if (flowId === MAIN_FLOW_ID) {
-          evidence.push(useCase.nameJa);
-          for (const s of useCase.mainFlow) evidence.push(s.action);
+          actions = useCase.mainFlow.map((s) => s.action);
         } else {
           const branch = (useCase.branches ?? []).find((b) => b.id === flowId);
           if (!branch) continue; // 引けないフローは検査対象外
-          evidence.push(branch.nameJa);
-          for (const s of branch.steps) evidence.push(s.action);
+          actions = branch.steps.map((s) => s.action);
         }
-        if (evidence.some((e) => e.length > 0 && text.includes(e))) continue;
+        const evalResult = evaluateFlowSubstantiation(text, actions);
+        if (!evalResult.applicable || evalResult.hit) continue;
         findings.push({
           caseId: c.caseId,
           targetId,
           techniqueId: target.techniqueId,
           missing: "use-case-flow",
-          detail: `フロー「${target.description}」のフロー名・ステップの操作がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+          detail: `フロー「${target.description}」のステップ列(${evalResult.matched}/${evalResult.total}件一致)がケース本文から裏付けられない。最終ステップの操作「${evalResult.lastAction}」が本文に現れない。${SUBSTANTIATION_ADVICE}`,
         });
         continue;
       }
@@ -850,14 +852,13 @@ export function findUnsubstantiatedCoverageTargets(
         const dataClass = input.testData?.dataClasses.find((dc) => dc.id === dataClassId);
         if (!dataClass) continue; // 引けない区分は検査対象外
         const state = dataClass.states.find((s) => s.id === stateId);
-        const evidence = [dataClass.nameJa, state?.nameJa ?? ""].filter((e) => e.length > 0);
-        if (evidence.some((e) => text.includes(e))) continue;
+        if (isDataStateSubstantiated(text, dataClass, stateId)) continue;
         findings.push({
           caseId: c.caseId,
           targetId,
           techniqueId: target.techniqueId,
           missing: "data-state",
-          detail: `データ区分「${dataClass.nameJa}」の状態「${state?.nameJa ?? stateId}」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+          detail: `データ区分「${dataClass.nameJa}」の状態「${state?.nameJa ?? stateId}」の状態名がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
         });
         continue;
       }
@@ -873,17 +874,20 @@ export function findUnsubstantiatedCoverageTargets(
         if (!dataClass) continue; // 引けない区分は検査対象外
         const transition = dataClass.transitions.find((t) => t.id === transitionId);
         if (!transition) continue; // 引けない遷移は検査対象外
-        const toState = dataClass.states.find((s) => s.id === transition.to);
-        const evidence = [dataClass.nameJa, transition.event, toState?.nameJa ?? ""].filter((e) => e.length > 0);
-        if (evidence.some((e) => text.includes(e))) continue;
+        if (isDataTransitionSubstantiated(text, dataClass, transition)) continue;
+        const fromState = dataClass.states.find((s) => s.id === transition.from);
+        const fromHit =
+          (fromState && fromState.nameJa.length > 0 && text.includes(fromState.nameJa)) ||
+          text.includes(transition.from);
+        const missingSide = !fromHit
+          ? `遷移元「${fromState?.nameJa ?? transition.from}」`
+          : `イベント「${transition.event}」・遷移先の両方`;
         findings.push({
           caseId: c.caseId,
           targetId,
           techniqueId: target.techniqueId,
           missing: "data-transition",
-          detail: `データ区分「${dataClass.nameJa}」の遷移「${transition.event}」の遷移先「${
-            toState?.nameJa ?? transition.to
-          }」がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
+          detail: `データ区分「${dataClass.nameJa}」の遷移の${missingSide}がケース本文に現れない。${SUBSTANTIATION_ADVICE}`,
         });
         continue;
       }
