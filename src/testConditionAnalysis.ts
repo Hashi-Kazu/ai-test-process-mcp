@@ -615,6 +615,36 @@ export function findUnknownRiskStakeholderFrameIds(
   return result;
 }
 
+// --- テスト目的(derive_test_purposes)貫通状況。testPurposes 未指定なら空配列(後方互換)。 ---
+export function findConditionsWithoutPurposeIds(input: ExtractTestConditionsInput): string[] {
+  if (!input.testPurposes || input.testPurposes.length === 0) return [];
+  return input.testConditions.filter((c) => !c.purposeIds || c.purposeIds.length === 0).map((c) => c.id);
+}
+
+export function findPurposesWithoutConditions(
+  input: ExtractTestConditionsInput
+): { id: string; statement: string }[] {
+  if (!input.testPurposes || input.testPurposes.length === 0) return [];
+  const referenced = new Set(input.testConditions.flatMap((c) => c.purposeIds ?? []));
+  return input.testPurposes
+    .filter((p) => !referenced.has(p.id))
+    .map((p) => ({ id: p.id, statement: p.statement }));
+}
+
+export function findUnresolvedPurposeRefs(
+  input: ExtractTestConditionsInput
+): { conditionId: string; ref: string }[] {
+  if (!input.testPurposes || input.testPurposes.length === 0) return [];
+  const purposeIds = new Set(input.testPurposes.map((p) => p.id));
+  const result: { conditionId: string; ref: string }[] = [];
+  for (const c of input.testConditions) {
+    for (const ref of c.purposeIds ?? []) {
+      if (!purposeIds.has(ref)) result.push({ conditionId: c.id, ref });
+    }
+  }
+  return result;
+}
+
 /** pronenessFactorIds が frame の pronenessFactors に存在しない参照を、リスク→条件の順に列挙する。 */
 export function findUnknownRiskPronenessFactorIds(
   risks: TestConditionRiskInput[],

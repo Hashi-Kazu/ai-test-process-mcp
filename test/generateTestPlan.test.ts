@@ -490,6 +490,65 @@ describe("sectionContent coverage (issue #17 / HSKZ-84)", () => {
   });
 });
 
+describe("HSKZ-129: testPurposes / testTypeSelections (sections 1.1 / 5.2)", () => {
+  it("renders the 3-column test type table when testTypeSelections is not specified (backward compatible)", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Login and checkout flows",
+      selectedTestTypes: ["機能テスト"],
+    };
+    const markdown = renderTestPlan(input);
+    expect(markdown).toContain("| 対象 | テストタイプ | 説明 |");
+    expect(markdown).not.toContain("紐づくテスト目的ID");
+  });
+
+  it("switches to the 5-column test type table when testTypeSelections is specified", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Login and checkout flows",
+      testTypeSelections: [
+        { name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "主要業務フローの確認のため" },
+        { name: "性能テスト", selected: false },
+      ],
+    };
+    const markdown = renderTestPlan(input);
+    expect(markdown).toContain("| 対象 | テストタイプ | 説明 | 紐づくテスト目的ID | 選定理由 |");
+    expect(markdown).toContain("| 〇 | 機能テスト | 機能が期待どおりの結果を返すか確かめる | TP-01 | 主要業務フローの確認のため |");
+  });
+
+  it("marks the reason cell as 未記入(必須) when purposeIds or reason is missing", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Login and checkout flows",
+      testTypeSelections: [{ name: "機能テスト", selected: true }],
+    };
+    const markdown = renderTestPlan(input);
+    const row = markdown.split("\n").find((l) => l.startsWith("| 〇 | 機能テスト |"));
+    expect(row).toContain("未記入(必須)");
+  });
+
+  it("renders a test purpose table in section 1.1 when testPurposes is specified", () => {
+    const input: TestPlanInput = {
+      projectName: "Sample",
+      scope: "Login and checkout flows",
+      testPurposes: [{ id: "TP-01", statement: "主要業務フローが達成できる", priorityRank: 1 }],
+    };
+    const markdown = renderTestPlan(input);
+    const sectionStart = markdown.indexOf("### 1.1 スコープ・目的");
+    const sectionEnd = markdown.indexOf("### 1.2", sectionStart);
+    const section = markdown.slice(sectionStart, sectionEnd);
+    expect(section).toContain("**テスト目的:**");
+    expect(section).toContain("| 目的ID | テスト目的 | 優先順位 |");
+    expect(section).toContain("| TP-01 | 主要業務フローが達成できる | 1 |");
+  });
+
+  it("does not render a test purpose table when testPurposes is not specified", () => {
+    const input: TestPlanInput = { projectName: "Sample", scope: "Login and checkout flows" };
+    const markdown = renderTestPlan(input);
+    expect(markdown).not.toContain("**テスト目的:**");
+  });
+});
+
 describe("renderTestPlan 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestPlan({ projectName: "Sample", scope: "Login and checkout flows" }));

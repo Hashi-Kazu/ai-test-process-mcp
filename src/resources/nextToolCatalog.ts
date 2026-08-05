@@ -35,6 +35,7 @@ export const registeredToolNames: readonly string[] = [
   "analyze_execution_order",
   "audit_deliverable_consistency",
   "analyze_data_flow_timing",
+  "derive_test_purposes",
 ];
 
 const DESIGN_FOLLOWUPS: NextToolCatalogEntry[] = [
@@ -65,6 +66,11 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "revise_test_plan",
       when: "has-unfilled-fields",
       reason: "未記入項目が残っているため修正が必要",
+    },
+    {
+      toolName: "derive_test_purposes",
+      when: "always",
+      reason: "テスト目的の導出チェーンが未整理である",
     },
   ],
   review_test_plan: [
@@ -370,6 +376,11 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       when: "always",
       reason: "業務フローのシナリオ設計が未実施である",
     },
+    {
+      toolName: "derive_test_purposes",
+      when: "always",
+      reason: "業務目的からのテスト目的導出が未実施である",
+    },
   ],
   reexpand_threshold_changes: [
     {
@@ -386,6 +397,23 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "design_boundary_values",
       when: "always",
       reason: "閾値の境界値設計が未実施である",
+    },
+  ],
+  derive_test_purposes: [
+    {
+      toolName: "extract_test_conditions",
+      when: "has-purposes",
+      reason: "決定したテスト目的からのテスト条件抽出が未実施である",
+    },
+    {
+      toolName: "create_test_plan",
+      when: "has-purposes",
+      reason: "決定したテスト目的の計画書1.1・5.2への反映が未実施である",
+    },
+    {
+      toolName: "audit_cross_matrix",
+      when: "has-unlinked-conditions",
+      reason: "目的に紐づかないテスト条件があり多軸での交差被覆監査が必要",
     },
   ],
 };

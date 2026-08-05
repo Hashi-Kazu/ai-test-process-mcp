@@ -32,6 +32,7 @@ import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
 import { deliverableConsistencyCriteria } from "./deliverableConsistencyCriteria.js";
+import { testPurposeDerivationFrame } from "./testPurposeDerivationFrame.js";
 import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
 
 export function registerResources(server: McpServer): void {
@@ -799,6 +800,29 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(businessRequirementFrame, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-purpose-derivation-frame",
+    "testplan://purpose/derivation-frame",
+    {
+      title: "Test Purpose Derivation Frame",
+      description:
+        "Paraphrased derivation frame for test purposes: requester expectations -> test requirements " +
+        "(management / engineering lines) -> test strategy -> test purposes -> prioritization, with " +
+        "question examples, bad examples, purpose quality rules, prioritization axes, and the judgment " +
+        "category catalog (PDC-01..PDC-17) used by derive_test_purposes.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testPurposeDerivationFrame, null, 2),
         },
       ],
     })

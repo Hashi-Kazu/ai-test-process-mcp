@@ -9,17 +9,20 @@ import {
   deriveSeverity,
   evaluateRisks,
   findConditionsWithoutPriority,
+  findConditionsWithoutPurposeIds,
   findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
   findIncompletePersonaQuadrants,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
+  findPurposesWithoutConditions,
   findRisksWithoutBasis,
   findUncoveredRequirementIds,
   findUnknownRiskCategoryIds,
   findUnknownRiskPronenessFactorIds,
   findUnknownRiskStakeholderFrameIds,
   findUnresolvedDerivedFromRefs,
+  findUnresolvedPurposeRefs,
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
   formatPersonaQuadrantCell,
@@ -775,5 +778,54 @@ describe("findRisksWithoutBasis", () => {
       risk({ id: "RK-003", sourceRefs: [{ document: "doc.md", startLine: 1 }] }),
     ];
     expect(findRisksWithoutBasis(risks)).toEqual(["RK-001"]);
+  });
+});
+
+describe("test purpose passthrough (findConditionsWithoutPurposeIds / findPurposesWithoutConditions / findUnresolvedPurposeRefs)", () => {
+  function baseInput(overrides: Partial<ExtractTestConditionsInput> = {}): ExtractTestConditionsInput {
+    return {
+      requirementIds: ["R-001"],
+      testConditions: [condition({ id: "TC-001", derivedFrom: ["R-001"] })],
+      ...overrides,
+    };
+  }
+
+  it("returns empty arrays when testPurposes is not specified (backward compatible)", () => {
+    const input = baseInput();
+    expect(findConditionsWithoutPurposeIds(input)).toEqual([]);
+    expect(findPurposesWithoutConditions(input)).toEqual([]);
+    expect(findUnresolvedPurposeRefs(input)).toEqual([]);
+  });
+
+  it("flags conditions without any purposeIds when testPurposes is specified", () => {
+    const input = baseInput({ testPurposes: [{ id: "TP-01", statement: "目的" }] });
+    expect(findConditionsWithoutPurposeIds(input)).toEqual(["TC-001"]);
+  });
+
+  it("does not flag conditions that declare purposeIds", () => {
+    const input = baseInput({
+      testPurposes: [{ id: "TP-01", statement: "目的" }],
+      testConditions: [condition({ id: "TC-001", derivedFrom: ["R-001"], purposeIds: ["TP-01"] })],
+    });
+    expect(findConditionsWithoutPurposeIds(input)).toEqual([]);
+  });
+
+  it("flags purposes referenced by no condition", () => {
+    const input = baseInput({
+      testPurposes: [
+        { id: "TP-01", statement: "目的1" },
+        { id: "TP-02", statement: "目的2" },
+      ],
+      testConditions: [condition({ id: "TC-001", derivedFrom: ["R-001"], purposeIds: ["TP-01"] })],
+    });
+    expect(findPurposesWithoutConditions(input)).toEqual([{ id: "TP-02", statement: "目的2" }]);
+  });
+
+  it("flags unresolved purpose id references", () => {
+    const input = baseInput({
+      testPurposes: [{ id: "TP-01", statement: "目的1" }],
+      testConditions: [condition({ id: "TC-001", derivedFrom: ["R-001"], purposeIds: ["TP-99"] })],
+    });
+    expect(findUnresolvedPurposeRefs(input)).toEqual([{ conditionId: "TC-001", ref: "TP-99" }]);
   });
 });

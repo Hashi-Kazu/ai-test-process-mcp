@@ -227,6 +227,8 @@ export interface TestPlanInput {
   sloTargets?: TestPlanSloTarget[];
   monitoringPlan?: TestPlanMonitoringCheckpoint[];
   executionOrderPlan?: TestPlanExecutionOrderItem[];
+  testPurposes?: TestPlanTestPurposeRef[];
+  testTypeSelections?: TestPurposeTypeSelection[];
 }
 
 // --- Test Design 技法 ---
@@ -701,6 +703,14 @@ export interface TestConditionInput {
   sourceRefs?: TestBasisSourceRef[]; // テストベース上の根拠位置（明示指定時はこちらを優先）
   severity?: RiskSeverityInput;      // 重篤度4サブ軸（任意軸。未指定なら impact をそのまま使う）
   likelihoodDetail?: RiskLikelihoodDetailInput; // 発生頻度2サブ軸（任意軸。未指定なら likelihood をそのまま使う）
+  purposeIds?: string[];             // derive_test_purposes のテスト目的ID
+}
+
+/** derive_test_purposes のテスト目的の要約参照（extract_test_conditions / create_test_plan で共有） */
+export interface TestPlanTestPurposeRef {
+  id: string;
+  statement: string;
+  priorityRank?: number;
 }
 
 // --- リスク分析フレーム 任意軸の入力（重篤度4サブ軸・発生頻度2サブ軸・ステークホルダ別影響） ---
@@ -756,6 +766,7 @@ export interface ExtractTestConditionsInput {
   perspectiveCategoryIds?: string[];
   idPrefix?: string;                 // 既定 "TC-"
   requirementSources?: RequirementSourceRef[]; // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
+  testPurposes?: TestPlanTestPurposeRef[]; // derive_test_purposes のテスト目的一覧
 }
 
 // 決定的検査の結果型
@@ -3789,4 +3800,200 @@ export interface DataFlowTimingAnalysisCriteria {
     recommendedAction: string;
   }[];
   notes: string[];
+}
+
+// --- テスト目的の導出フレーム（testplan://purpose/derivation-frame） ---
+export type TestRequirementLine = "management" | "engineering";
+
+export interface TestPurposeDerivationStage {
+  id: string; // PDS-01..PDS-05
+  key: "expectation" | "testRequirement" | "strategy" | "purpose" | "prioritization";
+  nameJa: string;
+  definition: string;
+  outputConvention: string; // この段で何をID付きで残すか
+  questionExamples: string[];
+  badExamples: string[];
+}
+
+export interface TestRequirementLineSpec {
+  id: string; // PRL-01 / PRL-02
+  line: TestRequirementLine;
+  nameJa: string; // マネジメント的テスト要求 / エンジニアリング的テスト要求
+  definition: string;
+  typicalSubjects: string[];
+  probeQuestions: string[];
+}
+
+export interface TestPurposeQualityRule {
+  id: string; // PQR-01..PQR-05
+  nameJa: string;
+  rule: string;
+}
+
+export interface TestPurposePrioritizationAxis {
+  id: string; // PPA-01..PPA-03
+  nameJa: string;
+  definition: string;
+  probeQuestions: string[];
+}
+
+export interface TestPurposeDerivationCriteriaCategory {
+  id: string; // PDC-01..PDC-17
+  nameJa: string;
+  severity: ReviewSeverity | "info";
+  definition: string;
+  recommendedAction: string;
+}
+
+export interface TestPurposeDerivationFrame {
+  name: string;
+  note: string;
+  stages: TestPurposeDerivationStage[];
+  requirementLines: TestRequirementLineSpec[];
+  purposeQualityRules: TestPurposeQualityRule[];
+  prioritizationAxes: TestPurposePrioritizationAxis[];
+  categories: TestPurposeDerivationCriteriaCategory[];
+  notes: string[];
+}
+
+// --- derive_test_purposes 入力 ---
+export interface TestPurposeExpectation {
+  id: string; // 既定プレフィックス EXP-
+  statement: string;
+  requesterRole?: string;
+  sourceRef?: TestBasisSourceRef;
+}
+
+export interface TestPurposeRequirement {
+  id: string; // 既定プレフィックス TR-
+  line: TestRequirementLine;
+  statement: string;
+  expectationIds?: string[];
+  rationale?: string;
+}
+
+export interface TestPurposeStrategyStatement {
+  id: string; // 既定プレフィックス ST-
+  statement: string;
+}
+
+export interface TestPurposeEntry {
+  id: string; // 既定プレフィックス TP-
+  statement: string;
+  testRequirementIds?: string[];
+  strategyIds?: string[];
+  successCriterion?: string;
+  priorityRank?: number; // 1 が最優先
+  priorityRationale?: string;
+  relatedQualityCharacteristicIds?: string[]; // QC-xx / QC-xx-xx
+}
+
+export interface TestPurposeLinkedCondition {
+  id: string;
+  statement?: string;
+  purposeIds?: string[];
+  perspectiveCategoryId?: string;
+  qualityCharacteristicIds?: string[];
+}
+
+export interface TestPurposeTypeSelection {
+  name: string; // testTypeCatalog の name と照合する
+  selected: boolean;
+  purposeIds?: string[];
+  reason?: string;
+}
+
+export interface TestPurposeIdPrefixes {
+  expectation?: string;
+  testRequirement?: string;
+  strategy?: string;
+  purpose?: string;
+}
+
+export interface DeriveTestPurposesInput {
+  completedTools?: CompletedToolDeclaration[];
+  projectName?: string;
+  requestDocuments?: TestBasisDocument[]; // システムテスト依頼書など
+  expectations: TestPurposeExpectation[];
+  testRequirements: TestPurposeRequirement[];
+  strategyStatements?: TestPurposeStrategyStatement[];
+  purposes: TestPurposeEntry[];
+  testConditions?: TestPurposeLinkedCondition[];
+  testTypeSelections?: TestPurposeTypeSelection[];
+  claimedPurposeCoveragePercent?: number;
+  claimedTestTypeJustificationPercent?: number;
+  idPrefixes?: TestPurposeIdPrefixes;
+}
+
+// --- 決定的検査の結果型（derive_test_purposes） ---
+export interface TestPurposeUnresolvedRef {
+  ownerId: string;
+  ref: string;
+  expectedKind: string;
+}
+export interface TestPurposeDuplicateId { kind: string; id: string; count: number; }
+export interface TestPurposeIdIssue { kind: string; id: string; expectedPrefix: string; }
+export interface TestPurposeOrphanExpectation { id: string; statement: string; }
+export interface TestPurposeTypeSelectionIssue {
+  name: string;
+  kind: "selected-without-purpose" | "selected-without-reason" | "unselected-with-purpose";
+}
+export interface TestPurposePriorityIssue {
+  purposeId: string;
+  kind: "missing-rank" | "duplicate-rank" | "missing-rationale";
+  rank?: number;
+}
+export interface TestPurposeQualityCharacteristicIssue {
+  ownerId: string;
+  kind: "unassigned" | "unknown";
+  characteristicId?: string;
+}
+export interface TestPurposeUngroundedExpectation {
+  id: string;
+  kind: "not-in-documents" | "unknown-document" | "line-out-of-range";
+  document?: string;
+}
+export interface TestPurposeCoverageResult {
+  conditionBasis: "available" | "unavailable";
+  computedPurposeCoveragePercent?: number;
+  claimedPurposeCoveragePercent?: number;
+  purposeCoverageMismatch: boolean;
+  typeBasis: "available" | "unavailable";
+  computedTestTypeJustificationPercent?: number;
+  claimedTestTypeJustificationPercent?: number;
+  testTypeJustificationMismatch: boolean;
+}
+export interface TestPurposeConditionMatrixRow {
+  purposeId: string;
+  statement: string;
+  conditionIds: string[];
+}
+export interface TestPurposeTestTypeMatrixRow {
+  purposeId: string;
+  typeNames: string[];
+}
+export interface TestPurposeQualityMatrixRow {
+  purposeId: string;
+  characteristicIds: string[];
+}
+export interface TestPurposeDerivationSummary {
+  unresolvedRefCount: number;
+  duplicateIdCount: number;
+  prefixMismatchCount: number;
+  missingNumberCount: number;
+  orphanExpectationCount: number;
+  expectationLessRequirementCount: number;
+  unusedRequirementCount: number;
+  requirementLessPurposeCount: number;
+  missingRequirementLineCount: number;
+  purposeLessConditionCount: number;
+  conditionLessPurposeCount: number;
+  testTypeSelectionIssueCount: number;
+  testTypeLessPurposeCount: number;
+  missingSuccessCriterionCount: number;
+  priorityIssueCount: number;
+  qualityCharacteristicIssueCount: number;
+  ungroundedExpectationCount: number;
+  coverageMismatchCount: number;
+  unknownTestTypeNameCount: number;
 }
