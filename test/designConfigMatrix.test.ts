@@ -47,7 +47,8 @@ describe("computeConfigMatrixRows", () => {
     const result = computeConfigMatrixRows({ ...baseSpec(), coveragePolicy: "single" });
     expect(result.generated).toBe(true);
     expect(result.coveragePolicy).toBe("single");
-    expect(result.untestedLevels).toEqual([]);
+    expect(result.coverageBasis).toBe("unavailable");
+    expect(result.uncoveredLevels).toEqual([]);
     for (const f of baseSpec().factors) {
       for (const lv of f.levels) {
         const present = result.rows.some((r) => r.values[f.id] === lv);
@@ -62,12 +63,12 @@ describe("computeConfigMatrixRows", () => {
     }
   });
 
-  it("covers every reachable level pair and reaches 100% pair coverage with coveragePolicy 'pairwise'", () => {
+  it("covers every reachable level pair and reaches 100% pair realization (a structural tautology) with coveragePolicy 'pairwise'", () => {
     const result = computeConfigMatrixRows({ ...baseSpec(), coveragePolicy: "pairwise" });
     expect(result.generated).toBe(true);
-    expect(result.pairCoverageRatioPercent).toBe(100);
-    expect(result.pairs.every((p) => p.status === "reachable" && p.coveredByRowNos.length > 0)).toBe(true);
-    expect(result.untestedLevels).toEqual([]);
+    expect(result.pairRealizationRatioPercent).toBe(100);
+    expect(result.pairs.every((p) => p.status === "reachable" && p.generatedRowNos.length > 0)).toBe(true);
+    expect(result.uncoveredLevels).toEqual([]);
   });
 
   it("matches rows.length to the full product minus excluded combinations with coveragePolicy 'full'", () => {
@@ -98,7 +99,7 @@ describe("computeConfigMatrixRows", () => {
     expect(safariLevel?.status).toBe("unreachable");
     expect(result.unreachableLevelCount).toBe(1);
     expect(result.targetLevelCount).toBe(result.totalLevelCount - 1);
-    expect(result.levelCoverageRatioPercent).toBe(100);
+    expect(result.levelRealizationRatioPercent).toBe(100);
   });
 
   it("reports CMC-06[high] when an excluded combination reason is missing or blank, and not when it is present", () => {
@@ -197,11 +198,121 @@ describe("computeConfigMatrixRows", () => {
   });
 
   it("is deterministic and does not mutate the input spec", () => {
-    expect(computeConfigMatrixRows(excludedSpec())).toEqual(computeConfigMatrixRows(excludedSpec()));
-    const spec = excludedSpec();
+    const withActualRows = (): ConfigMatrixSpec => ({
+      ...excludedSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } }],
+    });
+    expect(computeConfigMatrixRows(withActualRows())).toEqual(computeConfigMatrixRows(withActualRows()));
+    const spec = withActualRows();
     const snapshot = JSON.stringify(spec);
     computeConfigMatrixRows(spec);
     expect(JSON.stringify(spec)).toBe(snapshot);
+  });
+});
+
+describe("computeConfigMatrixRows actualRows(実構成表)に対する被覆", () => {
+  it("actualRows 未指定なら coverageBasis が unavailable になり、実被覆率は未算出", () => {
+    const result = computeConfigMatrixRows(baseSpec());
+    expect(result.coverageBasis).toBe("unavailable");
+    expect(result.levelCoverageRatioPercent).toBeUndefined();
+    expect(result.pairCoverageRatioPercent).toBeUndefined();
+    expect(result.actualCoveredLevelCount).toBeUndefined();
+    expect(result.actualCoveredPairCount).toBeUndefined();
+    expect(result.uncoveredLevels).toEqual([]);
+    expect(result.uncoveredPairs).toEqual([]);
+  });
+
+  it("actualRows が対象水準・ペアの一部しか踏んでいない場合、実被覆率は100%未満になる", () => {
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } }],
+    };
+    const result = computeConfigMatrixRows(spec);
+    expect(result.targetLevelCount).toBe(7);
+    expect(result.targetPairCount).toBe(16);
+    expect(result.coverageBasis).toBe("actual-rows");
+    expect(result.actualCoveredLevelCount).toBe(3);
+    expect(result.levelCoverageRatioPercent).toBe(42.9);
+    expect(result.actualCoveredPairCount).toBe(3);
+    expect(result.pairCoverageRatioPercent).toBe(18.8);
+    // 構造値である実体化率は生成方針にかかわらず変わらない
+    expect(result.levelRealizationRatioPercent).toBe(100);
+  });
+
+  it("CMC-10: 実構成表で踏まれていない到達可能な水準を medium で指摘する", () => {
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } }],
+    };
+    const result = computeConfigMatrixRows(spec);
+    const cmc10 = result.findings.filter((f) => f.categoryId === "CMC-10");
+    expect(cmc10).toHaveLength(1);
+    expect(cmc10[0].severity).toBe("medium");
+    expect(cmc10[0].detail).toContain("macOS");
+    expect(cmc10[0].detail).toContain("7");
+    expect(result.uncoveredLevels.some((l) => l.factorId === "F1" && l.level === "macOS")).toBe(true);
+  });
+
+  it("CMC-13: 実構成表で踏まれていない到達可能な水準ペアを medium で指摘する", () => {
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } }],
+    };
+    const result = computeConfigMatrixRows(spec);
+    const cmc13 = result.findings.filter((f) => f.categoryId === "CMC-13");
+    expect(cmc13).toHaveLength(1);
+    expect(cmc13[0].severity).toBe("medium");
+    expect(result.uncoveredPairs.length).toBeGreaterThan(0);
+  });
+
+  it("actualRows が全対象水準・ペアを踏めば実被覆率100%になり CMC-10/CMC-13 は出ない", () => {
+    const full = computeConfigMatrixRows({ ...baseSpec(), coveragePolicy: "full" });
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      actualRows: full.rows.map((row) => ({ id: `R${row.no}`, values: row.values })),
+    };
+    const result = computeConfigMatrixRows(spec);
+    expect(result.levelCoverageRatioPercent).toBe(100);
+    expect(result.pairCoverageRatioPercent).toBe(100);
+    expect(result.findings.filter((f) => f.categoryId === "CMC-10")).toHaveLength(0);
+    expect(result.findings.filter((f) => f.categoryId === "CMC-13")).toHaveLength(0);
+  });
+
+  it("CMC-11: actualRows の宣言不整合(未宣言因子・未宣言水準・割当欠落)を high で検出し生成をスキップする", () => {
+    const undeclaredFactor = computeConfigMatrixRows({
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080", F9: "x" } }],
+    });
+    expect(undeclaredFactor.generated).toBe(false);
+    const findingsA = undeclaredFactor.findings.filter((f) => f.categoryId === "CMC-11");
+    expect(findingsA.length).toBeGreaterThan(0);
+    expect(findingsA[0].severity).toBe("high");
+
+    const undeclaredLevel = computeConfigMatrixRows({
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Linux", F2: "Chrome", F3: "1920x1080" } }],
+    });
+    expect(undeclaredLevel.generated).toBe(false);
+    expect(undeclaredLevel.findings.some((f) => f.categoryId === "CMC-11")).toBe(true);
+
+    const missingAssignment = computeConfigMatrixRows({
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome" } }],
+    });
+    expect(missingAssignment.generated).toBe(false);
+    expect(missingAssignment.findings.some((f) => f.categoryId === "CMC-11")).toBe(true);
+  });
+
+  it("CMC-12: 除外組合せに一致する actualRows の行を medium で検出する", () => {
+    const spec: ConfigMatrixSpec = {
+      ...excludedSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Safari", F3: "1920x1080" } }],
+    };
+    const result = computeConfigMatrixRows(spec);
+    const cmc12 = result.findings.filter((f) => f.categoryId === "CMC-12");
+    expect(cmc12).toHaveLength(1);
+    expect(cmc12[0].severity).toBe("medium");
+    expect(cmc12[0].detail).toContain("EX1");
   });
 });
 
@@ -223,16 +334,17 @@ describe("buildConfigMatrixCoverageTargets", () => {
 });
 
 describe("renderConfigMatrix", () => {
-  it("renders all seven sections", () => {
+  it("renders all eight sections", () => {
     const md = renderConfigMatrix(excludedSpec());
     expect(md).toContain("# 構成・環境マトリクス設計結果");
     expect(md).toContain("## 1. 構成因子・水準一覧");
     expect(md).toContain("## 2. 除外組合せ一覧");
     expect(md).toContain("## 3. 到達不能な水準・ペアの一覧");
     expect(md).toContain("## 4. 生成した構成表");
-    expect(md).toContain("## 5. 決定的検査");
-    expect(md).toContain("## 6. 網羅対象一覧(generate_test_cases 引き渡し)");
-    expect(md).toContain("## 7. サマリ");
+    expect(md).toContain("## 5. 実構成表");
+    expect(md).toContain("## 6. 決定的検査");
+    expect(md).toContain("## 7. 網羅対象一覧(generate_test_cases 引き渡し)");
+    expect(md).toContain("## 8. サマリ");
     expect(md.endsWith("\n")).toBe(true);
   });
 
@@ -242,6 +354,27 @@ describe("renderConfigMatrix", () => {
       excludedCombinations: [{ id: "EX1", when: { F1: "Windows11" }, reason: "" }],
     });
     expect(md).toContain("(未記入)");
+  });
+
+  it("actualRows 未指定なら実構成表節に未算出と出る", () => {
+    const md = renderConfigMatrix(baseSpec());
+    const section5 = md.split("## 5. 実構成表")[1].split("## 6.")[0];
+    expect(section5).toContain("未算出");
+  });
+
+  it("actualRows 指定時は分母・分子つきの被覆率が出る", () => {
+    const md = renderConfigMatrix({
+      ...baseSpec(),
+      actualRows: [{ id: "A1", values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } }],
+    });
+    const section5 = md.split("## 5. 実構成表")[1].split("## 6.")[0];
+    expect(section5).toContain("分母");
+    expect(section5).toContain("分子");
+  });
+
+  it("実体化率が構造上の恒真値であるという但し書きが出る", () => {
+    const md = renderConfigMatrix(baseSpec());
+    expect(md).toContain("テストの達成度ではない");
   });
 
   it("is deterministic", () => {

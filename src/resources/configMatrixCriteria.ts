@@ -73,17 +73,43 @@ export const configMatrixAnalysisCriteria: ConfigMatrixAnalysisCriteria = {
     },
     {
       id: "CMC-10",
-      nameJa: "生成後もテストされない水準が残っている",
-      severity: "high",
-      definition: "構成を生成したにもかかわらず、到達可能な水準のうち、どの構成にも登場していないものが残っている。",
+      nameJa: "実構成表で踏まれていない到達可能な水準",
+      severity: "medium",
+      definition:
+        "actualRows を宣言したにもかかわらず、到達可能な水準のうち実構成のどれにも現れていないものが残っている。",
       recommendedAction:
-        "生成結果とカウントが自己整合していない可能性があるため、入力（特に除外組合せ）を見直し、再現する入力を添えて報告すること。",
+        "当該水準を含む構成を実構成表に追加するか、テストしない判断であれば excludedCombinations として理由つきで宣言すること。",
+    },
+    {
+      id: "CMC-11",
+      nameJa: "実構成表の宣言不整合",
+      severity: "high",
+      definition:
+        "actualRows が未宣言の因子IDを参照している、未宣言の水準を参照している、または宣言済み因子への割当が欠落している。",
+      recommendedAction: "actualRows[].values のキー・値を factors[].id / levels の宣言と一致させ、全因子分を割り当てること。",
+    },
+    {
+      id: "CMC-12",
+      nameJa: "除外したはずの構成が実構成表に含まれる",
+      severity: "medium",
+      definition: "actualRows の行が excludedCombinations のいずれかに一致している。",
+      recommendedAction: "除外組合せの宣言が誤っていないか確認するか、実構成表からその行を除くこと。",
+    },
+    {
+      id: "CMC-13",
+      nameJa: "実構成表で踏まれていない到達可能な水準ペア",
+      severity: "medium",
+      definition:
+        "actualRows を宣言したにもかかわらず、到達可能な水準ペアのうち実構成のどれにも現れていないものが残っている。",
+      recommendedAction:
+        "当該ペアを含む構成を実構成表に追加するか、テストしない判断であれば excludedCombinations として理由つきで宣言すること。",
     },
   ],
   notes: [
     "本検査は渡された因子・水準・除外組合せに対してのみ成立する。渡していない因子の取りこぼしは検出できない。",
     "single は各水準を最低1回、pairwise は全ての水準ペアを被覆する決定的な貪欲法であり、行数の最小性を保証しない。",
-    "水準被覆率・ペア被覆率の分母は、除外組合せにより到達不能な水準・ペアを除いた対象数であり、全水準数・全ペア数ではない。",
+    "水準実体化率・ペア実体化率は、生成器が自ら生成した構成表に対する構造上の恒真値であり、テストの達成度ではない。到達可能な水準・ペアは生成アルゴリズムが必ず1回以上構成表に載せるため、常に100%になる。",
+    "水準被覆率・ペア被覆率は actualRows を宣言したときのみ算出し、未宣言なら「未算出」とする。分母は到達不能を除いた対象数（除外組合せにより到達不能な水準・ペアを除いた数）、分子は実構成表(actualRows)が実際に踏んだ数である。",
     "ペア被覆・ペア到達可否は2因子間の相互作用のみを対象とする。3因子以上が同時に絡む不具合は、別途 excludedCombinations や他技法で補うこと。",
   ],
 };

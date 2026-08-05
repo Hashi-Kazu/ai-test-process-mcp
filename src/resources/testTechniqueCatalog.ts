@@ -327,7 +327,8 @@ export const testTechniqueCatalog: TestTechniqueCatalog = {
       selectionRationale: "対応対象の端末・OS・ブラウザ・画面サイズ・設定値の組み合わせにより挙動差が出得る場合に選ぶ。",
       note:
         "design_config_matrix が、指定した網羅方針(single=シングルカバレッジ/pairwise=ペア/full=フル)に基づく構成生成・" +
-        "水準被覆率・ペア被覆率のカウント・どの構成でもテストされない水準の検出・除外理由未記入の指摘([high])を決定的に行う。" +
+        "水準実体化率・ペア実体化率(生成した構成表に対する構造上の恒真値であり、テストの達成度ではない)のカウント・" +
+        "利用者が実際にテストした構成表(actualRows)を渡した場合のみ算出する実被覆率・除外理由未記入の指摘([high])を決定的に行う。" +
         "各構成は CFG: プレフィックスの網羅対象IDとして出力されるので、それをそのまま generate_test_cases の configMatrix へ渡すと、" +
         "構成組合せ被覆率を決定的にカウントできる。",
     },

@@ -1120,6 +1120,12 @@ export interface ConfigMatrixExcludedCombination {
 
 export type ConfigMatrixCoveragePolicy = "single" | "pairwise" | "full";
 
+export interface ConfigMatrixActualRow {
+  id?: string; // 表示ラベル。省略時は actualRows[i] を使う
+  values: Record<string, string>; // factorId -> level（全因子必須）
+  note?: string;
+}
+
 export interface ConfigMatrixSpec {
   completedTools?: CompletedToolDeclaration[];
   matrixId?: string; // 既定 "MAIN"。CFG: prefix と網羅対象IDに使う
@@ -1129,6 +1135,7 @@ export interface ConfigMatrixSpec {
   excludedCombinations?: ConfigMatrixExcludedCombination[];
   maxCombinationCount?: number; // 全構成の列挙上限。既定 5000
   maxSearchNodes?: number; // single/pairwise の貪欲生成で使う完全割当探索の予算。既定 5000
+  actualRows?: ConfigMatrixActualRow[]; // 実際にテストした/する構成表。被覆率の分子はこれのみから数える
 }
 
 export type ConfigMatrixLevelStatusKind = "reachable" | "unreachable";
@@ -1137,7 +1144,8 @@ export interface ConfigMatrixLevelStatus {
   level: string;
   status: ConfigMatrixLevelStatusKind;
   unreachableReason?: string;
-  coveredByRowNos: number[]; // 昇順
+  generatedRowNos: number[]; // 本ツールが生成した構成表の中で、この水準が現れた行番号（昇順）
+  actualRowLabels: string[]; // この水準を踏んだ actualRows のラベル（宣言順）
 }
 
 export type ConfigMatrixPairStatusKind = "reachable" | "unreachable";
@@ -1148,7 +1156,8 @@ export interface ConfigMatrixPairStatus {
   levelB: string;
   status: ConfigMatrixPairStatusKind;
   unreachableReason?: string;
-  coveredByRowNos: number[];
+  generatedRowNos: number[];
+  actualRowLabels: string[];
 }
 
 export interface ConfigMatrixRow {
@@ -1175,14 +1184,23 @@ export interface ConfigMatrixResult {
   unreachablePairCount: number;
   targetLevelCount: number; // total - unreachable
   targetPairCount: number;
-  coveredLevelCount: number;
-  coveredPairCount: number;
-  levelCoverageRatioPercent: number; // 小数第1位。targetLevelCount=0 なら0
-  pairCoverageRatioPercent: number; // 小数第1位。targetPairCount=0 なら0
+  // 生成器が自ら生成した行に対する構造上の恒真値。テストの達成度ではない。
+  realizedLevelCount: number;
+  realizedPairCount: number;
+  levelRealizationRatioPercent: number; // 小数第1位。targetLevelCount=0 なら0
+  pairRealizationRatioPercent: number; // 小数第1位。targetPairCount=0 なら0
+  // actualRows を渡した場合のみ算出する実被覆率。coverageBasis==="actual-rows" のときのみ定義。
+  coverageBasis: "actual-rows" | "unavailable";
+  actualRowCount: number;
+  actualCoveredLevelCount?: number;
+  actualCoveredPairCount?: number;
+  levelCoverageRatioPercent?: number;
+  pairCoverageRatioPercent?: number;
   rows: ConfigMatrixRow[];
   levels: ConfigMatrixLevelStatus[];
   pairs: ConfigMatrixPairStatus[]; // factorCount<2 なら空配列
-  untestedLevels: ConfigMatrixLevelStatus[]; // status="reachable" かつ coveredByRowNos.length===0（自己整合チェック用の明示リスト。通常空）
+  uncoveredLevels: ConfigMatrixLevelStatus[]; // coverageBasis==="actual-rows" のときのみ算出。basis が unavailable なら空配列
+  uncoveredPairs: ConfigMatrixPairStatus[];
   findings: ConfigMatrixFinding[];
 }
 
