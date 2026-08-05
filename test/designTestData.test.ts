@@ -162,6 +162,56 @@ describe("computeTestDataDesign - case body substantiation (TDC-11)", () => {
     expect(result.stateCoverage.basis).toBe("case-body");
     expect(result.stateCoverage.uncoveredIds).toContain(dataStateTargetId("DC-RSV", "S-DRAFT"));
   });
+
+  it("treats a request as unsubstantiated when only the data class name appears in the case body", () => {
+    const spec = baseSpec();
+    spec.testCases = [
+      {
+        caseId: "TC-01",
+        preconditionText: "予約データを1件用意する",
+        requiredData: [{ dataClassId: "DC-RSV", stateId: "S-DRAFT", dataItemId: "DI-01", access: "read" }],
+      },
+    ];
+    const result = computeTestDataDesign(spec);
+    expect(result.supplyRows[0].substantiation).toBe("no");
+    const finding = result.findings.find((f) => f.categoryId === "TDC-11" && f.target === "TC-01");
+    expect(finding).toBeDefined();
+  });
+
+  it("treats a request as unsubstantiated when only the data item label appears", () => {
+    const spec = baseSpec();
+    spec.testCases = [
+      {
+        caseId: "TC-01",
+        preconditionText: "予約Aを用意する",
+        requiredData: [{ dataClassId: "DC-RSV", stateId: "S-DRAFT", dataItemId: "DI-01", access: "read" }],
+      },
+    ];
+    const result = computeTestDataDesign(spec);
+    expect(result.supplyRows[0].substantiation).toBe("no");
+  });
+
+  it("excludes a transition from the transition coverage numerator when the case body does not substantiate the transition", () => {
+    const spec = baseSpec();
+    spec.testCases = [
+      {
+        caseId: "TC-01",
+        preconditionText: "予約データが未確定である",
+        requiredData: [
+          {
+            dataClassId: "DC-RSV",
+            stateId: "S-DRAFT",
+            dataItemId: "DI-01",
+            access: "update",
+            resultStateId: "S-CONFIRMED",
+          },
+        ],
+      },
+    ];
+    const result = computeTestDataDesign(spec);
+    expect(result.transitionCoverage.covered).toBe(0);
+    expect(result.transitionCoverage.uncoveredIds).toContain(dataTransitionTargetId("DC-RSV", "T-CONFIRM"));
+  });
 });
 
 describe("computeTestDataDesign - exclusivity (TDC-13/14/15/16/18)", () => {

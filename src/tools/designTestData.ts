@@ -56,6 +56,27 @@ function stateNameOf(c: DataClassSpec, stateId: string): string {
   return c.states.find((s) => s.id === stateId)?.nameJa ?? stateId;
 }
 
+/** DL:S: の本文裏付け規則。状態そのものが本文に現れることを必須にする。
+ *  データ区分名・実体ラベル・属性値は補助証跡であり、単独では成立させない。
+ *  (制約: 同名状態を持つ区分が複数ある場合の取り違えまでは判別しない) */
+export function isDataStateSubstantiated(bodyText: string, c: DataClassSpec, stateId: string): boolean {
+  const name = stateNameOf(c, stateId); // 見つからなければ stateId が返る
+  return (name.length > 0 && bodyText.includes(name)) || bodyText.includes(stateId);
+}
+
+/** DL:T: の本文裏付け規則。遷移を一意に特定できる組合せ
+ *  「遷移元状態 かつ (イベント または 遷移先状態)」を必須にする。
+ *  (testCaseAnalysis.ts の ST: 判定の fromHit && toHit に揃えた強度) */
+export function isDataTransitionSubstantiated(
+  bodyText: string, c: DataClassSpec, t: DataLifecycleTransitionSpec
+): boolean {
+  if (bodyText.includes(t.id)) return true;   // 遷移IDの直接記載は許容（ST: の origin 記載許容に揃える）
+  const fromHit = isDataStateSubstantiated(bodyText, c, t.from);
+  const toHit = isDataStateSubstantiated(bodyText, c, t.to);
+  const eventHit = t.event.trim().length > 0 && bodyText.includes(t.event);
+  return fromHit && (eventHit || toHit);
+}
+
 function transitionLabel(t: DataLifecycleTransitionSpec, c: DataClassSpec): string {
   return `${stateNameOf(c, t.from)} --${t.event}${t.guard ? `[${t.guard}]` : ""}--> ${stateNameOf(c, t.to)}`;
 }
@@ -482,9 +503,12 @@ export function computeTestDataDesign(spec: TestDataSpec): TestDataResult {
   const matchedTransitionIds: (string | undefined)[] = [];
   const identityEntries: IdentityEntry[] = [];
 
+  const bodyTextByCase = new Map<string, string>();
+
   for (const tc of testCases) {
     const bodyAvailable = hasCaseBody(tc);
     const bodyText = caseBodyText(tc);
+    if (bodyAvailable) bodyTextByCase.set(tc.caseId, bodyText);
     for (const rd of tc.requiredData) {
       const c = classById.get(rd.dataClassId) as DataClassSpec;
 
@@ -511,15 +535,7 @@ export function computeTestDataDesign(spec: TestDataSpec): TestDataResult {
       if (!bodyAvailable) {
         substantiation = "unchecked";
       } else {
-        const evidences: string[] = [c.nameJa, stateNameOf(c, rd.stateId)];
-        if (rd.dataItemId !== undefined) {
-          const item = itemById.get(rd.dataItemId);
-          if (item) {
-            evidences.push(item.label);
-            for (const v of Object.values(item.attributes ?? {})) evidences.push(v);
-          }
-        }
-        substantiation = evidences.some((e) => e.length > 0 && bodyText.includes(e)) ? "yes" : "no";
+        substantiation = isDataStateSubstantiated(bodyText, c, rd.stateId) ? "yes" : "no";
       }
 
       // --- update要求の遷移一意判定(TDC-16 / 遷移通過 / 遷移被覆) ---
@@ -578,7 +594,7 @@ export function computeTestDataDesign(spec: TestDataSpec): TestDataResult {
         categoryId: "TDC-11",
         severity: "medium",
         target: row.caseId,
-        detail: `ケース「${row.caseId}」の要求 (${row.dataClassId}, ${row.stateId}) がケース本文（前提条件・手順）から裏付けられない。`,
+        detail: `ケース「${row.caseId}」の要求 (${row.dataClassId}, ${row.stateId}) の状態名がケース本文（前提条件・手順）に現れない。区分名・実体ラベル・属性値だけでは裏付けとして成立しない。`,
       });
     }
   }
@@ -799,8 +815,14 @@ export function computeTestDataDesign(spec: TestDataSpec): TestDataResult {
     for (let i = 0; i < supplyRows.length; i++) {
       const transitionId = matchedTransitionIds[i];
       if (transitionId === undefined) continue;
-      if (supplyRows[i].substantiation !== "yes") continue;
-      coveredKeys.add(dataTransitionTargetId(supplyRows[i].dataClassId, transitionId));
+      const row = supplyRows[i];
+      if (row.substantiation !== "yes") continue;
+      const bodyText = bodyTextByCase.get(row.caseId);
+      if (bodyText === undefined) continue;
+      const c = classById.get(row.dataClassId);
+      const t = c ? transitionsByClass.get(row.dataClassId)?.get(transitionId) : undefined;
+      if (!c || !t || !isDataTransitionSubstantiated(bodyText, c, t)) continue;
+      coveredKeys.add(dataTransitionTargetId(row.dataClassId, transitionId));
     }
     const allIds: string[] = [];
     for (const c of dataClasses) for (const t of c.transitions) allIds.push(dataTransitionTargetId(c.id, t.id));
@@ -1155,7 +1177,7 @@ export function renderTestData(spec: TestDataSpec): string {
       result.stateCoverage.basis === "case-body"
         ? `状態被覆率: ${(result.stateCoverage.ratioPercent as number).toFixed(1)}%（分母: 宣言状態 ${
             result.stateCoverage.total
-          } 件、分子: 本文裏付けを通過した要求が指す状態 ${result.stateCoverage.covered} 件、未被覆: ${
+          } 件、分子: 状態名が本文に現れた要求が指す状態 ${result.stateCoverage.covered} 件、未被覆: ${
             result.stateCoverage.uncoveredIds.length === 0 ? "なし" : result.stateCoverage.uncoveredIds.join(", ")
           }）`
         : `状態被覆率: 未算出(理由: ${result.stateCoverage.reason ?? ""})`;
@@ -1163,7 +1185,7 @@ export function renderTestData(spec: TestDataSpec): string {
       result.transitionCoverage.basis === "case-body"
         ? `遷移被覆率: ${(result.transitionCoverage.ratioPercent as number).toFixed(1)}%（分母: 宣言遷移 ${
             result.transitionCoverage.total
-          } 件、分子: 本文裏付けを通過した update 要求が一意に通過した遷移 ${
+          } 件、分子: 遷移元状態＋（イベントまたは遷移先状態）が本文に現れた update 要求が一意に通過した遷移 ${
             result.transitionCoverage.covered
           } 件、未被覆: ${
             result.transitionCoverage.uncoveredIds.length === 0
