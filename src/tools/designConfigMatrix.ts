@@ -2,6 +2,7 @@ import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
+  ConfigMatrixActualRow,
   ConfigMatrixExcludedCombination,
   ConfigMatrixFactorSpec,
   ConfigMatrixFinding,
@@ -65,6 +66,10 @@ function selectorCompatible(when: ConfigMatrixSelector, partial: Record<string, 
 
 function excludedLabel(ex: ConfigMatrixExcludedCombination, index: number): string {
   return ex.id ?? `excludedCombinations[${index}]`;
+}
+
+function actualRowLabel(row: ConfigMatrixActualRow, index: number): string {
+  return row.id ?? `actualRows[${index}]`;
 }
 
 function describeSelector(when: ConfigMatrixSelector, factors: ConfigMatrixFactorSpec[]): string {
@@ -249,6 +254,41 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
     }
   });
 
+  const actualRows = spec.actualRows ?? [];
+  actualRows.forEach((row, i) => {
+    const label = actualRowLabel(row, i);
+    for (const [factorId, level] of Object.entries(row.values)) {
+      if (!factorIds.has(factorId)) {
+        findings.push({
+          categoryId: "CMC-11",
+          severity: "high",
+          target: label,
+          detail: `「${label}」が未宣言の因子ID「${factorId}」を参照している。`,
+        });
+        continue;
+      }
+      const factor = factorById.get(factorId) as ConfigMatrixFactorSpec;
+      if (!factor.levels.includes(level)) {
+        findings.push({
+          categoryId: "CMC-11",
+          severity: "high",
+          target: label,
+          detail: `「${label}」が因子「${factorId}」に存在しない水準「${level}」を参照している。`,
+        });
+      }
+    }
+    for (const f of factors) {
+      if (row.values[f.id] === undefined) {
+        findings.push({
+          categoryId: "CMC-11",
+          severity: "high",
+          target: label,
+          detail: `「${label}」に因子「${f.id}」への割当が欠落している。`,
+        });
+      }
+    }
+  });
+
   // --- 共通のカウント（generated=false でも算出する） ---
   let totalPairCount = 0;
   for (let i = 0; i < factors.length; i++) {
@@ -270,14 +310,17 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
     unreachablePairCount: 0,
     targetLevelCount: 0,
     targetPairCount: 0,
-    coveredLevelCount: 0,
-    coveredPairCount: 0,
-    levelCoverageRatioPercent: 0,
-    pairCoverageRatioPercent: 0,
+    realizedLevelCount: 0,
+    realizedPairCount: 0,
+    levelRealizationRatioPercent: 0,
+    pairRealizationRatioPercent: 0,
+    coverageBasis: "unavailable",
+    actualRowCount: actualRows.length,
     rows: [],
     levels: [],
     pairs: [],
-    untestedLevels: [],
+    uncoveredLevels: [],
+    uncoveredPairs: [],
     findings,
   });
 
@@ -312,7 +355,7 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
     for (const lv of f.levels) {
       const completion = findValidCompletion({ [f.id]: lv }, factors, excluded, maxSearchNodes);
       if (completion.kind !== "none") {
-        levels.push({ factorId: f.id, level: lv, status: "reachable", coveredByRowNos: [] });
+        levels.push({ factorId: f.id, level: lv, status: "reachable", generatedRowNos: [], actualRowLabels: [] });
         continue;
       }
       unreachableLevelCount += 1;
@@ -324,7 +367,14 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
         related.length > 0
           ? `${base}（該当: ${related.map(({ ex, i }) => `${excludedLabel(ex, i)}: ${ex.reason ?? "(未記入)"}`).join(" / ")}）`
           : base;
-      levels.push({ factorId: f.id, level: lv, status: "unreachable", unreachableReason, coveredByRowNos: [] });
+      levels.push({
+        factorId: f.id,
+        level: lv,
+        status: "unreachable",
+        unreachableReason,
+        generatedRowNos: [],
+        actualRowLabels: [],
+      });
     }
   }
 
@@ -344,7 +394,8 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
                 factorIdB: factors[j].id,
                 levelB,
                 status: "reachable",
-                coveredByRowNos: [],
+                generatedRowNos: [],
+                actualRowLabels: [],
               });
               continue;
             }
@@ -368,7 +419,8 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
               levelB,
               status: "unreachable",
               unreachableReason,
-              coveredByRowNos: [],
+              generatedRowNos: [],
+              actualRowLabels: [],
             });
             findings.push({
               categoryId: "CMC-07",
@@ -579,34 +631,97 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
 
   const rows: ConfigMatrixRow[] = generatedValues.map((values, i) => ({ no: i + 1, values }));
 
-  // --- 7. 生成結果に基づく被覆状態の反映 ---
+  // --- 7. 生成結果に基づく実体化状態の反映（自己生成行に対する構造上の恒真値） ---
   for (const row of rows) {
     for (const lvl of levels) {
-      if (row.values[lvl.factorId] === lvl.level) lvl.coveredByRowNos.push(row.no);
+      if (row.values[lvl.factorId] === lvl.level) lvl.generatedRowNos.push(row.no);
     }
     for (const pr of pairs) {
       if (row.values[pr.factorIdA] === pr.levelA && row.values[pr.factorIdB] === pr.levelB) {
-        pr.coveredByRowNos.push(row.no);
+        pr.generatedRowNos.push(row.no);
       }
     }
   }
 
-  // --- 8. カウント ---
-  const coveredLevelCount = levels.filter((l) => l.status === "reachable" && l.coveredByRowNos.length > 0).length;
-  const coveredPairCount = pairs.filter((p) => p.status === "reachable" && p.coveredByRowNos.length > 0).length;
-  const levelCoverageRatioPercent =
-    targetLevelCount === 0 ? 0 : Math.round((coveredLevelCount / targetLevelCount) * 1000) / 10;
-  const pairCoverageRatioPercent =
-    targetPairCount === 0 ? 0 : Math.round((coveredPairCount / targetPairCount) * 1000) / 10;
-
-  const untestedLevels = levels.filter((l) => l.status === "reachable" && l.coveredByRowNos.length === 0);
-  if (untestedLevels.length > 0) {
-    findings.push({
-      categoryId: "CMC-10",
-      severity: "high",
-      target: matrixId,
-      detail: `生成後も${untestedLevels.length}件の水準がどの構成にも現れていない。`,
+  // --- 7b. actualRows（利用者が実際にテストした構成表）との照合 ---
+  actualRows.forEach((row, i) => {
+    const label = actualRowLabel(row, i);
+    for (const lvl of levels) {
+      if (row.values[lvl.factorId] === lvl.level) lvl.actualRowLabels.push(label);
+    }
+    for (const pr of pairs) {
+      if (row.values[pr.factorIdA] === pr.levelA && row.values[pr.factorIdB] === pr.levelB) {
+        pr.actualRowLabels.push(label);
+      }
+    }
+    excluded.forEach((ex, ei) => {
+      if (selectorMatches(ex.when, row.values)) {
+        findings.push({
+          categoryId: "CMC-12",
+          severity: "medium",
+          target: label,
+          detail: `「${label}」は除外組合せ「${excludedLabel(ex, ei)}」(${ex.reason ?? "(未記入)"})に一致する構成である。`,
+        });
+      }
     });
+  });
+
+  // --- 8. カウント ---
+  // 実体化率: 生成器が自ら生成した行に対する構造上の恒真値。到達可能な水準・ペアは生成アルゴリズムが必ず1回以上載せるため、常に100%になる。
+  const realizedLevelCount = levels.filter((l) => l.status === "reachable" && l.generatedRowNos.length > 0).length;
+  const realizedPairCount = pairs.filter((p) => p.status === "reachable" && p.generatedRowNos.length > 0).length;
+  const levelRealizationRatioPercent =
+    targetLevelCount === 0 ? 0 : Math.round((realizedLevelCount / targetLevelCount) * 1000) / 10;
+  const pairRealizationRatioPercent =
+    targetPairCount === 0 ? 0 : Math.round((realizedPairCount / targetPairCount) * 1000) / 10;
+
+  // 実被覆率: actualRows を渡した場合のみ算出する。
+  const coverageBasis: ConfigMatrixResult["coverageBasis"] = actualRows.length > 0 ? "actual-rows" : "unavailable";
+  let actualCoveredLevelCount: number | undefined;
+  let actualCoveredPairCount: number | undefined;
+  let levelCoverageRatioPercent: number | undefined;
+  let pairCoverageRatioPercent: number | undefined;
+  let uncoveredLevels: ConfigMatrixLevelStatus[] = [];
+  let uncoveredPairs: ConfigMatrixPairStatus[] = [];
+
+  if (coverageBasis === "actual-rows") {
+    actualCoveredLevelCount = levels.filter(
+      (l) => l.status === "reachable" && l.actualRowLabels.length > 0
+    ).length;
+    actualCoveredPairCount = pairs.filter((p) => p.status === "reachable" && p.actualRowLabels.length > 0).length;
+    levelCoverageRatioPercent =
+      targetLevelCount === 0 ? 0 : Math.round((actualCoveredLevelCount / targetLevelCount) * 1000) / 10;
+    pairCoverageRatioPercent =
+      targetPairCount === 0 ? 0 : Math.round((actualCoveredPairCount / targetPairCount) * 1000) / 10;
+    uncoveredLevels = levels.filter((l) => l.status === "reachable" && l.actualRowLabels.length === 0);
+    uncoveredPairs = pairs.filter((p) => p.status === "reachable" && p.actualRowLabels.length === 0);
+
+    if (uncoveredLevels.length > 0) {
+      const sample = uncoveredLevels
+        .slice(0, 10)
+        .map((l) => `${nameOf(l.factorId)}=${l.level}`)
+        .join(", ");
+      const remainder = uncoveredLevels.length > 10 ? ` 他 ${uncoveredLevels.length - 10} 件` : "";
+      findings.push({
+        categoryId: "CMC-10",
+        severity: "medium",
+        target: matrixId,
+        detail: `対象水準数${targetLevelCount}件のうち、実構成表(actualRows)が踏んだのは${actualCoveredLevelCount}件で、${uncoveredLevels.length}件が未踏である（未踏: ${sample}${remainder}）。`,
+      });
+    }
+    if (uncoveredPairs.length > 0) {
+      const sample = uncoveredPairs
+        .slice(0, 10)
+        .map((p) => `${nameOf(p.factorIdA)}=${p.levelA} × ${nameOf(p.factorIdB)}=${p.levelB}`)
+        .join(", ");
+      const remainder = uncoveredPairs.length > 10 ? ` 他 ${uncoveredPairs.length - 10} 件` : "";
+      findings.push({
+        categoryId: "CMC-13",
+        severity: "medium",
+        target: matrixId,
+        detail: `対象ペア数${targetPairCount}件のうち、実構成表(actualRows)が踏んだのは${actualCoveredPairCount}件で、${uncoveredPairs.length}件が未踏である（未踏: ${sample}${remainder}）。`,
+      });
+    }
   }
 
   return {
@@ -620,14 +735,21 @@ export function computeConfigMatrixRows(spec: ConfigMatrixSpec): ConfigMatrixRes
     unreachablePairCount,
     targetLevelCount,
     targetPairCount,
-    coveredLevelCount,
-    coveredPairCount,
+    realizedLevelCount,
+    realizedPairCount,
+    levelRealizationRatioPercent,
+    pairRealizationRatioPercent,
+    coverageBasis,
+    actualRowCount: actualRows.length,
+    actualCoveredLevelCount,
+    actualCoveredPairCount,
     levelCoverageRatioPercent,
     pairCoverageRatioPercent,
     rows,
     levels,
     pairs,
-    untestedLevels,
+    uncoveredLevels,
+    uncoveredPairs,
     findings,
   };
 }
@@ -738,9 +860,68 @@ export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
       lines.push(`| ${cells.map((v) => escapeCell(String(v))).join(" | ")} |`);
     }
     lines.push("");
+    lines.push(
+      "- この表は design_config_matrix が自ら生成したものであり、下段(5節)の実体化率はこの自己生成行に対する構造上の恒真値である。実際にテストしたか否かは actualRows で別途宣言すること。"
+    );
+    lines.push("");
   }
 
-  lines.push("## 5. 決定的検査");
+  lines.push("## 5. 実構成表(actualRows)に対する被覆");
+  lines.push("");
+  if (!result.generated) {
+    skipLine();
+  } else if (result.coverageBasis === "unavailable") {
+    lines.push("- 未算出(理由: actualRows が未指定のため、実体に対する被覆率は算出しない)");
+    lines.push("");
+  } else {
+    const actualRows = spec.actualRows ?? [];
+    lines.push("| 実構成 | 構成内容 | 備考 |");
+    lines.push("| --- | --- | --- |");
+    actualRows.slice(0, TARGET_RENDER_LIMIT).forEach((row, i) => {
+      const label = actualRowLabel(row, i);
+      const content = factors.map((f) => `${f.name}=${row.values[f.id]}`).join(" × ");
+      lines.push(`| ${escapeCell(label)} | ${escapeCell(content)} | ${escapeCell(row.note ?? "")} |`);
+    });
+    lines.push("");
+    if (actualRows.length > TARGET_RENDER_LIMIT) {
+      lines.push(`- 他 ${actualRows.length - TARGET_RENDER_LIMIT} 件`);
+      lines.push("");
+    }
+    lines.push(
+      `- 水準被覆率: ${(result.levelCoverageRatioPercent as number).toFixed(1)}%（分母: 対象水準数 ${
+        result.targetLevelCount
+      } 件、分子: 実構成表が踏んだ水準数 ${result.actualCoveredLevelCount} 件） / ` +
+        `ペア被覆率: ${(result.pairCoverageRatioPercent as number).toFixed(1)}%（分母: 対象ペア数 ${
+          result.targetPairCount
+        } 件、分子: 実構成表が踏んだペア数 ${result.actualCoveredPairCount} 件）`
+    );
+    lines.push("");
+    if (result.uncoveredLevels.length === 0 && result.uncoveredPairs.length === 0) {
+      lines.push("- 未被覆の水準・ペアなし");
+      lines.push("");
+    } else {
+      lines.push("| 種別 | 対象 |");
+      lines.push("| --- | --- |");
+      for (const l of result.uncoveredLevels.slice(0, UNREACHABLE_RENDER_LIMIT)) {
+        lines.push(`| 未被覆水準 | ${escapeCell(`${nameOf(l.factorId)}=${l.level}`)} |`);
+      }
+      for (const p of result.uncoveredPairs.slice(0, UNREACHABLE_RENDER_LIMIT)) {
+        lines.push(
+          `| 未被覆ペア | ${escapeCell(`${nameOf(p.factorIdA)}=${p.levelA} × ${nameOf(p.factorIdB)}=${p.levelB}`)} |`
+        );
+      }
+      lines.push("");
+      if (result.uncoveredLevels.length > UNREACHABLE_RENDER_LIMIT) {
+        lines.push(`- 他 ${result.uncoveredLevels.length - UNREACHABLE_RENDER_LIMIT} 件（未被覆水準を丸めた）`);
+      }
+      if (result.uncoveredPairs.length > UNREACHABLE_RENDER_LIMIT) {
+        lines.push(`- 他 ${result.uncoveredPairs.length - UNREACHABLE_RENDER_LIMIT} 件（未被覆ペアを丸めた）`);
+      }
+      lines.push("");
+    }
+  }
+
+  lines.push("## 6. 決定的検査");
   lines.push("");
   if (result.findings.length === 0) {
     lines.push("- 指摘なし");
@@ -764,7 +945,7 @@ export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
   }
   lines.push("");
 
-  lines.push("## 6. 網羅対象一覧(generate_test_cases 引き渡し)");
+  lines.push("## 7. 網羅対象一覧(generate_test_cases 引き渡し)");
   lines.push("");
   if (!result.generated) {
     skipLine();
@@ -785,17 +966,36 @@ export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
     lines.push("");
   }
 
-  lines.push("## 7. サマリ");
+  lines.push("## 8. サマリ");
   lines.push("");
   if (!result.generated) {
     skipLine();
   } else {
+    const actualCoverageText =
+      result.coverageBasis === "actual-rows"
+        ? `水準被覆率: ${(result.levelCoverageRatioPercent as number).toFixed(1)}%（分母: 対象水準数 ${
+            result.targetLevelCount
+          } 件、分子: 実構成表が踏んだ水準数 ${result.actualCoveredLevelCount} 件） / ` +
+          `ペア被覆率: ${(result.pairCoverageRatioPercent as number).toFixed(1)}%（分母: 対象ペア数 ${
+            result.targetPairCount
+          } 件、分子: 実構成表が踏んだペア数 ${result.actualCoveredPairCount} 件）`
+        : "水準被覆率・ペア被覆率: 未算出(理由: actualRows 未指定)";
     lines.push(
       `- 因子数: ${result.factorCount} / 全水準数: ${result.totalLevelCount} / 全ペア数: ${result.totalPairCount} / ` +
         `到達不能水準: ${result.unreachableLevelCount} / 到達不能ペア: ${result.unreachablePairCount} / ` +
         `対象水準数: ${result.targetLevelCount} / 対象ペア数: ${result.targetPairCount} / ` +
-        `水準被覆率: ${result.levelCoverageRatioPercent.toFixed(1)}% / ペア被覆率: ${result.pairCoverageRatioPercent.toFixed(1)}% / ` +
-        `生成行数: ${result.rows.length}`
+        `水準実体化率: ${result.levelRealizationRatioPercent.toFixed(1)}%（分母: 対象水準数 ${
+          result.targetLevelCount
+        } 件、分子: 生成した構成表に現れた水準数 ${result.realizedLevelCount} 件） / ` +
+        `ペア実体化率: ${result.pairRealizationRatioPercent.toFixed(1)}%（分母: 対象ペア数 ${
+          result.targetPairCount
+        } 件、分子: 生成した構成表に現れたペア数 ${result.realizedPairCount} 件） / ` +
+        `${actualCoverageText} / 生成行数: ${result.rows.length}`
+    );
+    lines.push(
+      "- 水準実体化率・ペア実体化率は「宣言した到達可能な水準・ペアが、本ツールが生成した構成表に実体として現れたか」を照合した構造上の値であり、" +
+        "生成アルゴリズムが到達可能な水準・ペアを必ず1回以上載せるため 100% になる。テストの達成度ではない。実際の被覆は actualRows を渡した場合の実構成被覆率、" +
+        "または generate_test_cases の CFG: 網羅対象で数えること。"
     );
   }
 
@@ -850,6 +1050,18 @@ export const designConfigMatrixInputShape = {
     .positive()
     .optional()
     .describe("Node budget per reachability search / greedy completion (default 5000)"),
+  actualRows: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        values: z.record(z.string(), z.string()),
+        note: z.string().optional(),
+      })
+    )
+    .optional()
+    .describe(
+      "Configurations actually planned/executed by the user. Level/pair coverage ratios are computed ONLY against these rows; without them the tool reports realization ratios only."
+    ),
 } as const;
 
 const designConfigMatrixInputSchema = z.object(designConfigMatrixInputShape);
@@ -862,7 +1074,8 @@ export function registerDesignConfigMatrixTool(server: McpServer): void {
       title: "Design Config Matrix",
       description:
         "構成因子(OS/ブラウザ/解像度/機種など)と水準、網羅方針(single=シングルカバレッジ / pairwise=ペア / full=フル)、" +
-        "除外する組合せとその理由から、決定的に構成一覧を生成し、水準被覆率・ペア被覆率・テストされない水準・除外理由未記入をMarkdownで返す。" +
+        "除外する組合せとその理由から、決定的に構成一覧を生成し、水準実体化率・ペア実体化率(生成した構成表に対する構造値。テストの達成度ではない)と、" +
+        "actualRows(利用者が実際にテストした構成表)を渡した場合のみ算出する実被覆率・除外理由未記入をMarkdownで返す。" +
         "各構成は CFG: プレフィックスの網羅対象IDとして generate_test_cases の configMatrix へそのまま渡せる。",
       inputSchema: designConfigMatrixInputShape,
     },

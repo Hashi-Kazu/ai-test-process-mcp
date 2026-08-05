@@ -514,11 +514,11 @@ export function registerResources(server: McpServer): void {
     {
       title: "Config Matrix Analysis Criteria",
       description:
-        "Judgment category catalog for design_config_matrix (CMC-01..CMC-10): unknown factor/level references, " +
+        "Judgment category catalog for design_config_matrix (CMC-01..CMC-13): unknown factor/level references, " +
         "duplicate factor ids or levels, factors that do not contribute to combinations, insufficient factor count, " +
         "missing exclusion reasons, combinations made unreachable by excluded combinations, redundant/unreachable " +
-        "excluded combinations, combination count cap overflow, and untested levels remaining after generation, " +
-        "with severity and recommended actions.",
+        "excluded combinations, combination count cap overflow, levels/pairs not exercised by the user-supplied " +
+        "actual rows, and inconsistencies in those rows, with severity and recommended actions.",
       mimeType: "application/json",
     },
     async (uri) => ({
