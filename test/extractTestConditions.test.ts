@@ -379,6 +379,11 @@ describe("renderTestConditions with persona quadrants", () => {
     );
   });
 
+  it("recommends linking source=stakeholder conditions to quality-in-use characteristic ids under section 9", () => {
+    const section = markdown.split("## 9. ステークホルダー／ペルソナ視点の洗い出し指示(意味的層)")[1];
+    expect(section).toContain("quality://characteristics/in-use");
+  });
+
   it("renders without throwing for legacy minimal persona input and reports no personas when omitted", () => {
     const minimal: ExtractTestConditionsInput = {
       requirementIds: ["R-001"],

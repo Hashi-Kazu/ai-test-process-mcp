@@ -2,6 +2,7 @@ import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { qualityCharacteristicModel } from "../resources/qualityCharacteristics.js";
+import { qualityInUseCharacteristicModel } from "../resources/qualityInUseCharacteristics.js";
 import { questionPriorityDefinitions } from "../resources/testPlanTemplate.js";
 import {
   analyzePrefixes,
@@ -36,7 +37,8 @@ function listOrUnprovided(values: string[] | undefined): string[] {
 
 export function renderRequirementsAnalysis(
   input: AnalyzeRequirementsInput,
-  model: QualityCharacteristicModel = qualityCharacteristicModel
+  model: QualityCharacteristicModel = qualityCharacteristicModel,
+  inUseModel: QualityCharacteristicModel = qualityInUseCharacteristicModel
 ): string {
   const {
     documents,
@@ -288,6 +290,12 @@ export function renderRequirementsAnalysis(
     qualityCharacteristicIds && qualityCharacteristicIds.length > 0
       ? model.characteristics.filter((c) => qualityCharacteristicIds.includes(c.id))
       : model.characteristics;
+  const inUseCharacteristics =
+    qualityCharacteristicIds && qualityCharacteristicIds.length > 0
+      ? inUseModel.characteristics.filter((c) => qualityCharacteristicIds.includes(c.id))
+      : inUseModel.characteristics;
+  lines.push("### 4.1 製品品質特性");
+  lines.push("");
   for (const c of characteristics) {
     lines.push(`### ${c.id} ${c.nameJa}(${c.nameEn})`);
     lines.push("");
@@ -299,11 +307,33 @@ export function renderRequirementsAnalysis(
     }
     lines.push("");
   }
+  lines.push("### 4.2 利用時品質特性");
+  lines.push("");
+  if (inUseCharacteristics.length === 0) {
+    lines.push("該当なし（qualityCharacteristicIds で除外された）");
+    lines.push("");
+  } else {
+    for (const c of inUseCharacteristics) {
+      lines.push(`### ${c.id} ${c.nameJa}(${c.nameEn})`);
+      lines.push("");
+      lines.push(c.summary);
+      lines.push("");
+      for (const sub of c.subCharacteristics) {
+        const related = sub.relatedTestTypes.length > 0 ? sub.relatedTestTypes.join(", ") : "-";
+        lines.push(`- ${sub.id} ${sub.nameJa}: ${sub.focus.join(" / ")}(関連: ${related})`);
+      }
+      lines.push("");
+    }
+  }
+  lines.push(
+    "利用者由来のテスト条件（ペルソナ／ステークホルダー起点）は、まず本節の利用時品質特性(QU-XX)への対応を検討し、対応する製品品質特性(QC-XX)があれば併記すること。"
+  );
+  lines.push("");
   lines.push("| 品質特性 | 副特性 | 関連する要件ID/箇所 | 記述の有無 | 不足している事項 |");
   lines.push("| --- | --- | --- | --- | --- |");
   lines.push("");
   lines.push(
-    "上記の副特性ごとに、対象文書中で対応する要件ID・章・記述箇所を特定し、記述の有無と不足事項を表に埋めること。"
+    "上記の副特性ごとに（製品品質QC-XX・利用時品質QU-XXの両方が対象）、対象文書中で対応する要件ID・章・記述箇所を特定し、記述の有無と不足事項を表に埋めること。"
   );
   lines.push("");
 

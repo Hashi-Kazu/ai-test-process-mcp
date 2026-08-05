@@ -76,6 +76,7 @@ describe("personaJourneyFrame", () => {
     expect(convention).toContain("extract_test_conditions");
     expect(convention).toContain('source="stakeholder"');
     expect(convention).toContain("personas[].id");
+    expect(convention).toContain("quality://characteristics/in-use");
   });
 
   it("keeps every id unique across the whole frame", () => {
