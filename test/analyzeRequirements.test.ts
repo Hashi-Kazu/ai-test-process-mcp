@@ -4,6 +4,7 @@ import { z } from "zod";
 import { renderRequirementsAnalysis } from "../src/tools/analyzeRequirements.js";
 import { designBoundaryValuesInputShape } from "../src/tools/designBoundaryValues.js";
 import { qualityCharacteristicModel } from "../src/resources/qualityCharacteristics.js";
+import { qualityInUseCharacteristicModel } from "../src/resources/qualityInUseCharacteristics.js";
 import { questionPriorityDefinitions } from "../src/resources/testPlanTemplate.js";
 import type { AnalyzeRequirementsInput, TestBasisDocument } from "../src/types.js";
 
@@ -98,6 +99,26 @@ describe("renderRequirementsAnalysis", () => {
     expect(section4).toContain("QC-01");
     for (const c of qualityCharacteristicModel.characteristics) {
       if (c.id === "QC-01") continue;
+      expect(section4).not.toContain(c.id);
+    }
+  });
+
+  it("lists every quality-in-use characteristic id by default", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    for (const c of qualityInUseCharacteristicModel.characteristics) {
+      expect(markdown).toContain(c.id);
+    }
+  });
+
+  it("restricts quality-in-use characteristics when qualityCharacteristicIds is given", () => {
+    const restricted = renderRequirementsAnalysis({ ...baseInput, qualityCharacteristicIds: ["QU-04"] });
+    const section4 = restricted.split("## 4. 品質特性")[1].split("## 5.")[0];
+    expect(section4).toContain("QU-04");
+    for (const c of qualityCharacteristicModel.characteristics) {
+      expect(section4).not.toContain(c.id);
+    }
+    for (const c of qualityInUseCharacteristicModel.characteristics) {
+      if (c.id === "QU-04") continue;
       expect(section4).not.toContain(c.id);
     }
   });

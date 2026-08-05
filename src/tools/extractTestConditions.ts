@@ -934,6 +934,9 @@ export function renderTestConditions(
   lines.push(
     "4象限（属性・発言・思考・目標・不満点）が未記入のペルソナは、persona_journey_interview で解像度を上げてから条件を導出すること。"
   );
+  lines.push(
+    "source=stakeholder のテスト条件の rationale には、対応する quality://characteristics/in-use の利用時品質特性ID(QU-XX、有効性・効率性・満足性・リスク回避性・利用状況網羅性)を1件以上記載することを推奨する。"
+  );
   lines.push("");
 
   // 推奨技法 → 対応ツールの技法由来エントリ。5節で構築した techniqueOrder / techniqueMap を再利用する。

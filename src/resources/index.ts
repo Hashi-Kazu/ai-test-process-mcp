@@ -6,6 +6,7 @@ import { testPlanAmbiguityLexicon } from "./ambiguityLexicon.js";
 import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
 import { testSpecificationReviewChecklist } from "./testSpecificationReviewChecklist.js";
 import { qualityCharacteristicModel } from "./qualityCharacteristics.js";
+import { qualityInUseCharacteristicModel } from "./qualityInUseCharacteristics.js";
 import { requirementIdPatternCatalog } from "./requirementIdPatterns.js";
 import { testPerspectiveCatalog } from "./testPerspectiveCatalog.js";
 import { guidewordDictionary } from "./guidewordDictionary.js";
@@ -171,6 +172,26 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(qualityCharacteristicModel, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "quality-characteristics-in-use",
+    "quality://characteristics/in-use",
+    {
+      title: "Quality-in-Use Characteristics",
+      description:
+        "Paraphrased quality-in-use characteristic model (effectiveness, efficiency, satisfaction, freedom from risk, context coverage) for connecting stakeholder-/persona-derived test requirements to quality-in-use aspects, complementing quality://characteristics/product.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(qualityInUseCharacteristicModel, null, 2),
         },
       ],
     })

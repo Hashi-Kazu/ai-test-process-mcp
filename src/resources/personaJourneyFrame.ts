@@ -216,6 +216,7 @@ export const personaJourneyFrame: PersonaJourneyFrame = {
       "展開したテスト条件は source=\"stakeholder\" とし、derivedFrom に由来ペルソナID（personas[].id）を書く。",
       "ペルソナは4象限（属性・発言・思考・目標・不満点）を埋めたうえで extract_test_conditions の personas へ渡す。",
       "テスト要求IDは条件の rationale などに残し、テスト要求 → テスト条件の追跡を切らさない。",
+      "テスト要求を品質特性へ接続する場合は、まず quality://characteristics/in-use の利用時品質特性ID(QU-XX)を検討し、対応する quality://characteristics/product のQC-XXがあれば併記すること。",
     ],
   },
   stakeholderWeightingFrame: {
