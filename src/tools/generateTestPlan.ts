@@ -22,6 +22,10 @@ import type {
   TestPlanExecutionOrderItem,
 } from "../types.js";
 
+function escapeCell(value: string): string {
+  return value.replace(/\|/g, "\\|");
+}
+
 const TBD = "_未記入_";
 const TBD_REQUIRED = "_未記入（必須）_";
 
@@ -32,6 +36,16 @@ export const generateTestPlanInputShape = {
     .string()
     .describe("(required section 1.1 スコープ・目的) What is in scope for testing (features, systems, boundaries)"),
   objectives: z.array(z.string()).optional().describe("Test objectives / goals"),
+  testPurposes: z
+    .array(
+      z.object({
+        id: z.string().describe("Test purpose id from derive_test_purposes"),
+        statement: z.string().describe("The test purpose statement"),
+        priorityRank: z.number().int().min(1).optional().describe("1 is highest priority"),
+      })
+    )
+    .optional()
+    .describe("Test purposes from derive_test_purposes, rendered as a table in section 1.1"),
   featuresToTest: z
     .array(z.string())
     .optional()
@@ -119,6 +133,19 @@ export const generateTestPlanInputShape = {
     .optional()
     .describe(
       "(required section 5.2 テストタイプ) Test type names selected from the fixed catalog (e.g. 機能テスト, 性能テスト); at least one is required"
+    ),
+  testTypeSelections: z
+    .array(
+      z.object({
+        name: z.string().describe("Test type name matching testTypeCatalog"),
+        selected: z.boolean(),
+        purposeIds: z.array(z.string()).optional().describe("Test purpose ids justifying this selection"),
+        reason: z.string().optional().describe("Reason for selecting/excluding this test type"),
+      })
+    )
+    .optional()
+    .describe(
+      "(optional, supersedes selectedTestTypes for section 5.2) Test type selections with the backing test purpose ids and reason, typically from derive_test_purposes"
     ),
   testTechniques: z
     .array(
@@ -333,6 +360,16 @@ function scopeObjectivesContent(input: TestPlanInput, required: boolean): string
     lines.push("**目的・目標:**");
     lines.push(listOrTbd(input.objectives));
   }
+  if (input.testPurposes && input.testPurposes.length > 0) {
+    lines.push("");
+    lines.push("**テスト目的:**");
+    lines.push("");
+    lines.push("| 目的ID | テスト目的 | 優先順位 |");
+    lines.push("| --- | --- | --- |");
+    for (const p of input.testPurposes) {
+      lines.push(`| ${escapeCell(p.id)} | ${escapeCell(p.statement)} | ${p.priorityRank ?? "-"} |`);
+    }
+  }
   return lines.join("\n");
 }
 
@@ -363,6 +400,32 @@ function testItemsContent(input: TestPlanInput, required: boolean): string {
 }
 
 function testTypesContent(input: TestPlanInput, required: boolean): string {
+  if (input.testTypeSelections && input.testTypeSelections.length > 0) {
+    const selectionByName = new Map(input.testTypeSelections.map((s) => [s.name, s]));
+    let matchedCount = 0;
+    const lines: string[] = [];
+    lines.push("| 対象 | テストタイプ | 説明 | 紐づくテスト目的ID | 選定理由 |");
+    lines.push("| --- | --- | --- | --- | --- |");
+    for (const t of testTypeCatalog) {
+      const selection = selectionByName.get(t.name);
+      const isSelected = selection?.selected === true;
+      if (isSelected) matchedCount += 1;
+      const mark = isSelected ? "〇" : "";
+      const hasPurposeIds = !!(selection?.purposeIds && selection.purposeIds.length > 0);
+      const hasReason = !!(selection?.reason && selection.reason.trim() !== "");
+      const purposeIds = hasPurposeIds ? (selection!.purposeIds as string[]).join(", ") : "-";
+      const reason = hasPurposeIds && hasReason ? (selection!.reason as string) : "未記入(必須)";
+      lines.push(
+        `| ${mark} | ${t.name} | ${t.description} | ${escapeCell(purposeIds)} | ${escapeCell(reason)} |`
+      );
+    }
+    if (matchedCount === 0) {
+      lines.push("");
+      lines.push(requiredTbd(required));
+    }
+    return lines.join("\n");
+  }
+
   const selected = new Set(input.selectedTestTypes ?? []);
   let matchedCount = 0;
   const lines: string[] = [];

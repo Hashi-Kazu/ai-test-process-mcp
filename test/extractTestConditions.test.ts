@@ -82,9 +82,9 @@ describe("renderTestConditions", () => {
     }
   });
 
-  it("renders the 9-column test condition table header", () => {
+  it("renders the 10-column test condition table header with a purpose id column", () => {
     expect(markdown).toContain(
-      "| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 | 根拠位置 |"
+      "| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 | 根拠位置 | 目的ID |"
     );
   });
 
@@ -163,7 +163,7 @@ describe("renderTestConditions", () => {
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 
-  it("renders section 3.9, 3.10, 3.11 and 3.12 exactly once each", () => {
+  it("renders section 3.9, 3.10, 3.11, 3.12 and 3.13 exactly once each", () => {
     expect(markdown.split("\n").filter((l) => l === "### 3.9 リスク区分の被覆状況")).toHaveLength(1);
     expect(
       markdown.split("\n").filter((l) => l === "### 3.10 根拠位置が未特定のテスト条件")
@@ -171,7 +171,17 @@ describe("renderTestConditions", () => {
     expect(
       markdown.split("\n").filter((l) => l === "### 3.11 ペルソナ4象限の記入状況")
     ).toHaveLength(1);
-    expect(markdown.split("\n").filter((l) => l === "### 3.12 サマリ")).toHaveLength(1);
+    expect(
+      markdown.split("\n").filter((l) => l === "### 3.12 テスト目的の貫通状況")
+    ).toHaveLength(1);
+    expect(markdown.split("\n").filter((l) => l === "### 3.13 サマリ")).toHaveLength(1);
+  });
+
+  it("shows no test purposes specified when testPurposes is omitted (section 3.12)", () => {
+    const section = markdown.split("### 3.12 テスト目的の貫通状況")[1].split("### 3.13")[0];
+    expect(section).toContain(
+      "テスト目的の指定なし。derive_test_purposes の出力を testPurposes に渡すこと。"
+    );
   });
 
   it("marks source location as 未特定 and skips detection when requirementSources is not provided", () => {
@@ -574,6 +584,64 @@ describe("renderTestConditions with optional severity/likelihoodDetail axes", ()
     const snapshot = JSON.stringify(inputOptional);
     expect(renderTestConditions(inputOptional)).toBe(markdownOptional);
     expect(JSON.stringify(inputOptional)).toBe(snapshot);
+  });
+});
+
+describe("renderTestConditions with testPurposes", () => {
+  const inputWithPurposes: ExtractTestConditionsInput = {
+    requirementIds: ["R-001"],
+    testPurposes: [
+      { id: "TP-01", statement: "主要業務フローが達成できる", priorityRank: 1 },
+      { id: "TP-02", statement: "どの条件からも参照されない目的" },
+    ],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "F-001",
+        perspectiveCategoryId: "TPC-01",
+        statement: "目的未紐づけの条件",
+        source: "testbase",
+        derivedFrom: ["R-001"],
+        priority: "高",
+      },
+      {
+        id: "TC-002",
+        target: "F-002",
+        perspectiveCategoryId: "TPC-01",
+        statement: "存在しない目的IDを参照する条件",
+        source: "testbase",
+        derivedFrom: ["R-001"],
+        priority: "高",
+        purposeIds: ["TP-99"],
+      },
+    ],
+  };
+  const markdownWithPurposes = renderTestConditions(inputWithPurposes);
+
+  it("flags conditions without a purpose id, purposes referenced by no condition, and unresolved purpose refs under section 3.12", () => {
+    const section = markdownWithPurposes.split("### 3.12 テスト目的の貫通状況")[1].split("### 3.13")[0];
+    expect(section).toContain("[high] TC-001: どのテスト目的にも紐づいていない");
+    expect(section).toContain("[high] TP-01: どのテスト条件からも参照されていない");
+    expect(section).toContain("[high] TP-02: どのテスト条件からも参照されていない");
+    expect(section).toContain("「TP-99」は testPurposes に存在しない目的ID");
+  });
+
+  it("includes the purpose-related counters in the 3.13 summary", () => {
+    const summaryLine = markdownWithPurposes.split("\n").find((l) => l.startsWith("- 対象要件ID数:"));
+    expect(summaryLine).toContain("目的未紐づけ条件数: 1");
+    expect(summaryLine).toContain("条件未展開目的数: 2");
+    expect(summaryLine).toContain("未解決目的ID参照数: 1");
+  });
+
+  it("shows the purpose id in the section 2 condition table", () => {
+    const row = markdownWithPurposes.split("\n").find((l) => l.startsWith("| TC-002 |"));
+    expect(row).toContain("TP-99");
+  });
+
+  it("is deterministic and does not mutate the input", () => {
+    const snapshot = JSON.stringify(inputWithPurposes);
+    expect(renderTestConditions(inputWithPurposes)).toBe(markdownWithPurposes);
+    expect(JSON.stringify(inputWithPurposes)).toBe(snapshot);
   });
 });
 

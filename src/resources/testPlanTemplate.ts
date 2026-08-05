@@ -16,7 +16,10 @@ export const testPlanTemplate: TestPlanTemplate = {
       level: 2,
       required: true,
       fieldKey: "scope",
-      guidance: "本書がカバーするテストのスコープ（対象範囲）と、達成したい目的・目標を記述する。",
+      guidance:
+        "本書がカバーするテストのスコープ（対象範囲）と、達成したい目的・目標を記述する。" +
+        "テスト目的は derive_test_purposes の導出チェーン（依頼者の期待→テスト要求→テスト目的）に" +
+        "基づき、目的IDを付けて記述する。",
     },
     {
       id: "background",
@@ -102,7 +105,9 @@ export const testPlanTemplate: TestPlanTemplate = {
       level: 2,
       required: true,
       fieldKey: "selectedTestTypes",
-      guidance: "実施するテストタイプ（機能テスト・非機能テストなど）をカタログから選定する。",
+      guidance:
+        "実施するテストタイプ（機能テスト・非機能テストなど）をカタログから選定する。" +
+        "各テストタイプの選択・非選択には、根拠となるテスト目的IDと選定理由を添える。",
     },
     {
       id: "test-techniques",
@@ -470,9 +475,9 @@ export const testLevelsTemplateExamples: string[] = [
 
 // 5.2 テストタイプ・参考候補（一般的な例示。プロジェクトに応じて修正が必要）
 export const testTypesTemplateExamples: string[] = [
-  "機能テスト: 主要業務フローの正常系・異常系を確認",
-  "性能テスト: ピーク時アクセスにおける応答時間を確認",
-  "セキュリティテスト: 認証・認可・入力値検証の脆弱性を確認",
+  "機能テスト: TP-01 の達成に必要(主要業務フローの正常系・異常系を確認)",
+  "性能テスト: TP-02 の達成に必要(ピーク時アクセスにおける応答時間を確認)",
+  "セキュリティテスト: TP-03 の達成に必要(認証・認可・入力値検証の脆弱性を確認)",
 ];
 
 // 6.2 合否判定基準・参考候補（一般的な例示。プロジェクトに応じて修正が必要）

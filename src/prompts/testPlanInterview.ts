@@ -9,12 +9,12 @@ import type { TestPlanTemplate } from "../types.js";
 
 // fieldKey → create_test_plan の入力キーの対応メモ（設問に添えて収集漏れを防ぐ）。
 const fieldHint: Record<string, string> = {
-  scope: "scope（必須）/ objectives[]（任意）",
+  scope: "scope(必須) / objectives[] / testPurposes[]{id, statement, priorityRank}",
   references: "references[]{name, author, version, receivedDate, note} / referenceDocs[]{name, description}",
   background: "background{current, concerns}",
   testLevels: "testLevels[]",
   testItems: "testItems[]{name, summary} / systemOverview{name, users, purpose, detail, devType}",
-  selectedTestTypes: "selectedTestTypes[]（テストタイプ名の配列）",
+  selectedTestTypes: "selectedTestTypes[] / testTypeSelections[]{name, selected, purposeIds, reason}",
   featuresToTest: "featuresToTest[]",
   featuresNotToTest: "featuresNotToTest[]",
   risks: "risks[]{description, impact, mitigation}",
@@ -61,6 +61,19 @@ export function buildInterviewPrompt(
       "テスト計画書ドラフトを生成する。"
   );
   lines.push("- projectName と scope は必須。最低限この2つは必ず確認する。");
+  lines.push("");
+  lines.push("## 0. テスト目的の導出(先に実施)");
+  lines.push("");
+  lines.push(
+    "テスト計画書の1.1・5.2を埋める前に、以下の手順でテスト目的を導出する（`testplan://purpose/derivation-frame` を参照）。"
+  );
+  lines.push("1. 依頼書（システムテスト依頼書等）から依頼者の期待を聞き取る。");
+  lines.push("2. マネジメント的（テスト活動の運営）／エンジニアリング的（テスト対象の中身）の2系統でテスト要求を整理する。");
+  lines.push("3. テスト戦略と併せてテスト目的を決める。");
+  lines.push("4. `derive_test_purposes` を呼んで、依頼者の期待→テスト要求→テスト目的の貫通性を検査する。");
+  lines.push(
+    "5. その出力の目的IDを `testPurposes` / `testTypeSelections` として `create_test_plan` に渡す。"
+  );
   lines.push("");
   lines.push("## 質問項目");
   lines.push("");

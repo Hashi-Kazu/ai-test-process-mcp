@@ -23,7 +23,7 @@ describe("nextToolCatalog", () => {
   const actual = actualToolNames();
 
   it("registeredToolNames が src/tools/*.ts の実ツール名と完全一致する", () => {
-    expect(actual.size).toBe(28);
+    expect(actual.size).toBe(29);
     expect([...registeredToolNames].sort()).toEqual([...actual].sort());
   });
 

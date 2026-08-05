@@ -30,4 +30,11 @@ describe("buildInterviewPrompt", () => {
     // 1.1 スコープ・目的 is a required, field-mapped section.
     expect(text).toContain("★ [1 はじめに / 1.1 スコープ・目的]");
   });
+
+  it("includes a test purpose derivation block referencing derive_test_purposes and both requirement lines", () => {
+    const text = buildInterviewPrompt(testPlanTemplate);
+    expect(text).toContain("derive_test_purposes");
+    expect(text).toContain("マネジメント的");
+    expect(text).toContain("エンジニアリング的");
+  });
 });

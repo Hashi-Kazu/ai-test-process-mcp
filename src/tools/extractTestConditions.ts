@@ -15,6 +15,7 @@ import {
   buildSourceDistribution,
   evaluateRisks,
   findConditionsWithoutPriority,
+  findConditionsWithoutPurposeIds,
   findConditionsWithoutSourceRefs,
   findDuplicateConditionIds,
   findIncompletePersonaQuadrants,
@@ -25,9 +26,11 @@ import {
   personaQuadrantColumns,
   findMissingConditionNumbers,
   findPrefixMismatchConditionIds,
+  findPurposesWithoutConditions,
   findUncoveredRequirementIds,
   findUnknownRiskCategoryIds,
   findUnresolvedDerivedFromRefs,
+  findUnresolvedPurposeRefs,
   findUnusedPerspectiveCategories,
   findUnusedRiskCategories,
   resolveEffectiveRiskAxes,
@@ -119,6 +122,9 @@ export function renderTestConditions(
   const unknownRiskStakeholderFrameRefs = findUnknownRiskStakeholderFrameIds(risks ?? [], frame);
   const unknownRiskPronenessFactorRefs = findUnknownRiskPronenessFactorIds(risks ?? [], testConditions, frame);
   const risksWithoutBasis = findRisksWithoutBasis(risks ?? []);
+  const conditionsWithoutPurposeIds = findConditionsWithoutPurposeIds(input);
+  const purposesWithoutConditions = findPurposesWithoutConditions(input);
+  const unresolvedPurposeRefs = findUnresolvedPurposeRefs(input);
 
   const known = knownTechniqueIds(catalog);
   const unknownTechniques: { conditionId: string; techniqueId: string }[] = [];
@@ -168,8 +174,10 @@ export function renderTestConditions(
   // --- 2. テスト条件表 ---
   lines.push("## 2. テスト条件表");
   lines.push("");
-  lines.push("| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 | 根拠位置 |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push(
+    "| 条件ID | 対象 | 観点カテゴリ | 条件文 | 優先度 | リスクレベル | 導出根拠 | 推奨技法 | 根拠位置 | 目的ID |"
+  );
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const c of testConditions) {
     const evaluation = evaluationById.get(c.id);
     const riskLevel = evaluation && evaluation.bandId ? evaluation.bandId : "未算出";
@@ -180,12 +188,13 @@ export function renderTestConditions(
     const sourceRefs = resolveSourceRefs(c, input.requirementSources ?? []);
     const sourceCitation =
       sourceRefs.length > 0 ? sourceRefs.map((r) => formatSourceCitation(r)).join("; ") : "未特定";
+    const purposeIdsCell = c.purposeIds && c.purposeIds.length > 0 ? c.purposeIds.join(", ") : "-";
     lines.push(
       `| ${escapeCell(c.id)} | ${escapeCell(c.target)} | ${escapeCell(
         categoryLabel(catalog, c.perspectiveCategoryId)
       )} | ${escapeCell(c.statement)} | ${c.priority ?? "未設定"} | ${riskLevel} | ${escapeCell(
         derivationText(c)
-      )} | ${escapeCell(techniques)} | ${escapeCell(sourceCitation)} |`
+      )} | ${escapeCell(techniques)} | ${escapeCell(sourceCitation)} | ${escapeCell(purposeIdsCell)} |`
     );
   }
   lines.push("");
@@ -396,10 +405,56 @@ export function renderTestConditions(
   }
   lines.push("");
 
-  lines.push("### 3.12 サマリ");
+  lines.push("### 3.12 テスト目的の貫通状況");
+  lines.push("");
+  if (!input.testPurposes || input.testPurposes.length === 0) {
+    lines.push(
+      "- テスト目的の指定なし。derive_test_purposes の出力を testPurposes に渡すこと。"
+    );
+  } else {
+    lines.push("| 目的ID | テスト目的 | 紐づく条件ID |");
+    lines.push("| --- | --- | --- |");
+    for (const p of input.testPurposes) {
+      const conditionIds = testConditions
+        .filter((c) => (c.purposeIds ?? []).includes(p.id))
+        .map((c) => c.id);
+      lines.push(
+        `| ${escapeCell(p.id)} | ${escapeCell(p.statement)} | ${escapeCell(
+          conditionIds.length > 0 ? conditionIds.join(", ") : "-"
+        )} |`
+      );
+    }
+    lines.push("");
+    if (conditionsWithoutPurposeIds.length === 0) {
+      lines.push("- 目的未紐づけ条件: なし");
+    } else {
+      for (const id of conditionsWithoutPurposeIds) {
+        lines.push(`- [high] ${escapeCell(id)}: どのテスト目的にも紐づいていない`);
+      }
+    }
+    if (purposesWithoutConditions.length === 0) {
+      lines.push("- 条件未展開目的: なし");
+    } else {
+      for (const p of purposesWithoutConditions) {
+        lines.push(`- [high] ${escapeCell(p.id)}: どのテスト条件からも参照されていない`);
+      }
+    }
+    if (unresolvedPurposeRefs.length === 0) {
+      lines.push("- 未解決目的ID参照: なし");
+    } else {
+      for (const ref of unresolvedPurposeRefs) {
+        lines.push(
+          `- [high] ${escapeCell(ref.conditionId)}: 「${escapeCell(ref.ref)}」は testPurposes に存在しない目的ID`
+        );
+      }
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.13 サマリ");
   lines.push("");
   lines.push(
-    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length} / 4象限未記入ペルソナ件数: ${incompletePersonaQuadrants.length}`
+    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length} / 4象限未記入ペルソナ件数: ${incompletePersonaQuadrants.length} / 目的未紐づけ条件数: ${conditionsWithoutPurposeIds.length} / 条件未展開目的数: ${purposesWithoutConditions.length} / 未解決目的ID参照数: ${unresolvedPurposeRefs.length}`
   );
   lines.push("");
 
@@ -1033,6 +1088,10 @@ export const extractTestConditionsInputShape = {
           .describe("Explicit source locations in the test basis; takes precedence over requirementSources lookup"),
         severity: riskSeverityInputSchema,
         likelihoodDetail: riskLikelihoodDetailInputSchema,
+        purposeIds: z
+          .array(z.string())
+          .optional()
+          .describe("Test purpose ids from derive_test_purposes this condition was derived from"),
       })
     )
     .min(1)
@@ -1137,6 +1196,18 @@ export const extractTestConditionsInputShape = {
     .optional()
     .describe(
       "Requirement id -> test basis source location map, typically taken from analyze_requirements section 2.6"
+    ),
+  testPurposes: z
+    .array(
+      z.object({
+        id: z.string().describe("Test purpose id from derive_test_purposes"),
+        statement: z.string().describe("The test purpose statement"),
+        priorityRank: z.number().int().min(1).optional().describe("1 is highest priority"),
+      })
+    )
+    .optional()
+    .describe(
+      "Test purposes from derive_test_purposes, used to cross-check testConditions[].purposeIds bidirectionally"
     ),
 } as const;
 
