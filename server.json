@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Hashi-Kazu/ai-test-process-mcp",
+  "description": "AI-assisted MCP server for JSTQB-based test planning, design, review, and analysis.",
+  "repository": {
+    "url": "https://github.com/Hashi-Kazu/ai-test-process-mcp",
+    "source": "github"
+  },
+  "version": "0.22.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "ai-test-process-mcp",
+      "version": "0.22.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
