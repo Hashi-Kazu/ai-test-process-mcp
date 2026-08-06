@@ -2,6 +2,7 @@ name: Publish to npm
 
 # package.json の version が更新され、その版が npm に未公開のときだけ publish する。
 # main への push（package.json を含む変更）で起動し、既に公開済みの版なら何もしない（冪等）。
+# npm publish 後、同じ version で server.json を同期し MCP Registry へも publish する。
 on:
   push:
     branches: [main]
@@ -13,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # MCP Registry への GitHub OIDC 認証に必要
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,10 +48,30 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Sync server.json version
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp.json
+          mv server.tmp.json server.json
+
+      - name: Install mcp-publisher
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to MCP Registry
+        if: steps.check.outputs.publish == 'true'
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server to MCP Registry
+        if: steps.check.outputs.publish == 'true'
+        run: ./mcp-publisher publish
+
       - name: Summary
         run: |
           if [ "${{ steps.check.outputs.publish }}" = "true" ]; then
-            echo "✅ published ${{ steps.check.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ published ${{ steps.check.outputs.version }} (npm + MCP Registry)" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "⏭️ skipped: ${{ steps.check.outputs.version }} は既に公開済み" >> "$GITHUB_STEP_SUMMARY"
           fi
