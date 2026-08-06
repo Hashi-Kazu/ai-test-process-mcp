@@ -39,6 +39,14 @@ import {
 } from "../testConditionAnalysis.js";
 import { formatSourceCitation } from "../testBasisAnalysis.js";
 import {
+  findFocusConditionPriorityIssues,
+  findFocusPersonasWithoutConditions,
+  hasAnyStakeholderWeighting,
+  resolveStakeholderHandlingClass,
+  stakeholderWeightingShape,
+} from "../stakeholderWeightingAnalysis.js";
+import { personaJourneyFrame } from "../resources/personaJourneyFrame.js";
+import {
   derivedFromSchema,
   formatDerivedFromEntry,
   formatDerivedFromList,
@@ -125,6 +133,12 @@ export function renderTestConditions(
   const conditionsWithoutPurposeIds = findConditionsWithoutPurposeIds(input);
   const purposesWithoutConditions = findPurposesWithoutConditions(input);
   const unresolvedPurposeRefs = findUnresolvedPurposeRefs(input);
+  const stakeholderWeightingFrame = personaJourneyFrame.stakeholderWeightingFrame;
+  const focusClassId =
+    stakeholderWeightingFrame.handlingClasses.find((c) => c.key === "focus")?.id ?? "SWC-01";
+  const weightingSpecified = hasAnyStakeholderWeighting(personas);
+  const focusPersonasWithoutConditions = findFocusPersonasWithoutConditions(input);
+  const focusConditionPriorityIssues = findFocusConditionPriorityIssues(input);
 
   const known = knownTechniqueIds(catalog);
   const unknownTechniques: { conditionId: string; techniqueId: string }[] = [];
@@ -451,10 +465,37 @@ export function renderTestConditions(
   }
   lines.push("");
 
-  lines.push("### 3.13 サマリ");
+  lines.push(`### 3.13 重点ステークホルダー(${focusClassId})の条件紐づけ`);
+  lines.push("");
+  if (!weightingSpecified) {
+    lines.push(
+      "- ステークホルダー2軸評価の指定なし。generate_user_story_map の評価結果を personas[].stakeholderWeighting に渡すこと。"
+    );
+  } else if (focusPersonasWithoutConditions.length === 0 && focusConditionPriorityIssues.length === 0) {
+    lines.push("- なし");
+  } else {
+    for (const personaId of focusPersonasWithoutConditions) {
+      lines.push(
+        `- [high] ${escapeCell(personaId)}: 重点クラス(${focusClassId})だが source=stakeholder のテスト条件が0件。` +
+          "derivedFrom に当該ペルソナIDを持つ条件を1件以上導出すること。"
+      );
+    }
+    for (const issue of focusConditionPriorityIssues) {
+      lines.push(
+        `- [high] ${escapeCell(issue.conditionId)}: 重点クラス(${escapeCell(
+          issue.personaId
+        )})由来だが priority=${escapeCell(issue.declaredPriority ?? "-")} が既定の ${escapeCell(
+          issue.defaultPriority
+        )} より低い。rationale に引き下げ理由を明記すること。`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("### 3.14 サマリ");
   lines.push("");
   lines.push(
-    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length} / 4象限未記入ペルソナ件数: ${incompletePersonaQuadrants.length} / 目的未紐づけ条件数: ${conditionsWithoutPurposeIds.length} / 条件未展開目的数: ${purposesWithoutConditions.length} / 未解決目的ID参照数: ${unresolvedPurposeRefs.length}`
+    `- 対象要件ID数: ${requirementIds.length} / テスト条件数: ${testConditions.length} / 未カバー要件ID数: ${uncovered.length} / 未使用観点カテゴリ数: ${unusedCategories.length} / 重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / 優先度未設定数: ${withoutPriority.length} / 未解決参照数: ${unresolvedRefs.length} / 未知技法ID数: ${unknownTechniques.length} / リスク未算出数: ${evaluations.filter((e) => e.incomplete).length} / 優先度逸脱数: ${evaluations.filter((e) => e.deviates).length} / 未使用リスク区分数: ${unusedRiskCategories.length} / 未知リスク区分ID数: ${unknownRiskCategoryRefs.length} / 根拠位置未特定数: ${conditionsWithoutSourceRefs.length} / 4象限未記入ペルソナ件数: ${incompletePersonaQuadrants.length} / 目的未紐づけ条件数: ${conditionsWithoutPurposeIds.length} / 条件未展開目的数: ${purposesWithoutConditions.length} / 未解決目的ID参照数: ${unresolvedPurposeRefs.length} / 重点クラス条件0件ペルソナ数: ${focusPersonasWithoutConditions.length} / 重点クラス優先度引き下げ理由未記入数: ${focusConditionPriorityIssues.length}`
   );
   lines.push("");
 
@@ -912,8 +953,10 @@ export function renderTestConditions(
   // --- 9. ステークホルダー／ペルソナ視点 ---
   lines.push("## 9. ステークホルダー／ペルソナ視点の洗い出し指示(意味的層)");
   lines.push("");
-  lines.push("| ペルソナID | 役割 | 氏名 | 属性 | 発言・思考 | 目標 | 不満点 | 導出済み条件ID |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push(
+    "| ペルソナID | 役割 | 氏名 | 属性 | 発言・思考 | 目標 | 不満点 | 影響力 | 関心度 | スコア | 扱いクラス | 導出済み条件ID |"
+  );
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const p of personas ?? []) {
     const derived = testConditions
       .filter((c) => hasDerivedFromRef(c.derivedFrom, p.id, "stakeholder"))
@@ -921,10 +964,18 @@ export function renderTestConditions(
     const quadrantCells = personaQuadrantColumns
       .map((column) => escapeCell(formatPersonaQuadrantCell(p, column.key)))
       .join(" | ");
+    const weighting = p.stakeholderWeighting;
+    const handlingClass = resolveStakeholderHandlingClass(weighting?.influence, weighting?.interest);
+    const scoreCell =
+      handlingClass !== undefined && weighting?.influence !== undefined && weighting?.interest !== undefined
+        ? `${weighting.influence * weighting.interest}`
+        : "-";
     lines.push(
       `| ${escapeCell(p.id)} | ${escapeCell(p.role)} | ${escapeCell(
         p.name ?? "-"
-      )} | ${quadrantCells} | ${escapeCell(derived.length > 0 ? derived.join(", ") : "-")} |`
+      )} | ${quadrantCells} | ${weighting?.influence ?? "-"} | ${weighting?.interest ?? "-"} | ${scoreCell} | ${escapeCell(
+        handlingClass?.id ?? "-"
+      )} | ${escapeCell(derived.length > 0 ? derived.join(", ") : "-")} |`
     );
   }
   lines.push("");
@@ -1122,6 +1173,7 @@ export const extractTestConditionsInputShape = {
           .array(z.string())
           .optional()
           .describe("Pain Point quadrant: frustrations and obstacles this persona faces"),
+        stakeholderWeighting: stakeholderWeightingShape,
       })
     )
     .optional()
@@ -1220,7 +1272,7 @@ export function registerExtractTestConditionsTool(server: McpServer): void {
     {
       title: "Extract Test Conditions",
       description:
-        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。既存のテスト条件一覧を testConditions に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
+        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照・重点クラス(SWC-01)ステークホルダーの条件紐づけと優先度引き下げ理由の有無を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。既存のテスト条件一覧を testConditions に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
       inputSchema: extractTestConditionsInputShape,
     },
     async (input) => {

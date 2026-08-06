@@ -753,6 +753,17 @@ export interface TestConditionPersonaInput {
   saysAndThinks?: string[];   // 発言・思考
   goals?: string[];           // 目標
   painPoints?: string[];      // 不満点
+  stakeholderWeighting?: StakeholderWeightingInput; // ステークホルダー2軸評価（任意）
+}
+/** ステークホルダー2軸評価（personaJourneyFrame.stakeholderWeightingFrame の評価結果） */
+export interface StakeholderWeightingInput {
+  influence?: number;             // 影響力 1..4（未指定=未評価）
+  interest?: number;              // 関心度 1..4（未指定=未評価）
+  score?: number;                 // 任意。宣言された stakeholderScore。あれば influence×interest と照合する
+  handlingClassId?: string;       // 任意。宣言された扱いクラスID "SWC-01".."SWC-03"。あれば matrix 導出と照合する
+  rationale?: string[];           // 評価値を選んだ根拠となる事実（1件以上必須）
+  excludedByScreening?: boolean;  // SWS-04 の絞り込みで対象外にしたか
+  exclusionReason?: string;       // 対象外にした理由（excludedByScreening=true のとき必須）
 }
 /** 4象限の記入状況（未記入の象限名を列挙する） */
 export interface PersonaQuadrantCompleteness { personaId: string; missingQuadrants: string[]; }
@@ -1808,6 +1819,34 @@ export interface StoryMapDuplicateId { kind: StoryMapEntityKind; id: string; cou
 export interface StoryMapIdIssue { kind: StoryMapEntityKind; id: string; expectedPrefix: string; }
 export interface StoryMapUnresolvedRef { ownerId: string; ref: string; expectedKind: string; }
 export interface IncompleteTestRequirementRow { id: string; missingFields: string[]; }
+
+// ステークホルダー2軸評価の宣言・実体照合結果
+export interface StakeholderWeightingEvaluation {
+  personaId: string;
+  influence?: number;
+  interest?: number;
+  missingAxes: string[];                            // 未評価軸の日本語名（"影響力" / "関心度"）入力軸順
+  outOfRangeAxes: { axis: string; value: number }[]; // 軸名と範囲外の値
+  derivedScore?: number;                            // influence×interest（両軸が範囲内のときのみ）
+  declaredScore?: number;
+  scoreMismatch: boolean;
+  derivedClassId?: string;                          // matrix 由来 "SWC-01".."SWC-03"
+  derivedClassKey?: StakeholderHandlingClassKey;
+  declaredClassId?: string;
+  classMismatch: boolean;
+  missingRationale: boolean;
+  excludedByScreening: boolean;
+  missingExclusionReason: boolean;
+  focusExcluded: boolean;                           // 重点クラスなのに絞り込みで除外
+  unevaluatedButExcluded: boolean;                  // 未評価なのに絞り込み済み扱い
+}
+
+export interface FocusConditionPriorityIssue {
+  conditionId: string;
+  personaId: string;
+  declaredPriority?: TestConditionPriority;
+  defaultPriority: TestConditionPriority;           // SWC-01 の defaultConditionPriority（"高"）
+}
 
 // --- ID母集団監査（audit_id_population） ---
 export interface DeclaredIdPopulation {
