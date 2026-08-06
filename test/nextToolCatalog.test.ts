@@ -45,10 +45,36 @@ describe("nextToolCatalog", () => {
     }
   });
 
-  it("同一実行元内で後続ツール名の重複が無い", () => {
+  it("同一実行元内で toolName+when の組が一意である", () => {
     for (const [source, entries] of Object.entries(nextToolCatalog)) {
-      const names = entries.map((e) => e.toolName);
-      expect(new Set(names).size, source).toBe(names.length);
+      const keys = entries.map((e) => `${e.toolName}::${e.when}`);
+      expect(new Set(keys).size, source).toBe(keys.length);
+    }
+  });
+
+  it("同一実行元・同一toolNameに always エントリは高々1件である", () => {
+    for (const [source, entries] of Object.entries(nextToolCatalog)) {
+      const alwaysCounts = new Map<string, number>();
+      for (const entry of entries) {
+        if (entry.when !== "always") continue;
+        alwaysCounts.set(entry.toolName, (alwaysCounts.get(entry.toolName) ?? 0) + 1);
+      }
+      for (const [toolName, count] of alwaysCounts) {
+        expect(count, `${source} -> ${toolName}`).toBe(1);
+      }
+    }
+  });
+
+  it("条件付きエントリのシグナルキーが src/tools/*.ts のソース中に実在する", () => {
+    const toolsSource = readdirSync(toolsDir)
+      .filter((f) => f.endsWith(".ts") && f !== "index.ts")
+      .map((f) => readFileSync(join(toolsDir, f), "utf8"))
+      .join("\n");
+    for (const [source, entries] of Object.entries(nextToolCatalog)) {
+      for (const entry of entries) {
+        if (entry.when === "always") continue;
+        expect(toolsSource.includes(entry.when), `${source} -> ${entry.when}`).toBe(true);
+      }
     }
   });
 

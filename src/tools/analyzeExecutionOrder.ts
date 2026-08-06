@@ -1084,10 +1084,20 @@ export function renderExecutionOrder(spec: ExecutionOrderSpec): string {
     for (const line of guidanceLines) lines.push(line);
   }
 
+  const executionOrderSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    executionOrderSignals.push("has-high-findings");
+  }
+  if (isCyclic) {
+    executionOrderSignals.push("has-cycles");
+  }
+  if (result.resourceConflicts.length > 0) {
+    executionOrderSignals.push("has-resource-conflicts");
+  }
   lines.push(
     ...renderNextToolsSection(
       "analyze_execution_order",
-      [],
+      executionOrderSignals,
       spec.completedTools
     ).split("\n")
   );

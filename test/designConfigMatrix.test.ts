@@ -386,4 +386,45 @@ describe("renderConfigMatrix 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderConfigMatrix(baseSpec()));
   });
+
+  it("actualRows 未指定(被覆率未算出)では締めの注意書きにシグナルが含まれる", () => {
+    const md = renderConfigMatrix(baseSpec());
+    expect(md).toContain("生成物から機械的に導いたシグナル（has-unmeasured-coverage");
+  });
+
+  it("high指摘(reason未記入の除外)があると has-high-findings シグナルが含まれる", () => {
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      excludedCombinations: [{ id: "EX1", when: { F1: "Windows11", F2: "Safari" } }],
+    };
+    const md = renderConfigMatrix(spec);
+    expect(md).toContain("has-high-findings");
+  });
+
+  it("actualRows が全水準・全ペアを踏んでいれば has-uncovered-combinations は含まれない", () => {
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      actualRows: [
+        { values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } },
+        { values: { F1: "Windows11", F2: "Safari", F3: "1920x1080" } },
+        { values: { F1: "Windows11", F2: "Edge", F3: "1920x1080" } },
+        { values: { F1: "macOS", F2: "Chrome", F3: "1366x768" } },
+        { values: { F1: "macOS", F2: "Safari", F3: "1366x768" } },
+        { values: { F1: "macOS", F2: "Edge", F3: "1366x768" } },
+        { values: { F1: "Windows11", F2: "Chrome", F3: "1366x768" } },
+        { values: { F1: "macOS", F2: "Chrome", F3: "1920x1080" } },
+      ],
+    };
+    const md = renderConfigMatrix(spec);
+    expect(md).not.toContain("has-uncovered-combinations");
+  });
+
+  it("actualRows が一部水準しか踏んでいなければ has-uncovered-combinations が含まれる", () => {
+    const spec: ConfigMatrixSpec = {
+      ...baseSpec(),
+      actualRows: [{ values: { F1: "Windows11", F2: "Chrome", F3: "1920x1080" } }],
+    };
+    const md = renderConfigMatrix(spec);
+    expect(md).toContain("has-uncovered-combinations");
+  });
 });

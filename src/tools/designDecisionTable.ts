@@ -617,10 +617,17 @@ export function renderDecisionTable(spec: DecisionTableSpec): string {
     `- 条件数: ${result.conditionCount} / 全組合せ数: ${result.totalCombinationCount} / 無効: ${result.invalidCombinationCount} / 有効: ${result.validCombinationCount} / 動作定義済み: ${result.definedCombinationCount} / 未定義: ${result.undefinedCombinationIndexes.length} / 矛盾: ${result.conflictingCombinationIndexes.length} / 圧縮後列数: ${result.compressedRules.length} / 削減率: ${result.compressionRatioPercent.toFixed(1)}%`
   );
 
+  const decisionTableSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    decisionTableSignals.push("has-high-findings");
+  }
+  if (!result.enumerated) {
+    decisionTableSignals.push("has-skipped-generation");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_decision_table",
-      [],
+      decisionTableSignals,
       spec.completedTools
     ).split("\n")
   );

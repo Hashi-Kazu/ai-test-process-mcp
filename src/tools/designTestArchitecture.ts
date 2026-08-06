@@ -946,10 +946,17 @@ export function renderTestArchitecture(spec: TestArchitectureSpec): string {
     "- 本検査は渡されたコンテナ・テスト条件に対してのみ成立し、そもそも洗い出されていない観点の取りこぼしは検出できない。"
   );
 
+  const testArchitectureSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    testArchitectureSignals.push("has-high-findings");
+  }
+  if (result.unassignedConditionIds.length > 0) {
+    testArchitectureSignals.push("has-unassigned-conditions");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_test_architecture",
-      [],
+      testArchitectureSignals,
       spec.completedTools
     ).split("\n")
   );

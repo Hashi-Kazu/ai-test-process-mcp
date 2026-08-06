@@ -273,18 +273,108 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       when: "always",
       reason: "導出した論理関係のテストケース化が未実施である",
     },
+    {
+      toolName: "design_decision_table",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のまま論理関係を確定できない",
+    },
+    {
+      toolName: "review_test_basis",
+      when: "has-ungrounded-nodes",
+      reason: "仕様本文から裏付けられない原因・結果があり、テストベース自体の確認が必要",
+    },
   ],
-  design_boundary_values: [...DESIGN_FOLLOWUPS],
-  design_equivalence_partitioning: [...DESIGN_FOLLOWUPS],
-  design_decision_table: [...DESIGN_FOLLOWUPS],
-  design_pairwise: [...DESIGN_FOLLOWUPS],
-  design_test_data: [...DESIGN_FOLLOWUPS],
+  design_boundary_values: [
+    ...DESIGN_FOLLOWUPS,
+    {
+      toolName: "generate_test_cases",
+      when: "has-invalid-variables",
+      reason: "境界値を算出できない変数があり、そのままではケース化できない",
+    },
+    {
+      toolName: "review_test_basis",
+      when: "has-invalid-variables",
+      reason: "範囲・刻みの宣言が不正であり、テストベースの確認が必要",
+    },
+  ],
+  design_equivalence_partitioning: [
+    ...DESIGN_FOLLOWUPS,
+    {
+      toolName: "generate_test_cases",
+      when: "has-uncovered-classes",
+      reason: "生成ケースが踏んでいない同値クラスがある",
+    },
+    {
+      toolName: "audit_cross_matrix",
+      when: "has-uncovered-classes",
+      reason: "未被覆の同値クラスがあり交差被覆監査が必要",
+    },
+  ],
+  design_decision_table: [
+    ...DESIGN_FOLLOWUPS,
+    {
+      toolName: "generate_test_cases",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のままではケース化できない",
+    },
+    {
+      toolName: "review_test_basis",
+      when: "has-skipped-generation",
+      reason: "入力の致命的な指摘により表を生成できておらず、テストベースの確認が必要",
+    },
+  ],
+  design_pairwise: [
+    ...DESIGN_FOLLOWUPS,
+    {
+      toolName: "generate_test_cases",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のままではケース化できない",
+    },
+    {
+      toolName: "review_test_basis",
+      when: "has-skipped-generation",
+      reason: "入力の致命的な指摘により表を生成できておらず、テストベースの確認が必要",
+    },
+  ],
+  design_test_data: [
+    ...DESIGN_FOLLOWUPS,
+    {
+      toolName: "generate_test_cases",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のままではケース化できない",
+    },
+    {
+      toolName: "generate_test_cases",
+      when: "has-uncovered-states",
+      reason: "未被覆の状態・遷移が残っている",
+    },
+    {
+      toolName: "audit_cross_matrix",
+      when: "has-unmeasured-coverage",
+      reason: "状態・遷移被覆率が算出できておらず、交差被覆監査で実被覆を数える必要がある",
+    },
+  ],
   design_config_matrix: [
     ...DESIGN_FOLLOWUPS,
     {
       toolName: "select_regression_suite",
       when: "always",
       reason: "構成軸を踏まえた回帰選択が未実施である",
+    },
+    {
+      toolName: "generate_test_cases",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のままではケース化できない",
+    },
+    {
+      toolName: "generate_test_cases",
+      when: "has-uncovered-combinations",
+      reason: "実構成表が踏んでいない水準・ペアが残っている",
+    },
+    {
+      toolName: "audit_cross_matrix",
+      when: "has-unmeasured-coverage",
+      reason: "実構成表(actualRows)未指定で被覆率が算出できておらず、交差被覆監査で実被覆を数える必要がある",
     },
   ],
   design_scenario_flows: [
@@ -293,6 +383,16 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "analyze_execution_order",
       when: "always",
       reason: "シナリオ間の実行順序検討が未実施である",
+    },
+    {
+      toolName: "generate_test_cases",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のままではケース化できない",
+    },
+    {
+      toolName: "audit_id_population",
+      when: "has-unmeasured-feature-coverage",
+      reason: "機能ID母集団が未宣言で機能ID被覆率が算出できておらず、母集団監査が必要",
     },
   ],
   design_test_architecture: [
@@ -305,6 +405,16 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "generate_test_cases",
       when: "always",
       reason: "コンテナに配置するテストケースの生成が未実施である",
+    },
+    {
+      toolName: "generate_test_cases",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のままではケース配置を確定できない",
+    },
+    {
+      toolName: "review_test_specification",
+      when: "has-unassigned-conditions",
+      reason: "どのコンテナにも帰属していないテスト条件が残っている",
     },
   ],
   select_regression_suite: [
@@ -347,6 +457,21 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       when: "always",
       reason: "交差被覆監査が未実施である",
     },
+    {
+      toolName: "review_test_specification",
+      when: "has-high-findings",
+      reason: "high指摘が未解消のまま実行計画を確定できない",
+    },
+    {
+      toolName: "review_test_specification",
+      when: "has-cycles",
+      reason: "循環依存があり実行順序が一意に決まらない",
+    },
+    {
+      toolName: "design_test_architecture",
+      when: "has-resource-conflicts",
+      reason: "リソース競合区間があり、テストコンテナの分割・実行単位の見直しが必要",
+    },
   ],
   generate_user_story_map: [
     {
@@ -380,6 +505,16 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "derive_test_purposes",
       when: "always",
       reason: "業務目的からのテスト目的導出が未実施である",
+    },
+    {
+      toolName: "audit_id_population",
+      when: "has-id-findings",
+      reason: "ID重複・欠番・接頭辞不一致・未解決参照があり母集団監査が必要",
+    },
+    {
+      toolName: "derive_test_purposes",
+      when: "has-orphan-elements",
+      reason: "目的または業務ユースケースが相互に紐づいておらず、目的の導出チェーンが切れている",
     },
   ],
   reexpand_threshold_changes: [

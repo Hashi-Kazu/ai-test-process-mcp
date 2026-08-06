@@ -162,10 +162,14 @@ export function renderEquivalencePartitioning(input: {
     }
   }
 
+  const equivalenceSignals: string[] = [];
+  if (uncoveredCount > 0) {
+    equivalenceSignals.push("has-uncovered-classes");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_equivalence_partitioning",
-      [],
+      equivalenceSignals,
       input.completedTools
     ).split("\n")
   );

@@ -337,4 +337,35 @@ describe("renderExecutionOrder 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderExecutionOrder({ nodes: [{ id: "A", dependsOn: [] }] }));
   });
+
+  it("指摘・循環・リソース競合が無ければ締めの注意書きは生成物依存なし文言になる", () => {
+    const md = renderExecutionOrder({ nodes: [{ id: "A", dependsOn: [] }] });
+    expect(md).toContain(
+      "この節は本ツールが静的に保持する後続表のみから生成しており、生成物の内容に依存する後続提示はない。"
+    );
+  });
+
+  it("循環依存があると has-cycles と has-high-findings シグナルが含まれる", () => {
+    const spec: ExecutionOrderSpec = {
+      nodes: [
+        { id: "A", dependsOn: [{ fromId: "B", reason: "r" }] },
+        { id: "B", dependsOn: [{ fromId: "A", reason: "r" }] },
+      ],
+    };
+    const md = renderExecutionOrder(spec);
+    expect(md).toContain("has-cycles");
+    expect(md).toContain("has-high-findings");
+  });
+
+  it("リソース競合があると has-resource-conflicts シグナルが含まれる", () => {
+    const spec: ExecutionOrderSpec = {
+      resources: [{ id: "RES-01", nameJa: "端末", kind: "device", capacity: 1 }],
+      nodes: [
+        { id: "A", durationHours: 3, dependsOn: [], requiredResources: [{ resourceId: "RES-01" }] },
+        { id: "B", durationHours: 3, dependsOn: [], requiredResources: [{ resourceId: "RES-01" }] },
+      ],
+    };
+    const md = renderExecutionOrder(spec);
+    expect(md).toContain("has-resource-conflicts");
+  });
 });

@@ -35,6 +35,7 @@ import { businessRequirementFrame } from "./businessRequirementFrame.js";
 import { deliverableConsistencyCriteria } from "./deliverableConsistencyCriteria.js";
 import { testPurposeDerivationFrame } from "./testPurposeDerivationFrame.js";
 import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
+import { toolOutputSignatures } from "./toolOutputSignatures.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -858,7 +859,9 @@ export function registerResources(server: McpServer): void {
         "Static follow-up tool table used by every tool to render the '次に実行すべきツール' section: " +
         "per-source-tool follow-up entries with the signal key that makes each entry applicable and the " +
         "Japanese reason shown to the caller, plus the list of all tool names registered by this MCP server " +
-        "used to reject completedTools declarations naming tools that do not exist.",
+        "used to reject completedTools declarations naming tools that do not exist. Also includes the output " +
+        "heading signature table (toolOutputSignatures) used to verify that a completedTools declaration's " +
+        "outputExcerpt actually contains that tool's own output heading.",
       mimeType: "application/json",
     },
     async (uri) => ({
@@ -866,7 +869,7 @@ export function registerResources(server: McpServer): void {
         {
           uri: uri.href,
           mimeType: "application/json",
-          text: JSON.stringify({ registeredToolNames, nextToolCatalog }, null, 2),
+          text: JSON.stringify({ registeredToolNames, nextToolCatalog, toolOutputSignatures }, null, 2),
         },
       ],
     })

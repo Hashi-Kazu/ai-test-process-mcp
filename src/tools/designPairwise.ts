@@ -796,10 +796,17 @@ export function renderPairwise(spec: PairwiseSpec): string {
     );
   }
 
+  const pairwiseSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    pairwiseSignals.push("has-high-findings");
+  }
+  if (!result.generated) {
+    pairwiseSignals.push("has-skipped-generation");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_pairwise",
-      [],
+      pairwiseSignals,
       spec.completedTools
     ).split("\n")
   );
