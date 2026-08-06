@@ -3167,6 +3167,19 @@ export interface RegressionRemovalReasonInput {
   approvedBy?: string;
 }
 
+// reexpand_threshold_changes の「成果物別の影響判定」行をそのまま受け取るための入力型。
+// ThresholdImpactedArtifactRow のうち照合に必要な3項目を必須、残りは任意（出力行を無編集で貼れるようにする）。
+export type RegressionImpactVerdict = "要修正" | "要再確認" | "影響なし";
+
+export interface RegressionImpactVerdictInput {
+  ownerKind: ThresholdArtifactKind; // "testCondition" | "testCase"
+  ownerId: string;
+  verdict: RegressionImpactVerdict;
+  title?: string;
+  parameterNames?: string[];
+  categoryIds?: string[];
+}
+
 export interface RegressionSelectionSpec {
   completedTools?: CompletedToolDeclaration[];
   suiteId?: string;
@@ -3178,12 +3191,13 @@ export interface RegressionSelectionSpec {
   previousSuite?: RegressionPreviousSuiteInput;
   removalReasons?: RegressionRemovalReasonInput[];
   executionTimeBudgetSeconds?: number;
+  computedImpactVerdicts?: RegressionImpactVerdictInput[];
   claimedImpactScopeCoveragePercent?: number;
   highRiskMinScore?: number; // 既定 riskAnalysisFrame.bands の R1.minScore
   maxItems?: number; // 既定 DEFAULT_MAX_REGRESSION_ITEMS
 }
 
-// --- 決定的検査の結果型(select_regression_suite, RSC-01..RSC-20) ---
+// --- 決定的検査の結果型(select_regression_suite, RSC-01..RSC-25) ---
 export interface RegressionSuiteFinding {
   categoryId: string; // "RSC-01" 形式
   severity: "high" | "medium" | "info";
@@ -3223,15 +3237,17 @@ export interface RegressionSuiteDiffItem {
   approvedBy?: string;
 }
 
-export type RegressionSuiteCoverageBasis = "computed" | "unavailable";
+export type RegressionSuiteCoverageBasis = "computed" | "declared-only" | "unavailable";
 export interface RegressionSuiteCoverage {
   basis: RegressionSuiteCoverageBasis;
   denominator: number;
   numerator?: number;
   percent?: number;
-  reason?: string; // basis="unavailable" のときの理由
+  reason?: string; // basis="unavailable" / "declared-only" のときの理由
   claimedPercent?: number;
   claimMismatch: boolean;
+  declaredOnlyDenominator?: number;        // 申告のみで算出した場合の分母（basis="computed" のときに設定）
+  computedImpactedConditionCount?: number; // 実体側で影響ありと算出され、かつ母集団に存在する条件件数（basis="computed" のときに設定）
 }
 
 export interface RegressionSuiteResult {

@@ -12,10 +12,10 @@ describe("regressionSelectionAnalysisCriteria", () => {
     expect(ids).toEqual([...ids].sort());
   });
 
-  it("has 20 categories (RSC-01..RSC-20)", () => {
-    expect(regressionSelectionAnalysisCriteria.categories).toHaveLength(20);
+  it("has 25 categories (RSC-01..RSC-25)", () => {
+    expect(regressionSelectionAnalysisCriteria.categories).toHaveLength(25);
     expect(regressionSelectionAnalysisCriteria.categories.map((c) => c.id)).toEqual(
-      Array.from({ length: 20 }, (_, i) => `RSC-${String(i + 1).padStart(2, "0")}`)
+      Array.from({ length: 25 }, (_, i) => `RSC-${String(i + 1).padStart(2, "0")}`)
     );
   });
 

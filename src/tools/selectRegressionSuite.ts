@@ -7,8 +7,10 @@ import { riskAnalysisFrame } from "../resources/riskAnalysisFrame.js";
 import { testSizeClassificationCriteria } from "../resources/testSizeClassificationCriteria.js";
 import { regressionSelectionAnalysisCriteria } from "../resources/regressionSelectionCriteria.js";
 import type {
+  RegressionImpactVerdictInput,
   RegressionItemKind,
   RegressionSelectionSpec,
+  RegressionSuiteCoverageBasis,
   RegressionSuiteDiffItem,
   RegressionSuiteFinding,
   RegressionSuiteItemRow,
@@ -17,6 +19,7 @@ import type {
   RegressionSuiteTestConditionInput,
   TestCaseSpec,
   TestConditionPriority,
+  ThresholdArtifactKind,
 } from "../types.js";
 
 // select_regression_suite 固有の決定的エンジン。
@@ -209,6 +212,47 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
     });
   }
 
+  // --- 2.5 影響判定実体(computedImpactVerdicts)の照合(RSC-24) ---
+  const computedImpactVerdicts = spec.computedImpactVerdicts;
+  const validImpactVerdictsByKey = new Map<string, RegressionImpactVerdictInput[]>();
+  if (computedImpactVerdicts !== undefined) {
+    for (const v of computedImpactVerdicts) {
+      const inPopulation = v.ownerKind === "testCondition" ? conditionById.has(v.ownerId) : caseById.has(v.ownerId);
+      if (!inPopulation) {
+        findings.push({
+          categoryId: "RSC-24",
+          severity: "medium",
+          target: `${v.ownerKind}:${v.ownerId}`,
+          detail: `影響判定入力(computedImpactVerdicts)が母集団に存在しない${
+            v.ownerKind === "testCondition" ? "テスト条件" : "テストケース"
+          }ID「${v.ownerId}」を参照している。`,
+        });
+        continue;
+      }
+      const key = `${v.ownerKind}::${v.ownerId}`;
+      const arr = validImpactVerdictsByKey.get(key) ?? [];
+      arr.push(v);
+      validImpactVerdictsByKey.set(key, arr);
+    }
+    for (const [key, arr] of validImpactVerdictsByKey) {
+      if (arr.length > 1) {
+        findings.push({
+          categoryId: "RSC-24",
+          severity: "medium",
+          target: key,
+          detail: `項目「${key}」に対する影響判定が${arr.length}件重複して宣言されている。最後に宣言された判定を有効とする。`,
+        });
+      }
+    }
+  }
+
+  const effectiveImpactVerdict = (ownerKind: ThresholdArtifactKind, id: string): RegressionImpactVerdictInput | undefined => {
+    const arr = validImpactVerdictsByKey.get(`${ownerKind}::${id}`);
+    return arr && arr.length > 0 ? arr[arr.length - 1] : undefined;
+  };
+  const isImpactedVerdict = (v: RegressionImpactVerdictInput | undefined): boolean =>
+    v !== undefined && v.verdict !== "影響なし";
+
   // --- 3. 項目単位の決定的検査 ---
   for (const row of items) {
     if (row.decision === "undecided") {
@@ -255,6 +299,43 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
         target: row.itemId,
         detail: `影響範囲(${row.changeCategory})の条件「${row.itemId}」が非選択または未判定である。`,
       });
+    }
+  }
+
+  // --- 3.5 影響判定実体との照合検査(RSC-21/RSC-22/RSC-23) ---
+  if (computedImpactVerdicts !== undefined) {
+    for (const row of items) {
+      const ownerKind: ThresholdArtifactKind = row.itemKind === "condition" ? "testCondition" : "testCase";
+      const verdict = effectiveImpactVerdict(ownerKind, row.itemId);
+      if (row.itemKind === "condition" && isImpactedVerdict(verdict) && row.changeCategory === "existing-unaffected") {
+        findings.push({
+          categoryId: "RSC-21",
+          severity: "high",
+          target: row.itemId,
+          detail: `条件「${row.itemId}」は影響判定実体で「${verdict!.verdict}」と算出されているが、変更差分区分が existing-unaffected と申告されており、影響範囲被覆率の分母から外れる。`,
+        });
+      }
+      if (row.itemKind === "case" && isImpactedVerdict(verdict) && row.decision !== "include") {
+        findings.push({
+          categoryId: "RSC-22",
+          severity: "high",
+          target: row.itemId,
+          detail: `ケース「${row.itemId}」は影響判定実体で「${verdict!.verdict}」と算出されているが、スイートに選択されていない(${row.decision})。`,
+        });
+      }
+      if (
+        row.itemKind === "condition" &&
+        verdict !== undefined &&
+        verdict.verdict === "影響なし" &&
+        (row.changeCategory === "modified" || row.changeCategory === "existing-impacted")
+      ) {
+        findings.push({
+          categoryId: "RSC-23",
+          severity: "medium",
+          target: row.itemId,
+          detail: `条件「${row.itemId}」は影響判定実体で「影響なし」と算出されているが、変更差分区分が ${row.changeCategory} と申告されている。閾値・パラメータ変更以外の変更に起因する場合は根拠を reason に残すこと。`,
+        });
+      }
     }
   }
 
@@ -451,8 +532,17 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
   // --- 9. 影響範囲被覆(TTC-COV-18) ---
   const hasUndeclaredChangeCategory = testConditions.some((c) => c.changeCategory === undefined);
   const hasRsc01 = findings.some((f) => f.categoryId === "RSC-01");
+  const declaredImpactConditionIds = testConditions
+    .filter((c) => c.changeCategory === "new" || c.changeCategory === "modified" || c.changeCategory === "existing-impacted")
+    .map((c) => c.id);
+  const declaredImpactConditionIdSet = new Set(declaredImpactConditionIds);
+  const computedImpactedConditionIds =
+    computedImpactVerdicts !== undefined
+      ? testConditions.filter((c) => isImpactedVerdict(effectiveImpactVerdict("testCondition", c.id))).map((c) => c.id)
+      : [];
+  const computedImpactedConditionIdSet = new Set(computedImpactedConditionIds);
   const impactConditions = testConditions.filter(
-    (c) => c.changeCategory === "new" || c.changeCategory === "modified" || c.changeCategory === "existing-impacted"
+    (c) => declaredImpactConditionIdSet.has(c.id) || computedImpactedConditionIdSet.has(c.id)
   );
   const denominator = impactConditions.length;
 
@@ -462,7 +552,7 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
       ? "changeCategory 未宣言の条件があり母集団が確定しないため算出不能"
       : hasRsc01
         ? "母集団外を参照する選択判定(RSC-01)があり宣言と実体が食い違うため算出不能"
-        : "影響範囲(new/modified/existing-impacted)の条件が0件のため算出不能";
+        : "影響範囲(changeCategory 申告および影響判定実体)の条件が0件のため算出不能";
     coverage = { basis: "unavailable", denominator, reason, claimMismatch: false };
     if (spec.claimedImpactScopeCoveragePercent !== undefined) {
       coverage.claimedPercent = spec.claimedImpactScopeCoveragePercent;
@@ -482,7 +572,40 @@ export function computeRegressionSuite(spec: RegressionSelectionSpec): Regressio
       return (caseCountByConditionId.get(c.id) ?? 0) > 0;
     }).length;
     const percent = Math.round((numerator / denominator) * 1000) / 10;
-    coverage = { basis: "computed", denominator, numerator, percent, claimMismatch: false };
+
+    const hasValidTestConditionVerdict =
+      computedImpactVerdicts !== undefined &&
+      [...validImpactVerdictsByKey.keys()].some((k) => k.startsWith("testCondition::"));
+
+    let basis: RegressionSuiteCoverageBasis;
+    let coverageReason: string | undefined;
+    let declaredOnlyDenominator: number | undefined;
+    let computedImpactedConditionCount: number | undefined;
+    if (computedImpactVerdicts === undefined) {
+      basis = "declared-only";
+      coverageReason =
+        "影響判定実体(computedImpactVerdicts)が未指定のため、申告された changeCategory のみを母集団として算出した値である。";
+      findings.push({
+        categoryId: "RSC-25",
+        severity: "info",
+        target: suiteId,
+        detail:
+          "影響判定実体(computedImpactVerdicts)が未指定のため、changeCategory 申告の正しさを照合しておらず、影響範囲被覆率は申告のみを母集団とした値(basis=declared-only)である。",
+      });
+    } else if (!hasValidTestConditionVerdict) {
+      basis = "declared-only";
+      coverageReason =
+        "影響判定実体に母集団と照合できる testCondition 行が無いため、申告された changeCategory のみを母集団として算出した値である。";
+    } else {
+      basis = "computed";
+      declaredOnlyDenominator = declaredImpactConditionIds.length;
+      computedImpactedConditionCount = computedImpactedConditionIds.length;
+    }
+
+    coverage = { basis, denominator, numerator, percent, claimMismatch: false };
+    if (coverageReason !== undefined) coverage.reason = coverageReason;
+    if (declaredOnlyDenominator !== undefined) coverage.declaredOnlyDenominator = declaredOnlyDenominator;
+    if (computedImpactedConditionCount !== undefined) coverage.computedImpactedConditionCount = computedImpactedConditionCount;
     if (spec.claimedImpactScopeCoveragePercent !== undefined) {
       coverage.claimedPercent = spec.claimedImpactScopeCoveragePercent;
       if (spec.claimedImpactScopeCoveragePercent !== percent) {
@@ -737,12 +860,30 @@ export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
     // 7. 影響範囲被覆(TTC-COV-18)
     lines.push("## 7. 影響範囲被覆(TTC-COV-18)");
     lines.push("");
+    lines.push(`- 算出根拠(basis): ${result.coverage.basis}`);
     if (result.coverage.basis === "unavailable") {
       lines.push(`- 未算出(理由: ${escapeCell(result.coverage.reason ?? "")})`);
     } else {
       lines.push(
         `- 分母: ${result.coverage.denominator} / 分子: ${result.coverage.numerator} / 被覆率: ${result.coverage.percent?.toFixed(1)}%`
       );
+      if (result.coverage.basis === "declared-only") {
+        lines.push(`- 実体照合: 未実施(理由: ${escapeCell(result.coverage.reason ?? "")})`);
+      } else {
+        lines.push(
+          `- 実体照合: 実施済み(影響判定実体で影響ありと算出された条件 ${result.coverage.computedImpactedConditionCount} 件と照合)`
+        );
+        if (
+          result.coverage.declaredOnlyDenominator !== undefined &&
+          result.coverage.declaredOnlyDenominator !== result.coverage.denominator
+        ) {
+          lines.push(
+            `- 申告のみの分母(${result.coverage.declaredOnlyDenominator}件)に対し、実体照合で ${
+              result.coverage.denominator - result.coverage.declaredOnlyDenominator
+            } 件を分母へ追加した。`
+          );
+        }
+      }
     }
     if (result.coverage.claimedPercent !== undefined) {
       lines.push(
@@ -828,6 +969,10 @@ export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
     "RSC-12": "ラージ偏重を解消するため、ラージテストの一部をより小さいサイズへ分解できないか検討すること。",
     "RSC-17": "選択した条件のうちケースが無いものについて、ケース化するか条件そのものを除外するか判断すること。",
     "RSC-18": "リスク×テストサイズ等、追加・削減の基準を selectionCriteria として明文化すること。",
+    "RSC-21": "影響ありと算出された条件の changeCategory 申告を existing-impacted / modified へ修正し、スイート選択を再判断すること。",
+    "RSC-22": "影響ありと算出されたケースをスイートへ含めるか、除外する根拠を reason に明記すること。",
+    "RSC-23": "影響なしと算出された条件を影響範囲として扱う根拠（閾値変更以外の変更要因）を明記すること。",
+    "RSC-25": "reexpand_threshold_changes の『成果物別の影響判定』を computedImpactVerdicts として渡し、changeCategory 申告を実体照合すること。",
   };
   const presentCategoryIds = [...new Set(result.findings.map((f) => f.categoryId))].sort();
   const guidanceLines = presentCategoryIds
@@ -933,6 +1078,21 @@ export const selectRegressionSuiteInputShape = {
     )
     .optional(),
   executionTimeBudgetSeconds: z.number().positive().optional(),
+  computedImpactVerdicts: z
+    .array(
+      z.object({
+        ownerKind: z.enum(["testCondition", "testCase"]),
+        ownerId: z.string(),
+        verdict: z.enum(["要修正", "要再確認", "影響なし"]),
+        title: z.string().optional(),
+        parameterNames: z.array(z.string()).optional(),
+        categoryIds: z.array(z.string()).optional(),
+      })
+    )
+    .optional()
+    .describe(
+      "reexpand_threshold_changes の『成果物別の影響判定』行をそのまま渡す。changeCategory の申告と実体を照合し(RSC-21/RSC-22/RSC-23)、影響範囲被覆率の分母を実体側で補正する。未指定時は被覆率を basis=\"declared-only\" として算出し、実体照合していない旨を明示する(RSC-25)。"
+    ),
   claimedImpactScopeCoveragePercent: z.number().min(0).max(100).optional(),
   highRiskMinScore: z.number().int().positive().optional().describe("Default: riskAnalysisFrame R1.minScore"),
   maxItems: z.number().int().positive().optional().describe(`Population size cap (default ${DEFAULT_MAX_REGRESSION_ITEMS})`),
@@ -951,7 +1111,11 @@ export function registerSelectRegressionSuiteTool(server: McpServer): void {
         "リグレッションスイートとして何を残し何を落としたかを決定的に検査してMarkdownで返す。" +
         "選択・非選択の理由、非選択となった高リスク項目の全件列挙、選択されたケースのテストサイズ分布と推定実行時間、" +
         "前バージョンとの追加/削除/維持の差分と削除理由の突き合わせ、変更差分区分(RA-CHANGE)への未紐づけ検出、" +
-        "影響範囲被覆率(TTC-COV-18)の宣言と算出値の照合を行う。閾値・パラメータ変更に伴う設計自体の再展開は" +
+        "影響範囲被覆率(TTC-COV-18)の宣言と算出値の照合を行う。" +
+        "reexpand_threshold_changes の影響判定実体（computedImpactVerdicts）を渡した場合は、影響ありと算出された条件が" +
+        "existing-unaffected と申告されていないか、影響ありと算出されたケースが非選択になっていないか、影響なしと算出された" +
+        "条件が過大申告されていないかを実体照合し、被覆率の分母を実体側で補正する。未指定の場合、被覆率は" +
+        "basis: \"declared-only\"（申告のみ）として算出する。閾値・パラメータ変更に伴う設計自体の再展開は" +
         "reexpand_threshold_changes の担当であり、本ツールは対象外。判定区分と対処指針は " +
         "testdesign://regression-selection/analysis-criteria を参照する。",
       inputSchema: selectRegressionSuiteInputShape,
