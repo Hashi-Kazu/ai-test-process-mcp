@@ -282,8 +282,9 @@ export const testPurposeDerivationFrame: TestPurposeDerivationFrame = {
       nameJa: "品質特性の未割当・未知ID",
       severity: "medium",
       definition:
-        "目的にもテスト条件にも品質特性IDが無い、または qualityCharacteristicModel に存在しないIDが指定されている。",
-      recommendedAction: "既知の品質特性IDを割り当てるか、対象外の理由を明記すること。",
+        "目的にもテスト条件にも品質特性IDが無い、または製品品質特性モデル（QC-*）・利用時品質特性モデル（QU-*）のいずれにも存在しないIDが指定されている。",
+      recommendedAction:
+        "製品品質特性モデル（QC-*）・利用時品質特性モデル（QU-*）のいずれかから既知の品質特性IDを割り当てるか、対象外の理由を明記すること。",
     },
     {
       id: "PDC-15",

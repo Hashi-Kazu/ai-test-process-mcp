@@ -23,6 +23,8 @@ import {
   findUnresolvedTestPurposeRefs,
   findUnusedTestRequirements,
 } from "../src/testPurposeAnalysis.js";
+import { qualityCharacteristicModel } from "../src/resources/qualityCharacteristics.js";
+import { qualityInUseCharacteristicModel } from "../src/resources/qualityInUseCharacteristics.js";
 import type { DeriveTestPurposesInput } from "../src/types.js";
 
 function baseInput(overrides: Partial<DeriveTestPurposesInput> = {}): DeriveTestPurposesInput {
@@ -290,6 +292,84 @@ describe("findQualityCharacteristicIssues", () => {
     });
     expect(findQualityCharacteristicIssues(input)).toEqual([]);
   });
+
+  it("does not flag a top-level in-use quality characteristic id", () => {
+    const input = baseInput({
+      purposes: [
+        { id: "TP-01", statement: "目的1", relatedQualityCharacteristicIds: ["QU-01"] },
+      ],
+    });
+    expect(findQualityCharacteristicIssues(input)).toEqual([]);
+  });
+
+  it("does not flag a sub-characteristic in-use quality characteristic id", () => {
+    const input = baseInput({
+      purposes: [
+        { id: "TP-01", statement: "目的1", relatedQualityCharacteristicIds: ["QU-05-02"] },
+      ],
+    });
+    expect(findQualityCharacteristicIssues(input)).toEqual([]);
+  });
+
+  it("does not flag a mix of product and in-use characteristic ids", () => {
+    const input = baseInput({
+      purposes: [
+        {
+          id: "TP-01",
+          statement: "目的1",
+          relatedQualityCharacteristicIds: ["QC-01", "QU-03-02"],
+        },
+      ],
+    });
+    expect(findQualityCharacteristicIssues(input)).toEqual([]);
+  });
+
+  it("resolves unassigned via a linked condition carrying a known in-use characteristic id", () => {
+    const input = baseInput({
+      testConditions: [{ id: "TC-01", purposeIds: ["TP-01"], qualityCharacteristicIds: ["QU-02-01"] }],
+    });
+    expect(findQualityCharacteristicIssues(input)).toEqual([]);
+  });
+
+  it("still flags a non-existent in-use-looking id as unknown", () => {
+    const input = baseInput({
+      purposes: [{ id: "TP-01", statement: "目的1", relatedQualityCharacteristicIds: ["QU-99"] }],
+    });
+    expect(findQualityCharacteristicIssues(input)).toEqual([
+      { ownerId: "TP-01", kind: "unknown", characteristicId: "QU-99" },
+    ]);
+  });
+
+  it("keeps existing unknown/unassigned behavior for product-only ids", () => {
+    const unknownInput = baseInput({
+      purposes: [{ id: "TP-01", statement: "目的1", relatedQualityCharacteristicIds: ["QC-99"] }],
+    });
+    expect(findQualityCharacteristicIssues(unknownInput)).toEqual([
+      { ownerId: "TP-01", kind: "unknown", characteristicId: "QC-99" },
+    ]);
+
+    const unassignedInput = baseInput();
+    expect(findQualityCharacteristicIssues(unassignedInput)).toEqual([
+      { ownerId: "TP-01", kind: "unassigned" },
+    ]);
+  });
+});
+
+describe("product/in-use quality characteristic id spaces", () => {
+  it("do not overlap between the two models", () => {
+    const productIds = new Set<string>();
+    for (const c of qualityCharacteristicModel.characteristics) {
+      productIds.add(c.id);
+      for (const s of c.subCharacteristics) productIds.add(s.id);
+    }
+    const inUseIds = new Set<string>();
+    for (const c of qualityInUseCharacteristicModel.characteristics) {
+      inUseIds.add(c.id);
+      for (const s of c.subCharacteristics) inUseIds.add(s.id);
+    }
+    const intersection = [...productIds].filter((id) => inUseIds.has(id));
+    expect(intersection).toEqual([]);
+  });
 });
 
 describe("findUngroundedExpectations", () => {
@@ -404,7 +484,34 @@ describe("matrix builders", () => {
     ]);
     expect(buildPurposeTestTypeMatrix(input)).toEqual([{ purposeId: "TP-01", typeNames: ["機能テスト"] }]);
     expect(buildPurposeQualityMatrix(input)).toEqual([
-      { purposeId: "TP-01", characteristicIds: ["QC-01", "QC-02"] },
+      {
+        purposeId: "TP-01",
+        characteristicIds: ["QC-01", "QC-02"],
+        productCharacteristicIds: ["QC-01", "QC-02"],
+        inUseCharacteristicIds: [],
+        unknownCharacteristicIds: [],
+      },
+    ]);
+  });
+
+  it("classifies product/in-use/unknown characteristic ids into separate matrix columns", () => {
+    const input = baseInput({
+      purposes: [
+        {
+          id: "TP-01",
+          statement: "目的1",
+          relatedQualityCharacteristicIds: ["QC-01", "QU-01", "ZZ-01"],
+        },
+      ],
+    });
+    expect(buildPurposeQualityMatrix(input)).toEqual([
+      {
+        purposeId: "TP-01",
+        characteristicIds: ["QC-01", "QU-01", "ZZ-01"],
+        productCharacteristicIds: ["QC-01"],
+        inUseCharacteristicIds: ["QU-01"],
+        unknownCharacteristicIds: ["ZZ-01"],
+      },
     ]);
   });
 });

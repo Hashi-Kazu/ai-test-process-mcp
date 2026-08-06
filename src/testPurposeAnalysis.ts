@@ -1,4 +1,5 @@
 import { qualityCharacteristicModel } from "./resources/qualityCharacteristics.js";
+import { qualityInUseCharacteristicModel } from "./resources/qualityInUseCharacteristics.js";
 import { testTypeCatalog } from "./resources/testPlanTemplate.js";
 import type {
   DeriveTestPurposesInput,
@@ -272,15 +273,30 @@ export function findPriorityIssues(input: DeriveTestPurposesInput): TestPurposeP
 }
 
 // --- PDC-14: 品質特性の未割当・未知ID ---
+function collectCharacteristicIds(model: QualityCharacteristicModel): Set<string> {
+  const ids = new Set<string>();
+  for (const c of model.characteristics) {
+    ids.add(c.id);
+    for (const s of c.subCharacteristics) ids.add(s.id);
+  }
+  return ids;
+}
+
+export function classifyQualityCharacteristicId(
+  id: string,
+  model: QualityCharacteristicModel = qualityCharacteristicModel,
+  inUseModel: QualityCharacteristicModel = qualityInUseCharacteristicModel
+): "product" | "in-use" | "unknown" {
+  if (collectCharacteristicIds(model).has(id)) return "product";
+  if (collectCharacteristicIds(inUseModel).has(id)) return "in-use";
+  return "unknown";
+}
+
 export function findQualityCharacteristicIssues(
   input: DeriveTestPurposesInput,
-  model: QualityCharacteristicModel = qualityCharacteristicModel
+  model: QualityCharacteristicModel = qualityCharacteristicModel,
+  inUseModel: QualityCharacteristicModel = qualityInUseCharacteristicModel
 ): TestPurposeQualityCharacteristicIssue[] {
-  const knownIds = new Set<string>();
-  for (const c of model.characteristics) {
-    knownIds.add(c.id);
-    for (const s of c.subCharacteristics) knownIds.add(s.id);
-  }
   const result: TestPurposeQualityCharacteristicIssue[] = [];
   const conditions = input.testConditions ?? [];
   for (const p of input.purposes) {
@@ -292,12 +308,16 @@ export function findQualityCharacteristicIssues(
       result.push({ ownerId: p.id, kind: "unassigned" });
     }
     for (const id of ownIds) {
-      if (!knownIds.has(id)) result.push({ ownerId: p.id, kind: "unknown", characteristicId: id });
+      if (classifyQualityCharacteristicId(id, model, inUseModel) === "unknown") {
+        result.push({ ownerId: p.id, kind: "unknown", characteristicId: id });
+      }
     }
   }
   for (const c of conditions) {
     for (const id of c.qualityCharacteristicIds ?? []) {
-      if (!knownIds.has(id)) result.push({ ownerId: c.id, kind: "unknown", characteristicId: id });
+      if (classifyQualityCharacteristicId(id, model, inUseModel) === "unknown") {
+        result.push({ ownerId: c.id, kind: "unknown", characteristicId: id });
+      }
     }
   }
   return result;
@@ -413,7 +433,11 @@ export function buildPurposeTestTypeMatrix(input: DeriveTestPurposesInput): Test
   }));
 }
 
-export function buildPurposeQualityMatrix(input: DeriveTestPurposesInput): TestPurposeQualityMatrixRow[] {
+export function buildPurposeQualityMatrix(
+  input: DeriveTestPurposesInput,
+  model: QualityCharacteristicModel = qualityCharacteristicModel,
+  inUseModel: QualityCharacteristicModel = qualityInUseCharacteristicModel
+): TestPurposeQualityMatrixRow[] {
   const conditions = input.testConditions ?? [];
   return input.purposes.map((p) => {
     const ids: string[] = [];
@@ -426,7 +450,22 @@ export function buildPurposeQualityMatrix(input: DeriveTestPurposesInput): TestP
         if (!ids.includes(id)) ids.push(id);
       }
     }
-    return { purposeId: p.id, characteristicIds: ids };
+    const productCharacteristicIds: string[] = [];
+    const inUseCharacteristicIds: string[] = [];
+    const unknownCharacteristicIds: string[] = [];
+    for (const id of ids) {
+      const kind = classifyQualityCharacteristicId(id, model, inUseModel);
+      if (kind === "product") productCharacteristicIds.push(id);
+      else if (kind === "in-use") inUseCharacteristicIds.push(id);
+      else unknownCharacteristicIds.push(id);
+    }
+    return {
+      purposeId: p.id,
+      characteristicIds: ids,
+      productCharacteristicIds,
+      inUseCharacteristicIds,
+      unknownCharacteristicIds,
+    };
   });
 }
 
