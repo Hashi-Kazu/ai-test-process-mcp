@@ -30,8 +30,25 @@ const input: GenerateUserStoryMapInput = {
       saysAndThinks: ["列に並ぶ時間がもったいない"],
       goals: ["待たずに入場したい"],
       painPoints: ["当日券の列が長い"],
+      stakeholderWeighting: {
+        influence: 4,
+        interest: 4,
+        handlingClassId: "SWC-01",
+        rationale: ["入場体験の評価が売上に直結する"],
+      },
     },
-    { id: "P-002", role: "運用担当", concerns: "障害時の切り替え手順|が煩雑" },
+    {
+      id: "P-002",
+      role: "運用担当",
+      concerns: "障害時の切り替え手順|が煩雑",
+      stakeholderWeighting: {
+        influence: 3,
+        interest: 3,
+        score: 6,
+        handlingClassId: "SWC-03",
+        rationale: [],
+      },
+    },
   ],
   activities: [
     { id: "ACT-01", personaIds: ["P-001"], productGoal: "待たずに入場できる", activity: "入場する" },
@@ -85,10 +102,38 @@ describe("renderUserStoryMap", () => {
       "### 6.5 ペルソナ4象限の記入状況",
       "### 6.6 テスト要求行の欠落",
       "### 6.7 ドメイン分析観点の被覆状況",
-      "### 6.8 サマリ",
+      "### 6.8 ステークホルダー2軸評価の宣言・実体の照合",
+      "### 6.9 サマリ",
     ]) {
       expect(markdown.split("\n").filter((l) => l === heading)).toHaveLength(1);
     }
+  });
+
+  it("splits section 3 into the quadrant sheet and the stakeholder weighting subsections", () => {
+    for (const heading of [
+      "### 3.1 ペルソナ4象限シート",
+      "### 3.2 ステークホルダー2軸評価（影響力×関心度）",
+    ]) {
+      expect(markdown.split("\n").filter((l) => l === heading)).toHaveLength(1);
+    }
+  });
+
+  it("renders the axis levels, the handling classes and the evaluation table in 3.2", () => {
+    const section = markdown.split("### 3.2 ステークホルダー2軸評価")[1].split("## 4.")[0];
+    const swf = personaJourneyFrame.stakeholderWeightingFrame;
+    expect(section).toContain("| 軸ID | 軸 | 値 | レベル | 判定基準 |");
+    for (const axis of [swf.influenceAxis, swf.interestAxis]) {
+      for (const level of axis.levels) {
+        expect(section).toContain(`| ${axis.id} | ${axis.nameJa} | ${level.value} | ${level.label} |`);
+      }
+    }
+    expect(section).toContain("| クラスID | クラス | 条件 | 既定優先度 | 指針 |");
+    for (const handlingClass of swf.handlingClasses) {
+      expect(section).toContain(`| ${handlingClass.id} | ${handlingClass.nameJa} |`);
+    }
+    expect(section).toContain(
+      "| ペルソナID | 役割 | 影響力 | 関心度 | スコア | 導出クラス | 宣言クラス | 評価根拠 | 絞り込み |"
+    );
   });
 
   it("shows the subject name and the review mode in section 1", () => {
@@ -166,12 +211,29 @@ describe("renderUserStoryMap", () => {
     expect(rowSection).not.toContain("TR-01");
   });
 
-  it("includes the counters in the 6.8 summary", () => {
+  it("cross-checks the declared weighting against the matrix under 6.8", () => {
+    const section = markdown.split("### 6.8 ステークホルダー2軸評価の宣言・実体の照合")[1].split("### 6.9")[0];
+    expect(section).toContain(
+      "- [high] P-002: 宣言された扱いクラス SWC-03 は matrix の (影響力 3, 関心度 3) 対応 SWC-01 と一致しない。"
+    );
+    expect(section).toContain(
+      "- [high] P-002: 重点クラス(SWC-01)だがテスト要求が0件。Before/After のテスト要求列を最初に埋めること。"
+    );
+    expect(section).toContain(
+      "- [medium] P-002: 宣言スコア 6 は influence×interest=9 と一致しない。"
+    );
+    expect(section).toContain("- [medium] P-002: 評価値を選んだ根拠となる事実が未記入。");
+    expect(section).not.toContain("P-001");
+  });
+
+  it("includes the counters in the 6.9 summary", () => {
     const summaryLine = markdown.split("\n").find((l) => l.startsWith("- ペルソナ数:"));
     expect(summaryLine).toBeDefined();
     expect(summaryLine).toContain("未解決参照数: 2");
     expect(summaryLine).toContain("テスト要求欠落行数: 1");
     expect(summaryLine).toContain("4象限未記入ペルソナ数: 1");
+    expect(summaryLine).toContain("2軸評価指摘件数: 4");
+    expect(summaryLine).toContain("重点クラステスト要求0件ペルソナ数: 1");
   });
 
   it("emits the semantic-layer question examples of the frame in section 7", () => {
@@ -197,6 +259,16 @@ describe("renderUserStoryMap", () => {
       "| テスト要求ID | 由来ペルソナID | source | derivedFrom | 関連ストーリーID | 展開すべき確認内容 |"
     );
     expect(section).toContain("| TR-01 | P-001 | stakeholder | P-001 | US-01 |");
+  });
+
+  it("emits the stakeholder weighting handover convention and the focus handover table in section 8", () => {
+    const section = markdown.split("## 8. extract_test_conditions への引き渡し")[1];
+    for (const rule of personaJourneyFrame.stakeholderWeightingFrame.handoverConvention) {
+      expect(section).toContain(rule);
+    }
+    expect(section).toContain("| ペルソナID | 扱いクラス | 既定priority | 紐づくテスト要求ID |");
+    expect(section).toContain("| P-001 | SWC-01 | 高 | TR-01 |");
+    expect(section).toContain("| P-002 | SWC-01 | 高 | - |");
   });
 
   it("is deterministic and does not mutate the input", () => {
@@ -236,6 +308,19 @@ describe("renderUserStoryMap in generation-instruction-only mode", () => {
 
     const handoverSection = md.split("## 8. extract_test_conditions への引き渡し")[1];
     expect(handoverSection).toContain("テスト要求が未指定のため引き渡し表は空である。");
+  });
+
+  it("keeps 6.8 to a single not-specified line when stakeholderWeighting is omitted", () => {
+    const section = md.split("### 6.8 ステークホルダー2軸評価の宣言・実体の照合")[1].split("### 6.9")[0];
+    expect(section.trim()).toBe("- ステークホルダー2軸評価の指定なし");
+    expect(section).not.toContain("[high]");
+    expect(section).not.toContain("[medium]");
+  });
+
+  it("returns a generation instruction instead of the evaluation table in 3.2", () => {
+    const section = md.split("### 3.2 ステークホルダー2軸評価")[1].split("## 4.")[0];
+    expect(section).toContain("ステークホルダー2軸評価が未指定である。");
+    expect(section).not.toContain("| ペルソナID | 役割 | 影響力 |");
   });
 
   it("still reports the deterministic checks for the persona level", () => {

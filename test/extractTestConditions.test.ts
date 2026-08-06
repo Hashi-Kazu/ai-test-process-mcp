@@ -163,7 +163,7 @@ describe("renderTestConditions", () => {
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 
-  it("renders section 3.9, 3.10, 3.11, 3.12 and 3.13 exactly once each", () => {
+  it("renders section 3.9, 3.10, 3.11, 3.12, 3.13 and 3.14 exactly once each", () => {
     expect(markdown.split("\n").filter((l) => l === "### 3.9 リスク区分の被覆状況")).toHaveLength(1);
     expect(
       markdown.split("\n").filter((l) => l === "### 3.10 根拠位置が未特定のテスト条件")
@@ -174,7 +174,20 @@ describe("renderTestConditions", () => {
     expect(
       markdown.split("\n").filter((l) => l === "### 3.12 テスト目的の貫通状況")
     ).toHaveLength(1);
-    expect(markdown.split("\n").filter((l) => l === "### 3.13 サマリ")).toHaveLength(1);
+    expect(
+      markdown.split("\n").filter((l) => l === "### 3.13 重点ステークホルダー(SWC-01)の条件紐づけ")
+    ).toHaveLength(1);
+    expect(markdown.split("\n").filter((l) => l === "### 3.14 サマリ")).toHaveLength(1);
+  });
+
+  it("keeps 3.13 to a single not-specified line when stakeholderWeighting is omitted", () => {
+    const section = markdown
+      .split("### 3.13 重点ステークホルダー(SWC-01)の条件紐づけ")[1]
+      .split("### 3.14")[0];
+    expect(section.trim()).toBe(
+      "- ステークホルダー2軸評価の指定なし。generate_user_story_map の評価結果を personas[].stakeholderWeighting に渡すこと。"
+    );
+    expect(section).not.toContain("[high]");
   });
 
   it("shows no test purposes specified when testPurposes is omitted (section 3.12)", () => {
@@ -281,7 +294,7 @@ describe("renderTestConditions with riskCategoryId", () => {
     expect(markdown2).toContain("「RC-99」はリスク分析フレームに存在しないリスク区分IDである。");
   });
 
-  it("includes the unused/unknown risk category counters in the 3.12 summary", () => {
+  it("includes the unused/unknown risk category counters in the 3.14 summary", () => {
     const summaryLine = markdown2
       .split("\n")
       .find((l) => l.startsWith("- 対象要件ID数:"));
@@ -346,9 +359,9 @@ describe("renderTestConditions with persona quadrants", () => {
   };
   const markdownPersona = renderTestConditions(inputPersona);
 
-  it("renders the 8-column persona table header with the four quadrants", () => {
+  it("renders the 12-column persona table header with the four quadrants and the weighting columns", () => {
     expect(markdownPersona).toContain(
-      "| ペルソナID | 役割 | 氏名 | 属性 | 発言・思考 | 目標 | 不満点 | 導出済み条件ID |"
+      "| ペルソナID | 役割 | 氏名 | 属性 | 発言・思考 | 目標 | 不満点 | 影響力 | 関心度 | スコア | 扱いクラス | 導出済み条件ID |"
     );
   });
 
@@ -377,7 +390,7 @@ describe("renderTestConditions with persona quadrants", () => {
     expect(section).toContain("persona_journey_interview");
   });
 
-  it("includes the incomplete-quadrant counter in the 3.12 summary", () => {
+  it("includes the incomplete-quadrant counter in the 3.14 summary", () => {
     const summaryLine = markdownPersona.split("\n").find((l) => l.startsWith("- 対象要件ID数:"));
     expect(summaryLine).toContain("4象限未記入ペルソナ件数: 2");
   });
@@ -631,7 +644,7 @@ describe("renderTestConditions with testPurposes", () => {
     expect(section).toContain("「TP-99」は testPurposes に存在しない目的ID");
   });
 
-  it("includes the purpose-related counters in the 3.13 summary", () => {
+  it("includes the purpose-related counters in the 3.14 summary", () => {
     const summaryLine = markdownWithPurposes.split("\n").find((l) => l.startsWith("- 対象要件ID数:"));
     expect(summaryLine).toContain("目的未紐づけ条件数: 1");
     expect(summaryLine).toContain("条件未展開目的数: 2");
@@ -719,5 +732,134 @@ describe("renderTestConditions 次に実行すべきツール節の内容", () =
     expect(nextToolsSection(md)).toContain(
       "| 未実施 | design_decision_table | 推奨技法 decision-table が条件 TC-001 に指定されている |"
     );
+  });
+});
+
+describe("renderTestConditions 重点ステークホルダー(SWC-01)の条件紐づけ", () => {
+  const focusPersona = {
+    id: "P-001",
+    role: "運行管理責任者",
+    demographics: ["40代", "現場責任者"],
+    saysAndThinks: ["改札が止まると即クレームになる"],
+    goals: ["改札を止めずに運行したい"],
+    painPoints: ["障害時の切り戻し手順が煩雑"],
+    stakeholderWeighting: {
+      influence: 4,
+      interest: 4,
+      handlingClassId: "SWC-01",
+      rationale: ["リリース可否の最終承認者", "停止時に運行業務が直接停止する"],
+    },
+  };
+
+  const focusUnlinked: ExtractTestConditionsInput = {
+    requirementIds: ["R-001"],
+    testConditions: [
+      {
+        id: "TC-001",
+        target: "改札機",
+        perspectiveCategoryId: "TPC-03",
+        statement: "QR読取が3秒以内に完了すること",
+        source: "testbase",
+        derivedFrom: ["R-001"],
+        priority: "高",
+      },
+    ],
+    personas: [focusPersona],
+  };
+
+  function focusSection(md: string): string {
+    return md.split("### 3.13 重点ステークホルダー(SWC-01)の条件紐づけ")[1].split("### 3.14")[0];
+  }
+
+  it("flags a focus-class persona that has no source=stakeholder test condition", () => {
+    const section = focusSection(renderTestConditions(focusUnlinked));
+    expect(section).toContain(
+      "- [high] P-001: 重点クラス(SWC-01)だが source=stakeholder のテスト条件が0件。"
+    );
+  });
+
+  it("reports なし once a stakeholder condition is linked to the focus persona", () => {
+    const linked: ExtractTestConditionsInput = {
+      ...focusUnlinked,
+      testConditions: [
+        ...focusUnlinked.testConditions,
+        {
+          id: "TC-002",
+          target: "改札機",
+          perspectiveCategoryId: "TPC-15",
+          statement: "障害時に手順どおり切り戻せること",
+          source: "stakeholder",
+          derivedFrom: ["P-001"],
+          priority: "高",
+        },
+      ],
+    };
+    expect(focusSection(renderTestConditions(linked)).trim()).toBe("- なし");
+  });
+
+  it("flags a lowered priority on a focus-derived condition without any reason", () => {
+    const lowered: ExtractTestConditionsInput = {
+      ...focusUnlinked,
+      testConditions: [
+        {
+          id: "TC-002",
+          target: "改札機",
+          perspectiveCategoryId: "TPC-15",
+          statement: "障害時に手順どおり切り戻せること",
+          source: "stakeholder",
+          derivedFrom: ["P-001"],
+          priority: "低",
+        },
+      ],
+    };
+    expect(focusSection(renderTestConditions(lowered))).toContain(
+      "- [high] TC-002: 重点クラス(P-001)由来だが priority=低 が既定の 高 より低い。rationale に引き下げ理由を明記すること。"
+    );
+  });
+
+  it("judges by the matrix even when the declared handling class disagrees", () => {
+    const declaredReference: ExtractTestConditionsInput = {
+      ...focusUnlinked,
+      personas: [
+        {
+          ...focusPersona,
+          stakeholderWeighting: { ...focusPersona.stakeholderWeighting, handlingClassId: "SWC-03" },
+        },
+      ],
+    };
+    const section = focusSection(renderTestConditions(declaredReference));
+    expect(section).toContain(
+      "- [high] P-001: 重点クラス(SWC-01)だが source=stakeholder のテスト条件が0件。"
+    );
+  });
+
+  it("does not re-report evaluation quality issues handled by generate_user_story_map", () => {
+    const outOfRange: ExtractTestConditionsInput = {
+      ...focusUnlinked,
+      personas: [{ id: "P-001", role: "運行管理責任者", stakeholderWeighting: { influence: 5 } }],
+    };
+    expect(focusSection(renderTestConditions(outOfRange)).trim()).toBe("- なし");
+  });
+
+  it("includes the focus counters in the 3.14 summary", () => {
+    const summaryLine = renderTestConditions(focusUnlinked)
+      .split("\n")
+      .find((l) => l.startsWith("- 対象要件ID数:"));
+    expect(summaryLine).toContain("重点クラス条件0件ペルソナ数: 1");
+    expect(summaryLine).toContain("重点クラス優先度引き下げ理由未記入数: 0");
+  });
+
+  it("shows the weighting columns of section 9 for the focus persona", () => {
+    const row = renderTestConditions(focusUnlinked)
+      .split("\n")
+      .find((l) => l.startsWith("| P-001 |") && l.includes("SWC-01"));
+    expect(row).toContain("| 4 | 4 | 16 | SWC-01 | - |");
+  });
+
+  it("is deterministic and does not mutate the input", () => {
+    const snapshot = JSON.stringify(focusUnlinked);
+    const md = renderTestConditions(focusUnlinked);
+    expect(renderTestConditions(focusUnlinked)).toBe(md);
+    expect(JSON.stringify(focusUnlinked)).toBe(snapshot);
   });
 });

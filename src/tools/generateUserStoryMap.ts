@@ -20,6 +20,14 @@ import {
   resolveStoryMapIdPrefixes,
   storyMapEntityLabels,
 } from "../userStoryMapAnalysis.js";
+import {
+  evaluateStakeholderWeighting,
+  findFocusPersonasWithoutTestRequirements,
+  hasAnyStakeholderWeighting,
+  resolveStakeholderWeightingAxisLabels,
+  stakeholderAxisAllowedValues,
+  stakeholderWeightingShape,
+} from "../stakeholderWeightingAnalysis.js";
 import type {
   GenerateUserStoryMapInput,
   PersonaJourneyFrame,
@@ -148,6 +156,11 @@ export function renderUserStoryMap(
   const incompleteRequirementRows = findIncompleteTestRequirementRows(input);
   const unusedAspects = findUnusedDomainAnalysisAspects(input, frame);
   const unknownAspectIds = findUnknownDomainAnalysisAspectIds(input, frame);
+  const swf = frame.stakeholderWeightingFrame;
+  const axisLabels = resolveStakeholderWeightingAxisLabels(frame);
+  const weightingSpecified = hasAnyStakeholderWeighting(personas);
+  const weightingEvaluations = evaluateStakeholderWeighting(personas, frame);
+  const focusPersonasWithoutTestRequirements = findFocusPersonasWithoutTestRequirements(input, frame);
 
   const lines: string[] = [];
   lines.push("# 利用状況モデリング結果");
@@ -205,6 +218,8 @@ export function renderUserStoryMap(
   // --- 3. ペルソナ4象限シート ---
   lines.push("## 3. ペルソナ4象限シート");
   lines.push("");
+  lines.push("### 3.1 ペルソナ4象限シート");
+  lines.push("");
   if (personas.length === 0) {
     lines.push("- ペルソナの指定なし。まず4象限でペルソナを立案すること。");
   } else {
@@ -216,6 +231,75 @@ export function renderUserStoryMap(
         .join(" | ");
       lines.push(
         `| ${escapeCell(p.id)} | ${escapeCell(p.role)} | ${escapeCell(p.name ?? "-")} | ${quadrantCells} |`
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push(
+    `### 3.2 ステークホルダー2軸評価（${escapeCell(swf.influenceAxis.nameJa)}×${escapeCell(
+      swf.interestAxis.nameJa
+    )}）`
+  );
+  lines.push("");
+  lines.push("| 軸ID | 軸 | 値 | レベル | 判定基準 |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const axis of [swf.influenceAxis, swf.interestAxis]) {
+    for (const level of axis.levels) {
+      lines.push(
+        `| ${escapeCell(axis.id)} | ${escapeCell(axis.nameJa)} | ${level.value} | ${escapeCell(
+          level.label
+        )} | ${escapeCell(level.criteria)} |`
+      );
+    }
+  }
+  lines.push("");
+  lines.push(`- 得点化: ${escapeCell(swf.formula)} 高評価の下限(highThreshold): ${swf.highThreshold}`);
+  lines.push("");
+  lines.push("| クラスID | クラス | 条件 | 既定優先度 | 指針 |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const handlingClass of swf.handlingClasses) {
+    lines.push(
+      `| ${escapeCell(handlingClass.id)} | ${escapeCell(handlingClass.nameJa)} | ${escapeCell(
+        handlingClass.rule
+      )} | ${escapeCell(handlingClass.defaultConditionPriority)} | ${escapeCell(handlingClass.guidance)} |`
+    );
+  }
+  lines.push("");
+  if (!weightingSpecified) {
+    lines.push(
+      "ステークホルダー2軸評価が未指定である。上記の軸定義と扱いクラスに従い、すべてのペルソナについて" +
+        `${swf.influenceAxis.nameJa}・${swf.interestAxis.nameJa}を評価し、その根拠となる事実を添えて ` +
+        "personas[].stakeholderWeighting へ渡して再度本ツールで検査すること。"
+    );
+  } else {
+    lines.push(
+      `| ペルソナID | 役割 | ${swf.influenceAxis.nameJa} | ${swf.interestAxis.nameJa} | スコア | 導出クラス | 宣言クラス | 評価根拠 | 絞り込み |`
+    );
+    lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const evaluation of weightingEvaluations) {
+      const persona = personas.find((p) => p.id === evaluation.personaId);
+      const weighting = persona?.stakeholderWeighting;
+      const scoreCell =
+        evaluation.derivedScore === undefined
+          ? evaluation.declaredScore === undefined
+            ? UNFILLED
+            : `${UNFILLED}(宣言 ${evaluation.declaredScore})`
+          : evaluation.scoreMismatch
+            ? `${evaluation.derivedScore}(宣言 ${evaluation.declaredScore})`
+            : `${evaluation.derivedScore}`;
+      const rationale = (weighting?.rationale ?? []).filter((r) => r.trim() !== "");
+      const screening = evaluation.excludedByScreening
+        ? `対象外(${weighting?.exclusionReason?.trim() ? weighting.exclusionReason.trim() : UNFILLED})`
+        : "対象";
+      lines.push(
+        `| ${escapeCell(evaluation.personaId)} | ${escapeCell(persona?.role ?? "-")} | ${
+          evaluation.influence ?? UNFILLED
+        } | ${evaluation.interest ?? UNFILLED} | ${escapeCell(scoreCell)} | ${escapeCell(
+          evaluation.derivedClassId ?? UNFILLED
+        )} | ${escapeCell(evaluation.declaredClassId ?? "-")} | ${escapeCell(
+          rationale.length > 0 ? rationale.join("; ") : UNFILLED
+        )} | ${escapeCell(screening)} |`
       );
     }
   }
@@ -404,7 +488,80 @@ export function renderUserStoryMap(
   }
   lines.push("");
 
-  lines.push("### 6.8 サマリ");
+  lines.push("### 6.8 ステークホルダー2軸評価の宣言・実体の照合");
+  lines.push("");
+  const weightingFindings: string[] = [];
+  if (weightingSpecified) {
+    const focusClassId =
+      swf.handlingClasses.find((c) => c.key === "focus")?.id ?? "SWC-01";
+    const evaluationStep = swf.steps.find((s) => s.nameJa.includes("2軸評価"));
+    for (const evaluation of weightingEvaluations) {
+      const id = escapeCell(evaluation.personaId);
+      if (evaluation.missingAxes.length > 0) {
+        weightingFindings.push(
+          `- [high] ${id}: ${escapeCell(
+            axisLabels.map((a) => a.nameJa).join("・")
+          )}の未評価軸 ${escapeCell(evaluation.missingAxes.join(", "))}。${
+            evaluationStep ? `${evaluationStep.id} に従い両軸を評価すること。` : "両軸を評価すること。"
+          }`
+        );
+      }
+      for (const outOfRange of evaluation.outOfRangeAxes) {
+        const axis = axisLabels.find((a) => a.nameJa === outOfRange.axis);
+        const allowed = axis ? stakeholderAxisAllowedValues(axis.axis, frame) : [];
+        weightingFindings.push(
+          `- [high] ${id}: ${escapeCell(outOfRange.axis)} の値 ${
+            outOfRange.value
+          } は levels の値（${allowed.join(", ")}）に存在しない。`
+        );
+      }
+      if (evaluation.classMismatch) {
+        weightingFindings.push(
+          `- [high] ${id}: 宣言された扱いクラス ${escapeCell(
+            evaluation.declaredClassId ?? "-"
+          )} は matrix の (${swf.influenceAxis.nameJa} ${evaluation.influence}, ${
+            swf.interestAxis.nameJa
+          } ${evaluation.interest}) 対応 ${escapeCell(
+            evaluation.derivedClassId ?? "-"
+          )} と一致しない。scoreだけで判定していないか確認すること。`
+        );
+      }
+      if (evaluation.unevaluatedButExcluded) {
+        weightingFindings.push(`- [high] ${id}: 両軸が未評価のまま絞り込み済みとして扱われている。`);
+      }
+      if (evaluation.focusExcluded) {
+        weightingFindings.push(
+          `- [high] ${id}: 重点クラス(${focusClassId})のペルソナを絞り込みで対象外にしている。`
+        );
+      }
+      if (evaluation.scoreMismatch) {
+        weightingFindings.push(
+          `- [medium] ${id}: 宣言スコア ${evaluation.declaredScore} は influence×interest=${evaluation.derivedScore} と一致しない。`
+        );
+      }
+      if (evaluation.missingRationale) {
+        weightingFindings.push(`- [medium] ${id}: 評価値を選んだ根拠となる事実が未記入。`);
+      }
+      if (evaluation.missingExclusionReason) {
+        weightingFindings.push(`- [medium] ${id}: 絞り込みで対象外にした理由が未記入。`);
+      }
+      if (focusPersonasWithoutTestRequirements.includes(evaluation.personaId)) {
+        weightingFindings.push(
+          `- [high] ${id}: 重点クラス(${focusClassId})だがテスト要求が0件。Before/After のテスト要求列を最初に埋めること。`
+        );
+      }
+    }
+    if (weightingFindings.length === 0) {
+      lines.push("- なし");
+    } else {
+      lines.push(...weightingFindings);
+    }
+  } else {
+    lines.push("- ステークホルダー2軸評価の指定なし");
+  }
+  lines.push("");
+
+  lines.push("### 6.9 サマリ");
   lines.push("");
   lines.push(
     `- ペルソナ数: ${personas.length} / アクティビティ数: ${activities.length} / タスク数: ${tasks.length} / ` +
@@ -412,7 +569,8 @@ export function renderUserStoryMap(
       `重複ID数: ${duplicates.length} / 欠番数: ${missingNumbers.length} / プレフィックス不一致数: ${prefixMismatch.length} / ` +
       `未解決参照数: ${unresolvedRefs.length} / ストーリー未紐づけペルソナ数: ${personasWithoutStories.length} / ` +
       `テスト要求0件ペルソナ数: ${personasWithoutTestRequirements.length} / 4象限未記入ペルソナ数: ${incompleteQuadrants.length} / ` +
-      `テスト要求欠落行数: ${incompleteRequirementRows.length} / ドメイン分析未記入観点数: ${unusedAspects.length}`
+      `テスト要求欠落行数: ${incompleteRequirementRows.length} / ドメイン分析未記入観点数: ${unusedAspects.length}` +
+      ` / 2軸評価指摘件数: ${weightingFindings.length} / 重点クラステスト要求0件ペルソナ数: ${focusPersonasWithoutTestRequirements.length}`
   );
   lines.push("");
 
@@ -466,7 +624,40 @@ export function renderUserStoryMap(
   for (const rule of frame.testRequirementFrame.handoverConvention) {
     lines.push(`- ${rule}`);
   }
+  for (const rule of swf.handoverConvention) {
+    lines.push(`- ${rule}`);
+  }
   lines.push("");
+  if (!weightingSpecified) {
+    lines.push(
+      "ステークホルダー2軸評価が未指定のため重点クラス引き渡し表は空である。3.2 の評価表を埋めたうえで " +
+        "personas[].stakeholderWeighting を extract_test_conditions へ渡すこと。"
+    );
+  } else {
+    const handoverRows = weightingEvaluations.filter(
+      (e) => e.derivedClassKey === "focus" || e.derivedClassKey === "standard"
+    );
+    if (handoverRows.length === 0) {
+      lines.push("重点クラス・通常クラスに該当するペルソナがないため重点クラス引き渡し表は空である。");
+    } else {
+      lines.push("| ペルソナID | 扱いクラス | 既定priority | 紐づくテスト要求ID |");
+      lines.push("| --- | --- | --- | --- |");
+      for (const evaluation of handoverRows) {
+        const handlingClass = swf.handlingClasses.find((c) => c.id === evaluation.derivedClassId);
+        const relatedIds = testRequirements
+          .filter((r) => r.personaId === evaluation.personaId)
+          .map((r) => r.id);
+        lines.push(
+          `| ${escapeCell(evaluation.personaId)} | ${escapeCell(
+            evaluation.derivedClassId ?? "-"
+          )} | ${escapeCell(handlingClass?.defaultConditionPriority ?? "-")} | ${escapeCell(
+            relatedIds.length > 0 ? relatedIds.join(", ") : "-"
+          )} |`
+        );
+      }
+    }
+    lines.push("");
+  }
   if (testRequirements.length === 0) {
     lines.push(
       "テスト要求が未指定のため引き渡し表は空である。5節でテスト要求を起こしたうえで、" +
@@ -519,6 +710,7 @@ const personaShape = z.object({
     .array(z.string())
     .optional()
     .describe("Pain Point quadrant: frustrations and obstacles this persona faces"),
+  stakeholderWeighting: stakeholderWeightingShape,
 });
 
 export const generateUserStoryMapInputShape = {
@@ -605,7 +797,8 @@ export function registerGenerateUserStoryMapTool(server: McpServer): void {
         "上流の利用状況モデリング（ドメイン分析 → ペルソナ立案 → ユーザーストーリーマップ5階層 → " +
         "テスト要求導出）を二層構成で支援する。決定的層は、アクティビティ/タスク/ストーリー/テスト要求のID重複・欠番・" +
         "プレフィックス不一致・階層参照の未解決・ストーリー未紐づけペルソナ・テスト要求0件ペルソナ・ペルソナ4象限の未記入・" +
-        "テスト要求行(現状/将来/テスト要求)の欠落・ドメイン分析観点の被覆状況を検査する。意味的層は、フレームの質問例に基づく" +
+        "テスト要求行(現状/将来/テスト要求)の欠落・ドメイン分析観点の被覆状況に加えて、ステークホルダー2軸評価（影響力×関心度）の" +
+        "未評価軸・範囲外値・宣言扱いクラスと matrix 対応の不一致・評価根拠の未記入・重点クラスのテスト要求0件を検査する。意味的層は、フレームの質問例に基づく" +
         "深掘り指示のみを呼び出し側LLMへ返す。activities / tasks / stories / testRequirements が未指定・空の場合は生成指示のみを返し、" +
         "既存成果物を渡せばレビューとして機能する。導出したテスト要求は source=\"stakeholder\" のテスト条件として " +
         "extract_test_conditions へ引き渡す。",
