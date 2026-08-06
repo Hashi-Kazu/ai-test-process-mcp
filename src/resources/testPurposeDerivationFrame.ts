@@ -253,8 +253,11 @@ export const testPurposeDerivationFrame: TestPurposeDerivationFrame = {
       nameJa: "テストタイプ選択と目的の不整合",
       severity: "high",
       definition:
-        "selected:true なのに purposeIds が空／reason が空、または selected:false なのに purposeIds が非空である。",
-      recommendedAction: "選定・非選定の判断根拠となるテスト目的IDと理由を明記すること。",
+        "selected:true なのに purposeIds が空／reason が空、selected:true なのに reason が定型語のみ、" +
+        "または正規化後8文字未満である、あるいは selected:false なのに purposeIds が非空である。",
+      recommendedAction:
+        "選定・非選定の判断根拠となるテスト目的IDと理由を明記すること。理由は定型語で済ませず、" +
+        "何をどこまで確かめるためにそのタイプを選ぶのかを記述すること。",
     },
     {
       id: "PDC-11",
@@ -297,10 +300,12 @@ export const testPurposeDerivationFrame: TestPurposeDerivationFrame = {
     },
     {
       id: "PDC-16",
-      nameJa: "宣言した被覆率と実測値の不一致",
+      nameJa: "宣言した被覆率・記入率と実測値の不一致",
       severity: "high",
       definition:
-        "claimedPurposeCoveragePercent / claimedTestTypeJustificationPercent が算出値と0.05超の差がある。",
+        "claimedPurposeCoveragePercent / claimedTestTypeJustificationPercent が算出値と0.05超の差がある。" +
+        "テスト目的の被覆率は purposeIds 宣言有無による構造上の紐づけ率、テストタイプ側は選定理由の記入率であり、" +
+        "定型語のみ・正規化後8文字未満の理由は分子に数えない。",
       recommendedAction: "宣言値を算出値に合わせて修正するか、算出根拠となる入力を見直すこと。",
     },
     {
@@ -316,5 +321,6 @@ export const testPurposeDerivationFrame: TestPurposeDerivationFrame = {
     "テスト目的の件数に正解はなく、本フレームの例で示す件数は例に過ぎない。",
     "決定的層は候補列挙までであり、テスト目的の妥当性判断（内容として適切か）は意味的層に委ねる。",
     "テスト戦略（strategyStatements）は下流IDからの参照を必須にしていない。優先順位判断の背景説明として自由に使ってよい。",
+    "テストタイプ側の指標は選定理由の記入率であり、理由の内容が妥当かどうかは決定的層では判定しない（定型語の除外と最小長のみを歯止めとする）。",
   ],
 };

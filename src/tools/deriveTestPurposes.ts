@@ -46,6 +46,8 @@ const priorityIssueLabel: Record<string, string> = {
 const typeSelectionIssueLabel: Record<string, string> = {
   "selected-without-purpose": "選定(selected:true)なのに紐づくテスト目的IDが無い",
   "selected-without-reason": "選定(selected:true)なのに選定理由(reason)が未記入",
+  "selected-with-placeholder-reason": "選定理由(reason)が定型語のみで実質未記入(例: 「必要」「重要」)",
+  "selected-with-too-short-reason": "選定理由(reason)が短すぎて根拠として成立しない(正規化後8文字未満)",
   "unselected-with-purpose": "非選定(selected:false)なのに紐づくテスト目的IDが指定されている",
 };
 
@@ -340,24 +342,30 @@ export function renderTestPurposeDerivation(
   }
   lines.push("");
 
-  lines.push("### 3.16 宣言した被覆率と実測値の不一致(PDC-16)");
+  lines.push("### 3.16 宣言した被覆率・記入率と実測値の不一致(PDC-16)");
   lines.push("");
   const coverageBullets: string[] = [];
   if (coverage.purposeCoverageMismatch) {
     coverageBullets.push(
-      `- [high] テスト目的の被覆率: 宣言 ${coverage.claimedPurposeCoveragePercent ?? "-"}% に対し実測 ${
-        coverage.computedPurposeCoveragePercent ?? "未算出(条件未指定)"
-      }%`
+      `- [high] テスト目的への紐づけ率(構造上の紐づけのみ): 宣言 ${
+        coverage.claimedPurposeCoveragePercent ?? "-"
+      }% に対し実測 ${coverage.computedPurposeCoveragePercent ?? "未算出(条件未指定)"}%`
     );
   }
   if (coverage.testTypeJustificationMismatch) {
     coverageBullets.push(
-      `- [high] テストタイプ選定根拠率: 宣言 ${coverage.claimedTestTypeJustificationPercent ?? "-"}% に対し実測 ${
-        coverage.computedTestTypeJustificationPercent ?? "未算出(選定タイプ未指定)"
-      }%`
+      `- [high] テストタイプ選定理由の記入率: 宣言 ${
+        coverage.claimedTestTypeJustificationPercent ?? "-"
+      }% に対し実測 ${coverage.computedTestTypeJustificationPercent ?? "未算出(選定タイプ未指定)"}%`
     );
   }
   lines.push(...bulletsOrNone(coverageBullets));
+  lines.push(
+    "- 注記: テスト目的への紐づけ率は testConditions[].purposeIds の宣言有無だけで算出した構造上の紐づけ率であり、目的とテスト条件の内容が対応しているかは検査していない。"
+  );
+  lines.push(
+    "- 注記: テストタイプ選定理由の記入率は、目的IDが1件以上あり選定理由が実質記入(定型語のみでなく正規化後8文字以上)である選定タイプの割合であり、理由の内容が妥当かは意味的層に委ねる(PDC-10 の指摘を参照)。"
+  );
   lines.push("");
 
   lines.push("### 3.17 カタログ外のテストタイプ名(PDC-17)");
@@ -559,8 +567,16 @@ export const deriveTestPurposesInputShape = {
     )
     .optional()
     .describe("Test type selection/exclusion decisions with the backing purpose ids and reason"),
-  claimedPurposeCoveragePercent: z.number().optional(),
-  claimedTestTypeJustificationPercent: z.number().optional(),
+  claimedPurposeCoveragePercent: z
+    .number()
+    .optional()
+    .describe("Claimed percentage of test conditions linked to at least one purpose id (structural link rate)"),
+  claimedTestTypeJustificationPercent: z
+    .number()
+    .optional()
+    .describe(
+      "Claimed percentage of selected test types that have a purpose id and a substantively filled reason (fill rate, not a validity rate)"
+    ),
   idPrefixes: z
     .object({
       expectation: z.string().optional(),
@@ -581,7 +597,8 @@ export function registerDeriveTestPurposesTool(server: McpServer): void {
         "テスト戦略 → テスト目的 → 優先順位」という導出チェーンで整理させ、目的ID（既定 TP-）が下流の " +
         "テスト条件（extract_test_conditions）・テストタイプ選択（create_test_plan の5.2）へ貫通しているかを " +
         "双方向に検査する。どのテスト目的にも紐づかないテスト条件と、どのテスト条件からも参照されないテスト " +
-        "目的の両方を検出し、依頼書本文との裏付け照合（PDC-15）・宣言被覆率と実測値の突き合わせ（PDC-16）も " +
+        "目的の両方を検出し、依頼書本文との裏付け照合（PDC-15）・宣言被覆率・記入率と実測値の突き合わせ（PDC-16、" +
+        "目的の被覆率は構造上の紐づけ率、タイプ側は選定理由の記入率であり定型語や極端な短文は分子に数えない）も " +
         "行う。品質特性ID（PDC-14）は製品品質モデル（QC-*）・利用時品質モデル（QU-*）の両方を既知IDとして検査する。 " +
         "既存のテスト目的一覧を purposes に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
       inputSchema: deriveTestPurposesInputShape,

@@ -3,6 +3,7 @@ import {
   buildPurposeConditionMatrix,
   buildPurposeQualityMatrix,
   buildPurposeTestTypeMatrix,
+  classifyTestTypeReasonSubstance,
   computeTestPurposeCoverage,
   findConditionLessPurposes,
   findDuplicateTestPurposeIds,
@@ -228,13 +229,48 @@ describe("findTestTypeSelectionIssues / findTestTypeLessPurposes", () => {
 
   it("returns empty for well-formed selections", () => {
     const input = baseInput({
-      testTypeSelections: [{ name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "理由" }],
+      testTypeSelections: [
+        {
+          name: "機能テスト",
+          selected: true,
+          purposeIds: ["TP-01"],
+          reason: "TP-01 の達成状況を機能面から確認するため",
+        },
+      ],
     });
     expect(findTestTypeSelectionIssues(input)).toEqual([]);
   });
 
+  it("detects selected-with-placeholder-reason and selected-with-too-short-reason, not selected-without-reason", () => {
+    const input = baseInput({
+      testTypeSelections: [
+        { name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "必要" },
+        { name: "性能テスト", selected: true, purposeIds: ["TP-01"], reason: "リスク高" },
+      ],
+    });
+    const issues = findTestTypeSelectionIssues(input);
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        { name: "機能テスト", kind: "selected-with-placeholder-reason" },
+        { name: "性能テスト", kind: "selected-with-too-short-reason" },
+      ])
+    );
+    expect(issues.some((i) => i.kind === "selected-without-reason")).toBe(false);
+  });
+
   it("returns empty for testTypeLessPurposes when testTypeSelections is unspecified", () => {
     expect(findTestTypeLessPurposes(baseInput())).toEqual([]);
+  });
+});
+
+describe("classifyTestTypeReasonSubstance", () => {
+  it("classifies reason substance deterministically", () => {
+    expect(classifyTestTypeReasonSubstance(undefined)).toBe("missing");
+    expect(classifyTestTypeReasonSubstance("  ")).toBe("missing");
+    expect(classifyTestTypeReasonSubstance("必要")).toBe("placeholder");
+    expect(classifyTestTypeReasonSubstance("重要")).toBe("placeholder");
+    expect(classifyTestTypeReasonSubstance("リスク高")).toBe("too-short");
+    expect(classifyTestTypeReasonSubstance("TP-01 の回帰リスクが高いため実施する")).toBe("substantive");
   });
 });
 
@@ -450,6 +486,47 @@ describe("computeTestPurposeCoverage", () => {
     expect(result.conditionBasis).toBe("available");
     expect(result.computedPurposeCoveragePercent).toBeCloseTo(66.7, 1);
     expect(result.purposeCoverageMismatch).toBe(true);
+  });
+
+  it("does not count a placeholder-only reason toward computedTestTypeJustificationPercent", () => {
+    const input = baseInput({
+      testTypeSelections: [
+        { name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "必要" },
+      ],
+      claimedTestTypeJustificationPercent: 100,
+    });
+    const result = computeTestPurposeCoverage(input);
+    expect(result.typeBasis).toBe("available");
+    expect(result.computedTestTypeJustificationPercent).toBe(0);
+    expect(result.testTypeJustificationMismatch).toBe(true);
+  });
+
+  it("counts only substantively-reasoned selections toward computedTestTypeJustificationPercent", () => {
+    const input = baseInput({
+      testTypeSelections: [
+        { name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "必要" },
+        {
+          name: "性能テスト",
+          selected: true,
+          purposeIds: ["TP-01"],
+          reason: "TP-01 の性能要件を確認するため",
+        },
+      ],
+    });
+    const result = computeTestPurposeCoverage(input);
+    expect(result.computedTestTypeJustificationPercent).toBe(50);
+  });
+
+  it("leaves the purpose coverage computation unaffected by the reason substance change", () => {
+    const input = baseInput({
+      testConditions: [
+        { id: "TC-01", purposeIds: ["TP-01"] },
+        { id: "TC-02", purposeIds: ["TP-01"] },
+        { id: "TC-03" },
+      ],
+    });
+    const result = computeTestPurposeCoverage(input);
+    expect(result.computedPurposeCoveragePercent).toBeCloseTo(66.7, 1);
   });
 });
 

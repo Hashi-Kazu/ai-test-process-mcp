@@ -6,12 +6,12 @@
     "url": "https://github.com/Hashi-Kazu/ai-test-process-mcp",
     "source": "github"
   },
-  "version": "0.22.2",
+  "version": "0.23.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "ai-test-process-mcp",
-      "version": "0.22.2",
+      "version": "0.23.0",
       "transport": {
         "type": "stdio"
       }
