@@ -7,9 +7,28 @@
 **現在のスコープ（Phase 1〜3: Test Planning + Test Analysis + Test Design）**: テスト計画書（JSTQB準拠15章構成）の日本語ドラフト生成・JSTQB観点でのレビュー・修正支援・質問形式でのコンテキスト収集ガイド、要件分析・テスト条件抽出、境界値分析・同値分割・テストケース生成によるテスト設計技法、および探索的テストのチャーター設計を含む経験ベース技法。
 **将来構想**: Test Analysis（要件分析・テスト条件抽出）、Test Design（テストケース生成・テスト仕様書レビュー）を経て、Generic Test Process 全7工程へ段階的に拡張する。詳細は [docs/roadmap.md](./docs/roadmap.md) を参照。
 
-## セットアップ
+## インストール（利用者向け）
+
+npmに公開済みのため、ビルド不要ですぐに使える。Claude Desktop / Claude Codeの設定に以下を追記する（Node.js 18以上が必要）。
+
+```json
+{
+  "mcpServers": {
+    "ai-test-process-mcp": {
+      "command": "npx",
+      "args": ["-y", "ai-test-process-mcp@latest"]
+    }
+  }
+}
+```
+
+`@latest`を付けることで、新しいバージョンが公開されたときに手動でキャッシュを消さなくても自動的に反映される。
+
+## セットアップ（開発者向け）
 
 ```bash
+git clone https://github.com/Hashi-Kazu/ai-test-process-mcp.git
+cd ai-test-process-mcp
 npm install
 npm run build
 ```
