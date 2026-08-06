@@ -143,6 +143,24 @@ export const deliverableConsistencyCriteria: DeliverableConsistencyCriteria = {
       recommendedAction:
         "宣言値を実体に合わせて修正するか、列挙を実体の全件へ補うこと。達成度の数値は必ず本文の列挙で裏付けられる形にすること。",
     },
+    {
+      id: "DCC-16",
+      nameJa: "網羅率宣言の母集団（分母）が本文定義ID実数と不一致",
+      severity: "high",
+      definition:
+        "「N/M（X%）」形式の網羅率宣言について、分母Mが、その主語に対応するIDプレフィックスで本文に定義されているIDの実数と一致しない。母集団を縮小したことによる見かけの高い網羅率である可能性がある。",
+      recommendedAction:
+        "母集団を本文の定義実数へ揃えて率を再計算するか、母集団から除外した対象と除外理由を成果物に明記すること。分母を縮めたまま達成度として提示しないこと。",
+    },
+    {
+      id: "DCC-17",
+      nameJa: "分子分母の根拠を伴わない達成度%の主張",
+      severity: "medium",
+      definition:
+        "網羅率・カバレッジ・充足率のような達成度を示す語とともに「X%」だけが書かれ、その根拠となる分子・分母（N/M や N件中M件）が同一箇所に併記されていない。数値の裏付けを機械的に検査できない。",
+      recommendedAction:
+        "達成度の%には必ず分子・分母を併記し、分母が本文で定義された母集団の実数であることを示すこと。根拠を示せない場合は達成度の%表記を削除すること。",
+    },
   ],
   sharedItemKinds: [
     {
@@ -184,11 +202,49 @@ export const deliverableConsistencyCriteria: DeliverableConsistencyCriteria = {
   ],
   unreadStateWords: ["未読", "未読解", "読んでいない", "参照していない", "対象外", "除外", "未参照"],
   readStateWords: ["精読", "読了", "読解", "参照した", "参考文献", "テストベース"],
+  countClaimSubjectDefaults: [
+    { keyword: "テスト条件", idPrefixCandidates: ["TC", "TCOND", "COND"] },
+    { keyword: "テストケース", idPrefixCandidates: ["TCS", "TCASE", "CASE"] },
+    { keyword: "テスト観点", idPrefixCandidates: ["VP", "TV"] },
+    { keyword: "プロダクトリスク", idPrefixCandidates: ["R", "PR"] },
+    { keyword: "要件", idPrefixCandidates: ["REQ", "RQ"] },
+    { keyword: "機能", idPrefixCandidates: ["F", "FN", "FUNC"] },
+    { keyword: "シナリオ", idPrefixCandidates: ["SC", "SCN"] },
+  ],
+  achievementRatioKeywords: [
+    "網羅率",
+    "網羅性",
+    "カバレッジ",
+    "カバー率",
+    "被覆率",
+    "充足率",
+    "達成率",
+    "達成度",
+    "消化率",
+    "合格率",
+    "実施率",
+    "完了率",
+  ],
+  achievementRatioExclusionWords: [
+    "目標",
+    "基準",
+    "以上",
+    "以下",
+    "未満",
+    "超過",
+    "許容",
+    "閾値",
+    "しきい値",
+    "予定",
+    "計画値",
+    "SLA",
+  ],
   notes: [
     "候補0件は不整合が無いことを意味しない。投入した成果物のテキストと、指定した任意入力の範囲でしか検査は成立しない。",
     "決定的層は候補列挙にとどめ、不整合であるという断定は意味的層（レビュー担当）に委ねる。表記ゆれや意図的な精緻化を機械的に区別することはできない。",
     "任意入力（declaredReferencedDocuments / idPrefixOwners / countClaimSubjects）が未指定の検査は「検査不能（要確認）」として扱い、合格とはみなさない。",
     "参照テストベース文書は2桁の文書番号をキーに突き合わせる。番号を伴わない文書名だけの言及は抽出できない。",
     "章節参照の実在性は、参照先成果物に番号付き見出しが1件以上あるときにのみ検査する。",
+    "網羅率宣言の母集団照合は、主語が countClaimSubjects または既定主語カタログで解決でき、かつ対応するIDプレフィックスが本文に1件以上定義されている場合にのみ成立する。解決できない率宣言は「検査不能（要確認）」であり合格ではない。",
   ],
 };

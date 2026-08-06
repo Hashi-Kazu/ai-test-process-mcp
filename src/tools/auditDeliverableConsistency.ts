@@ -162,9 +162,28 @@ export function renderDeliverableConsistencyAudit(
 
   lines.push("### 2.5 件数・網羅率宣言と本文実体の照合");
   lines.push("");
-  renderFindings(lines, findings, ["DCC-15"]);
+  renderFindings(lines, findings, ["DCC-15", "DCC-16", "DCC-17"]);
   if (input.countClaimSubjects === undefined || input.countClaimSubjects.length === 0) {
     lines.push("- countClaimSubjects が未指定のため件数宣言の実体照合ができない(要確認)");
+  }
+  {
+    const ratioClaims = result.countClaims.filter((c) => c.kind === "ratio");
+    const unresolvedRatioCount = ratioClaims.filter((c) => {
+      const candidates = c.subjectPrefixCandidates ?? [];
+      if (candidates.length === 0) return true;
+      const matched = candidates.filter(
+        (candidate) =>
+          result.crossRefIndex.filter(
+            (e) => e.owner !== undefined && e.prefix.toUpperCase() === candidate.toUpperCase()
+          ).length > 0
+      );
+      return matched.length !== 1;
+    }).length;
+    if (unresolvedRatioCount > 0) {
+      lines.push(
+        `- 網羅率宣言 ${ratioClaims.length} 件のうち ${unresolvedRatioCount} 件は母集団の主語またはIDプレフィックスを解決できないため母集団照合ができない(要確認)`
+      );
+    }
   }
   lines.push("");
 
@@ -242,6 +261,9 @@ export function renderDeliverableConsistencyAudit(
   );
   lines.push(
     "- 2.5 の件数・網羅率は本文の列挙で裏付けられていない限り達成度として使わないこと。"
+  );
+  lines.push(
+    "- 2.5 の網羅率は分母が母集団の全件であることまで確認すること。分母を縮めた率、分子分母を伴わない%表記は達成度の根拠にならない。"
   );
   lines.push("");
 
@@ -352,7 +374,8 @@ export function registerAuditDeliverableConsistencyTool(server: McpServer): void
       title: "Audit Deliverable Consistency",
       description:
         "複数成果物を突き合わせ、参照テストベース文書リストの差分・IDの成果物間相互参照の解決性・章節参照の実在性・" +
-        "同一項目の記述差分を決定的に検出する。件数・網羅率の宣言は本文の列挙実体と照合する。",
+        "同一項目の記述差分を決定的に検出する。件数・網羅率の宣言は本文の列挙実体と照合し、網羅率の分母は本文で定義されたIDの実数と照合する。" +
+        "分子分母を伴わない達成度%の主張も別途検出する。",
       inputSchema: auditDeliverableConsistencyInputShape,
     },
     async (input) => {
