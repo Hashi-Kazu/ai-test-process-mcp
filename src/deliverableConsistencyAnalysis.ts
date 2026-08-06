@@ -1118,13 +1118,75 @@ export function checkIdStatementDiffs(rows: IdStatementDiffRow[]): DeliverableCo
   return findings;
 }
 
-// --- (d) 件数・網羅率の宣言と実体（DCC-15） ---
+// --- (d) 件数・網羅率の宣言と実体（DCC-15〜DCC-17） ---
+
+interface ResolvedCountClaimSubject {
+  keyword: string;
+  prefixCandidates: string[];
+  source: "input" | "default";
+}
+
+function longestKeyword<T extends { keyword: string }>(items: T[]): T {
+  return items.reduce((a, b) => (b.keyword.length > a.keyword.length ? b : a));
+}
+
+/**
+ * 網羅率宣言（ratio / bare-percent）の主語を解決する。
+ * 表行では列挙値のセルと主語ラベルのセルが分かれるため、キーワード一致は
+ * セル単位ではなく行全体（line）と見出し（heading）に対して行う。
+ */
+function resolveCountClaimSubject(
+  line: string,
+  heading: string,
+  countClaimSubjects: DeliverableCountClaimSubject[] | undefined,
+  criteria: DeliverableConsistencyCriteria
+): ResolvedCountClaimSubject | undefined {
+  const inputSubjects = countClaimSubjects ?? [];
+
+  const stage1 = inputSubjects.filter((s) => line.includes(s.keyword));
+  if (stage1.length > 0) {
+    const picked = longestKeyword(stage1);
+    return {
+      keyword: picked.keyword,
+      prefixCandidates: [picked.idPrefix.replace(/-$/, "")],
+      source: "input",
+    };
+  }
+  const stage2 = inputSubjects.filter((s) => heading.includes(s.keyword));
+  if (stage2.length > 0) {
+    const picked = longestKeyword(stage2);
+    return {
+      keyword: picked.keyword,
+      prefixCandidates: [picked.idPrefix.replace(/-$/, "")],
+      source: "input",
+    };
+  }
+
+  const defaults = criteria.countClaimSubjectDefaults;
+  const stage3 = defaults.filter((s) => line.includes(s.keyword));
+  if (stage3.length > 0) {
+    const picked = longestKeyword(stage3);
+    return { keyword: picked.keyword, prefixCandidates: picked.idPrefixCandidates, source: "default" };
+  }
+  const stage4 = defaults.filter((s) => heading.includes(s.keyword));
+  if (stage4.length > 0) {
+    const picked = longestKeyword(stage4);
+    return { keyword: picked.keyword, prefixCandidates: picked.idPrefixCandidates, source: "default" };
+  }
+
+  return undefined;
+}
 
 export function extractCountClaims(
   deliverables: ConsistencyDeliverable[],
-  options: { idPatterns?: string[]; countClaimSubjects?: DeliverableCountClaimSubject[] } = {}
+  options: {
+    idPatterns?: string[];
+    countClaimSubjects?: DeliverableCountClaimSubject[];
+    criteria?: DeliverableConsistencyCriteria;
+  } = {}
 ): CountClaim[] {
   const idRegexSources = [DEFAULT_ID_PATTERN_SOURCE, ...(options.idPatterns ?? [])];
+  const criteria = options.criteria ?? deliverableConsistencyCriteria;
   const claims: CountClaim[] = [];
 
   for (const d of deliverables) {
@@ -1165,6 +1227,7 @@ export function extractCountClaims(
         const ratioMatches = Array.from(segment.matchAll(/(\d+)\s*\/\s*(\d+)/g));
         const percentMatches = Array.from(segment.matchAll(/(\d+(?:\.\d+)?)\s*%/g));
         if (ratioMatches.length === 1 && percentMatches.length === 1) {
+          const resolved = resolveCountClaimSubject(line, heading, options.countClaimSubjects, criteria);
           claims.push({
             kind: "ratio",
             deliverable: d.name,
@@ -1174,6 +1237,13 @@ export function extractCountClaims(
             numerator: Number(ratioMatches[0][1]),
             denominator: Number(ratioMatches[0][2]),
             percent: Number(percentMatches[0][1]),
+            ...(resolved !== undefined
+              ? {
+                  subjectKeyword: resolved.keyword,
+                  subjectPrefixCandidates: resolved.prefixCandidates,
+                  subjectSource: resolved.source,
+                }
+              : {}),
           });
         }
 
@@ -1191,6 +1261,41 @@ export function extractCountClaims(
             keyword: subject.keyword,
           });
         }
+
+        // (iv) 分子分母を伴わない達成度%の主張
+        if (
+          percentMatches.length >= 1 &&
+          ratioMatches.length === 0 &&
+          !/\d+\s*件中\s*\d+\s*件/.test(segment) &&
+          !/\d+\s*分の\s*\d+/.test(segment)
+        ) {
+          const achievementMatches = criteria.achievementRatioKeywords.filter(
+            (k) => line.includes(k) || heading.includes(k)
+          );
+          const excluded = criteria.achievementRatioExclusionWords.some((w) => segment.includes(w));
+          if (achievementMatches.length > 0 && !excluded) {
+            const achievementKeyword = achievementMatches.reduce((a, b) =>
+              b.length > a.length ? b : a
+            );
+            const resolved = resolveCountClaimSubject(line, heading, options.countClaimSubjects, criteria);
+            claims.push({
+              kind: "bare-percent",
+              deliverable: d.name,
+              lineIndex,
+              heading,
+              snippet: makeSnippet(segment),
+              percent: Number(percentMatches[0][1]),
+              achievementKeyword,
+              ...(resolved !== undefined
+                ? {
+                    subjectKeyword: resolved.keyword,
+                    subjectPrefixCandidates: resolved.prefixCandidates,
+                    subjectSource: resolved.source,
+                  }
+                : {}),
+            });
+          }
+        }
       }
     });
   }
@@ -1200,7 +1305,8 @@ export function extractCountClaims(
 export function checkCountClaims(
   claims: CountClaim[],
   index: CrossRefIdEntry[],
-  countClaimSubjects: DeliverableCountClaimSubject[] | undefined
+  countClaimSubjects: DeliverableCountClaimSubject[] | undefined,
+  criteria: DeliverableConsistencyCriteria = deliverableConsistencyCriteria
 ): DeliverableConsistencyFinding[] {
   const findings: DeliverableConsistencyFinding[] = [];
 
@@ -1232,17 +1338,80 @@ export function checkCountClaims(
       const denominator = claim.denominator ?? 0;
       const percent = claim.percent ?? 0;
       if (denominator <= 0) continue;
+
       const expected = Math.round((numerator / denominator) * 1000) / 10;
-      if (Math.abs(expected - percent) < 0.05) continue;
+      if (Math.abs(expected - percent) >= 0.05) {
+        findings.push(
+          makeFinding({
+            checkId: "DCC-15",
+            severity: "high",
+            subject: `${claim.deliverable} ${claim.lineIndex + 1}行 網羅率宣言`,
+            summary: `網羅率宣言 ${numerator}/${denominator} に併記された ${percent}% が、分子分母から算出した ${expected}% と一致しない。`,
+            places: [place],
+            question: `分子・分母・率のどれが誤っているかを確認してください。`,
+            assumption: "暫定的に分子分母から算出した率を実体として扱う。",
+          })
+        );
+      }
+
+      if (numerator > denominator) {
+        findings.push(
+          makeFinding({
+            checkId: "DCC-15",
+            severity: "high",
+            subject: `${claim.deliverable} ${claim.lineIndex + 1}行 網羅率宣言`,
+            summary: `網羅率宣言 ${numerator}/${denominator} は分子が分母を超えており、率として成立しない。`,
+            places: [place],
+            question: `分子・分母のどちらが誤っているかを確認してください。`,
+            assumption: "暫定的に分子が分母を超えている宣言を誤りとして扱う。",
+          })
+        );
+      }
+
+      const candidates = claim.subjectPrefixCandidates ?? [];
+      if (candidates.length > 0) {
+        const matchedCandidates = candidates.filter(
+          (candidate) =>
+            index.filter(
+              (e) => e.owner !== undefined && e.prefix.toUpperCase() === candidate.toUpperCase()
+            ).length > 0
+        );
+        if (matchedCandidates.length === 1) {
+          const prefix = matchedCandidates[0];
+          const actual = index.filter(
+            (e) => e.owner !== undefined && e.prefix.toUpperCase() === prefix.toUpperCase()
+          ).length;
+          if (actual !== denominator) {
+            findings.push(
+              makeFinding({
+                checkId: "DCC-16",
+                severity: "high",
+                subject: `${claim.deliverable} ${claim.lineIndex + 1}行 網羅率母集団`,
+                summary: `網羅率宣言 ${numerator}/${denominator}（${percent}%）の分母 ${denominator} が、「${claim.subjectKeyword}」に対応するプレフィックス「${prefix}」で本文に定義されているIDの実数 ${actual} 件と一致しない。母集団の縮小による見かけの網羅率である可能性がある。`,
+                places: [place],
+                question: `分母 ${denominator} が母集団の全件かを確認してください。除外した対象があるなら除外IDと除外理由を明記し、無いなら分母を ${actual} として率を再計算してください。`,
+                assumption: "暫定的に本文で定義されたIDの実数を母集団として扱う。",
+              })
+            );
+          }
+        }
+      }
+
+      continue;
+    }
+
+    if (claim.kind === "bare-percent") {
+      const percent = claim.percent ?? 0;
+      const suffix = claim.subjectKeyword !== undefined ? `（主語: ${claim.subjectKeyword}）` : "";
       findings.push(
         makeFinding({
-          checkId: "DCC-15",
-          severity: "high",
-          subject: `${claim.deliverable} ${claim.lineIndex + 1}行 網羅率宣言`,
-          summary: `網羅率宣言 ${numerator}/${denominator} に併記された ${percent}% が、分子分母から算出した ${expected}% と一致しない。`,
+          checkId: "DCC-17",
+          severity: "medium",
+          subject: `${claim.deliverable} ${claim.lineIndex + 1}行 達成度宣言`,
+          summary: `「${claim.achievementKeyword}」として ${percent}% が示されているが、同一箇所に分子・分母（N/M）が併記されておらず、数値の根拠を検査できない。${suffix}`,
           places: [place],
-          question: `分子・分母・率のどれが誤っているかを確認してください。`,
-          assumption: "暫定的に分子分母から算出した率を実体として扱う。",
+          question: `${percent}% の分子と分母を明記してください。分母は本文で定義された母集団の実数と一致している必要があります。`,
+          assumption: "暫定的に根拠未記載の達成度主張として扱い、達成度の裏付けが無いものとみなす。",
         })
       );
       continue;
@@ -1460,6 +1629,7 @@ export function analyzeDeliverableConsistency(
   const countClaims = extractCountClaims(deliverables, {
     idPatterns: input.idPatterns,
     countClaimSubjects: input.countClaimSubjects,
+    criteria,
   });
   const sharedItems = extractSharedItems(deliverables, criteria, input.sharedItemKindIds);
 
@@ -1472,7 +1642,7 @@ export function analyzeDeliverableConsistency(
     ...checkNeverReferencedIds(crossRefIndex, deliverableIndex),
     ...checkSectionReferences(sectionReferences, deliverableIndex),
     ...checkIdStatementDiffs(statementDiffs),
-    ...checkCountClaims(countClaims, crossRefIndex, input.countClaimSubjects),
+    ...checkCountClaims(countClaims, crossRefIndex, input.countClaimSubjects, criteria),
     ...checkSharedItemGaps(sharedItems, deliverables),
   ]);
 

@@ -249,7 +249,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 ### Phase F — 超えるための独自性
 
 - F-1 `reexpand_threshold_changes` の入力に仕様書テキストを許し、**閾値パラメータ表そのものを文書から自前抽出**する（Re:Spec 未実装フェーズ1の踏破）
-- F-2 `audit_deliverable_consistency`（成果物間の参照文書リスト／ID相互参照／章節参照の実在性）→ #35 ✅ 完了（GitHub Issue #88 / Jira `HSKZ-132`。判定区分カタログ `testdesign://deliverable/consistency-criteria` `DCC-01`〜`DCC-15` と共通項目種別カタログ `DSI-01`〜`DSI-06` 付き。参照テストベース文書リストの読了/未読マトリクス突き合わせ、レンジ表記展開を含むIDの成果物間相互参照と対応主張の裏付け照合、章節参照の実在性と見出しラベル一致、同一IDの同一単位異値・記述乖離・共通項目列挙の片側欠落、件数/網羅率宣言と本文列挙実体の照合を決定的層で実装。任意入力 `declaredReferencedDocuments` / `idPrefixOwners` / `countClaimSubjects` 未指定の検査は合格ではなく「検査不能（要確認）」として出力する）
+- F-2 `audit_deliverable_consistency`（成果物間の参照文書リスト／ID相互参照／章節参照の実在性）→ #35 / #134 ✅ 完了（GitHub Issue #88 / #134 / Jira `HSKZ-132` / `HSKZ-173`。判定区分カタログ `testdesign://deliverable/consistency-criteria` `DCC-01`〜`DCC-17` と共通項目種別カタログ `DSI-01`〜`DSI-06` 付き。参照テストベース文書リストの読了/未読マトリクス突き合わせ、レンジ表記展開を含むIDの成果物間相互参照と対応主張の裏付け照合、章節参照の実在性と見出しラベル一致、同一IDの同一単位異値・記述乖離・共通項目列挙の片側欠落、件数/網羅率宣言と本文列挙実体の照合を決定的層で実装。網羅率宣言は分母を `countClaimSubjects`（未指定時は既定主語カタログ）で解決したプレフィックスの本文定義ID実数（母集団）と照合し、母集団の縮小による見かけの網羅率（`DCC-16`）と、分子分母の根拠を伴わない裸の達成度%主張（`DCC-17`）を区別して検出する。任意入力 `declaredReferencedDocuments` / `idPrefixOwners` / `countClaimSubjects` 未指定の検査は合格ではなく「検査不能（要確認）」として出力する）
 - F-3 全ツール出力への「未実施の後続ツール」の決定的列挙 ✅ 完了（GitHub Issue #91 / Jira `HSKZ-135`。全26ツールの出力末尾に固定見出し `## 次に実行すべきツール` を追加。静的後続カタログ `toolchain://next-tools/catalog` と生成物由来のシグナルから未実施の後続ツールを列挙し、`completedTools` の実施済み申告は証跡(evidence)付きかつ実在ツール名のものだけを実施済みとして扱い、証跡なし・不存在ツール名・後続候補外の申告は警告付きで未実施のまま残す）
 
 ---

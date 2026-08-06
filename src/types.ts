@@ -3475,7 +3475,9 @@ export type DeliverableConsistencyCheckId =
   | "DCC-12"
   | "DCC-13"
   | "DCC-14"
-  | "DCC-15";
+  | "DCC-15"
+  | "DCC-16"
+  | "DCC-17";
 
 export type DeliverableConsistencySeverity = "high" | "medium" | "info";
 
@@ -3574,7 +3576,7 @@ export interface IdStatementDiffRow {
   bigramRatio: number;
 }
 
-export type CountClaimKind = "id-enumeration" | "ratio" | "subject";
+export type CountClaimKind = "id-enumeration" | "ratio" | "subject" | "bare-percent";
 
 export interface CountClaim {
   kind: CountClaimKind;
@@ -3592,6 +3594,19 @@ export interface CountClaim {
   percent?: number;
   /** subject の対象キーワード */
   keyword?: string;
+  /** ratio / bare-percent で解決できた主語キーワード */
+  subjectKeyword?: string;
+  /** その主語に対応しうるIDプレフィックス候補（明示指定なら1件、既定カタログなら複数のことがある） */
+  subjectPrefixCandidates?: string[];
+  /** 主語の解決元 */
+  subjectSource?: "input" | "default";
+  /** bare-percent で検出した達成度語 */
+  achievementKeyword?: string;
+}
+
+export interface DeliverableCountClaimSubjectDefault {
+  keyword: string;
+  idPrefixCandidates: string[];
 }
 
 export interface SharedItemOccurrence {
@@ -3638,6 +3653,12 @@ export interface DeliverableConsistencyCriteria {
   sharedItemKinds: DeliverableSharedItemKind[];
   unreadStateWords: string[];
   readStateWords: string[];
+  /** 網羅率宣言の主語が明示指定されなかった場合に試す既定の主語カタログ */
+  countClaimSubjectDefaults: DeliverableCountClaimSubjectDefault[];
+  /** 達成度を示す語彙（網羅率・カバレッジ等）。裸の%検出のトリガー */
+  achievementRatioKeywords: string[];
+  /** 目標値・閾値など達成度主張ではないものを除外する語彙 */
+  achievementRatioExclusionWords: string[];
   notes: string[];
 }
 

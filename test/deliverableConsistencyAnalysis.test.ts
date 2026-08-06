@@ -495,6 +495,115 @@ describe("件数・網羅率宣言（DCC-15）", () => {
   });
 });
 
+describe("網羅率の母集団照合（DCC-16 / DCC-17）", () => {
+  function buildTcDefinitions(count: number): string {
+    return Array.from(
+      { length: count },
+      (_, i) => `| TC-${String(i + 1).padStart(3, "0")} | 条件${i + 1} |`
+    ).join("\n");
+  }
+
+  const ANALYSIS_20: ConsistencyDeliverable = {
+    name: "分析.md",
+    kind: "test-analysis",
+    content: `# 分析\n\n## 2 テスト条件\n\n| ID | 内容 |\n| --- | --- |\n${buildTcDefinitions(20)}\n`,
+  };
+
+  const DESIGN_RATIO: ConsistencyDeliverable = {
+    name: "設計.md",
+    kind: "test-design",
+    content: `# 設計\n\n### 3.6 網羅率\n\n| テスト条件網羅率 | 8/8（100%） |\n`,
+  };
+
+  it("網羅率宣言の分母が本文定義ID実数と一致しない場合に DCC-16 を high で検出する", () => {
+    const index = buildCrossRefIdIndex([ANALYSIS_20, DESIGN_RATIO]);
+    const subjectsInput = [{ keyword: "テスト条件", idPrefix: "TC-" }];
+    const claims = extractCountClaims([ANALYSIS_20, DESIGN_RATIO], { countClaimSubjects: subjectsInput });
+    const findings = checkCountClaims(claims, index, subjectsInput);
+    const dcc16 = findings.filter((f) => f.checkId === "DCC-16");
+    expect(dcc16).toHaveLength(1);
+    expect(dcc16[0].severity).toBe("high");
+    expect(dcc16[0].summary).toContain("20");
+    expect(dcc16[0].summary).toContain("8");
+    expect(findings.filter((f) => f.checkId === "DCC-15")).toHaveLength(0);
+  });
+
+  it("countClaimSubjects 未指定でも既定主語カタログで母集団を解決して DCC-16 を出す", () => {
+    const index = buildCrossRefIdIndex([ANALYSIS_20, DESIGN_RATIO]);
+    const claims = extractCountClaims([ANALYSIS_20, DESIGN_RATIO]);
+    const findings = checkCountClaims(claims, index, undefined);
+    expect(findings.filter((f) => f.checkId === "DCC-16")).toHaveLength(1);
+  });
+
+  it("分母が本文定義ID実数と一致していれば DCC-16 を出さない", () => {
+    const analysis8: ConsistencyDeliverable = {
+      ...ANALYSIS_20,
+      content: `# 分析\n\n## 2 テスト条件\n\n| ID | 内容 |\n| --- | --- |\n${buildTcDefinitions(8)}\n`,
+    };
+    const index = buildCrossRefIdIndex([analysis8, DESIGN_RATIO]);
+    const subjectsInput = [{ keyword: "テスト条件", idPrefix: "TC-" }];
+    const claims = extractCountClaims([analysis8, DESIGN_RATIO], { countClaimSubjects: subjectsInput });
+    const findings = checkCountClaims(claims, index, subjectsInput);
+    expect(findings.filter((f) => f.checkId === "DCC-15")).toHaveLength(0);
+    expect(findings.filter((f) => f.checkId === "DCC-16")).toHaveLength(0);
+  });
+
+  it("主語を解決できない網羅率宣言では DCC-16 を出さない", () => {
+    const index = buildCrossRefIdIndex([DESIGN]);
+    const claims = extractCountClaims([DESIGN]);
+    const findings = checkCountClaims(claims, index, undefined);
+    expect(findings.filter((f) => f.checkId === "DCC-16")).toHaveLength(0);
+  });
+
+  it("分子分母を伴わない達成度%を DCC-17 medium で検出する", () => {
+    const bare: ConsistencyDeliverable = {
+      name: "設計.md",
+      kind: "test-design",
+      content: `# 設計\n\n### 3.6 網羅率\n\n| テスト条件網羅率 | 100% |\n`,
+    };
+    const claims = extractCountClaims([bare]);
+    const findings = checkCountClaims(claims, [], undefined);
+    const dcc17 = findings.filter((f) => f.checkId === "DCC-17");
+    expect(dcc17).toHaveLength(1);
+    expect(dcc17[0].severity).toBe("medium");
+  });
+
+  it("目標値・閾値としての%は DCC-17 を出さない", () => {
+    const target: ConsistencyDeliverable = {
+      name: "計画.md",
+      kind: "test-plan",
+      content: `# 計画\n\n網羅率は目標90%以上とする。\n`,
+    };
+    const claims = extractCountClaims([target]);
+    const findings = checkCountClaims(claims, [], undefined);
+    expect(findings.filter((f) => f.checkId === "DCC-17")).toHaveLength(0);
+  });
+
+  it("分子分母が併記された%は DCC-17 を出さない", () => {
+    const grounded: ConsistencyDeliverable = {
+      name: "設計.md",
+      kind: "test-design",
+      content: `# 設計\n\n| 観点 | 網羅 |\n| --- | --- |\n| 状態網羅率 | 6/6（100.0%） |\n| 条件網羅率 | 8件中8件（100%） |\n`,
+    };
+    const claims = extractCountClaims([grounded]);
+    const findings = checkCountClaims(claims, [], undefined);
+    expect(findings.filter((f) => f.checkId === "DCC-17")).toHaveLength(0);
+  });
+
+  it("分子が分母を超える網羅率宣言を DCC-15 で検出する", () => {
+    const overflow: ConsistencyDeliverable = {
+      name: "設計.md",
+      kind: "test-design",
+      content: `# 設計\n\n| 観点 | 網羅 |\n| --- | --- |\n| 状態網羅 | 9/8（112.5%） |\n`,
+    };
+    const claims = extractCountClaims([overflow]);
+    const findings = checkCountClaims(claims, [], undefined);
+    const dcc15 = findings.filter((f) => f.checkId === "DCC-15");
+    expect(dcc15.length).toBeGreaterThan(0);
+    expect(dcc15.every((f) => f.severity === "high")).toBe(true);
+  });
+});
+
 describe("共通項目の片側欠落（DCC-14）", () => {
   const planScope: ConsistencyDeliverable = {
     name: "計画書",

@@ -267,13 +267,50 @@ describe("renderDeliverableConsistencyAudit", () => {
     );
   });
 
-  it("3節に DCC-01〜DCC-15 の15行が出力される", () => {
+  it("3節に DCC-01〜DCC-17 の17行が出力される", () => {
     const markdown = renderDeliverableConsistencyAudit(CONFLICTING_INPUT);
     const body = sectionBody(markdown, "## 3. 判定区分と対処指針");
-    for (let i = 1; i <= 15; i++) {
+    for (let i = 1; i <= 17; i++) {
       const id = `DCC-${String(i).padStart(2, "0")}`;
       expect(body.split("\n").filter((l) => l.startsWith(`| ${id} |`)).length, id).toBe(1);
     }
+  });
+
+  it("8/8(100%) だが本文定義IDが20件の入力で 2.5 節に DCC-16 が現れる", () => {
+    const analysis20: ConsistencyDeliverable = {
+      name: "分析.md",
+      kind: "test-analysis",
+      content: `# 分析\n\n## 2 テスト条件\n\n| ID | 内容 |\n| --- | --- |\n${Array.from(
+        { length: 20 },
+        (_, i) => `| TC-${String(i + 1).padStart(3, "0")} | 条件${i + 1} |`
+      ).join("\n")}\n`,
+    };
+    const designRatio: ConsistencyDeliverable = {
+      name: "設計比率.md",
+      kind: "test-design",
+      content: `# 設計\n\n### 3.6 網羅率\n\n| テスト条件網羅率 | 8/8（100%） |\n`,
+    };
+    const markdown = renderDeliverableConsistencyAudit({
+      deliverables: [analysis20, designRatio],
+      countClaimSubjects: [{ keyword: "テスト条件", idPrefix: "TC-" }],
+    });
+    expect(sectionBody(markdown, "### 2.5 件数・網羅率宣言と本文実体の照合")).toContain("DCC-16");
+  });
+
+  it("母集団を解決できない率宣言があるとき 2.5 節に母集団照合の(要確認)行が出る", () => {
+    const markdown = renderDeliverableConsistencyAudit(CONFLICTING_INPUT);
+    // CONFLICTING_INPUT の DESIGN には網羅率宣言が無いため、まず率宣言を含む入力を用意する
+    const designWithRatio: ConsistencyDeliverable = {
+      ...DESIGN,
+      content: `${DESIGN.content}\n### 3.6 網羅率\n\n| 状態網羅 | 6/6（100.0%） |\n`,
+    };
+    const markdownWithRatio = renderDeliverableConsistencyAudit({
+      deliverables: [PLAN, ANALYSIS, designWithRatio],
+    });
+    expect(sectionBody(markdownWithRatio, "### 2.5 件数・網羅率宣言と本文実体の照合")).toContain(
+      "母集団照合ができない(要確認)"
+    );
+    expect(markdown).toBeDefined();
   });
 
   it("| を含む成果物名でもセルが崩れない", () => {

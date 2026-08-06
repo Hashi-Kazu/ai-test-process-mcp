@@ -48,7 +48,7 @@ src/
     scenarioFlowCriteria.ts # ユースケース／シナリオ設計の判定区分カタログ14区分 SFC-01〜SFC-14（testdesign://scenario-flow/analysis-criteria）
     testArchitectureDesignPrinciples.ts # テストコンテナ設計原則（分割軸8種 TAX-01〜TAX-08・責務定義項目9種 RFD-01〜RFD-09・優先度クラス3種 TPR-01〜TPR-03・スコープ宣言項目3種 TSC-01〜TSC-03）＋判定区分カタログ17区分 TAC-01〜TAC-17（testarch://container/design-principles）
     crossMatrixAuditCriteria.ts # 多軸マトリクス監査の判定区分カタログ17区分 CMX-01〜CMX-17（testdesign://cross-matrix/audit-criteria）
-    deliverableConsistencyCriteria.ts # 成果物間整合性監査の判定区分カタログ15区分 DCC-01〜DCC-15 ＋ 共通項目種別カタログ6種 DSI-01〜DSI-06 ＋ 読了状態語彙（testdesign://deliverable/consistency-criteria）
+    deliverableConsistencyCriteria.ts # 成果物間整合性監査の判定区分カタログ17区分 DCC-01〜DCC-17（分母の母集団照合・裸の達成度%検出を含む）＋ 共通項目種別カタログ6種 DSI-01〜DSI-06 ＋ 読了状態語彙 ＋ 網羅率宣言の既定主語カタログ・達成度語彙（testdesign://deliverable/consistency-criteria）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
