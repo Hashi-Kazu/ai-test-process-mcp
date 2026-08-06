@@ -1,4 +1,4 @@
-import { DEFAULT_ID_PATTERN_SOURCE } from "../testBasisAnalysis.js";
+import { COVERAGE_TARGET_ID_PATTERN_SOURCE, DEFAULT_ID_PATTERN_SOURCE } from "../testBasisAnalysis.js";
 import type { RequirementIdPatternCatalog } from "../types.js";
 
 // 要件ID・機能IDの表記ゆれに対応するための正規表現パターン集。
@@ -39,6 +39,14 @@ export const requirementIdPatternCatalog: RequirementIdPatternCatalog = {
       examples: ["FR1.2.3", "NFR2.1"],
       nonExamples: ["FR1", "1.2.3"],
       note: "idPatterns にこの source をそのまま追加すると検出できる。",
+    },
+    {
+      id: "IDP-05",
+      name: "網羅対象ID（コロン区切り、design_* 系エンジン発行）",
+      source: COVERAGE_TARGET_ID_PATTERN_SOURCE,
+      examples: ["CFG:MAIN:R12", "PW:MAIN:P3", "DL:S:ORDER:PAID", "UC:UC-01:F1", "ST:T1"],
+      nonExamples: ["REQ-001", "2026-04-26", "https://example.com"],
+      note: "audit_deliverable_consistency / audit_id_population / audit_cross_matrix では includeCoverageTargetIds（既定true）で自動的に有効。要件ID中心のツールで使う場合は idPatterns ではなくこの区分を意識して扱う。",
     },
   ],
 };

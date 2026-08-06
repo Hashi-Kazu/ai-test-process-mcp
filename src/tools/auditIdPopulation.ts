@@ -29,8 +29,9 @@ export function renderIdPopulationAudit(
   criteria: IdPopulationAuditCriteria = idPopulationAuditCriteria
 ): string {
   const { documents, declaredPopulations, exclusions, expectedDocumentNames, idPatterns } = input;
+  const includeCoverageTargetIds = input.includeCoverageTargetIds ?? true;
 
-  const defined = buildDefinedIdIndex(documents, { idPatterns });
+  const defined = buildDefinedIdIndex(documents, { idPatterns, includeCoverageTargetIds });
   const rows = buildIdPopulationMatrix(defined, declaredPopulations, exclusions);
   const neverDeclared = findNeverDeclaredIds(rows);
   const excluded = findExcludedIds(rows);
@@ -255,6 +256,12 @@ export const auditIdPopulationInputShape = {
     .array(z.string())
     .optional()
     .describe("Additional ID regular expression patterns, appended to the default pattern"),
+  includeCoverageTargetIds: z
+    .boolean()
+    .optional()
+    .describe(
+      "Include colon-separated coverage target IDs (BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:) emitted by design_* tools in the ID index. Defaults to true."
+    ),
 } as const;
 
 export function registerAuditIdPopulationTool(server: McpServer): void {
@@ -263,7 +270,8 @@ export function registerAuditIdPopulationTool(server: McpServer): void {
     {
       title: "Audit ID Population",
       description:
-        "テストベース文書から抽出した定義済みID全量と、各ツール呼び出しに実際に渡された母集団を突き合わせ、どの母集団にも渡されていないIDを決定的に検出する。網羅率100%が母集団の縮退による見かけの値でないことを検証する。",
+        "テストベース文書から抽出した定義済みID全量と、各ツール呼び出しに実際に渡された母集団を突き合わせ、どの母集団にも渡されていないIDを決定的に検出する。網羅率100%が母集団の縮退による見かけの値でないことを検証する。" +
+        "design_* 系エンジンが発行するコロン区切りの網羅対象ID（BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:）も既定でID索引に含める。",
       inputSchema: auditIdPopulationInputShape,
     },
     async (input) => {

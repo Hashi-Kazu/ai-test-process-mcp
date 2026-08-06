@@ -915,7 +915,10 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
   }
 
   // CMX-10 テストベース本文に裏付けの無い軸要素
-  for (const item of findUngroundedAxisItems(axes, input.documents, { idPatterns: input.idPatterns })) {
+  for (const item of findUngroundedAxisItems(axes, input.documents, {
+    idPatterns: input.idPatterns,
+    includeCoverageTargetIds: input.includeCoverageTargetIds,
+  })) {
     findings.push({
       categoryId: "CMX-10",
       severity: "high",
@@ -926,7 +929,10 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
 
   // CMX-11 テストベースに定義があるのに軸に載っていないID
   const exclusionItemIds = new Set((input.exclusions ?? []).map((e) => e.itemId));
-  for (const entry of findUnmappedDefinedIds(axes, input.documents, { idPatterns: input.idPatterns })) {
+  for (const entry of findUnmappedDefinedIds(axes, input.documents, {
+    idPatterns: input.idPatterns,
+    includeCoverageTargetIds: input.includeCoverageTargetIds,
+  })) {
     if (exclusionItemIds.has(entry.id)) continue;
     findings.push({
       categoryId: "CMX-11",

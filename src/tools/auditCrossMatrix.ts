@@ -114,7 +114,10 @@ export function renderCrossMatrixAudit(
   input: AuditCrossMatrixInput,
   criteria: CrossMatrixAuditCriteria = crossMatrixAuditCriteria
 ): string {
-  const result = analyzeCrossMatrix(input);
+  const result = analyzeCrossMatrix({
+    ...input,
+    includeCoverageTargetIds: input.includeCoverageTargetIds ?? true,
+  });
   const { axes, pairs, isolatedItems, findings, summary } = result;
 
   const lines: string[] = [];
@@ -527,6 +530,12 @@ export const auditCrossMatrixInputShape = {
     .array(z.string())
     .optional()
     .describe("Additional ID regular expression patterns, appended to the default pattern"),
+  includeCoverageTargetIds: z
+    .boolean()
+    .optional()
+    .describe(
+      "Include colon-separated coverage target IDs (BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:) emitted by design_* tools in the ID index. Defaults to true."
+    ),
   maxCellCount: z.number().int().positive().optional().describe("Per-pair cell count cap (default 20000)"),
 } as const;
 
@@ -539,7 +548,8 @@ export function registerAuditCrossMatrixTool(server: McpServer): void {
         "任意の2軸以上(プロダクトリスク／テスト観点カテゴリ／ペルソナ／機能ID／シナリオ／テストコンテナ／パラメータ／テストタイプなど)を汎用の軸データとして受け取り、" +
         "軸ペアの直積表を決定的に生成して、空行・空列(片側にしかない要素)を列挙する。3軸以上なら全組合せの軸ペアを一括で回す。" +
         "充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合するため、見かけの高充填率を検出できる。" +
-        "各リンク宣言の根拠(evidence)が documents 本文から裏付けられるかまで照合し、根拠裏付け後の充填率を併記する。",
+        "各リンク宣言の根拠(evidence)が documents 本文から裏付けられるかまで照合し、根拠裏付け後の充填率を併記する。" +
+        "design_* 系エンジンが発行するコロン区切りの網羅対象ID（BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:）も既定でID索引に含める。",
       inputSchema: auditCrossMatrixInputShape,
     },
     async (input) => {

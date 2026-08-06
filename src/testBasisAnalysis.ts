@@ -5,6 +5,7 @@ import type {
   TestBasisAmbiguousTermFinding,
   TestBasisDocument,
   TestBasisDuplicateId,
+  TestBasisIdKind,
   TestBasisIdOccurrence,
   TestBasisPrefixIssue,
   TestBasisPrefixStat,
@@ -19,6 +20,12 @@ import type {
 // 日付表記（2026-04-26 等）は先頭が英大文字ではないため対象外になる。
 export const DEFAULT_ID_PATTERN_SOURCE =
   "\\b([A-Z][A-Za-z0-9]{0,5}(?:-[A-Za-z][A-Za-z0-9]{0,7})?)-(\\d{1,4}(?:-\\d{1,3})*)\\b";
+
+// design_* 系エンジンが発行するコロン区切りの網羅対象ID。
+// 例: CFG:MAIN:R12 / PW:MAIN:P3 / DL:S:ORDER:PAID / UC:UC-01:F1 / BV:金額:1000
+export const COVERAGE_TARGET_ID_PATTERN_SOURCE =
+  "(?<![A-Za-z0-9:])(BV|EP|ST|DT|PW|SC|UC|DL|CFG):" +
+  "([A-Za-z0-9_.\\-\\u3040-\\u30FF\\u4E00-\\u9FFF]+(?::[A-Za-z0-9_.\\-\\u3040-\\u30FF\\u4E00-\\u9FFF]+){0,2})";
 
 export const DEFAULT_AMBIGUOUS_TERMS: { term: string; category: TestBasisAmbiguousTermFinding["category"] }[] = [
   // ambiguous（曖昧な限定語）
@@ -61,6 +68,11 @@ export interface TestBasisAnalysisOptions {
   idPatterns?: string[];
   /** 追加の曖昧語（categoryは"ambiguous"扱い） */
   additionalAmbiguousTerms?: string[];
+  /**
+   * design_* 系エンジンが発行するコロン区切りの網羅対象ID（BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:）を
+   * ID索引に含めるかどうか。既定 false（現行挙動を完全維持）。
+   */
+  includeCoverageTargetIds?: boolean;
 }
 
 const LEADING_MARKER_REGEX = /^\s*(?:#{1,6}\s+|[-*]\s+|\d+[.).]\s*|\|\s*)?/;
@@ -87,9 +99,37 @@ interface RawIdMatch {
   numberPart: string;
   start: number;
   end: number;
+  kind: TestBasisIdKind;
 }
 
-function findRawIdMatches(line: string, patterns: string[]): RawIdMatch[] {
+function overlapsRange(a: [number, number], b: [number, number]): boolean {
+  return a[0] < b[1] && b[0] < a[1];
+}
+
+function findRawIdMatches(
+  line: string,
+  patterns: string[],
+  options: TestBasisAnalysisOptions = {}
+): RawIdMatch[] {
+  const coverageMatches: RawIdMatch[] = [];
+  if (options.includeCoverageTargetIds === true) {
+    const regex = new RegExp(COVERAGE_TARGET_ID_PATTERN_SOURCE, "g");
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(line)) !== null) {
+      const start = m.index;
+      const end = start + m[0].length;
+      coverageMatches.push({
+        id: `${m[1]}:${m[2]}`,
+        prefix: `${m[1]}:`,
+        numberPart: m[2],
+        start,
+        end,
+        kind: "coverageTarget",
+      });
+      if (m[0].length === 0) regex.lastIndex++;
+    }
+  }
+
   const seen = new Map<string, RawIdMatch>();
   for (const source of patterns) {
     const regex = new RegExp(source, "gi");
@@ -99,14 +139,25 @@ function findRawIdMatches(line: string, patterns: string[]): RawIdMatch[] {
       const numberPart = m[2];
       const start = m.index;
       const end = start + m[0].length;
+      if (coverageMatches.some((c) => overlapsRange([c.start, c.end], [start, end]))) {
+        if (m[0].length === 0) regex.lastIndex++;
+        continue;
+      }
       const key = `${start}:${end}`;
       if (!seen.has(key)) {
-        seen.set(key, { id: `${prefix}-${numberPart}`, prefix, numberPart, start, end });
+        seen.set(key, {
+          id: `${prefix}-${numberPart}`,
+          prefix,
+          numberPart,
+          start,
+          end,
+          kind: "requirement",
+        });
       }
       if (m[0].length === 0) regex.lastIndex++;
     }
   }
-  return Array.from(seen.values()).sort((a, b) => a.start - b.start);
+  return [...coverageMatches, ...seen.values()].sort((a, b) => a.start - b.start);
 }
 
 export function extractIdOccurrences(
@@ -120,7 +171,7 @@ export function extractIdOccurrences(
     const lines = doc.content.split("\n");
     const headingPerLine = headingsPerLine(doc.content);
     lines.forEach((line, lineIndex) => {
-      const matches = findRawIdMatches(line, patterns);
+      const matches = findRawIdMatches(line, patterns, options);
       if (matches.length === 0) return;
       const leadMatch = LEADING_MARKER_REGEX.exec(line);
       const leadPos = leadMatch ? leadMatch[0].length : 0;
@@ -137,12 +188,32 @@ export function extractIdOccurrences(
           heading,
           lineText,
           role: isDefinition ? "definition" : "reference",
+          kind: match.kind,
         });
       });
     });
   }
 
   return occurrences;
+}
+
+/**
+ * 行/文書横断でIDを1回だけ数えたい呼び出し向けのヘルパー。
+ * findRawIdMatches によるID再構成ロジックを1か所に集約し、出現順・重複排除済みのID配列を返す。
+ */
+export function extractIdStringsFromText(
+  text: string,
+  options: TestBasisAnalysisOptions = {}
+): string[] {
+  const patterns = [DEFAULT_ID_PATTERN_SOURCE, ...(options.idPatterns ?? [])];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const match of findRawIdMatches(text, patterns, options)) {
+    if (seen.has(match.id)) continue;
+    seen.add(match.id);
+    result.push(match.id);
+  }
+  return result;
 }
 
 function extractDefinitionTitle(occurrence: TestBasisIdOccurrence): string {
@@ -286,7 +357,7 @@ export function analyzePrefixes(occurrences: TestBasisIdOccurrence[]): {
   stats: TestBasisPrefixStat[];
   issues: TestBasisPrefixIssue[];
 } {
-  const definitions = occurrences.filter((o) => o.role === "definition");
+  const definitions = occurrences.filter((o) => o.role === "definition" && o.kind !== "coverageTarget");
 
   const prefixOrder: string[] = [];
   const byPrefix = new Map<string, TestBasisIdOccurrence[]>();
