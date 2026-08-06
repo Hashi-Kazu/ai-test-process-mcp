@@ -177,10 +177,14 @@ export function renderBoundaryValues(input: {
   lines.push(`- 総ケース数: ${totalCases}`);
   lines.push(`- 有効: ${totalValid} 件 / 無効: ${totalInvalid} 件`);
 
+  const boundaryValueSignals: string[] = [];
+  if (results.some((r) => r.error)) {
+    boundaryValueSignals.push("has-invalid-variables");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_boundary_values",
-      [],
+      boundaryValueSignals,
       input.completedTools
     ).split("\n")
   );

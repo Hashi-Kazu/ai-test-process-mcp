@@ -2,6 +2,8 @@
 export interface CompletedToolDeclaration {
   toolName: string;
   evidence?: string;
+  /** 申告ツールの実出力本文（抜粋）。H1見出し行の実在照合に使う */
+  outputExcerpt?: string;
 }
 
 /** 「次に実行すべきツール」静的カタログの1エントリ。 */
@@ -16,7 +18,7 @@ export interface NextToolCatalogEntry {
 
 /** 「次に実行すべきツール」節の1行。 */
 export interface NextToolRow {
-  status: "未実施" | "実施済み";
+  status: "未実施" | "実施済み(証跡未照合)" | "実施済み";
   toolName: string;
   reason: string;
 }

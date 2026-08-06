@@ -502,4 +502,31 @@ describe("renderTestArchitecture 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestArchitecture(baseSpec()));
   });
+
+  it("指摘・未帰属が無ければ締めの注意書きは生成物依存なし文言になる", () => {
+    const md = renderTestArchitecture(baseSpec());
+    expect(md).toContain(
+      "この節は本ツールが静的に保持する後続表のみから生成しており、生成物の内容に依存する後続提示はない。"
+    );
+  });
+
+  it("未帰属のテスト条件があると has-unassigned-conditions シグナルが含まれる", () => {
+    const spec = baseSpec();
+    spec.testConditions.push({
+      id: "TC-09",
+      statement: "未帰属の条件",
+      perspectiveCategoryId: "TPC-01",
+      priority: "低",
+      containerIds: [],
+    });
+    const md = renderTestArchitecture(spec);
+    expect(md).toContain("has-unassigned-conditions");
+  });
+
+  it("high指摘があると has-high-findings シグナルが含まれる", () => {
+    const spec = baseSpec();
+    spec.testConditions[0].containerIds = ["TCN-NOT-EXIST"];
+    const md = renderTestArchitecture(spec);
+    expect(md).toContain("has-high-findings");
+  });
 });

@@ -471,4 +471,26 @@ describe("renderScenarioFlows 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderScenarioFlows(baseSpec()));
   });
+
+  it("機能ID母集団が宣言済みで指摘も無ければ、締めの注意書きは生成物依存なし文言になる", () => {
+    const spec = baseSpec();
+    const md = renderScenarioFlows(spec);
+    expect(md).toContain(
+      "この節は本ツールが静的に保持する後続表のみから生成しており、生成物の内容に依存する後続提示はない。"
+    );
+  });
+
+  it("機能ID母集団が未宣言だと has-unmeasured-feature-coverage シグナルが含まれる", () => {
+    const spec = baseSpec();
+    delete spec.featureIds;
+    const md = renderScenarioFlows(spec);
+    expect(md).toContain("has-unmeasured-feature-coverage");
+  });
+
+  it("high指摘(ステップ番号不正)があると has-high-findings シグナルが含まれる", () => {
+    const spec = baseSpec();
+    spec.useCases[0].mainFlow[0].no = 9;
+    const md = renderScenarioFlows(spec);
+    expect(md).toContain("has-high-findings");
+  });
 });

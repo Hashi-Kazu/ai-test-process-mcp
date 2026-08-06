@@ -478,10 +478,17 @@ export function renderCauseEffectAnalysis(
     lines.push("");
   }
 
+  const causeEffectSignals: string[] = [];
+  if (findings.some((f) => f.severity === "high")) {
+    causeEffectSignals.push("has-high-findings");
+  }
+  if (ungroundedIds.size > 0 || missingQuoteIds.size > 0) {
+    causeEffectSignals.push("has-ungrounded-nodes");
+  }
   lines.push(
     ...renderNextToolsSection(
       "analyze_cause_effect",
-      [],
+      causeEffectSignals,
       input.completedTools
     ).split("\n")
   );

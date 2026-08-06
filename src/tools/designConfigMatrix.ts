@@ -999,10 +999,20 @@ export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
     );
   }
 
+  const configMatrixSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    configMatrixSignals.push("has-high-findings");
+  }
+  if (result.coverageBasis !== "actual-rows") {
+    configMatrixSignals.push("has-unmeasured-coverage");
+  }
+  if (result.uncoveredLevels.length > 0 || result.uncoveredPairs.length > 0) {
+    configMatrixSignals.push("has-uncovered-combinations");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_config_matrix",
-      [],
+      configMatrixSignals,
       spec.completedTools
     ).split("\n")
   );

@@ -780,10 +780,17 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
     );
   }
 
+  const scenarioFlowSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    scenarioFlowSignals.push("has-high-findings");
+  }
+  if (result.featureCoverageBasis !== "declared-population") {
+    scenarioFlowSignals.push("has-unmeasured-feature-coverage");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_scenario_flows",
-      [],
+      scenarioFlowSignals,
       spec.completedTools
     ).split("\n")
   );

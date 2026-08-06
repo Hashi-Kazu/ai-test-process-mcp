@@ -1201,10 +1201,20 @@ export function renderTestData(spec: TestDataSpec): string {
     );
   }
 
+  const testDataSignals: string[] = [];
+  if (result.findings.some((f) => f.severity === "high")) {
+    testDataSignals.push("has-high-findings");
+  }
+  if (result.stateCoverage.basis !== "case-body" || result.transitionCoverage.basis !== "case-body") {
+    testDataSignals.push("has-unmeasured-coverage");
+  }
+  if (result.stateCoverage.uncoveredIds.length > 0 || result.transitionCoverage.uncoveredIds.length > 0) {
+    testDataSignals.push("has-uncovered-states");
+  }
   lines.push(
     ...renderNextToolsSection(
       "design_test_data",
-      [],
+      testDataSignals,
       spec.completedTools
     ).split("\n")
   );

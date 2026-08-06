@@ -558,10 +558,22 @@ export function renderBusinessRequirementModel(
   }
   lines.push("");
 
+  const businessRequirementModelSignals: string[] = [];
+  if (
+    duplicates.length > 0 ||
+    missingNumbers.length > 0 ||
+    prefixMismatch.length > 0 ||
+    unresolvedRefs.length > 0
+  ) {
+    businessRequirementModelSignals.push("has-id-findings");
+  }
+  if (orphanPurposes.length > 0 || orphanUseCases.length > 0) {
+    businessRequirementModelSignals.push("has-orphan-elements");
+  }
   lines.push(
     ...renderNextToolsSection(
       "generate_business_requirement_model",
-      [],
+      businessRequirementModelSignals,
       input.completedTools
     ).split("\n")
   );
