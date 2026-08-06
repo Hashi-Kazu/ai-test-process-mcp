@@ -73,7 +73,8 @@ export const crossMatrixAuditCriteria: CrossMatrixAuditCriteria = {
       nameJa: "宣言された充填率と実測値の不一致",
       severity: "high",
       definition:
-        "declaredCoverage に宣言された充填率・行被覆率・列被覆率が算出値と一致しない、または claimedNoEmptyCells が true であるにもかかわらず空行・空列が存在する。",
+        "declaredCoverage に宣言された充填率・行被覆率・列被覆率が算出値と一致しない、または claimedNoEmptyCells が true であるにもかかわらず空行・空列が存在する。" +
+        "宣言充填率が links 由来の充填率と一致していても、根拠裏付け後の充填率と一致しない場合を含む。",
       recommendedAction:
         "成果物に記載した数値を実測値へ修正するか、数値が正しいのであれば軸・紐づけの投入漏れがないか確認して再監査すること。",
     },
@@ -91,7 +92,8 @@ export const crossMatrixAuditCriteria: CrossMatrixAuditCriteria = {
       nameJa: "テストベース本文に裏付けの無い軸要素",
       severity: "high",
       definition:
-        "documents を指定したにもかかわらず、軸要素の id も label もテストベース本文に出現しない。軸の要素が成果物本文から裏付けられていない。",
+        "documents を指定したにもかかわらず、軸要素の id も label もテストベース本文に出現しない。軸の要素が成果物本文から裏付けられていない。" +
+        "照合は表記差(全角半角・空白・記号)を吸収した正規化後の包含判定で行う。",
       recommendedAction:
         "当該要素の出典をテストベースで確認し、綴りを本文に合わせるか、本文に無い要素であれば根拠を添えて軸から外すこと。",
     },
@@ -140,6 +142,24 @@ export const crossMatrixAuditCriteria: CrossMatrixAuditCriteria = {
       recommendedAction:
         "上流の分析成果物へ立ち戻り、当該要素がどの軸のどの要素と関係するのかを特定して紐づけること。関係が本当に存在しないなら軸から外すこと。",
     },
+    {
+      id: "CMX-16",
+      nameJa: "リンク根拠の未記入",
+      severity: "high",
+      definition:
+        "documents を指定したにもかかわらず、他軸要素へのリンク宣言に根拠(evidence)が無い、または短すぎて本文と照合できない。充填の根拠が宣言のみであり実体の裏付けが無い。",
+      recommendedAction:
+        "当該リンクの根拠となる本文の一文を evidence に引用し、出典を evidenceSource に記録すること。根拠を示せないリンクは削除すること。",
+    },
+    {
+      id: "CMX-17",
+      nameJa: "本文に裏付けの無いリンク根拠",
+      severity: "high",
+      definition:
+        "リンク宣言の evidence が、投入されたテストベース本文に存在しない(表記差を吸収した照合でも一致しない)。",
+      recommendedAction:
+        "evidence は本文からそのまま切り出すこと。要約・言い換えは書かず、本文に無い関係であれば当該リンクを削除するかテストベースを更新すること。",
+    },
   ],
   notes: [
     "本検査は渡された軸と紐づけに対してのみ成立する。渡していない軸・要素の取りこぼしは検出できない。",
@@ -147,5 +167,8 @@ export const crossMatrixAuditCriteria: CrossMatrixAuditCriteria = {
     "充填率の分母は 行数 × 列数 であり、意味的に成立し得ないセルを含む。行被覆率・列被覆率の分母は除外宣言された要素を除いた要素数であり、全要素数ではない。",
     "空セルは必ずしも欠陥ではない。片側にしかない要素が見つかった場合はテスト分析を再実施して追加するか、除外理由を明記すること。",
     "本検査は2軸間の関係のみを対象とする。3軸が同時に絡む網羅性は、軸ペアを回した結果の重ね合わせでは保証されない。",
+    "セルの充填は links の宣言で成立するが、根拠裏付け充填率は evidence が本文から裏付けられたセルだけを分子に数える。宣言充填率と根拠裏付け充填率の差が、宣言のみで成立している部分である。",
+    "links は文字列(相手IDのみ)でも受け付けるが、その形式では根拠が無いため documents 指定時は CMX-16 になる。",
+    "本文との照合は全角半角・空白・記号差を吸収した正規化後の包含判定であり、正規化により記号が落ちるため短い文字列は偶発一致し得る。",
   ],
 };

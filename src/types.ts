@@ -2579,10 +2579,19 @@ export interface TestDataDesignCriteria {
 }
 
 // --- 多軸マトリクス監査(audit_cross_matrix) ---
+/** リンク宣言。相手ID + 根拠。 */
+export interface CrossMatrixLinkRef {
+  targetId: string;           // 他軸の item.id
+  evidence?: string;          // 根拠となる documents 本文からの引用(未記入は CMX-16)
+  evidenceSource?: string;    // 出典(文書名・見出し・派生元ツール名など)。表示用で照合には使わない
+}
+/** 後方互換: 文字列は { targetId: <文字列> } と同義(根拠なし宣言)。 */
+export type CrossMatrixLinkInput = string | CrossMatrixLinkRef;
+
 export interface CrossMatrixAxisItem {
   id: string;                 // 全軸を通じて一意であること(重複は CMX-02 で検出)
   label?: string;             // 表示名。未指定なら id を表示に使う
-  links?: string[];           // 他軸の item.id の列挙。自軸内IDの参照は CMX-05 で検出
+  links?: CrossMatrixLinkInput[]; // 他軸の item.id の列挙。自軸内IDの参照は CMX-05 で検出
 }
 export interface CrossMatrixAxisSpec {
   axisId: string;             // 軸ID。例 "RISK" / "PERSPECTIVE"
@@ -2633,6 +2642,11 @@ export interface CrossMatrixCell {
   state: CrossMatrixCellState;
   /** 紐づけの宣言方向。"a-to-b" | "b-to-a" | "both" | "none" */
   direction: "a-to-b" | "b-to-a" | "both" | "none";
+  /**
+   * 当該セルを埋めたリンク宣言のうち少なくとも1件の evidence が本文から裏付けられたか。
+   * evidenceEvaluated=false のとき、または state!=="filled" のときは false。
+   */
+  grounded: boolean;
 }
 export interface CrossMatrixEmptyLine {
   axisId: string;
@@ -2654,6 +2668,12 @@ export interface CrossMatrixPairResult {
   totalCellCount: number;              // rowCount * columnCount
   filledCellCount: number;
   cellFillRatePercent: number;         // filled / total、小数第1位
+  /** documents が1件以上あり、かつ generated=true のとき true。 */
+  evidenceEvaluated: boolean;
+  /** 根拠が本文から裏付けられた充填セル数。evidenceEvaluated=false のときは 0 */
+  groundedFilledCellCount: number;
+  /** groundedFilledCellCount / totalCellCount。evidenceEvaluated=false のときは 0 */
+  groundedCellFillRatePercent: number;
   targetRowCount: number;              // rowCount - 除外行数
   coveredRowCount: number;
   rowCoverageRatePercent: number;      // covered / target
@@ -2680,6 +2700,12 @@ export interface CrossMatrixSummary {
   emptyColumnTotal: number;
   excludedLineTotal: number;
   overallCellFillRatePercent: number;  // 生成済みペアの filled 合計 / total 合計
+  evidenceEvaluatedPairCount: number;  // 根拠照合を行えたペア数
+  linkDeclarationTotal: number;        // 他軸要素へ解決できたリンク宣言の総数(重複除去後)
+  linksWithoutEvidenceTotal: number;   // CMX-16 対象の宣言数
+  ungroundedLinkTotal: number;         // CMX-17 対象の宣言数
+  /** 根拠裏付け充填率の全体値。evidenceEvaluated=true のペアのみで集計。該当なしは 0 */
+  overallGroundedCellFillRatePercent: number;
   findingTotal: number;
   highFindingTotal: number;
 }

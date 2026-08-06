@@ -1,3 +1,4 @@
+import { normalizeForGrounding } from "./groundingNormalization.js";
 import { extractIdOccurrences } from "./testBasisAnalysis.js";
 import type { TestBasisAnalysisOptions } from "./testBasisAnalysis.js";
 import type {
@@ -12,6 +13,7 @@ import type {
   CrossMatrixEmptyLine,
   CrossMatrixExclusion,
   CrossMatrixFinding,
+  CrossMatrixLinkRef,
   CrossMatrixPairResult,
   CrossMatrixSummary,
   TestBasisDocument,
@@ -31,6 +33,56 @@ function rate(numerator: number, denominator: number): number {
 
 export function itemLabel(item: CrossMatrixAxisItem): string {
   return item.label ?? item.id;
+}
+
+/** リンク根拠として扱う最小長（正規化後の文字数）。CEG-15 と同じ閾値。 */
+const MIN_LINK_EVIDENCE_LENGTH = 2;
+
+/**
+ * items[].links の宣言（文字列 or オブジェクト）を CrossMatrixLinkRef へ正規化する。
+ * - 文字列要素は { targetId: 文字列 } へ変換する。
+ * - targetId が空文字/空白のみの宣言は除外する（CMX-01 で別に報告する）。
+ * - 同一 targetId が複数回宣言された場合は最初の宣言のみを採用する。
+ * - 入力は破壊しない。出力順は宣言順。
+ */
+export function normalizeAxisItemLinks(item: CrossMatrixAxisItem): CrossMatrixLinkRef[] {
+  const result: CrossMatrixLinkRef[] = [];
+  const seen = new Set<string>();
+  for (const link of item.links ?? []) {
+    const ref: CrossMatrixLinkRef =
+      typeof link === "string" ? { targetId: link } : { ...link };
+    if (ref.targetId.trim() === "") continue;
+    if (seen.has(ref.targetId)) continue;
+    seen.add(ref.targetId);
+    result.push(ref);
+  }
+  return result;
+}
+
+/** 正規化済みリンク宣言の targetId 列（宣言順・重複除去済み）。 */
+export function linkTargetIds(item: CrossMatrixAxisItem): string[] {
+  return normalizeAxisItemLinks(item).map((link) => link.targetId);
+}
+
+/** targetId が空文字/空白のみのリンク宣言の件数。 */
+function countBlankLinkTargets(item: CrossMatrixAxisItem): number {
+  let count = 0;
+  for (const link of item.links ?? []) {
+    const targetId = typeof link === "string" ? link : link.targetId;
+    if (targetId.trim() === "") count++;
+  }
+  return count;
+}
+
+function buildGroundingCorpus(documents: TestBasisDocument[]): string {
+  return normalizeForGrounding(documents.map((doc) => doc.content).join("\n"));
+}
+
+/** 根拠が正規化済み corpus から裏付けられているか。未記入・短すぎる場合も false。 */
+function isLinkEvidenceGrounded(link: CrossMatrixLinkRef, normalizedCorpus: string): boolean {
+  const normalized = normalizeForGrounding(link.evidence ?? "");
+  if (normalized.length < MIN_LINK_EVIDENCE_LENGTH) return false;
+  return normalizedCorpus.includes(normalized);
 }
 
 /** axisId の初出宣言を採用した索引。 */
@@ -101,7 +153,7 @@ export function findUnknownLinkTargets(
   for (const axis of axes) {
     for (const item of axis.items) {
       const unknownIds: string[] = [];
-      for (const linkId of item.links ?? []) {
+      for (const linkId of linkTargetIds(item)) {
         if (itemAxis.has(linkId)) continue;
         if (unknownIds.includes(linkId)) continue;
         unknownIds.push(linkId);
@@ -122,7 +174,7 @@ export function findSelfAxisLinks(
   for (const axis of axes) {
     for (const item of axis.items) {
       const linkedIds: string[] = [];
-      for (const linkId of item.links ?? []) {
+      for (const linkId of linkTargetIds(item)) {
         if (linkId === item.id) continue;
         if (itemAxis.get(linkId) !== axis.axisId) continue;
         if (linkedIds.includes(linkId)) continue;
@@ -206,7 +258,8 @@ export function buildCrossMatrixPair(
   axisA: string,
   axisB: string,
   exclusions?: CrossMatrixExclusion[],
-  maxCellCount: number = DEFAULT_MAX_CELL_COUNT
+  maxCellCount: number = DEFAULT_MAX_CELL_COUNT,
+  documents?: TestBasisDocument[]
 ): CrossMatrixPairResult {
   const axisIndex = buildAxisIndex(axes);
   const specA = axisIndex.get(axisA);
@@ -234,6 +287,9 @@ export function buildCrossMatrixPair(
       skipReason: `セル数 ${rowCount} × ${columnCount} が上限 ${maxCellCount} を超えたため、この軸ペアの直積表を生成しなかった。`,
       filledCellCount: 0,
       cellFillRatePercent: 0,
+      evidenceEvaluated: false,
+      groundedFilledCellCount: 0,
+      groundedCellFillRatePercent: 0,
       targetRowCount: 0,
       coveredRowCount: 0,
       rowCoverageRatePercent: 0,
@@ -246,26 +302,50 @@ export function buildCrossMatrixPair(
     };
   }
 
-  const columnLinkSets = columns.map((col) => new Set(col.links ?? []));
+  const evidenceEvaluated = (documents?.length ?? 0) > 0;
+  const normalizedCorpus = evidenceEvaluated
+    ? buildGroundingCorpus(documents as TestBasisDocument[])
+    : "";
+
+  /** item -> (targetId -> 根拠が裏付けられたか) */
+  const linkMap = (item: CrossMatrixAxisItem): Map<string, boolean> => {
+    const map = new Map<string, boolean>();
+    for (const link of normalizeAxisItemLinks(item)) {
+      map.set(
+        link.targetId,
+        evidenceEvaluated ? isLinkEvidenceGrounded(link, normalizedCorpus) : false
+      );
+    }
+    return map;
+  };
+
+  const columnLinkMaps = columns.map((col) => linkMap(col));
   const cells: CrossMatrixCell[] = [];
   const rowFilled = rows.map(() => false);
   const columnFilled = columns.map(() => false);
   let filledCellCount = 0;
+  let groundedFilledCellCount = 0;
 
   rows.forEach((row, rowIdx) => {
-    const rowLinks = new Set(row.links ?? []);
+    const rowLinks = linkMap(row);
     columns.forEach((col, colIdx) => {
       const aToB = rowLinks.has(col.id);
-      const bToA = columnLinkSets[colIdx].has(row.id);
+      const bToA = columnLinkMaps[colIdx].has(row.id);
       const direction: CrossMatrixCell["direction"] =
         aToB && bToA ? "both" : aToB ? "a-to-b" : bToA ? "b-to-a" : "none";
       const state: CrossMatrixCell["state"] = aToB || bToA ? "filled" : "empty";
+      const grounded =
+        state === "filled" &&
+        evidenceEvaluated &&
+        ((aToB && rowLinks.get(col.id) === true) ||
+          (bToA && columnLinkMaps[colIdx].get(row.id) === true));
       if (state === "filled") {
         filledCellCount++;
         rowFilled[rowIdx] = true;
         columnFilled[colIdx] = true;
+        if (grounded) groundedFilledCellCount++;
       }
-      cells.push({ rowItemId: row.id, columnItemId: col.id, state, direction });
+      cells.push({ rowItemId: row.id, columnItemId: col.id, state, direction, grounded });
     });
   });
 
@@ -303,6 +383,11 @@ export function buildCrossMatrixPair(
     generated: true,
     filledCellCount,
     cellFillRatePercent: rate(filledCellCount, totalCellCount),
+    evidenceEvaluated,
+    groundedFilledCellCount: evidenceEvaluated ? groundedFilledCellCount : 0,
+    groundedCellFillRatePercent: evidenceEvaluated
+      ? rate(groundedFilledCellCount, totalCellCount)
+      : 0,
     targetRowCount,
     coveredRowCount,
     rowCoverageRatePercent: rate(coveredRowCount, targetRowCount),
@@ -329,15 +414,12 @@ export function findAsymmetricLinks(
   const result: { fromAxisId: string; fromItemId: string; toAxisId: string; toItemId: string }[] = [];
   for (const axis of axes) {
     for (const item of axis.items) {
-      const seen = new Set<string>();
-      for (const linkId of item.links ?? []) {
-        if (seen.has(linkId)) continue;
-        seen.add(linkId);
+      for (const linkId of linkTargetIds(item)) {
         const targetAxisId = itemAxis.get(linkId);
         if (targetAxisId === undefined) continue;
         if (targetAxisId === axis.axisId) continue;
         const target = itemById.get(linkId) as CrossMatrixAxisItem;
-        if ((target.links ?? []).includes(item.id)) continue;
+        if (linkTargetIds(target).includes(item.id)) continue;
         result.push({
           fromAxisId: axis.axisId,
           fromItemId: item.id,
@@ -357,7 +439,7 @@ export function findIsolatedItems(
   const linkedFromOthers = new Set<string>();
   for (const axis of axes) {
     for (const item of axis.items) {
-      for (const linkId of item.links ?? []) {
+      for (const linkId of linkTargetIds(item)) {
         const targetAxisId = itemAxis.get(linkId);
         if (targetAxisId === undefined) continue;
         if (targetAxisId === axis.axisId) continue;
@@ -371,7 +453,7 @@ export function findIsolatedItems(
   for (const axis of axes) {
     for (const item of axis.items) {
       if (emitted.has(item.id)) continue;
-      const linksOut = (item.links ?? []).some((linkId) => {
+      const linksOut = linkTargetIds(item).some((linkId) => {
         const targetAxisId = itemAxis.get(linkId);
         return targetAxisId !== undefined && targetAxisId !== axis.axisId;
       });
@@ -420,19 +502,85 @@ export function findUngroundedAxisItems(
   _options: TestBasisAnalysisOptions = {}
 ): { axisId: string; itemId: string; label: string }[] {
   if (!documents || documents.length === 0) return [];
-  const corpus = documents.map((doc) => doc.content).join("\n");
+  const corpus = buildGroundingCorpus(documents);
   const result: { axisId: string; itemId: string; label: string }[] = [];
   for (const axis of axes) {
     for (const item of axis.items) {
       const label = itemLabel(item);
+      const normalizedId = normalizeForGrounding(item.id);
+      const normalizedLabel = normalizeForGrounding(label);
       const grounded =
-        (item.id.length > 0 && corpus.includes(item.id)) ||
-        (label.length > 0 && corpus.includes(label));
+        (normalizedId.length > 0 && corpus.includes(normalizedId)) ||
+        (normalizedLabel.length > 0 && corpus.includes(normalizedLabel));
       if (grounded) continue;
       result.push({ axisId: axis.axisId, itemId: item.id, label });
     }
   }
   return result;
+}
+
+export interface CrossMatrixLinkEvidenceIssue {
+  axisId: string;
+  itemId: string;
+  targetAxisId: string;
+  targetId: string;
+  evidence?: string;
+}
+
+/**
+ * 他軸要素へ解決できたリンク宣言について、根拠(evidence)の未記入と本文未裏付けを切り分ける。
+ * documents が未指定または0件のときは何も報告しない（CMX-10 と同じゲート条件）。
+ */
+export function findLinkEvidenceIssues(
+  axes: CrossMatrixAxisSpec[],
+  documents?: TestBasisDocument[]
+): { missing: CrossMatrixLinkEvidenceIssue[]; ungrounded: CrossMatrixLinkEvidenceIssue[] } {
+  if (!documents || documents.length === 0) return { missing: [], ungrounded: [] };
+  const itemAxis = buildItemAxisIndex(axes);
+  const corpus = buildGroundingCorpus(documents);
+  const missing: CrossMatrixLinkEvidenceIssue[] = [];
+  const ungrounded: CrossMatrixLinkEvidenceIssue[] = [];
+
+  for (const axis of axes) {
+    for (const item of axis.items) {
+      for (const link of normalizeAxisItemLinks(item)) {
+        const targetAxisId = itemAxis.get(link.targetId);
+        if (targetAxisId === undefined) continue; // CMX-01 の担当
+        if (targetAxisId === axis.axisId) continue; // CMX-05 の担当
+        const issue: CrossMatrixLinkEvidenceIssue = {
+          axisId: axis.axisId,
+          itemId: item.id,
+          targetAxisId,
+          targetId: link.targetId,
+          ...(link.evidence !== undefined ? { evidence: link.evidence } : {}),
+        };
+        const normalized = normalizeForGrounding(link.evidence ?? "");
+        if (normalized.length < MIN_LINK_EVIDENCE_LENGTH) {
+          missing.push(issue);
+          continue;
+        }
+        if (!corpus.includes(normalized)) ungrounded.push(issue);
+      }
+    }
+  }
+  return { missing, ungrounded };
+}
+
+/** 他軸要素へ解決できたリンク宣言の総数（item ごとに targetId 重複除去後）。 */
+export function countResolvedCrossAxisLinks(axes: CrossMatrixAxisSpec[]): number {
+  const itemAxis = buildItemAxisIndex(axes);
+  let count = 0;
+  for (const axis of axes) {
+    for (const item of axis.items) {
+      for (const targetId of linkTargetIds(item)) {
+        const targetAxisId = itemAxis.get(targetId);
+        if (targetAxisId === undefined) continue;
+        if (targetAxisId === axis.axisId) continue;
+        count++;
+      }
+    }
+  }
+  return count;
 }
 
 export function findUnmappedDefinedIds(
@@ -484,17 +632,29 @@ export function findDeclaredCoverageMismatches(
     const actualRowRate = swapped ? pair.columnCoverageRatePercent : pair.rowCoverageRatePercent;
     const actualColumnRate = swapped ? pair.rowCoverageRatePercent : pair.columnCoverageRatePercent;
 
-    if (
-      declared.claimedFillRatePercent !== undefined &&
-      declared.claimedFillRatePercent !== pair.cellFillRatePercent
-    ) {
-      result.push({
-        axisA: declared.axisA,
-        axisB: declared.axisB,
-        field: "claimedFillRatePercent",
-        claimed: declared.claimedFillRatePercent,
-        actual: pair.cellFillRatePercent,
-      });
+    if (declared.claimedFillRatePercent !== undefined) {
+      if (declared.claimedFillRatePercent !== pair.cellFillRatePercent) {
+        result.push({
+          axisA: declared.axisA,
+          axisB: declared.axisB,
+          field: "claimedFillRatePercent",
+          claimed: declared.claimedFillRatePercent,
+          actual: pair.cellFillRatePercent,
+        });
+      } else if (
+        // 宣言充填率が links 由来の充填率と一致していても、根拠裏付け後の充填率と一致しないなら
+        // その充填は宣言だけで成立している。従来の不一致とは二重報告しない。
+        pair.evidenceEvaluated &&
+        declared.claimedFillRatePercent !== pair.groundedCellFillRatePercent
+      ) {
+        result.push({
+          axisA: declared.axisA,
+          axisB: declared.axisB,
+          field: "claimedFillRatePercentGrounded",
+          claimed: declared.claimedFillRatePercent,
+          actual: pair.groundedCellFillRatePercent,
+        });
+      }
     }
     if (
       declared.claimedRowCoveragePercent !== undefined &&
@@ -542,7 +702,11 @@ export function summarizeCrossMatrix(
   pairs: CrossMatrixPairResult[],
   isolatedItems: { axisId: string; itemId: string; label: string }[],
   findings: CrossMatrixFinding[],
-  axes: CrossMatrixAxisSpec[]
+  axes: CrossMatrixAxisSpec[],
+  linkEvidence: {
+    missing: CrossMatrixLinkEvidenceIssue[];
+    ungrounded: CrossMatrixLinkEvidenceIssue[];
+  } = { missing: [], ungrounded: [] }
 ): CrossMatrixSummary {
   let emptyRowTotal = 0;
   let emptyColumnTotal = 0;
@@ -550,6 +714,9 @@ export function summarizeCrossMatrix(
   let filledSum = 0;
   let totalSum = 0;
   let generatedPairCount = 0;
+  let evidenceEvaluatedPairCount = 0;
+  let groundedFilledSum = 0;
+  let groundedTotalSum = 0;
 
   for (const pair of pairs) {
     for (const line of pair.emptyRows) {
@@ -564,6 +731,10 @@ export function summarizeCrossMatrix(
     generatedPairCount++;
     filledSum += pair.filledCellCount;
     totalSum += pair.totalCellCount;
+    if (!pair.evidenceEvaluated) continue;
+    evidenceEvaluatedPairCount++;
+    groundedFilledSum += pair.groundedFilledCellCount;
+    groundedTotalSum += pair.totalCellCount;
   }
 
   let totalItemCount = 0;
@@ -579,6 +750,11 @@ export function summarizeCrossMatrix(
     emptyColumnTotal,
     excludedLineTotal,
     overallCellFillRatePercent: rate(filledSum, totalSum),
+    evidenceEvaluatedPairCount,
+    linkDeclarationTotal: countResolvedCrossAxisLinks(axes),
+    linksWithoutEvidenceTotal: linkEvidence.missing.length,
+    ungroundedLinkTotal: linkEvidence.ungrounded.length,
+    overallGroundedCellFillRatePercent: rate(groundedFilledSum, groundedTotalSum),
     findingTotal: findings.length,
     highFindingTotal: findings.filter((f) => f.severity === "high").length,
   };
@@ -591,7 +767,14 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
 
   const resolvedPairs = resolveAxisPairs(axes, input.axisPairs);
   const pairs = resolvedPairs.map((pair) =>
-    buildCrossMatrixPair(axes, pair.axisA, pair.axisB, input.exclusions, maxCellCount)
+    buildCrossMatrixPair(
+      axes,
+      pair.axisA,
+      pair.axisB,
+      input.exclusions,
+      maxCellCount,
+      input.documents
+    )
   );
 
   const isolatedItems = findIsolatedItems(axes);
@@ -605,6 +788,18 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
       target: `${entry.axisId} / ${entry.itemId}`,
       detail: `links がどの軸の要素IDにも一致しないIDを参照している: ${entry.unknownIds.join(", ")}。当該リンクは直積表に反映していない。`,
     });
+  }
+  for (const axis of axes) {
+    for (const item of axis.items) {
+      const blankCount = countBlankLinkTargets(item);
+      if (blankCount === 0) continue;
+      findings.push({
+        categoryId: "CMX-01",
+        severity: "high",
+        target: `${axis.axisId} / ${item.id}`,
+        detail: `links に targetId が空のリンク宣言が ${blankCount} 件ある。当該リンクは直積表に反映していない。`,
+      });
+    }
   }
   for (const exclusion of input.exclusions ?? []) {
     const axis = axisIndex.get(exclusion.axisId);
@@ -821,11 +1016,31 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
     });
   }
 
+  // CMX-16 / CMX-17 リンク根拠の未記入・本文未裏付け
+  const linkEvidence = findLinkEvidenceIssues(axes, input.documents);
+  for (const issue of linkEvidence.missing) {
+    findings.push({
+      categoryId: "CMX-16",
+      severity: "high",
+      target: `${issue.axisId} / ${issue.itemId} → ${issue.targetAxisId} / ${issue.targetId}`,
+      detail:
+        "リンク宣言に根拠(evidence)が無い、または短すぎて本文と照合できない。当該セルは根拠裏付け充填率の分子に数えていない。",
+    });
+  }
+  for (const issue of linkEvidence.ungrounded) {
+    findings.push({
+      categoryId: "CMX-17",
+      severity: "high",
+      target: `${issue.axisId} / ${issue.itemId} → ${issue.targetAxisId} / ${issue.targetId}`,
+      detail: `リンクの根拠「${issue.evidence ?? ""}」が投入されたテストベース本文に存在しない。当該セルは根拠裏付け充填率の分子に数えていない。`,
+    });
+  }
+
   return {
     axes,
     pairs,
     isolatedItems,
     findings,
-    summary: summarizeCrossMatrix(pairs, isolatedItems, findings, axes),
+    summary: summarizeCrossMatrix(pairs, isolatedItems, findings, axes, linkEvidence),
   };
 }

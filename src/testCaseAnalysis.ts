@@ -1,3 +1,4 @@
+import { normalizeForGrounding } from "./groundingNormalization.js";
 import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { buildDecisionTableCoverageTargets, computeDecisionTableRows } from "./tools/designDecisionTable.js";
@@ -944,21 +945,8 @@ export interface UngroundedQuotationOptions {
   minQuotationLength?: number;
 }
 
-const GROUNDING_SYMBOL_CHARS =
-  "、。，．・:：;；!！?？…「」『』“”\"'（）()【】[]{}〈〉《》／/\\|＊*＋+,.-‐–—ー~〜→←↑↓";
-const GROUNDING_SYMBOLS = new Set(Array.from(GROUNDING_SYMBOL_CHARS));
-
-/** 表記差（全角半角・大文字小文字・空白・記号）を吸収した照合用文字列へ正規化する。 */
-export function normalizeForGrounding(text: string): string {
-  const base = text.normalize("NFKC").toLowerCase();
-  let out = "";
-  for (const ch of base) {
-    if (ch === "　" || /\s/.test(ch)) continue;
-    if (GROUNDING_SYMBOLS.has(ch)) continue;
-    out += ch;
-  }
-  return out;
-}
+// 照合用の文字列正規化は ./groundingNormalization.ts が正本。従来の公開名を維持するため re-export する。
+export { normalizeForGrounding };
 
 const QUOTE_PATTERN_SOURCES = [
   "「([^」]{1,200})」",
