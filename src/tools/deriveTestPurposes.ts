@@ -311,10 +311,12 @@ export function renderTestPurposeDerivation(
     ...bulletsOrNone(
       qualityIssues.map((i) =>
         i.kind === "unassigned"
-          ? `- [medium] ${escapeCell(i.ownerId)}: 品質特性IDが1件も割り当てられていない`
+          ? `- [medium] ${escapeCell(
+              i.ownerId
+            )}: 製品品質特性(QC-*)・利用時品質特性(QU-*)のいずれのIDも1件も割り当てられていない`
           : `- [medium] ${escapeCell(i.ownerId)}: 「${escapeCell(
               i.characteristicId ?? ""
-            )}」は品質特性モデルに存在しないID`
+            )}」は製品品質特性モデル(QC-*)・利用時品質特性モデル(QU-*)のいずれにも存在しないID`
       )
     )
   );
@@ -403,12 +405,16 @@ export function renderTestPurposeDerivation(
 
   lines.push("### 4.3 テスト目的 × 品質特性");
   lines.push("");
-  lines.push("| 目的ID | 関連品質特性ID |");
-  lines.push("| --- | --- |");
+  lines.push("| 目的ID | 製品品質特性ID | 利用時品質特性ID | 未知ID |");
+  lines.push("| --- | --- | --- | --- |");
   for (const row of buildPurposeQualityMatrix(input)) {
     lines.push(
       `| ${escapeCell(row.purposeId)} | ${escapeCell(
-        row.characteristicIds.length > 0 ? row.characteristicIds.join(", ") : "-"
+        row.productCharacteristicIds.length > 0 ? row.productCharacteristicIds.join(", ") : "-"
+      )} | ${escapeCell(
+        row.inUseCharacteristicIds.length > 0 ? row.inUseCharacteristicIds.join(", ") : "-"
+      )} | ${escapeCell(
+        row.unknownCharacteristicIds.length > 0 ? row.unknownCharacteristicIds.join(", ") : "-"
       )} |`
     );
   }
@@ -519,7 +525,9 @@ export const deriveTestPurposesInputShape = {
         relatedQualityCharacteristicIds: z
           .array(z.string())
           .optional()
-          .describe("QC-xx / QC-xx-xx ids from quality://characteristics/product"),
+          .describe(
+            "QC-xx / QC-xx-xx ids from quality://characteristics/product, or QU-xx / QU-xx-xx ids from quality://characteristics/in-use"
+          ),
       })
     )
     .describe("Test purposes (stage 4)"),
@@ -530,7 +538,12 @@ export const deriveTestPurposesInputShape = {
         statement: z.string().optional(),
         purposeIds: z.array(z.string()).optional(),
         perspectiveCategoryId: z.string().optional(),
-        qualityCharacteristicIds: z.array(z.string()).optional(),
+        qualityCharacteristicIds: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "QC-xx / QC-xx-xx ids from quality://characteristics/product, or QU-xx / QU-xx-xx ids from quality://characteristics/in-use"
+          ),
       })
     )
     .optional()
@@ -569,7 +582,8 @@ export function registerDeriveTestPurposesTool(server: McpServer): void {
         "テスト条件（extract_test_conditions）・テストタイプ選択（create_test_plan の5.2）へ貫通しているかを " +
         "双方向に検査する。どのテスト目的にも紐づかないテスト条件と、どのテスト条件からも参照されないテスト " +
         "目的の両方を検出し、依頼書本文との裏付け照合（PDC-15）・宣言被覆率と実測値の突き合わせ（PDC-16）も " +
-        "行う。既存のテスト目的一覧を purposes に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
+        "行う。品質特性ID（PDC-14）は製品品質モデル（QC-*）・利用時品質モデル（QU-*）の両方を既知IDとして検査する。 " +
+        "既存のテスト目的一覧を purposes に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
       inputSchema: deriveTestPurposesInputShape,
     },
     async (input) => {

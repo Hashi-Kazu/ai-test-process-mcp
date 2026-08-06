@@ -317,6 +317,45 @@ describe("PDC-16: claimed vs computed coverage mismatch", () => {
   });
 });
 
+describe("PDC-14: in-use quality characteristic ids are treated as known", () => {
+  const input: DeriveTestPurposesInput = {
+    expectations: [{ id: "EXP-01", statement: "期待" }],
+    testRequirements: [
+      { id: "TR-01", line: "management", statement: "要求", expectationIds: ["EXP-01"] },
+    ],
+    purposes: [
+      {
+        id: "TP-01",
+        statement: "目的",
+        testRequirementIds: ["TR-01"],
+        successCriterion: "基準",
+        priorityRank: 1,
+        priorityRationale: "根拠",
+        relatedQualityCharacteristicIds: ["QU-01"],
+      },
+    ],
+  };
+  const markdown = renderTestPurposeDerivation(input);
+
+  it("reports no findings in 3.14 for a declared QU-* id", () => {
+    const section = markdown.split("### 3.14 ")[1].split("### 3.15")[0];
+    expect(section).toContain("- なし");
+    expect(section).not.toContain("QU-");
+  });
+
+  it("shows the id under the in-use quality characteristic column in 4.3 with no unknown id", () => {
+    const section = markdown.split("### 4.3 ")[1].split("## 5.")[0];
+    expect(section).toContain("利用時品質特性ID");
+    expect(section).toContain("QU-01");
+    const dataRow = section.split("\n").find((l) => l.startsWith("| TP-01"));
+    expect(dataRow).toBeDefined();
+    const cells = dataRow!.split("|").map((c) => c.trim());
+    // ["", 目的ID, 製品品質特性ID, 利用時品質特性ID, 未知ID, ""]
+    expect(cells[3]).toBe("QU-01");
+    expect(cells[4]).toBe("-");
+  });
+});
+
 describe("table cell escaping and formatting", () => {
   it("escapes | characters inside table cells", () => {
     const input: DeriveTestPurposesInput = {

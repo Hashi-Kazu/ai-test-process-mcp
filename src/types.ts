@@ -3964,7 +3964,7 @@ export interface TestPurposeEntry {
   successCriterion?: string;
   priorityRank?: number; // 1 が最優先
   priorityRationale?: string;
-  relatedQualityCharacteristicIds?: string[]; // QC-xx / QC-xx-xx
+  relatedQualityCharacteristicIds?: string[]; // QC-xx / QC-xx-xx（製品品質）または QU-xx / QU-xx-xx（利用時品質）
 }
 
 export interface TestPurposeLinkedCondition {
@@ -3972,7 +3972,7 @@ export interface TestPurposeLinkedCondition {
   statement?: string;
   purposeIds?: string[];
   perspectiveCategoryId?: string;
-  qualityCharacteristicIds?: string[];
+  qualityCharacteristicIds?: string[]; // QC-xx / QC-xx-xx（製品品質）または QU-xx / QU-xx-xx（利用時品質）
 }
 
 export interface TestPurposeTypeSelection {
@@ -4054,6 +4054,9 @@ export interface TestPurposeTestTypeMatrixRow {
 export interface TestPurposeQualityMatrixRow {
   purposeId: string;
   characteristicIds: string[];
+  productCharacteristicIds: string[];
+  inUseCharacteristicIds: string[];
+  unknownCharacteristicIds: string[];
 }
 export interface TestPurposeDerivationSummary {
   unresolvedRefCount: number;
