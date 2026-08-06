@@ -34,6 +34,24 @@ describe("buildDefinedIdIndex", () => {
   it("extracts 4 defined ids across both documents", () => {
     expect(defined.map((d) => d.id)).toEqual(["EH-100", "EH-101", "W-001", "W-002"]);
   });
+
+  it("supports coverage target ids when includeCoverageTargetIds is set", () => {
+    const cfgDocuments: TestBasisDocument[] = [
+      {
+        name: "doc-C",
+        content: ["# doc-C", "CFG:MAIN:R1 の構成", "CFG:MAIN:R2 の構成"].join("\n"),
+      },
+    ];
+    const cfgDefined = buildDefinedIdIndex(cfgDocuments, { includeCoverageTargetIds: true });
+    const rows = buildIdPopulationMatrix(cfgDefined, [
+      { toolName: "design_config_matrix", ids: ["CFG:MAIN:R1"] },
+    ]);
+    const r1 = rows.find((r) => r.id === "CFG:MAIN:R1");
+    const r2 = rows.find((r) => r.id === "CFG:MAIN:R2");
+    expect(r1?.status).toBe("declared");
+    expect(r2?.status).toBe("never-declared");
+    expect(findNeverDeclaredIds(rows).map((r) => r.id)).toEqual(["CFG:MAIN:R2"]);
+  });
 });
 
 describe("buildIdPopulationMatrix / findNeverDeclaredIds", () => {

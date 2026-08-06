@@ -293,6 +293,53 @@ describe("IDの成果物間相互参照（DCC-06〜DCC-08）", () => {
     expect(findings[0].severity).toBe("high");
   });
 
+  it("未解決の網羅対象ID参照 CFG:MAIN:R99 を DCC-06 として検出する", () => {
+    const designDoc: ConsistencyDeliverable = {
+      name: "テスト設計書",
+      kind: "test-design",
+      content: [
+        "# テスト設計書",
+        "",
+        "## 構成マトリクス",
+        "",
+        "| ID | 内容 |",
+        "| --- | --- |",
+        "| CFG:MAIN:R1 | ブラウザ=Chrome, OS=Win11 |",
+      ].join("\n"),
+    };
+    const caseListDoc: ConsistencyDeliverable = {
+      name: "テストケース一覧",
+      kind: "test-design",
+      content: ["# テストケース一覧", "", "本ケースは CFG:MAIN:R99 を網羅する。"].join("\n"),
+    };
+
+    const input: AuditDeliverableConsistencyInput = {
+      deliverables: [designDoc, caseListDoc],
+    };
+    const result = analyzeDeliverableConsistency({
+      ...input,
+      includeCoverageTargetIds: true,
+    });
+    const dcc06 = result.findings.filter(
+      (f) => f.checkId === "DCC-06" && f.subject === "CFG:MAIN:R99"
+    );
+    expect(dcc06).toHaveLength(1);
+
+    const cfgEntry = result.crossRefIndex.find((e) => e.id === "CFG:MAIN:R1");
+    expect(cfgEntry).toBeDefined();
+    expect(cfgEntry?.prefix).toBe("CFG:");
+    expect(cfgEntry?.owner).toBe("テスト設計書");
+
+    const withoutCoverageTargets = analyzeDeliverableConsistency({
+      ...input,
+      includeCoverageTargetIds: false,
+    });
+    const dcc06Off = withoutCoverageTargets.findings.filter(
+      (f) => f.checkId === "DCC-06" && f.subject === "CFG:MAIN:R99"
+    );
+    expect(dcc06Off).toHaveLength(0);
+  });
+
   it("対応主張の裏付け欠落を DCC-07 で検出し、裏付けがあれば0件になる", () => {
     const deliverableIndex = buildDeliverableIndex([PLAN, ANALYSIS]);
     const index = buildCrossRefIdIndex([PLAN, ANALYSIS]);

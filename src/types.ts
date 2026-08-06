@@ -272,6 +272,14 @@ export interface TestBasisDocument {
 
 export type TestBasisIdRole = "definition" | "reference";
 
+/**
+ * "requirement": 既定パターンの要件ID・機能ID（プレフィックス-連番形式）。
+ * "coverageTarget": design_* 系エンジンが発行するコロン区切りの網羅対象ID
+ * （BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:）。includeCoverageTargetIds が
+ * true のときのみ抽出される。
+ */
+export type TestBasisIdKind = "requirement" | "coverageTarget";
+
 export interface TestBasisIdOccurrence {
   id: string; // 例 "W-Mail-011-01"
   prefix: string; // 例 "W-Mail"
@@ -281,6 +289,7 @@ export interface TestBasisIdOccurrence {
   heading: string; // 直近の見出し（無ければ "(見出しなし)"）
   lineText: string; // 行全体（trim済み）
   role: TestBasisIdRole;
+  kind: TestBasisIdKind;
 }
 
 /** テストベース文書内の根拠位置（行番号・章節） */
@@ -1818,6 +1827,7 @@ export interface AuditIdPopulationInput {
   exclusions?: IdPopulationExclusion[];
   expectedDocumentNames?: string[];
   idPatterns?: string[];
+  includeCoverageTargetIds?: boolean;
 }
 
 export interface DefinedIdEntry {
@@ -2634,6 +2644,7 @@ export interface AuditCrossMatrixInput {
   expectedAxisPopulations?: CrossMatrixAxisPopulation[];
   documents?: TestBasisDocument[];
   idPatterns?: string[];
+  includeCoverageTargetIds?: boolean;
   maxCellCount?: number;                              // 既定 20000
 }
 
@@ -3460,6 +3471,7 @@ export interface AuditDeliverableConsistencyInput {
   countClaimSubjects?: DeliverableCountClaimSubject[];
   sharedItemKindIds?: string[];
   idPatterns?: string[];
+  includeCoverageTargetIds?: boolean;
 }
 
 export type DeliverableConsistencyCheckId =

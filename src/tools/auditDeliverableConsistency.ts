@@ -59,7 +59,10 @@ export function renderDeliverableConsistencyAudit(
   input: AuditDeliverableConsistencyInput,
   criteria: DeliverableConsistencyCriteria = deliverableConsistencyCriteria
 ): string {
-  const result = analyzeDeliverableConsistency(input, criteria);
+  const result = analyzeDeliverableConsistency(
+    { ...input, includeCoverageTargetIds: input.includeCoverageTargetIds ?? true },
+    criteria
+  );
   const { findings, summary, referencedRows } = result;
   const deliverables = input.deliverables;
 
@@ -365,6 +368,12 @@ export const auditDeliverableConsistencyInputShape = {
     .array(z.string())
     .optional()
     .describe("Additional ID regular expression patterns, appended to the default pattern"),
+  includeCoverageTargetIds: z
+    .boolean()
+    .optional()
+    .describe(
+      "Include colon-separated coverage target IDs (BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:) emitted by design_* tools in the ID index. Defaults to true."
+    ),
 } as const;
 
 export function registerAuditDeliverableConsistencyTool(server: McpServer): void {
@@ -375,7 +384,8 @@ export function registerAuditDeliverableConsistencyTool(server: McpServer): void
       description:
         "複数成果物を突き合わせ、参照テストベース文書リストの差分・IDの成果物間相互参照の解決性・章節参照の実在性・" +
         "同一項目の記述差分を決定的に検出する。件数・網羅率の宣言は本文の列挙実体と照合し、網羅率の分母は本文で定義されたIDの実数と照合する。" +
-        "分子分母を伴わない達成度%の主張も別途検出する。",
+        "分子分母を伴わない達成度%の主張も別途検出する。" +
+        "design_* 系エンジンが発行するコロン区切りの網羅対象ID（BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:）も既定でID索引に含める。",
       inputSchema: auditDeliverableConsistencyInputShape,
     },
     async (input) => {

@@ -63,6 +63,55 @@ describe("extractIdOccurrences", () => {
   });
 });
 
+describe("COVERAGE_TARGET_ID_PATTERN_SOURCE / includeCoverageTargetIds", () => {
+  it("extracts colon-separated coverage target IDs only when includeCoverageTargetIds is true", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: [
+          "CFG:MAIN:R12 の構成を対象とする。",
+          "DL:S:ORDER:PAID の状態遷移を確認する。",
+          "UC:UC-01:F1 のフローを確認する。",
+          "ST:T1 の遷移を確認する。",
+        ].join("\n"),
+      },
+    ];
+
+    const withoutOption = extractIdOccurrences(documents);
+    expect(withoutOption.filter((o) => o.kind === "coverageTarget").length).toBe(0);
+
+    const withOption = extractIdOccurrences(documents, { includeCoverageTargetIds: true });
+    const coverage = withOption.filter((o) => o.kind === "coverageTarget");
+    const ids = coverage.map((o) => o.id);
+    expect(ids).toContain("CFG:MAIN:R12");
+    expect(ids).toContain("DL:S:ORDER:PAID");
+    expect(ids).toContain("UC:UC-01:F1");
+    expect(ids).toContain("ST:T1");
+    for (const o of coverage) {
+      expect(o.prefix.endsWith(":")).toBe(true);
+    }
+  });
+
+  it("does not double-extract the requirement id embedded inside a coverage target id", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "DL:S:ORDER-01:S-1 の状態遷移を確認する。" },
+    ];
+    const occurrences = extractIdOccurrences(documents, { includeCoverageTargetIds: true });
+    expect(occurrences.some((o) => o.id === "ORDER-01")).toBe(false);
+    expect(occurrences.some((o) => o.id === "DL:S:ORDER-01:S-1")).toBe(true);
+  });
+
+  it("excludes coverageTarget occurrences from analyzePrefixes", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "## CFG:MAIN:R12 構成一覧\n本文は CFG:MAIN:R12 を参照する。" },
+    ];
+    const occurrences = extractIdOccurrences(documents, { includeCoverageTargetIds: true });
+    const { stats, issues } = analyzePrefixes(occurrences);
+    expect(stats.some((s) => s.prefix === "CFG:")).toBe(false);
+    expect(issues.length).toBe(0);
+  });
+});
+
 describe("findDuplicateIds", () => {
   it("detects duplicate definitions with differing text as sameText=false", () => {
     const documents: TestBasisDocument[] = [

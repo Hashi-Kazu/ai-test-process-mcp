@@ -375,6 +375,22 @@ describe("cross matrix findings helpers", () => {
     expect(findUnmappedDefinedIds(baseAxes())).toEqual([]);
   });
 
+  it("findUnmappedDefinedIds detects a colon-separated coverage target id defined but not on any axis (CMX-11)", () => {
+    const documents = [
+      {
+        name: "config-matrix.md",
+        content: "CFG:MAIN:R1 の構成を対象とする。",
+      },
+    ];
+    const withoutOption = findUnmappedDefinedIds(baseAxes(), documents);
+    expect(withoutOption.map((u) => u.id)).not.toContain("CFG:MAIN:R1");
+
+    const withOption = findUnmappedDefinedIds(baseAxes(), documents, {
+      includeCoverageTargetIds: true,
+    });
+    expect(withOption.map((u) => u.id)).toContain("CFG:MAIN:R1");
+  });
+
   it("findDeclaredCoverageMismatches detects wrong figures and a false claimedNoEmptyCells", () => {
     const pairs = [buildCrossMatrixPair(baseAxes(), "RISK", "METHOD")];
     const mismatches = findDeclaredCoverageMismatches(pairs, [

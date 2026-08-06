@@ -1,5 +1,5 @@
 import { escapeRegExp, parseHeadings } from "./tools/reviewTestPlan.js";
-import { DEFAULT_ID_PATTERN_SOURCE, extractIdOccurrences } from "./testBasisAnalysis.js";
+import { extractIdOccurrences, extractIdStringsFromText } from "./testBasisAnalysis.js";
 import { deliverableConsistencyCriteria } from "./resources/deliverableConsistencyCriteria.js";
 import type {
   AuditDeliverableConsistencyInput,
@@ -609,10 +609,13 @@ export function statementOf(lineText: string, id: string): string {
 
 export function buildCrossRefIdIndex(
   deliverables: ConsistencyDeliverable[],
-  options: { idPatterns?: string[] } = {}
+  options: { idPatterns?: string[]; includeCoverageTargetIds?: boolean } = {}
 ): CrossRefIdEntry[] {
   const documents = deliverables.map((d) => ({ name: d.name, content: d.content }));
-  const occurrences = extractIdOccurrences(documents, { idPatterns: options.idPatterns });
+  const occurrences = extractIdOccurrences(documents, {
+    idPatterns: options.idPatterns,
+    includeCoverageTargetIds: options.includeCoverageTargetIds,
+  });
 
   // レンジ表記（R-01〜R-04 等）の中間IDを参照として補完する
   const rangeOccurrences: TestBasisIdOccurrence[] = [];
@@ -637,6 +640,7 @@ export function buildCrossRefIdIndex(
           heading: headingPerLine[lineIndex] ?? "(見出しなし)",
           lineText: line.trim(),
           role: "reference",
+          kind: "requirement",
         });
       }
     });
@@ -709,7 +713,11 @@ export function resolveCrossRefPrefixes(
 
 function inPrefixes(entryOrId: string, prefixes: string[]): boolean {
   const upper = entryOrId.toUpperCase();
-  return prefixes.some((p) => upper.startsWith(`${p.toUpperCase()}-`) || upper === p.toUpperCase());
+  return prefixes.some((p) => {
+    const upperPrefix = p.toUpperCase();
+    if (upperPrefix.endsWith(":")) return upper.startsWith(upperPrefix);
+    return upper.startsWith(`${upperPrefix}-`) || upper === upperPrefix;
+  });
 }
 
 export function checkUnresolvedCrossRefIds(
@@ -742,11 +750,11 @@ export function extractCorrespondenceClaims(
   deliverables: ConsistencyDeliverable[],
   index: CrossRefIdEntry[],
   deliverableIndex: DeliverableIndexEntry[],
-  crossRefIdPrefixes?: string[]
+  crossRefIdPrefixes?: string[],
+  options: { includeCoverageTargetIds?: boolean } = {}
 ): CorrespondenceClaim[] {
   const prefixes = resolveCrossRefPrefixes(index, crossRefIdPrefixes);
   const vocabulary = buildAliasVocabulary(deliverableIndex);
-  const idRegex = new RegExp(DEFAULT_ID_PATTERN_SOURCE, "gi");
   const claims: CorrespondenceClaim[] = [];
 
   for (const d of deliverables) {
@@ -760,13 +768,9 @@ export function extractCorrespondenceClaims(
         );
         if (target === undefined || target.deliverable === null) continue;
 
-        const ids: string[] = [];
-        idRegex.lastIndex = 0;
-        let m: RegExpExecArray | null;
-        while ((m = idRegex.exec(sentence)) !== null) {
-          ids.push(`${m[1]}-${m[2]}`);
-          if (m[0].length === 0) idRegex.lastIndex++;
-        }
+        const ids: string[] = extractIdStringsFromText(sentence, {
+          includeCoverageTargetIds: options.includeCoverageTargetIds,
+        });
         ids.push(...expandIdRanges(sentence));
         const targetIds = uniqueStrings(ids).filter((id) => inPrefixes(id, prefixes));
         if (targetIds.length === 0) continue;
@@ -1183,9 +1187,9 @@ export function extractCountClaims(
     idPatterns?: string[];
     countClaimSubjects?: DeliverableCountClaimSubject[];
     criteria?: DeliverableConsistencyCriteria;
+    includeCoverageTargetIds?: boolean;
   } = {}
 ): CountClaim[] {
-  const idRegexSources = [DEFAULT_ID_PATTERN_SOURCE, ...(options.idPatterns ?? [])];
   const criteria = options.criteria ?? deliverableConsistencyCriteria;
   const claims: CountClaim[] = [];
 
@@ -1199,15 +1203,10 @@ export function extractCountClaims(
 
         // (i) 件数宣言と同一セル内のID列挙
         if (countMatches.length === 1) {
-          const ids: string[] = [];
-          for (const source of idRegexSources) {
-            const re = new RegExp(source, "gi");
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(segment)) !== null) {
-              ids.push(`${m[1]}-${m[2]}`);
-              if (m[0].length === 0) re.lastIndex++;
-            }
-          }
+          const ids: string[] = extractIdStringsFromText(segment, {
+            idPatterns: options.idPatterns,
+            includeCoverageTargetIds: options.includeCoverageTargetIds,
+          });
           ids.push(...expandIdRanges(segment));
           const uniqueIds = uniqueStrings(ids);
           if (uniqueIds.length > 0) {
@@ -1613,16 +1612,20 @@ export function analyzeDeliverableConsistency(
 
   const idOccurrences = extractIdOccurrences(
     deliverables.map((d) => ({ name: d.name, content: d.content })),
-    { idPatterns: input.idPatterns }
+    { idPatterns: input.idPatterns, includeCoverageTargetIds: input.includeCoverageTargetIds }
   );
-  const crossRefIndex = buildCrossRefIdIndex(deliverables, { idPatterns: input.idPatterns });
+  const crossRefIndex = buildCrossRefIdIndex(deliverables, {
+    idPatterns: input.idPatterns,
+    includeCoverageTargetIds: input.includeCoverageTargetIds,
+  });
   const crossRefPrefixes = resolveCrossRefPrefixes(crossRefIndex, input.crossRefIdPrefixes);
 
   const correspondenceClaims = extractCorrespondenceClaims(
     deliverables,
     crossRefIndex,
     deliverableIndex,
-    input.crossRefIdPrefixes
+    input.crossRefIdPrefixes,
+    { includeCoverageTargetIds: input.includeCoverageTargetIds }
   );
   const sectionReferences = extractSectionReferences(deliverables, deliverableIndex);
   const statementDiffs = buildIdStatementDiffs(crossRefIndex);
@@ -1630,6 +1633,7 @@ export function analyzeDeliverableConsistency(
     idPatterns: input.idPatterns,
     countClaimSubjects: input.countClaimSubjects,
     criteria,
+    includeCoverageTargetIds: input.includeCoverageTargetIds,
   });
   const sharedItems = extractSharedItems(deliverables, criteria, input.sharedItemKindIds);
 

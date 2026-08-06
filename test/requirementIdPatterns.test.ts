@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { requirementIdPatternCatalog } from "../src/resources/requirementIdPatterns.js";
-import { DEFAULT_ID_PATTERN_SOURCE } from "../src/testBasisAnalysis.js";
+import { COVERAGE_TARGET_ID_PATTERN_SOURCE, DEFAULT_ID_PATTERN_SOURCE } from "../src/testBasisAnalysis.js";
 
 describe("requirementIdPatternCatalog", () => {
   it("has a defaultPatternId that resolves to the shared default pattern source", () => {
@@ -9,6 +9,12 @@ describe("requirementIdPatternCatalog", () => {
     );
     expect(defaultPattern).toBeDefined();
     expect(defaultPattern!.source).toBe(DEFAULT_ID_PATTERN_SOURCE);
+  });
+
+  it("has an IDP-05 entry that matches COVERAGE_TARGET_ID_PATTERN_SOURCE", () => {
+    const idp05 = requirementIdPatternCatalog.patterns.find((p) => p.id === "IDP-05");
+    expect(idp05).toBeDefined();
+    expect(idp05!.source).toBe(COVERAGE_TARGET_ID_PATTERN_SOURCE);
   });
 
   it("has unique pattern ids", () => {
