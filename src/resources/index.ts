@@ -539,7 +539,7 @@ export function registerResources(server: McpServer): void {
     {
       title: "Regression Selection Analysis Criteria",
       description:
-        "Judgment category catalog for select_regression_suite (RSC-01..RSC-20): out-of-population selection " +
+        "Judgment category catalog for select_regression_suite (RSC-01..RSC-25): out-of-population selection " +
         "references, duplicate/conflicting decisions, missing reasons, high-risk items excluded from the suite, " +
         "undecided population items, undeclared change-diff category, selected existing-unaffected items, " +
         "non-selected or undecided impact-scope conditions, missing removal reasons for items actually dropped " +
@@ -547,8 +547,11 @@ export function registerResources(server: McpServer): void {
         "references outside the population, oversized large-test share, execution-time budget overrun, " +
         "selected cases with no size classification input, impact-scope coverage claim mismatches, unknown " +
         "selection criterion references, selected conditions with no backing test case, missing selection " +
-        "criteria declarations, previous-suite diff not computed, and population size cap overflow, with " +
-        "severity and recommended actions.",
+        "criteria declarations, previous-suite diff not computed, population size cap overflow, conditions " +
+        "computed as impacted by reexpand_threshold_changes but declared existing-unaffected, cases computed " +
+        "as impacted but not selected, conditions computed as unaffected but declared modified/existing-impacted, " +
+        "out-of-population or duplicated impact-verdict inputs, and impact-verdict input not supplied (coverage " +
+        "computed on a declared-only basis), with severity and recommended actions.",
       mimeType: "application/json",
     },
     async (uri) => ({

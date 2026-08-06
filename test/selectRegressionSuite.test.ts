@@ -197,7 +197,7 @@ describe("computeRegressionSuite", () => {
       claimedImpactScopeCoveragePercent: 50,
     };
     const result = computeRegressionSuite(spec);
-    expect(result.coverage.basis).toBe("computed");
+    expect(result.coverage.basis).toBe("declared-only");
     expect(result.coverage.percent).toBe(100);
     expect(result.findings.some((f) => f.categoryId === "RSC-15" && f.severity === "high")).toBe(true);
 
@@ -228,9 +228,161 @@ describe("computeRegressionSuite", () => {
     expect(result.findings.some((f) => f.categoryId === "RSC-17" && f.severity === "high" && f.target === "TC-02")).toBe(
       true
     );
-    expect(result.coverage.basis).toBe("computed");
+    expect(result.coverage.basis).toBe("declared-only");
     expect(result.coverage.numerator).toBe(1);
     expect(result.coverage.denominator).toBe(2);
+  });
+
+  it("reports RSC-21[high] when a condition computed as impacted is declared existing-unaffected", () => {
+    const spec: RegressionSelectionSpec = {
+      suiteId: "REG-1",
+      testConditions: [
+        { id: "TC-01", statement: "決済確定", changeCategory: "modified" },
+        { id: "TC-02", statement: "手数料計算", changeCategory: "existing-unaffected" },
+      ],
+      testCases: [
+        { caseId: "TCS-01", testConditionId: "TC-01" },
+        { caseId: "TCS-02", testConditionId: "TC-02" },
+      ],
+      selections: [
+        { itemKind: "condition", itemId: "TC-01", decision: "include", reason: "変更対象のため残す" },
+        { itemKind: "condition", itemId: "TC-02", decision: "exclude", reason: "影響なしのため落とす" },
+        { itemKind: "case", itemId: "TCS-01", decision: "include", reason: "残す" },
+        { itemKind: "case", itemId: "TCS-02", decision: "exclude", reason: "落とす" },
+      ],
+      computedImpactVerdicts: [
+        { ownerKind: "testCondition", ownerId: "TC-01", verdict: "要修正" },
+        { ownerKind: "testCondition", ownerId: "TC-02", verdict: "要修正" },
+        { ownerKind: "testCase", ownerId: "TCS-01", verdict: "要修正" },
+        { ownerKind: "testCase", ownerId: "TCS-02", verdict: "要修正" },
+      ],
+      claimedImpactScopeCoveragePercent: 100,
+    };
+    const result = computeRegressionSuite(spec);
+    const rsc21 = result.findings.filter((f) => f.categoryId === "RSC-21");
+    expect(rsc21).toHaveLength(1);
+    expect(rsc21[0].severity).toBe("high");
+    expect(rsc21[0].target).toBe("TC-02");
+
+    const rsc22 = result.findings.filter((f) => f.categoryId === "RSC-22");
+    expect(rsc22).toHaveLength(1);
+    expect(rsc22[0].severity).toBe("high");
+    expect(rsc22[0].target).toBe("TCS-02");
+
+    expect(result.coverage.basis).toBe("computed");
+    expect(result.coverage.denominator).toBe(2);
+    expect(result.coverage.declaredOnlyDenominator).toBe(1);
+    expect(result.coverage.numerator).toBe(1);
+    expect(result.coverage.percent).toBe(50);
+
+    expect(result.findings.some((f) => f.categoryId === "RSC-15" && f.severity === "high")).toBe(true);
+
+    const rendered = renderRegressionSuite(spec);
+    expect(rendered).toContain("算出根拠(basis): computed");
+    expect(rendered).toContain("実体照合: 実施済み");
+  });
+
+  it("reports RSC-23[medium] when a condition computed as unaffected is declared modified", () => {
+    const spec: RegressionSelectionSpec = {
+      suiteId: "REG-1",
+      testConditions: [{ id: "TC-01", statement: "決済確定", changeCategory: "modified" }],
+      selections: [{ itemKind: "condition", itemId: "TC-01", decision: "include", reason: "残す" }],
+      computedImpactVerdicts: [{ ownerKind: "testCondition", ownerId: "TC-01", verdict: "影響なし" }],
+    };
+    const result = computeRegressionSuite(spec);
+    const rsc23 = result.findings.filter((f) => f.categoryId === "RSC-23");
+    expect(rsc23).toHaveLength(1);
+    expect(rsc23[0].severity).toBe("medium");
+    expect(result.findings.filter((f) => f.categoryId === "RSC-21")).toHaveLength(0);
+  });
+
+  it("reports RSC-24[medium] for out-of-population and duplicated impact verdicts and honors the last declaration", () => {
+    const spec: RegressionSelectionSpec = {
+      suiteId: "REG-1",
+      testConditions: [{ id: "TC-01", statement: "決済確定", changeCategory: "existing-unaffected" }],
+      selections: [{ itemKind: "condition", itemId: "TC-01", decision: "exclude", reason: "落とす" }],
+      computedImpactVerdicts: [
+        { ownerKind: "testCondition", ownerId: "TC-99", verdict: "要修正" },
+        { ownerKind: "testCondition", ownerId: "TC-01", verdict: "影響なし" },
+        { ownerKind: "testCondition", ownerId: "TC-01", verdict: "要修正" },
+      ],
+    };
+    const result = computeRegressionSuite(spec);
+    const rsc24 = result.findings.filter((f) => f.categoryId === "RSC-24");
+    expect(rsc24).toHaveLength(2);
+    // last declaration (要修正) is effective, so TC-01 counts as impacted and is included in the denominator.
+    expect(result.coverage.basis).toBe("computed");
+    expect(result.coverage.denominator).toBe(1);
+    // and since TC-01 is now impacted-but-declared-existing-unaffected, RSC-21 should fire.
+    expect(result.findings.some((f) => f.categoryId === "RSC-21" && f.target === "TC-01")).toBe(true);
+  });
+
+  it("reports RSC-25[info] and marks coverage as declared-only when computedImpactVerdicts is absent", () => {
+    const spec: RegressionSelectionSpec = {
+      suiteId: "REG-1",
+      testConditions: [{ id: "TC-01", statement: "決済確定", changeCategory: "modified" }],
+      selections: [{ itemKind: "condition", itemId: "TC-01", decision: "include", reason: "残す" }],
+    };
+    const result = computeRegressionSuite(spec);
+    const rsc25 = result.findings.filter((f) => f.categoryId === "RSC-25");
+    expect(rsc25).toHaveLength(1);
+    expect(rsc25[0].severity).toBe("info");
+    expect(result.coverage.basis).toBe("declared-only");
+    expect(result.coverage.reason).toBeTruthy();
+
+    const rendered = renderRegressionSuite(spec);
+    expect(rendered).toContain("算出根拠(basis): declared-only");
+    expect(rendered).toContain("実体照合: 未実施");
+  });
+
+  it("keeps coverage unavailable and does not emit impact-verdict findings when the population exceeds maxItems", () => {
+    const spec: RegressionSelectionSpec = {
+      testConditions: [
+        { id: "TC-01", statement: "a", changeCategory: "modified" },
+        { id: "TC-02", statement: "b", changeCategory: "modified" },
+      ],
+      maxItems: 1,
+      computedImpactVerdicts: [{ ownerKind: "testCondition", ownerId: "TC-01", verdict: "要修正" }],
+    };
+    const result = computeRegressionSuite(spec);
+    expect(result.findings.filter((f) => f.categoryId === "RSC-20")).toHaveLength(1);
+    expect(result.findings.filter((f) => f.categoryId === "RSC-20")[0].severity).toBe("info");
+    for (const id of ["RSC-21", "RSC-22", "RSC-23", "RSC-24", "RSC-25"]) {
+      expect(result.findings.filter((f) => f.categoryId === id)).toHaveLength(0);
+    }
+    expect(result.coverage.basis).toBe("unavailable");
+  });
+
+  it("returns the same result (including array order) for the same input with computedImpactVerdicts", () => {
+    const spec: RegressionSelectionSpec = {
+      suiteId: "REG-1",
+      testConditions: [
+        { id: "TC-01", statement: "決済確定", changeCategory: "modified" },
+        { id: "TC-02", statement: "手数料計算", changeCategory: "existing-unaffected" },
+      ],
+      testCases: [
+        { caseId: "TCS-01", testConditionId: "TC-01" },
+        { caseId: "TCS-02", testConditionId: "TC-02" },
+      ],
+      selections: [
+        { itemKind: "condition", itemId: "TC-01", decision: "include", reason: "変更対象のため残す" },
+        { itemKind: "condition", itemId: "TC-02", decision: "exclude", reason: "影響なしのため落とす" },
+        { itemKind: "case", itemId: "TCS-01", decision: "include", reason: "残す" },
+        { itemKind: "case", itemId: "TCS-02", decision: "exclude", reason: "落とす" },
+      ],
+      computedImpactVerdicts: [
+        { ownerKind: "testCondition", ownerId: "TC-01", verdict: "要修正" },
+        { ownerKind: "testCondition", ownerId: "TC-02", verdict: "要修正" },
+        { ownerKind: "testCase", ownerId: "TCS-01", verdict: "要修正" },
+        { ownerKind: "testCase", ownerId: "TCS-02", verdict: "要修正" },
+      ],
+    };
+    const r1 = computeRegressionSuite(spec);
+    const r2 = computeRegressionSuite(spec);
+    expect(r1).toEqual(r2);
+    expect(r1.findings.map((f) => `${f.categoryId}:${f.target}`)).toEqual(
+      r2.findings.map((f) => `${f.categoryId}:${f.target}`)
+    );
   });
 
   it("does not generate rows when the population exceeds maxItems", () => {

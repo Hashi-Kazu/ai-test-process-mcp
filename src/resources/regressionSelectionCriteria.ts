@@ -148,12 +148,51 @@ export const regressionSelectionAnalysisCriteria: RegressionSelectionAnalysisCri
       definition: "母集団件数(条件数+ケース数)が maxItems を超えたため、スイート構成・分布・差分の算出を打ち切った。",
       recommendedAction: "対象を絞り込むか、必要であれば maxItems を明示的に引き上げること。",
     },
+    {
+      id: "RSC-21",
+      nameJa: "影響判定実体との申告矛盾（影響あり→影響なし申告）",
+      severity: "high",
+      definition:
+        "影響判定実体(computedImpactVerdicts)で「要修正」または「要再確認」と算出された条件が、changeCategory: existing-unaffected と申告され、影響範囲被覆率の分母から外れている。",
+      recommendedAction: "申告を実体に合わせて existing-impacted / modified へ修正し、当該条件をスイート選択の対象に戻すこと。",
+    },
+    {
+      id: "RSC-22",
+      nameJa: "影響ありと算出されたケースの非選択",
+      severity: "high",
+      definition: "影響判定実体で「要修正」または「要再確認」と算出されたテストケースが、スイートに選択(include)されていない。",
+      recommendedAction: "当該ケースをスイートへ含めるか、含めない場合は根拠を reason に明記すること。",
+    },
+    {
+      id: "RSC-23",
+      nameJa: "影響なしと算出された条件の過大申告",
+      severity: "medium",
+      definition: "影響判定実体で「影響なし」と算出された条件が modified または existing-impacted と申告されている。",
+      recommendedAction: "閾値・パラメータ変更以外の変更要因があるならその根拠を残し、無いなら申告区分を見直すこと。",
+    },
+    {
+      id: "RSC-24",
+      nameJa: "影響判定入力の母集団外参照・重複宣言",
+      severity: "medium",
+      definition:
+        "computedImpactVerdicts が母集団に存在しないIDを参照している、または同一項目に対する影響判定が重複宣言されている。",
+      recommendedAction: "参照先IDを母集団のIDに合わせ、項目ごとの影響判定を1件に統一すること。",
+    },
+    {
+      id: "RSC-25",
+      nameJa: "影響判定実体の未連携",
+      severity: "info",
+      definition:
+        "computedImpactVerdicts が未指定のため、changeCategory 申告の正しさを実体照合しておらず、影響範囲被覆率が申告のみを母集団とした値（basis: declared-only）になっている。",
+      recommendedAction: "reexpand_threshold_changes の「成果物別の影響判定」行をそのまま computedImpactVerdicts として渡すこと。",
+    },
   ],
   notes: [
     "本検査は渡された母集団に対してのみ成立し、渡していない条件・ケースの取りこぼしは検出できない。",
-    "影響範囲被覆率の分母は changeCategory が new / modified / existing-impacted の条件数であり、分子は選択済みかつ実際にテストケースが存在する条件数である。",
+    "影響範囲被覆率の申告側の分母は changeCategory が new / modified / existing-impacted の条件数であり、分子は選択済みかつ実際にテストケースが存在する条件数である。",
     "推定実行時間は設計時の見積もり値の合計であり、実測値の代替にはしない。一部未申告の場合は下限値として扱う。",
     "削除を禁じる検査ではなく、削除の理由を成果物に残させる検査である。",
     "変更追従(閾値・パラメータ変更に伴う設計の再展開)は reexpand_threshold_changes の担当であり、本ツールは対象外。",
+    "影響範囲被覆率の分母は、changeCategory の申告と影響判定実体(computedImpactVerdicts)で影響ありと算出された条件の和集合であり、実体を渡さない場合は申告のみ(basis=declared-only)として扱う。実体照合が裏付けるのは reexpand_threshold_changes が扱う閾値・パラメータ変更に起因する影響のみで、それ以外の変更要因は申告依存のまま残る。",
   ],
 };
