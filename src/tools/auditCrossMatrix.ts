@@ -27,10 +27,11 @@ function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
 }
 
-function cellMark(cell: CrossMatrixCell | undefined): string {
+function cellMark(cell: CrossMatrixCell | undefined, evidenceEvaluated: boolean): string {
   if (cell === undefined) return "";
   if (cell.state !== "filled") return "";
-  return cell.direction === "both" ? "○" : "△";
+  const mark = cell.direction === "both" ? "○" : "△";
+  return evidenceEvaluated && !cell.grounded ? `${mark}*` : mark;
 }
 
 function findAxis(axes: CrossMatrixAxisSpec[], axisId: string): CrossMatrixAxisSpec | undefined {
@@ -68,11 +69,19 @@ function renderPairMatrix(
       .join(" | ")} |`
   );
   lines.push(`| --- | ${shownColumns.map(() => "---").join(" | ")} |`);
+  let hasUngroundedMark = false;
   for (const row of shownRows) {
-    const cells = shownColumns.map((col) =>
-      cellMark(cellByKey.get(`${row.id}::${col.id}`))
-    );
+    const cells = shownColumns.map((col) => {
+      const mark = cellMark(cellByKey.get(`${row.id}::${col.id}`), pair.evidenceEvaluated);
+      if (mark.endsWith("*")) hasUngroundedMark = true;
+      return mark;
+    });
     lines.push(`| ${escapeCell(itemLabel(row))} | ${cells.join(" | ")} |`);
+  }
+  if (hasUngroundedMark) {
+    lines.push(
+      "- * は紐づけ宣言の根拠が本文から裏付けられていないセル(CMX-16 / CMX-17)。"
+    );
   }
   if (rows.length > shownRows.length || columns.length > shownColumns.length) {
     lines.push("");
@@ -231,16 +240,20 @@ export function renderCrossMatrixAudit(
   lines.push("### 2.6 軸ペアごとの充填率");
   lines.push("");
   lines.push(
-    "| 行軸 | 列軸 | 行数 | 列数 | 全セル数 | 充填セル数 | 充填率(%) | 対象行数 | 空行数 | 行被覆率(%) | 対象列数 | 空列数 | 列被覆率(%) |"
+    "| 行軸 | 列軸 | 行数 | 列数 | 全セル数 | 充填セル数 | 充填率(%) | 根拠裏付け充填セル数 | 根拠裏付け充填率(%) | 対象行数 | 空行数 | 行被覆率(%) | 対象列数 | 空列数 | 列被覆率(%) |"
   );
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push(
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+  );
   for (const pair of pairs) {
     const emptyRowCount = pair.emptyRows.filter((line) => !line.excluded).length;
     const emptyColumnCount = pair.emptyColumns.filter((line) => !line.excluded).length;
+    const groundedCount = pair.evidenceEvaluated ? String(pair.groundedFilledCellCount) : "-";
+    const groundedRate = pair.evidenceEvaluated ? String(pair.groundedCellFillRatePercent) : "-";
     lines.push(
       `| ${escapeCell(pair.axisAName)} | ${escapeCell(pair.axisBName)} | ${pair.rowCount} | ${
         pair.columnCount
-      } | ${pair.totalCellCount} | ${pair.filledCellCount} | ${pair.cellFillRatePercent} | ${
+      } | ${pair.totalCellCount} | ${pair.filledCellCount} | ${pair.cellFillRatePercent} | ${groundedCount} | ${groundedRate} | ${
         pair.targetRowCount
       } | ${emptyRowCount} | ${pair.rowCoverageRatePercent} | ${pair.targetColumnCount} | ${emptyColumnCount} | ${
         pair.columnCoverageRatePercent
@@ -250,6 +263,9 @@ export function renderCrossMatrixAudit(
   lines.push("");
   lines.push(
     "- 充填率の分母は 行数 × 列数(意味的に成立し得ないセルを含む)。行被覆率・列被覆率の分母は除外宣言された要素を除いた対象要素数であり、全要素数ではない。"
+  );
+  lines.push(
+    "- 根拠裏付け充填率は、リンク宣言の evidence が documents 本文から裏付けられたセルだけを分子に数えた値。documents 未指定のときは算出しない。"
   );
   lines.push("");
 
@@ -272,7 +288,7 @@ export function renderCrossMatrixAudit(
   }
   lines.push("");
 
-  lines.push("### 2.8 軸母集団の裏付け");
+  lines.push("### 2.8 軸母集団とリンク根拠の裏付け");
   lines.push("");
   {
     const shrinkage = findings.filter((f) => f.categoryId === "CMX-09");
@@ -300,6 +316,24 @@ export function renderCrossMatrixAudit(
       }
       if (grounding.length > FINDING_RENDER_LIMIT) {
         lines.push(`- 他 ${grounding.length - FINDING_RENDER_LIMIT} 件`);
+      }
+    }
+
+    const linkGrounding = findings.filter(
+      (f) => f.categoryId === "CMX-16" || f.categoryId === "CMX-17"
+    );
+    if (!input.documents || input.documents.length === 0) {
+      lines.push("- documents が未指定のためリンク根拠の裏付け照合を行えない(要確認)");
+    } else if (linkGrounding.length === 0) {
+      lines.push("- リンク根拠の欠落なし");
+    } else {
+      for (const f of linkGrounding.slice(0, FINDING_RENDER_LIMIT)) {
+        lines.push(
+          `- [${f.severity}] ${escapeCell(f.categoryId)} ${escapeCell(f.target)} : ${escapeCell(f.detail)}`
+        );
+      }
+      if (linkGrounding.length > FINDING_RENDER_LIMIT) {
+        lines.push(`- 他 ${linkGrounding.length - FINDING_RENDER_LIMIT} 件`);
       }
     }
   }
@@ -345,7 +379,7 @@ export function renderCrossMatrixAudit(
   lines.push("### 2.11 サマリ");
   lines.push("");
   lines.push(
-    `- 軸数: ${summary.axisCount} / 軸ペア数: ${summary.pairCount} / 生成済みペア数: ${summary.generatedPairCount} / 要素総数: ${summary.totalItemCount} / 完全孤立要素数: ${summary.isolatedItemCount} / 空行数: ${summary.emptyRowTotal} / 空列数: ${summary.emptyColumnTotal} / 除外宣言数: ${summary.excludedLineTotal} / 全体充填率: ${summary.overallCellFillRatePercent}% / 検出事項数: ${summary.findingTotal}(うち high ${summary.highFindingTotal})`
+    `- 軸数: ${summary.axisCount} / 軸ペア数: ${summary.pairCount} / 生成済みペア数: ${summary.generatedPairCount} / 要素総数: ${summary.totalItemCount} / 完全孤立要素数: ${summary.isolatedItemCount} / 空行数: ${summary.emptyRowTotal} / 空列数: ${summary.emptyColumnTotal} / 除外宣言数: ${summary.excludedLineTotal} / 全体充填率: ${summary.overallCellFillRatePercent}% / 検出事項数: ${summary.findingTotal}(うち high ${summary.highFindingTotal}) / 根拠未記入リンク数: ${summary.linksWithoutEvidenceTotal} / 未裏付けリンク数: ${summary.ungroundedLinkTotal} / 全体根拠裏付け充填率: ${summary.overallGroundedCellFillRatePercent}%`
   );
   lines.push("");
 
@@ -383,6 +417,9 @@ export function renderCrossMatrixAudit(
   lines.push(
     "- 2.9 の完全孤立要素は、他のどの軸ともつながらない要素である。上流の分析成果物に立ち戻って所属を確認すること。"
   );
+  lines.push(
+    "- 2.6 の根拠裏付け充填率が宣言充填率より大きく低い場合、充填は links の宣言だけで成立しており実体の裏付けが無い。CMX-16 / CMX-17 の指摘を解消してから充填率を成果物へ転記すること。"
+  );
   lines.push("");
 
   lines.push(
@@ -409,10 +446,29 @@ export const auditCrossMatrixInputShape = {
               id: z.string().describe("Item id, unique across all axes"),
               label: z.string().optional().describe("Display label; defaults to id"),
               links: z
-                .array(z.string())
+                .array(
+                  z.union([
+                    z.string().describe("Target item id on another axis (legacy form, no evidence)"),
+                    z.object({
+                      targetId: z.string().describe("Target item id on another axis"),
+                      evidence: z
+                        .string()
+                        .optional()
+                        .describe(
+                          "Verbatim quote from documents that substantiates this link; missing evidence is flagged as CMX-16[high] and evidence absent from documents as CMX-17[high]"
+                        ),
+                      evidenceSource: z
+                        .string()
+                        .optional()
+                        .describe(
+                          "Where the evidence came from (document name / heading / upstream tool); display only"
+                        ),
+                    }),
+                  ])
+                )
                 .optional()
                 .describe(
-                  "Ids of items on other axes this item is linked to; links are treated as undirected"
+                  "Links to items on other axes; links are treated as undirected. Plain strings are accepted for backward compatibility but carry no evidence"
                 ),
             })
           )
@@ -482,7 +538,8 @@ export function registerAuditCrossMatrixTool(server: McpServer): void {
       description:
         "任意の2軸以上(プロダクトリスク／テスト観点カテゴリ／ペルソナ／機能ID／シナリオ／テストコンテナ／パラメータ／テストタイプなど)を汎用の軸データとして受け取り、" +
         "軸ペアの直積表を決定的に生成して、空行・空列(片側にしかない要素)を列挙する。3軸以上なら全組合せの軸ペアを一括で回す。" +
-        "充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合するため、見かけの高充填率を検出できる。",
+        "充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合するため、見かけの高充填率を検出できる。" +
+        "各リンク宣言の根拠(evidence)が documents 本文から裏付けられるかまで照合し、根拠裏付け後の充填率を併記する。",
       inputSchema: auditCrossMatrixInputShape,
     },
     async (input) => {

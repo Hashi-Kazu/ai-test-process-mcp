@@ -9,13 +9,20 @@ import {
   findDuplicateAxisIds,
   findDuplicateItemIds,
   findIsolatedItems,
+  findLinkEvidenceIssues,
   findSelfAxisLinks,
   findUngroundedAxisItems,
   findUnknownLinkTargets,
   findUnmappedDefinedIds,
+  linkTargetIds,
+  normalizeAxisItemLinks,
   resolveAxisPairs,
 } from "../src/crossMatrixAnalysis.js";
-import type { AuditCrossMatrixInput, CrossMatrixAxisSpec } from "../src/types.js";
+import type {
+  AuditCrossMatrixInput,
+  CrossMatrixAxisSpec,
+  TestBasisDocument,
+} from "../src/types.js";
 
 // RISK(プロダクトリスク) × METHOD(テスト方法) × PERSONA(ペルソナ) の3軸を基本サンプルとする。
 function baseAxes(): CrossMatrixAxisSpec[] {
@@ -71,6 +78,77 @@ function cleanAxes(): CrossMatrixAxisSpec[] {
       ],
     },
   ];
+}
+
+// 全4セルが双方向 links で埋まる 2軸 × 2要素。documents には各要素の id と label だけを含める。
+const linkedDocuments: TestBasisDocument[] = [
+  {
+    name: "basis.md",
+    content: [
+      "# テストベース",
+      "R-01 決済失敗",
+      "R-02 在庫不整合",
+      "M-01 自動E2E",
+      "M-02 手動探索",
+    ].join("\n"),
+  },
+];
+
+/**
+ * kind="missing": 半分のリンク宣言は evidence 未記入、残り半分は本文に存在しない引用文。
+ * kind="grounded": 全リンク宣言に本文から切り出した引用文を与える。
+ */
+function fullyLinkedAxes(kind: "missing" | "grounded"): CrossMatrixAxisSpec[] {
+  const quote = (id: string, label: string): string => `${id} ${label}`;
+  const ev = (id: string, label: string): { evidence: string } =>
+    kind === "grounded"
+      ? { evidence: quote(id, label) }
+      : { evidence: `本文に存在しない引用文 ${id}` };
+  const bare = (targetId: string, id: string, label: string) =>
+    kind === "grounded" ? { targetId, ...ev(id, label) } : { targetId };
+
+  return [
+    {
+      axisId: "RISK",
+      axisName: "プロダクトリスク",
+      items: [
+        {
+          id: "R-01",
+          label: "決済失敗",
+          links: [bare("M-01", "M-01", "自動E2E"), { targetId: "M-02", ...ev("M-02", "手動探索") }],
+        },
+        {
+          id: "R-02",
+          label: "在庫不整合",
+          links: [bare("M-01", "M-01", "自動E2E"), { targetId: "M-02", ...ev("M-02", "手動探索") }],
+        },
+      ],
+    },
+    {
+      axisId: "METHOD",
+      axisName: "テスト方法",
+      items: [
+        {
+          id: "M-01",
+          label: "自動E2E",
+          links: [bare("R-01", "R-01", "決済失敗"), { targetId: "R-02", ...ev("R-02", "在庫不整合") }],
+        },
+        {
+          id: "M-02",
+          label: "手動探索",
+          links: [bare("R-01", "R-01", "決済失敗"), { targetId: "R-02", ...ev("R-02", "在庫不整合") }],
+        },
+      ],
+    },
+  ];
+}
+
+function fullyLinkedInput(kind: "missing" | "grounded"): AuditCrossMatrixInput {
+  return {
+    axes: fullyLinkedAxes(kind),
+    documents: linkedDocuments,
+    declaredCoverage: [{ axisA: "RISK", axisB: "METHOD", claimedFillRatePercent: 100 }],
+  };
 }
 
 describe("resolveAxisPairs", () => {
@@ -373,6 +451,15 @@ describe("analyzeCrossMatrix", () => {
     });
   });
 
+  it("does not mutate the input and stays deterministic with object-form links and documents", () => {
+    const input = fullyLinkedInput("missing");
+    const snapshot = JSON.parse(JSON.stringify(input));
+    const first = analyzeCrossMatrix(input);
+    const second = analyzeCrossMatrix(input);
+    expect(first).toEqual(second);
+    expect(input).toEqual(snapshot);
+  });
+
   it("reports CMX-03 for every empty row across all three axis pairs", () => {
     const result = analyzeCrossMatrix(baseInput());
     const emptyRowTargets = result.findings
@@ -384,5 +471,306 @@ describe("analyzeCrossMatrix", () => {
       "RISK / R-03 × PERSONA",
       "METHOD / M-01 × PERSONA",
     ]);
+  });
+});
+
+describe("normalizeAxisItemLinks / linkTargetIds", () => {
+  it("accepts strings and objects, drops blank targetIds and keeps the first declaration per targetId", () => {
+    const item = {
+      id: "R-01",
+      links: [
+        "M-01",
+        { targetId: "M-02", evidence: "最初の宣言", evidenceSource: "basis.md" },
+        { targetId: "M-02", evidence: "2件目は採用しない" },
+        "M-01",
+        "   ",
+        { targetId: "" },
+        "M-03",
+      ],
+    };
+    expect(normalizeAxisItemLinks(item)).toEqual([
+      { targetId: "M-01" },
+      { targetId: "M-02", evidence: "最初の宣言", evidenceSource: "basis.md" },
+      { targetId: "M-03" },
+    ]);
+    expect(linkTargetIds(item)).toEqual(["M-01", "M-02", "M-03"]);
+    expect(normalizeAxisItemLinks({ id: "X" })).toEqual([]);
+  });
+
+  it("does not mutate the item or its links", () => {
+    const item = { id: "R-01", links: [{ targetId: "M-01", evidence: "根拠" }, "M-02"] };
+    const snapshot = JSON.parse(JSON.stringify(item));
+    normalizeAxisItemLinks(item);
+    linkTargetIds(item);
+    expect(item).toEqual(snapshot);
+  });
+
+  it("reports blank targetIds as CMX-01 and keeps them out of the cross product", () => {
+    const axes = baseAxes();
+    axes[0].items[2].links = ["", "  ", "M-01"];
+    const result = analyzeCrossMatrix({ axes });
+    const blank = result.findings.filter(
+      (f) => f.categoryId === "CMX-01" && f.target === "RISK / R-03"
+    );
+    expect(blank).toHaveLength(1);
+    expect(blank[0].detail).toBe(
+      "links に targetId が空のリンク宣言が 2 件ある。当該リンクは直積表に反映していない。"
+    );
+    expect(linkTargetIds(axes[0].items[2])).toEqual(["M-01"]);
+  });
+});
+
+describe("link declaration form backward compatibility", () => {
+  function objectFormAxes(): CrossMatrixAxisSpec[] {
+    const axes = baseAxes();
+    for (const axis of axes) {
+      for (const item of axis.items) {
+        if (item.links === undefined) continue;
+        item.links = item.links.map((link) => ({ targetId: link as string }));
+      }
+    }
+    return axes;
+  }
+
+  it("produces identical results for string links and equivalent object links", () => {
+    const stringForm = baseAxes();
+    const objectForm = objectFormAxes();
+
+    expect(buildCrossMatrixPair(objectForm, "RISK", "METHOD")).toEqual(
+      buildCrossMatrixPair(stringForm, "RISK", "METHOD")
+    );
+    expect(findUnknownLinkTargets(objectForm)).toEqual(findUnknownLinkTargets(stringForm));
+    expect(findSelfAxisLinks(objectForm)).toEqual(findSelfAxisLinks(stringForm));
+    expect(findAsymmetricLinks(objectForm)).toEqual(findAsymmetricLinks(stringForm));
+    expect(findIsolatedItems(objectForm)).toEqual(findIsolatedItems(stringForm));
+  });
+
+  it("keeps the established string-link results unchanged", () => {
+    const pair = buildCrossMatrixPair(baseAxes(), "RISK", "METHOD");
+    expect(pair.filledCellCount).toBe(2);
+    expect(pair.cellFillRatePercent).toBe(33.3);
+    expect(pair.emptyRows.map((r) => r.itemId)).toEqual(["R-03"]);
+    expect(pair.evidenceEvaluated).toBe(false);
+    expect(pair.groundedFilledCellCount).toBe(0);
+    expect(pair.groundedCellFillRatePercent).toBe(0);
+    expect(pair.cells.every((c) => c.grounded === false)).toBe(true);
+  });
+});
+
+describe("findLinkEvidenceIssues", () => {
+  it("reports nothing when documents is missing or empty", () => {
+    expect(findLinkEvidenceIssues(fullyLinkedAxes("missing"))).toEqual({
+      missing: [],
+      ungrounded: [],
+    });
+    expect(findLinkEvidenceIssues(fullyLinkedAxes("missing"), [])).toEqual({
+      missing: [],
+      ungrounded: [],
+    });
+  });
+
+  it("splits declarations into missing evidence and evidence absent from the documents", () => {
+    const { missing, ungrounded } = findLinkEvidenceIssues(
+      fullyLinkedAxes("missing"),
+      linkedDocuments
+    );
+    expect(missing).toHaveLength(4);
+    expect(missing[0]).toEqual({
+      axisId: "RISK",
+      itemId: "R-01",
+      targetAxisId: "METHOD",
+      targetId: "M-01",
+    });
+    expect(ungrounded).toHaveLength(4);
+    expect(ungrounded[0]).toEqual({
+      axisId: "RISK",
+      itemId: "R-01",
+      targetAxisId: "METHOD",
+      targetId: "M-02",
+      evidence: "本文に存在しない引用文 M-02",
+    });
+  });
+
+  it("reports nothing when every evidence is quoted from the documents", () => {
+    expect(findLinkEvidenceIssues(fullyLinkedAxes("grounded"), linkedDocuments)).toEqual({
+      missing: [],
+      ungrounded: [],
+    });
+  });
+
+  it("absorbs full-width / half-width and punctuation differences in the evidence", () => {
+    const axes: CrossMatrixAxisSpec[] = [
+      {
+        axisId: "A",
+        axisName: "軸A",
+        items: [{ id: "A-1", links: [{ targetId: "B-1", evidence: "API呼び出しの失敗" }] }],
+      },
+      {
+        axisId: "B",
+        axisName: "軸B",
+        items: [{ id: "B-1", links: [{ targetId: "A-1", evidence: "ＡＰＩ 呼び出し・の失敗" }] }],
+      },
+    ];
+    const documents: TestBasisDocument[] = [
+      { name: "d.md", content: "A-1 B-1 ＡＰＩ呼び出しの失敗を検知する" },
+    ];
+    expect(findLinkEvidenceIssues(axes, documents)).toEqual({ missing: [], ungrounded: [] });
+  });
+
+  it("ignores links to undeclared ids and to items on the same axis", () => {
+    const axes: CrossMatrixAxisSpec[] = [
+      {
+        axisId: "A",
+        axisName: "軸A",
+        items: [
+          { id: "A-1", links: ["X-99", "A-2"] },
+          { id: "A-2" },
+        ],
+      },
+      { axisId: "B", axisName: "軸B", items: [{ id: "B-1" }] },
+    ];
+    expect(findLinkEvidenceIssues(axes, linkedDocuments)).toEqual({ missing: [], ungrounded: [] });
+  });
+});
+
+describe("link evidence grounded fill rate", () => {
+  it("reports CMX-16 and CMX-17 as high when every cell is linked but no link evidence is grounded", () => {
+    const result = analyzeCrossMatrix(fullyLinkedInput("missing"));
+    const pair = result.pairs[0];
+
+    // 宣言ベースでは満充填のまま
+    expect(pair.cellFillRatePercent).toBe(100);
+    expect(pair.filledCellCount).toBe(4);
+    expect(pair.emptyRows).toEqual([]);
+    expect(pair.emptyColumns).toEqual([]);
+
+    // 根拠裏付け後は 0
+    expect(pair.evidenceEvaluated).toBe(true);
+    expect(pair.groundedFilledCellCount).toBe(0);
+    expect(pair.groundedCellFillRatePercent).toBe(0);
+
+    const cmx16 = result.findings.filter((f) => f.categoryId === "CMX-16");
+    const cmx17 = result.findings.filter((f) => f.categoryId === "CMX-17");
+    expect(cmx16.length).toBeGreaterThan(0);
+    expect(cmx16.every((f) => f.severity === "high")).toBe(true);
+    expect(cmx17.length).toBeGreaterThan(0);
+    expect(cmx17.every((f) => f.severity === "high")).toBe(true);
+
+    const cmx08 = result.findings.filter(
+      (f) =>
+        f.categoryId === "CMX-08" &&
+        f.severity === "high" &&
+        f.target.includes("claimedFillRatePercentGrounded")
+    );
+    expect(cmx08).toHaveLength(1);
+
+    expect(result.summary.highFindingTotal).toBeGreaterThan(0);
+    expect(result.summary.linksWithoutEvidenceTotal).toBeGreaterThan(0);
+    expect(result.summary.ungroundedLinkTotal).toBeGreaterThan(0);
+    expect(result.summary.overallGroundedCellFillRatePercent).toBe(0);
+    expect(result.summary.linkDeclarationTotal).toBe(8);
+    expect(result.summary.evidenceEvaluatedPairCount).toBe(1);
+
+    // 根拠を本文に実在する引用へ差し替えると指摘が消え、根拠裏付け充填率が 100 になる
+    const grounded = analyzeCrossMatrix(fullyLinkedInput("grounded"));
+    expect(grounded.findings.filter((f) => f.categoryId === "CMX-16")).toEqual([]);
+    expect(grounded.findings.filter((f) => f.categoryId === "CMX-17")).toEqual([]);
+    expect(grounded.pairs[0].groundedCellFillRatePercent).toBe(100);
+    expect(grounded.pairs[0].groundedFilledCellCount).toBe(4);
+    expect(grounded.summary.overallGroundedCellFillRatePercent).toBe(100);
+    expect(
+      grounded.findings.filter((f) => f.categoryId === "CMX-08")
+    ).toEqual([]);
+  });
+
+  it("marks each cell grounded only when the direction that filled it carries grounded evidence", () => {
+    const axes: CrossMatrixAxisSpec[] = [
+      {
+        axisId: "A",
+        axisName: "軸A",
+        items: [
+          { id: "A-1", links: [{ targetId: "B-1", evidence: "A-1 と B-1 は関係する" }] },
+          { id: "A-2", links: [{ targetId: "B-1" }] },
+        ],
+      },
+      {
+        axisId: "B",
+        axisName: "軸B",
+        items: [{ id: "B-1", links: ["A-1", "A-2"] }],
+      },
+    ];
+    const documents: TestBasisDocument[] = [
+      { name: "d.md", content: "A-1 と B-1 は関係する\nA-2 も存在する\nB-1 も存在する" },
+    ];
+    const pair = buildCrossMatrixPair(axes, "A", "B", undefined, DEFAULT_MAX_CELL_COUNT, documents);
+    expect(pair.filledCellCount).toBe(2);
+    expect(pair.groundedFilledCellCount).toBe(1);
+    expect(pair.groundedCellFillRatePercent).toBe(50);
+    expect(pair.cells.find((c) => c.rowItemId === "A-1")?.grounded).toBe(true);
+    expect(pair.cells.find((c) => c.rowItemId === "A-2")?.grounded).toBe(false);
+  });
+
+  it("keeps evidence fields zeroed when the pair is skipped for exceeding maxCellCount", () => {
+    const pair = buildCrossMatrixPair(
+      fullyLinkedAxes("grounded"),
+      "RISK",
+      "METHOD",
+      undefined,
+      1,
+      linkedDocuments
+    );
+    expect(pair.generated).toBe(false);
+    expect(pair.evidenceEvaluated).toBe(false);
+    expect(pair.groundedFilledCellCount).toBe(0);
+    expect(pair.groundedCellFillRatePercent).toBe(0);
+  });
+
+  it("findDeclaredCoverageMismatches does not double-report when the declared fill rate is already wrong", () => {
+    const pairs = [
+      buildCrossMatrixPair(
+        fullyLinkedAxes("missing"),
+        "RISK",
+        "METHOD",
+        undefined,
+        DEFAULT_MAX_CELL_COUNT,
+        linkedDocuments
+      ),
+    ];
+    expect(
+      findDeclaredCoverageMismatches(pairs, [
+        { axisA: "RISK", axisB: "METHOD", claimedFillRatePercent: 100 },
+      ])
+    ).toEqual([
+      {
+        axisA: "RISK",
+        axisB: "METHOD",
+        field: "claimedFillRatePercentGrounded",
+        claimed: 100,
+        actual: 0,
+      },
+    ]);
+
+    // 従来の不一致があるときは claimedFillRatePercent のみを報告する
+    expect(
+      findDeclaredCoverageMismatches(pairs, [
+        { axisA: "RISK", axisB: "METHOD", claimedFillRatePercent: 80 },
+      ])
+    ).toEqual([
+      {
+        axisA: "RISK",
+        axisB: "METHOD",
+        field: "claimedFillRatePercent",
+        claimed: 80,
+        actual: 100,
+      },
+    ]);
+  });
+
+  it("emits no CMX-16 / CMX-17 when documents is not given", () => {
+    const result = analyzeCrossMatrix({ axes: fullyLinkedAxes("missing") });
+    expect(result.findings.filter((f) => f.categoryId === "CMX-16")).toEqual([]);
+    expect(result.findings.filter((f) => f.categoryId === "CMX-17")).toEqual([]);
+    expect(result.summary.evidenceEvaluatedPairCount).toBe(0);
+    expect(result.summary.overallGroundedCellFillRatePercent).toBe(0);
   });
 });

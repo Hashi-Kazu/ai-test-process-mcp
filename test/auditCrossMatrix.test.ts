@@ -58,7 +58,7 @@ describe("renderCrossMatrixAudit", () => {
       "### 2.5 除外宣言された空行・空列",
       "### 2.6 軸ペアごとの充填率",
       "### 2.7 宣言充填率との照合",
-      "### 2.8 軸母集団の裏付け",
+      "### 2.8 軸母集団とリンク根拠の裏付け",
       "### 2.9 完全孤立要素",
       "### 2.10 検出事項一覧",
       "### 2.11 サマリ",
@@ -126,6 +126,66 @@ describe("renderCrossMatrixAudit", () => {
 
     const findingSection = md.split("### 2.10 検出事項一覧")[1].split("### 2.11")[0];
     expect(findingSection).toContain("| CMX-10 | high | RISK / R-03 |");
+  });
+
+  it("flags link declarations with no evidence as CMX-16 and marks the ungrounded cells with *", () => {
+    const md = renderCrossMatrixAudit({
+      axes: [
+        {
+          axisId: "RISK",
+          axisName: "プロダクトリスク",
+          items: [
+            { id: "R-01", label: "決済失敗", links: ["M-01", "M-02"] },
+            { id: "R-02", label: "在庫不整合", links: ["M-01", "M-02"] },
+          ],
+        },
+        {
+          axisId: "METHOD",
+          axisName: "テスト方法",
+          items: [
+            { id: "M-01", label: "自動E2E", links: ["R-01", "R-02"] },
+            { id: "M-02", label: "手動探索", links: ["R-01", "R-02"] },
+          ],
+        },
+      ],
+      documents: [
+        {
+          name: "basis.md",
+          content: [
+            "# テストベース",
+            "R-01 決済失敗",
+            "R-02 在庫不整合",
+            "M-01 自動E2E",
+            "M-02 手動探索",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    const findingSection = md.split("### 2.10 検出事項一覧")[1].split("### 2.11")[0];
+    expect(findingSection).toContain("| CMX-16 | high |");
+
+    // 2.6 表: 充填率100 に対し根拠裏付け充填セル数・充填率はいずれも 0
+    const rateRow = md
+      .split("\n")
+      .find((l) => l.startsWith("| プロダクトリスク | テスト方法 |")) as string;
+    expect(rateRow).toBe("| プロダクトリスク | テスト方法 | 2 | 2 | 4 | 4 | 100 | 0 | 0 | 2 | 0 | 100 | 2 | 0 | 100 |");
+
+    expect(md).toContain("| 決済失敗 | ○* | ○* |");
+    expect(md).toContain("- * は紐づけ宣言の根拠が本文から裏付けられていないセル(CMX-16 / CMX-17)。");
+
+    const groundingSection = md.split("### 2.8 軸母集団とリンク根拠の裏付け")[1].split("### 2.9")[0];
+    expect(groundingSection).toContain("CMX-16 RISK / R-01 → METHOD / M-01");
+  });
+
+  it("warns in 2.8 when documents is missing so link evidence cannot be checked", () => {
+    const groundingSection = markdown
+      .split("### 2.8 軸母集団とリンク根拠の裏付け")[1]
+      .split("### 2.9")[0];
+    expect(groundingSection).toContain(
+      "- documents が未指定のためリンク根拠の裏付け照合を行えない(要確認)"
+    );
+    expect(markdown).not.toContain("○*");
   });
 
   it("escapes pipe characters in labels and ids without breaking the table column count", () => {

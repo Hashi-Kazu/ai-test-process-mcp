@@ -1,4 +1,4 @@
-import { normalizeForGrounding } from "./testCaseAnalysis.js";
+import { normalizeForGrounding } from "./groundingNormalization.js";
 import type {
   AnalyzeCauseEffectInput,
   CauseEffectConstraintInput,
