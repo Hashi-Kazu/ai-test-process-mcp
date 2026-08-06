@@ -4070,7 +4070,12 @@ export interface TestPurposeIdIssue { kind: string; id: string; expectedPrefix: 
 export interface TestPurposeOrphanExpectation { id: string; statement: string; }
 export interface TestPurposeTypeSelectionIssue {
   name: string;
-  kind: "selected-without-purpose" | "selected-without-reason" | "unselected-with-purpose";
+  kind:
+    | "selected-without-purpose"
+    | "selected-without-reason"
+    | "selected-with-placeholder-reason"
+    | "selected-with-too-short-reason"
+    | "unselected-with-purpose";
 }
 export interface TestPurposePriorityIssue {
   purposeId: string;

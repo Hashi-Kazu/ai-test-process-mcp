@@ -246,6 +246,31 @@ describe("PDC-10: test type selection / purpose inconsistency", () => {
     expect(section).toContain("[high] 機能テスト");
     expect(section).toContain("[high] 性能テスト");
   });
+
+  it("flags a placeholder-only reason with the placeholder label", () => {
+    const input: DeriveTestPurposesInput = {
+      expectations: [{ id: "EXP-01", statement: "期待" }],
+      testRequirements: [
+        { id: "TR-01", line: "management", statement: "要求", expectationIds: ["EXP-01"] },
+      ],
+      purposes: [
+        {
+          id: "TP-01",
+          statement: "目的",
+          testRequirementIds: ["TR-01"],
+          successCriterion: "基準",
+          priorityRank: 1,
+          priorityRationale: "根拠",
+        },
+      ],
+      testTypeSelections: [
+        { name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "必要" },
+      ],
+    };
+    const markdown = renderTestPurposeDerivation(input);
+    const section = markdown.split("### 3.10 ")[1].split("### 3.11")[0];
+    expect(section).toContain("定型語のみで実質未記入");
+  });
 });
 
 describe("PDC-15: grounding against request documents", () => {
@@ -314,6 +339,61 @@ describe("PDC-16: claimed vs computed coverage mismatch", () => {
     const section = markdown.split("### 3.16 ")[1].split("### 3.17")[0];
     expect(section).toContain("[high]");
     expect(section).toContain("66.7");
+    expect(section).not.toContain("テストタイプ選定根拠率");
+    expect(section).toContain("- 注記:");
+  });
+
+  it("does not use テストタイプ選定根拠率 and flags a placeholder-reason mismatch as 0%", () => {
+    const input: DeriveTestPurposesInput = {
+      expectations: [{ id: "EXP-01", statement: "期待" }],
+      testRequirements: [
+        { id: "TR-01", line: "management", statement: "要求", expectationIds: ["EXP-01"] },
+      ],
+      purposes: [
+        {
+          id: "TP-01",
+          statement: "目的",
+          testRequirementIds: ["TR-01"],
+          successCriterion: "基準",
+          priorityRank: 1,
+          priorityRationale: "根拠",
+        },
+      ],
+      testTypeSelections: [
+        { name: "機能テスト", selected: true, purposeIds: ["TP-01"], reason: "必要" },
+      ],
+      claimedTestTypeJustificationPercent: 100,
+    };
+    const markdown = renderTestPurposeDerivation(input);
+    const section = markdown.split("### 3.16 ")[1].split("### 3.17")[0];
+    expect(section).not.toContain("テストタイプ選定根拠率");
+    expect(section).toContain("テストタイプ選定理由の記入率");
+    expect(section).toContain("[high]");
+    expect(section).toContain("0%");
+  });
+
+  it("shows なし and both notes when there is no mismatch", () => {
+    const input: DeriveTestPurposesInput = {
+      expectations: [{ id: "EXP-01", statement: "期待" }],
+      testRequirements: [
+        { id: "TR-01", line: "management", statement: "要求", expectationIds: ["EXP-01"] },
+      ],
+      purposes: [
+        {
+          id: "TP-01",
+          statement: "目的",
+          testRequirementIds: ["TR-01"],
+          successCriterion: "基準",
+          priorityRank: 1,
+          priorityRationale: "根拠",
+        },
+      ],
+    };
+    const markdown = renderTestPurposeDerivation(input);
+    const section = markdown.split("### 3.16 ")[1].split("### 3.17")[0];
+    expect(section).toContain("- なし");
+    const noteCount = (section.match(/- 注記:/g) ?? []).length;
+    expect(noteCount).toBe(2);
   });
 });
 

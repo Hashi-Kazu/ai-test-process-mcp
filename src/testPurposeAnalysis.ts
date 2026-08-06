@@ -1,3 +1,4 @@
+import { normalizeForGrounding } from "./groundingNormalization.js";
 import { qualityCharacteristicModel } from "./resources/qualityCharacteristics.js";
 import { qualityInUseCharacteristicModel } from "./resources/qualityInUseCharacteristics.js";
 import { testTypeCatalog } from "./resources/testPlanTemplate.js";
@@ -221,6 +222,36 @@ export function findConditionLessPurposes(input: DeriveTestPurposesInput): strin
   return input.purposes.filter((p) => !referenced.has(p.id)).map((p) => p.id);
 }
 
+/** 選定理由(reason)を実質記入とみなす最小長（正規化後の文字数）。 */
+export const MIN_TEST_TYPE_REASON_LENGTH = 8;
+
+/** 選定理由が実質未記入とみなす定型語（正規化後の完全一致で判定）。 */
+export const TEST_TYPE_REASON_PLACEHOLDER_VALUES: string[] = [
+  "必要", "不要", "必須", "重要", "当然", "なし", "特になし", "N/A", "TBD",
+  "未定", "同上", "その他", "一般的", "標準", "実施する", "実施しない", "対象", "対象外",
+];
+
+const normalizedTestTypeReasonPlaceholders = new Set(
+  TEST_TYPE_REASON_PLACEHOLDER_VALUES.map((v) => normalizeForGrounding(v))
+);
+
+export type TestTypeReasonSubstance = "substantive" | "missing" | "placeholder" | "too-short";
+
+/**
+ * 選定理由(reason)の実質性を分類する。
+ * 過検出を避けるため、依頼書本文への文字列包含照合や目的ID/品質特性IDの明記の必須化は行わない。
+ * 恒真を避ける歯止めは「定型語の完全一致除外」と「正規化後の最小長」の2点のみであり、
+ * 理由の内容が妥当かどうかは意味的層の判断に委ねる。
+ */
+export function classifyTestTypeReasonSubstance(reason?: string): TestTypeReasonSubstance {
+  if (!reason || reason.trim() === "") return "missing";
+  const normalized = normalizeForGrounding(reason);
+  if (normalized === "") return "missing";
+  if (normalizedTestTypeReasonPlaceholders.has(normalized)) return "placeholder";
+  if (normalized.length < MIN_TEST_TYPE_REASON_LENGTH) return "too-short";
+  return "substantive";
+}
+
 // --- PDC-10 / PDC-11: テストタイプ選択とテスト目的の相互紐づけ ---
 export function findTestTypeSelectionIssues(
   input: DeriveTestPurposesInput
@@ -228,9 +259,15 @@ export function findTestTypeSelectionIssues(
   const result: TestPurposeTypeSelectionIssue[] = [];
   for (const s of input.testTypeSelections ?? []) {
     const hasPurposes = (s.purposeIds ?? []).length > 0;
-    const hasReason = (s.reason ?? "").trim() !== "";
+    const reasonSubstance = classifyTestTypeReasonSubstance(s.reason);
     if (s.selected && !hasPurposes) result.push({ name: s.name, kind: "selected-without-purpose" });
-    if (s.selected && !hasReason) result.push({ name: s.name, kind: "selected-without-reason" });
+    if (s.selected && reasonSubstance === "missing") {
+      result.push({ name: s.name, kind: "selected-without-reason" });
+    } else if (s.selected && reasonSubstance === "placeholder") {
+      result.push({ name: s.name, kind: "selected-with-placeholder-reason" });
+    } else if (s.selected && reasonSubstance === "too-short") {
+      result.push({ name: s.name, kind: "selected-with-too-short-reason" });
+    }
     if (!s.selected && hasPurposes) result.push({ name: s.name, kind: "unselected-with-purpose" });
   }
   return result;
@@ -379,7 +416,7 @@ export function computeTestPurposeCoverage(input: DeriveTestPurposesInput): Test
   let testTypeJustificationMismatch = false;
   if (typeBasis === "available") {
     const justified = selected.filter(
-      (s) => (s.purposeIds ?? []).length > 0 && (s.reason ?? "").trim() !== ""
+      (s) => (s.purposeIds ?? []).length > 0 && classifyTestTypeReasonSubstance(s.reason) === "substantive"
     ).length;
     computedTestTypeJustificationPercent = Math.round((justified / selected.length) * 1000) / 10;
     if (input.claimedTestTypeJustificationPercent !== undefined) {
