@@ -17,7 +17,11 @@ if [ -z "$YEAR" ]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC_ROOT="$REPO_ROOT/sample/$YEAR"
+# sample/contest_testbase/<year>/ を優先し、無ければ従来の sample/<year>/ にフォールバックする。
+SRC_ROOT="$REPO_ROOT/sample/contest_testbase/$YEAR"
+if [ ! -d "$SRC_ROOT" ]; then
+  SRC_ROOT="$REPO_ROOT/sample/$YEAR"
+fi
 OUT_DIR="$REPO_ROOT/.work/testbase/$YEAR"
 
 if ! command -v pdftotext >/dev/null 2>&1; then

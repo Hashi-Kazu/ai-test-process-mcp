@@ -1,0 +1,665 @@
+{
+  "idPrefix": "TCS-V",
+  "testConditions": [
+    {
+      "id": "TC-V01",
+      "target": "EH-100 発券機起動",
+      "statement": "V02構成では EH-100 は発券機起動のみを指す。発券機の起動処理で残数アイコン切替閾値と設定情報（号機番号）を取得し、起動処理終了後に開始画面（S-001-01）を表示することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-100"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 359,
+          "endLine": 377,
+          "label": "EH-100 発券機起動"
+        }
+      ]
+    },
+    {
+      "id": "TC-V02",
+      "target": "EH-210 ログイン",
+      "statement": "V02構成では EH-210 は発券機の会員向けログインのみを指し、入場券の有効/無効判定は含まない。ログイン用QRコードによるログイン（S-007-02）とキーボード入力によるログイン（S-007-03）の2方法で会員認証が成立することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 503,
+          "endLine": 530,
+          "label": "EH-210 ログイン"
+        }
+      ]
+    },
+    {
+      "id": "TC-V03",
+      "target": "EG-210 QRコード読み取り",
+      "statement": "入場ゲートがQRコードを読み取り、QRコード有効/無効判定に必要な情報を取得することを確認する。V02構成では読み取り情報を外部の判定機器へ送信する経路が存在しない。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-210"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "業務フローが長い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1100,
+          "endLine": 1106,
+          "label": "EG-210 QRコード読み取り"
+        }
+      ]
+    },
+    {
+      "id": "TC-V04",
+      "target": "EG-220 QRコード有効/無効判定（有効）",
+      "statement": "入場ゲート内で保持している「入場券情報一覧」に該当する未使用の入場券があるとき、入場ゲート単独で有効と判定し、状態を未使用から使用済へ変更することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-04",
+      "basisCharacteristics": [
+        "入力の組み合わせが多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1110,
+          "endLine": 1128,
+          "label": "EG-220 QRコード有効/無効判定"
+        }
+      ]
+    },
+    {
+      "id": "TC-V05",
+      "target": "EG-220 QRコード有効/無効判定（無効）",
+      "statement": "入場券情報一覧に無いQRコード、状態が使用済または無効の入場券、および入場用QRコードの形式を満たさないQRコードのいずれでも、入場ゲート単独で無効と判定することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-04",
+      "basisCharacteristics": [
+        "入力の組み合わせが多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1129,
+          "endLine": 1146,
+          "label": "EG-220 QRコード有効/無効判定（無効時）"
+        }
+      ]
+    },
+    {
+      "id": "TC-V06",
+      "target": "EG-220 入場券情報一覧の上書きタイミング",
+      "statement": "入場ゲートが保持する「入場券情報一覧」が、入場ゲート起動時・新しい時間枠の開始時・いますぐ入場券の購入を契機とする更新通知時の3タイミングで入場管理から取得され現在の情報に上書きされることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "タイミング依存の不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1133,
+          "endLine": 1137,
+          "label": "入場券情報一覧の取得タイミング"
+        }
+      ]
+    },
+    {
+      "id": "TC-V07",
+      "target": "EG-220 未使用のままだった入場券の無効化",
+      "statement": "新しい時間枠の開始時に、あたらしい「入場券情報一覧」の取得に先立って状態が未使用のままだった入場券情報が無効へ変更され、その状態が入場管理経由でWebチケットシステム側の予約管理DBサーバへ反映されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-05",
+      "basisCharacteristics": [
+        "状態によって振る舞いが変わる"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1141,
+          "endLine": 1146,
+          "label": "未使用のままだった入場券情報の無効化"
+        }
+      ]
+    },
+    {
+      "id": "TC-V08",
+      "target": "EG-310 ゲート開閉制御",
+      "statement": "EG-220 の判定結果に基づき、入場ゲートの開閉制御が「入場可能入場券」時と「入場不能入場券」時で切り替わることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-310"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-01",
+      "basisCharacteristics": [
+        "状態によって振る舞いが変わる"
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1151,
+          "endLine": 1154,
+          "label": "EG-310 ゲート開閉制御"
+        }
+      ]
+    },
+    {
+      "id": "TC-V09",
+      "target": "72号 ②「入場管理」「入場ゲート」間データ（入場管理→入場ゲート）",
+      "statement": "V02構成の連携経路として、時間枠の開始時刻またはいますぐ入場券の購入（決済完了）時に入場管理が購入された入場券情報を入場ゲートへ渡し、入場ゲートが自身の入場券情報へコピーまたは追加することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "タイミング依存の不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 169,
+          "endLine": 182,
+          "label": "②「入場管理」「入場ゲート」間データ（入場管理→入場ゲート）"
+        }
+      ]
+    },
+    {
+      "id": "TC-V10",
+      "target": "72号 ②「入場管理」「入場ゲート」間データ（入場ゲート→入場管理）",
+      "statement": "入場者が入場用QRコードを入場ゲートにタッチして入場した時、入場ゲートが状態を使用済へ変更した分の情報を入場管理へ渡し、入場管理が自身の入場券情報とクラウド2の購入情報を更新することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "タイミング依存の不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 184,
+          "endLine": 196,
+          "label": "②「入場管理」「入場ゲート」間データ（入場ゲート→入場管理）"
+        }
+      ]
+    },
+    {
+      "id": "TC-V11",
+      "target": "72号 ③「入場管理」「クラウド２」間データ",
+      "statement": "入場管理が60秒毎に、入場券情報のうち状態が使用済へ変更された分の情報をクラウド2の購入情報へ反映することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-06",
+      "basisCharacteristics": [
+        "タイミング依存の不具合が多い"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 208,
+          "endLine": 221,
+          "label": "③「入場管理」「クラウド２」間データ"
+        }
+      ]
+    },
+    {
+      "id": "TC-V12",
+      "target": "EK-530 死活管理 / 72号 生存確認のための定期通信",
+      "statement": "入場管理が1秒周期で稼働状態を配信してACKを要求し、3回連続でACKの応答がない構成機器を障害発生と認識することを確認する。V02構成の定期通信の宛先は発券機・入場ゲート・クラウド2・残数表示インジケータ1・残数表示インジケータ2の5系統である。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-530"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "値の範囲に境界がある"
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 335,
+          "endLine": 346,
+          "label": "生存確認のための定期通信"
+        },
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1445,
+          "endLine": 1458,
+          "label": "EK-530 死活管理"
+        }
+      ]
+    },
+    {
+      "id": "TC-V13",
+      "target": "W-008-01 予約購入画面の時間枠指定ボタン表記と入場券残数",
+      "statement": "Web予約購入で、指定時間帯の時間枠指定ボタン表記が入場券残数によって切り替わり、購入確認時に残数が無い場合はエラーメッセージが表示されて遷移しないことを確認する。2025年版と本文が同一の文書のため、構成差の影響を受けないことの対照として扱う。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-020"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "値の範囲に境界がある"
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 653,
+          "endLine": 677,
+          "label": "W-008-01 予約購入画面 時間枠指定ボタン表記"
+        }
+      ]
+    },
+    {
+      "id": "TC-V14",
+      "target": "W-008-01 予約購入画面の購入枚数上限",
+      "statement": "Web予約購入で、購入枚数が合計0枚のときと合計10枚以上のときにそれぞれエラーメッセージが表示され、遷移しないことを確認する。2025年版と本文が同一の文書のため、構成差の影響を受けないことの対照として扱う。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-015"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-016"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "basisCharacteristics": [
+        "値の範囲に境界がある"
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 1092,
+          "endLine": 1096,
+          "label": "E-015 / E-016"
+        }
+      ]
+    }
+  ],
+  "requirementIds": [
+    "EH-100",
+    "EH-210",
+    "EG-210",
+    "EG-220",
+    "EG-310",
+    "EK-520",
+    "EK-530",
+    "W-008-01",
+    "E-015",
+    "E-016",
+    "E-020"
+  ],
+  "requirementSources": [
+    {
+      "requirementId": "EH-100",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 359,
+      "endLine": 377,
+      "label": "EH-100 発券機起動"
+    },
+    {
+      "requirementId": "EH-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 503,
+      "endLine": 530,
+      "label": "EH-210 ログイン"
+    },
+    {
+      "requirementId": "EG-210",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1100,
+      "endLine": 1106,
+      "label": "EG-210 QRコード読み取り"
+    },
+    {
+      "requirementId": "EG-220",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1110,
+      "endLine": 1146,
+      "label": "EG-220 QRコード有効/無効判定"
+    },
+    {
+      "requirementId": "EG-310",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1151,
+      "endLine": 1154,
+      "label": "EG-310 ゲート開閉制御"
+    },
+    {
+      "requirementId": "EK-520",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1420,
+      "endLine": 1440,
+      "label": "EK-520 入場券情報一覧同期"
+    },
+    {
+      "requirementId": "EK-530",
+      "document": "11_園内チケットシステム要求仕様書",
+      "startLine": 1445,
+      "endLine": 1458,
+      "label": "EK-530 死活管理"
+    },
+    {
+      "requirementId": "W-008-01",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 627,
+      "endLine": 677,
+      "label": "W-008-01 予約購入画面"
+    },
+    {
+      "requirementId": "E-015",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1092,
+      "endLine": 1092,
+      "label": "E-015 購入枚数が入力されていません。"
+    },
+    {
+      "requirementId": "E-016",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1096,
+      "endLine": 1096,
+      "label": "E-016 購入枚数は合計9枚までです。"
+    },
+    {
+      "requirementId": "E-020",
+      "document": "21_Webチケットシステム要求仕様書",
+      "startLine": 1104,
+      "endLine": 1104,
+      "label": "E-020 購入できる入場券残数がありません。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "Web予約購入の購入枚数の上限",
+      "value": "9",
+      "unit": "枚",
+      "source": "21号:1096（E-016 購入枚数は合計9枚までです。）/ 21号:1094（E-015 購入枚数が入力されていません。）"
+    },
+    {
+      "name": "残数アイコン切替閾値",
+      "value": "10",
+      "unit": "枚",
+      "source": "11号:368-369（残数アイコン切替閾値は変更可能であるが、現在は10枚）/ 21号:660-666（時間枠指定ボタン表記の通知条件）"
+    },
+    {
+      "name": "死活監視の連続無応答許容回数",
+      "value": "3",
+      "unit": "回",
+      "source": "72号:346（3回連続でACKが返ってこなかったら停止と判断）/ 11号:1454-1456"
+    },
+    {
+      "name": "死活状態通知の配信周期",
+      "value": "1",
+      "unit": "秒",
+      "source": "72号:343（タイミング：1秒毎）/ 11号:1450-1451（入場管理は1秒周期で配信）"
+    },
+    {
+      "name": "使用済状態のクラウド2反映周期",
+      "value": "60",
+      "unit": "秒",
+      "source": "72号:214-217（タイミング:60秒毎）"
+    }
+  ],
+  "boundaryVariables": [
+    {
+      "name": "Web予約購入の購入枚数(合計)",
+      "min": 1,
+      "max": 9,
+      "valueType": "int",
+      "step": 1
+    },
+    {
+      "name": "指定時間枠の入場券残数",
+      "min": 1,
+      "max": 10,
+      "valueType": "int",
+      "step": 1
+    },
+    {
+      "name": "死活状態通知の連続無応答回数",
+      "min": 1,
+      "max": 3,
+      "valueType": "int",
+      "step": 1
+    }
+  ],
+  "boundaryMode": "two",
+  "equivalenceVariables": [
+    {
+      "name": "入場券情報一覧の入場券状態",
+      "validClasses": [
+        {
+          "label": "未使用",
+          "representative": "未使用",
+          "description": "入場ゲートで有効と判定される状態"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "使用済",
+          "representative": "使用済",
+          "description": "入場不可と判断される状態"
+        },
+        {
+          "label": "無効",
+          "representative": "無効",
+          "description": "入場不可と判断される状態"
+        }
+      ]
+    },
+    {
+      "name": "入場ゲートに提示されたQRコード",
+      "validClasses": [
+        {
+          "label": "入場券情報一覧に存在する入場用QRコード",
+          "representative": "入場券情報一覧に存在する入場用QRコード"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "入場券情報一覧に無いQRコード",
+          "representative": "入場券情報一覧に無いQRコード"
+        },
+        {
+          "label": "入場用QRコードの形式を満たさないQRコード",
+          "representative": "入場用QRコードの形式を満たさないQRコード"
+        }
+      ]
+    }
+  ],
+  "stateTransition": {
+    "states": [
+      {
+        "id": "ST-UNUSED",
+        "nameJa": "未使用",
+        "initial": true
+      },
+      {
+        "id": "ST-USED",
+        "nameJa": "使用済"
+      },
+      {
+        "id": "ST-VOID",
+        "nameJa": "無効"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "TR-01",
+        "from": "ST-UNUSED",
+        "to": "ST-USED",
+        "event": "入場ゲートでQRコードが有効と判定される",
+        "guard": "入場券情報一覧に該当する入場券があり状態が未使用"
+      },
+      {
+        "id": "TR-02",
+        "from": "ST-UNUSED",
+        "to": "ST-VOID",
+        "event": "新しい時間枠の開始時に入場券情報一覧を取得する",
+        "guard": "状態が未使用のままだった入場券情報"
+      },
+      {
+        "id": "TR-03",
+        "from": "ST-UNUSED",
+        "to": "ST-VOID",
+        "event": "時間枠の終了時刻が経過する",
+        "guard": "入場ゲート側で無効に変更する対象"
+      }
+    ]
+  },
+  "additionalCoverageTargets": [
+    {
+      "id": "AC-TC-V01-01",
+      "techniqueId": "scenario-based",
+      "description": "EH-100 発券機起動が V02 では発券機のみを指し、起動処理終了後に開始画面（S-001-01）が表示されるかを確認する",
+      "origin": "TC-V01"
+    },
+    {
+      "id": "AC-TC-V02-01",
+      "techniqueId": "scenario-based",
+      "description": "EH-210 が V02 では発券機の会員ログインのみを指し、ログイン用QRコードとキーボード入力の2方法で会員認証が成立するかを確認する",
+      "origin": "TC-V02"
+    },
+    {
+      "id": "AC-TC-V03-01",
+      "techniqueId": "scenario-based",
+      "description": "EG-210 が読み取り情報を入場ゲート内の判定へ渡し、外部の判定機器へ送信する経路を持たないことを確認する",
+      "origin": "TC-V03"
+    },
+    {
+      "id": "AC-TC-V06-01",
+      "techniqueId": "scenario-based",
+      "description": "入場券情報一覧が入場ゲート起動時・新しい時間枠の開始時・いますぐ入場券購入の更新通知時の3タイミングで上書きされるかを確認する",
+      "origin": "TC-V06"
+    },
+    {
+      "id": "AC-TC-V08-01",
+      "techniqueId": "scenario-based",
+      "description": "EG-220 の判定結果に基づき入場可能入場券時と入場不能入場券時でゲート開閉制御が切り替わるかを確認する",
+      "origin": "TC-V08"
+    },
+    {
+      "id": "AC-TC-V09-01",
+      "techniqueId": "scenario-based",
+      "description": "入場管理→入場ゲートの入場券情報配信が時間枠開始時刻といますぐ入場券購入時の2契機で成立するかを確認する",
+      "origin": "TC-V09"
+    },
+    {
+      "id": "AC-TC-V10-01",
+      "techniqueId": "scenario-based",
+      "description": "入場ゲート→入場管理の使用済状態の反映がクラウド2の購入情報まで到達するかを確認する",
+      "origin": "TC-V10"
+    },
+    {
+      "id": "AC-TC-V11-01",
+      "techniqueId": "scenario-based",
+      "description": "入場管理からクラウド2への使用済状態の反映が使用済状態のクラウド2反映周期で行われるかを確認する",
+      "origin": "TC-V11"
+    },
+    {
+      "id": "AC-TC-V12-01",
+      "techniqueId": "scenario-based",
+      "description": "V02構成の定期通信の宛先が発券機・入場ゲート・クラウド2・残数表示インジケータ1・残数表示インジケータ2の5系統であることを確認する",
+      "origin": "TC-V12"
+    }
+  ],
+  "coverageCriteriaDeclaration": [
+    "対象テスト条件14件すべてに1件以上のテストケースがある。",
+    "2節の網羅対象（境界値・同値クラス・状態遷移の技法エンジン由来分と、技法エンジンを持たない条件の手動宣言9件）すべてがいずれかのケースで充足されている。",
+    "境界値・同値クラス・状態遷移の網羅対象宣言は、変数名と値・クラス名または代表値・遷移元と遷移先の状態名がケース本文から裏付けられる。",
+    "期待結果に書く引用文言とIDは2024年テストベース9文書に実在するものだけを使う。",
+    "期待結果に主観語を含まず、手順ごとの期待結果に空欄を作らない。",
+    "手順は1手順1操作とし、手順番号を1から連番にする。",
+    "閾値は 1.4 の閾値パラメータ表の名前で参照し、参照名のない直値を単独で埋め込まない。",
+    "優先度の判定基準は、V02構成での入場判定と時間枠別残数の重複販売への影響度を高とし、由来テスト条件の優先度をそのままケースへ引き継いでケース側で付け替えない。",
+    "本プローブはV02構成での検査の誤検出有無を観測する目的の縮小版であり、テスト条件件数・テストケース件数を2025年版と比較しない。"
+  ]
+}
