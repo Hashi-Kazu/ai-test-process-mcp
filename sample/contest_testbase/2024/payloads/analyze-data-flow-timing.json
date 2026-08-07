@@ -1,0 +1,756 @@
+{
+  "title": "だんだん動物園入場システム V02構成（入場ゲートの判定処理を担う独立機器を持たない構成）のデータフロー・タイミング分析",
+  "components": [
+    {
+      "id": "CMP-EH",
+      "nameJa": "発券機",
+      "kind": "device",
+      "note": "11号:1765 専用機（通信機能あり、OSありの組み込み機器）"
+    },
+    {
+      "id": "CMP-EG",
+      "nameJa": "入場ゲート",
+      "kind": "device",
+      "note": "11号:1766 専用機。V02構成ではQRコードの有効/無効判定を入場ゲート内で完結させる（11号:1110-1113）"
+    },
+    {
+      "id": "CMP-EK",
+      "nameJa": "入場管理",
+      "kind": "service",
+      "note": "11号:1767-1768 オンプレミスのサーバ上に構築されたアプリ群。WebチケットシステムとはVPN経由で接続"
+    },
+    {
+      "id": "CMP-Z1",
+      "nameJa": "残数表示インジケータ1",
+      "kind": "device",
+      "note": "11号:1769 専用機"
+    },
+    {
+      "id": "CMP-Z2",
+      "nameJa": "残数表示インジケータ2",
+      "kind": "device",
+      "note": "11号:1770 専用機"
+    },
+    {
+      "id": "CMP-C1",
+      "nameJa": "クラウド1",
+      "kind": "cloud",
+      "note": "72号:247-289 Webチケットシステムの入場者向け側。④「クラウド１」「クラウド2」間データの一方"
+    },
+    {
+      "id": "CMP-C2",
+      "nameJa": "クラウド2",
+      "kind": "cloud",
+      "note": "72号:208-243 Webチケットシステムの予約管理DB・会員情報管理DB側"
+    }
+  ],
+  "dataItems": [
+    {
+      "id": "DI-01",
+      "nameJa": "1-1.残数アイコン切替閾値（マスタ）",
+      "note": "72号:115-117 / 72号:211-213 / 72号:302-305"
+    },
+    {
+      "id": "DI-02",
+      "nameJa": "1-3.時間別残数情報（当日分全体）",
+      "note": "72号:104-109 / 72号:294-301 / 72号:313-320"
+    },
+    {
+      "id": "DI-03",
+      "nameJa": "5-3.時間枠別残数（全体）",
+      "note": "72号:234-236 / 72号:276-279"
+    },
+    {
+      "id": "DI-04",
+      "nameJa": "入場券情報一覧（1-4.入場券情報 / 3-1.入場券情報）",
+      "note": "72号:169-182 / 11号:1420-1440"
+    },
+    {
+      "id": "DI-05",
+      "nameJa": "5-2.購入情報",
+      "note": "72号:110-113 / 72号:230-233 / 72号:286-289"
+    },
+    {
+      "id": "DI-06",
+      "nameJa": "使用済へ変更された入場券情報",
+      "note": "72号:184-189 / 72号:214-217"
+    },
+    {
+      "id": "DI-07",
+      "nameJa": "無効へ変更された入場券情報",
+      "note": "72号:203-204 時間枠の終了時刻が経過した入場券の状態変更"
+    },
+    {
+      "id": "DI-08",
+      "nameJa": "システム死活状態通知",
+      "note": "72号:335-346 / 11号:1445-1458"
+    },
+    {
+      "id": "DI-09",
+      "nameJa": "購入予定の入場券情報",
+      "note": "72号:119-130 / 72号:248-260"
+    }
+  ],
+  "communications": [
+    {
+      "id": "CM-01",
+      "fromId": "CMP-EK",
+      "toId": "CMP-EH",
+      "dataItemIds": [
+        "DI-02"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "発券機の操作毎"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EH-500",
+        "EK-210"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 103,
+        "label": "①（入場管理→発券機）時間別残数情報"
+      }
+    },
+    {
+      "id": "CM-02",
+      "fromId": "CMP-EK",
+      "toId": "CMP-EH",
+      "dataItemIds": [
+        "DI-01"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "発券機の起動時"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EH-100",
+        "EK-220"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 114,
+        "label": "①（入場管理→発券機）残数アイコン切替閾値（マスタ）"
+      }
+    },
+    {
+      "id": "CM-03",
+      "fromId": "CMP-EH",
+      "toId": "CMP-EK",
+      "dataItemIds": [
+        "DI-09"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "入場者が支払操作を開始した時"
+      },
+      "ackKind": "application-ack",
+      "requirementIds": [
+        "EK-311",
+        "EK-312"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 120,
+        "label": "①（発券機→入場管理）購入予定の入場券情報"
+      }
+    },
+    {
+      "id": "CM-04",
+      "fromId": "CMP-EK",
+      "toId": "CMP-C2",
+      "dataItemIds": [
+        "DI-09",
+        "DI-05"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "発券機からの購入予定の入場券情報を受信した時"
+      },
+      "ackKind": "application-ack",
+      "requirementIds": [
+        "EK-312"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 129,
+        "label": "①（発券機→入場管理）購入情報の追加要求"
+      }
+    },
+    {
+      "id": "CM-05",
+      "fromId": "CMP-EK",
+      "toId": "CMP-EG",
+      "dataItemIds": [
+        "DI-04"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "時間枠の開始時刻（10:00-16:30の毎時00分と30分）、またはいますぐ入場券が購入(決済完了)された時"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-520",
+        "EG-400"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 171,
+        "label": "②（入場管理→入場ゲート）購入された入場券情報"
+      }
+    },
+    {
+      "id": "CM-06",
+      "fromId": "CMP-EG",
+      "toId": "CMP-EK",
+      "dataItemIds": [
+        "DI-06"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "入場者が入場用QRコードを入場ゲートにタッチして入場した時"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EG-400",
+        "EK-520"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 185,
+        "label": "②（入場ゲート→入場管理）使用済へ変更された分の情報"
+      }
+    },
+    {
+      "id": "CM-07",
+      "fromId": "CMP-EG",
+      "toId": "CMP-EK",
+      "dataItemIds": [
+        "DI-07"
+      ],
+      "timing": {
+        "kind": "undefined"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EG-220"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 203,
+        "label": "②補足 時間枠の終了時刻が経過した入場券の無効化の反映"
+      },
+      "note": "72号:203-204 は入場ゲート側で無効に変更し入場管理側の3-1.入場券情報にも反映すると書くが、反映の周期も契機も宣言されていない。11号:1141-1144 の無効化も新しい入場券情報一覧の取得に先立つと書くだけで、入場管理への反映タイミングの宣言はない。"
+    },
+    {
+      "id": "CM-08",
+      "fromId": "CMP-EK",
+      "toId": "CMP-C2",
+      "dataItemIds": [
+        "DI-06"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 60
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-520"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 214,
+        "label": "③（入場管理→クラウド２）60秒毎"
+      }
+    },
+    {
+      "id": "CM-09",
+      "fromId": "CMP-EK",
+      "toId": "CMP-C2",
+      "dataItemIds": [
+        "DI-01"
+      ],
+      "timing": {
+        "kind": "batch",
+        "intervalSeconds": 86400
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-220"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 210,
+        "label": "③（入場管理→クラウド２）毎日：05:00"
+      }
+    },
+    {
+      "id": "CM-10",
+      "fromId": "CMP-C2",
+      "toId": "CMP-EK",
+      "dataItemIds": [
+        "DI-03"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "入場管理から要求時"
+      },
+      "ackKind": "application-ack",
+      "requirementIds": [
+        "EK-230"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 230,
+        "label": "③（クラウド2→入場管理）5-3.時間枠別残数（全体）"
+      }
+    },
+    {
+      "id": "CM-11",
+      "fromId": "CMP-C2",
+      "toId": "CMP-EK",
+      "dataItemIds": [
+        "DI-05"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "入場管理から要求時"
+      },
+      "ackKind": "application-ack",
+      "requirementIds": [
+        "EK-230",
+        "EK-520"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 231,
+        "label": "③（クラウド2→入場管理）5-2.購入情報"
+      }
+    },
+    {
+      "id": "CM-12",
+      "fromId": "CMP-C1",
+      "toId": "CMP-C2",
+      "dataItemIds": [
+        "DI-09",
+        "DI-05"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "入場者が支払操作を開始した時"
+      },
+      "ackKind": "application-ack",
+      "requirementIds": [
+        "W-008-01"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 249,
+        "label": "④（クラウド1→クラウド2）購入予定の入場券情報"
+      }
+    },
+    {
+      "id": "CM-13",
+      "fromId": "CMP-C2",
+      "toId": "CMP-C1",
+      "dataItemIds": [
+        "DI-03"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "Webの操作毎"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "W-008-01"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 275,
+        "label": "④（クラウド2→クラウド1）5-3.時間枠別残数（全体）"
+      }
+    },
+    {
+      "id": "CM-14",
+      "fromId": "CMP-EK",
+      "toId": "CMP-Z1",
+      "dataItemIds": [
+        "DI-02"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-210",
+        "Z1-201"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 294,
+        "label": "⑤（入場管理→残数表示インジケータ1）1秒毎"
+      }
+    },
+    {
+      "id": "CM-15",
+      "fromId": "CMP-EK",
+      "toId": "CMP-Z1",
+      "dataItemIds": [
+        "DI-01"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "残数表示インジケータ1の起動時"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-220",
+        "Z1-100"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 302,
+        "label": "⑤（入場管理→残数表示インジケータ1）起動時"
+      }
+    },
+    {
+      "id": "CM-16",
+      "fromId": "CMP-EK",
+      "toId": "CMP-Z2",
+      "dataItemIds": [
+        "DI-02"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-210",
+        "Z2-201"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 313,
+        "label": "⑥（入場管理→残数表示インジケータ2）1秒毎"
+      },
+      "note": "72号:313 は1秒毎と書くが、11号:1668 の Z2-201 は「入場管理から配信される時間枠別残数情報を30秒おきに受信する」と書いており、同じ通信に対する周期の宣言が2文書間で食い違う。"
+    },
+    {
+      "id": "CM-17",
+      "fromId": "CMP-EK",
+      "toId": "CMP-Z2",
+      "dataItemIds": [
+        "DI-01"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "残数表示インジケータ2の起動時"
+      },
+      "ackKind": "undeclared",
+      "requirementIds": [
+        "EK-220",
+        "Z2-100"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 321,
+        "label": "⑥（入場管理→残数表示インジケータ2）起動時"
+      }
+    },
+    {
+      "id": "CM-18",
+      "fromId": "CMP-EK",
+      "toId": "CMP-EH",
+      "dataItemIds": [
+        "DI-08"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "application-ack",
+      "timeoutSeconds": 1,
+      "retry": {
+        "maxCount": 3,
+        "intervalSeconds": 1
+      },
+      "requirementIds": [
+        "EK-530"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 338,
+        "label": "生存確認（入場管理→発券機）"
+      }
+    },
+    {
+      "id": "CM-19",
+      "fromId": "CMP-EK",
+      "toId": "CMP-EG",
+      "dataItemIds": [
+        "DI-08"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "application-ack",
+      "timeoutSeconds": 1,
+      "retry": {
+        "maxCount": 3,
+        "intervalSeconds": 1
+      },
+      "requirementIds": [
+        "EK-530"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 339,
+        "label": "生存確認（入場管理→入場ゲート）"
+      }
+    },
+    {
+      "id": "CM-20",
+      "fromId": "CMP-EK",
+      "toId": "CMP-C2",
+      "dataItemIds": [
+        "DI-08"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "application-ack",
+      "timeoutSeconds": 1,
+      "retry": {
+        "maxCount": 3,
+        "intervalSeconds": 1
+      },
+      "requirementIds": [
+        "EK-530"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 340,
+        "label": "生存確認（入場管理→クラウド2）"
+      }
+    },
+    {
+      "id": "CM-21",
+      "fromId": "CMP-EK",
+      "toId": "CMP-Z1",
+      "dataItemIds": [
+        "DI-08"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "application-ack",
+      "timeoutSeconds": 1,
+      "retry": {
+        "maxCount": 3,
+        "intervalSeconds": 1
+      },
+      "requirementIds": [
+        "EK-530",
+        "Z1-201"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 341,
+        "label": "生存確認（入場管理→残数表示インジケータ1）"
+      }
+    },
+    {
+      "id": "CM-22",
+      "fromId": "CMP-EK",
+      "toId": "CMP-Z2",
+      "dataItemIds": [
+        "DI-08"
+      ],
+      "timing": {
+        "kind": "periodic",
+        "intervalSeconds": 1
+      },
+      "ackKind": "application-ack",
+      "timeoutSeconds": 1,
+      "retry": {
+        "maxCount": 3,
+        "intervalSeconds": 1
+      },
+      "requirementIds": [
+        "EK-530",
+        "Z2-201"
+      ],
+      "sourceRef": {
+        "document": "72_だんだん動物園入場システムデータ連携仕様書",
+        "startLine": 342,
+        "label": "生存確認（入場管理→残数表示インジケータ2）"
+      }
+    }
+  ],
+  "propagationTargets": [
+    {
+      "id": "PT-01",
+      "dataItemId": "DI-04",
+      "originComponentId": "CMP-EK",
+      "terminalComponentIds": [
+        "CMP-EG"
+      ],
+      "claimedMaxLatencySeconds": 0
+    },
+    {
+      "id": "PT-02",
+      "dataItemId": "DI-06",
+      "originComponentId": "CMP-EG",
+      "terminalComponentIds": [
+        "CMP-EK",
+        "CMP-C2"
+      ],
+      "claimedMaxLatencySeconds": 60
+    },
+    {
+      "id": "PT-03",
+      "dataItemId": "DI-02",
+      "originComponentId": "CMP-EK",
+      "terminalComponentIds": [
+        "CMP-EH",
+        "CMP-Z1",
+        "CMP-Z2"
+      ],
+      "claimedMaxLatencySeconds": 1
+    },
+    {
+      "id": "PT-04",
+      "dataItemId": "DI-01",
+      "originComponentId": "CMP-EK",
+      "terminalComponentIds": [
+        "CMP-EH",
+        "CMP-Z1",
+        "CMP-Z2",
+        "CMP-C2"
+      ],
+      "claimedMaxLatencySeconds": 86400
+    },
+    {
+      "id": "PT-05",
+      "dataItemId": "DI-07",
+      "originComponentId": "CMP-EG",
+      "terminalComponentIds": [
+        "CMP-EK"
+      ]
+    },
+    {
+      "id": "PT-06",
+      "dataItemId": "DI-08",
+      "originComponentId": "CMP-EK",
+      "terminalComponentIds": [
+        "CMP-EH",
+        "CMP-EG",
+        "CMP-Z1",
+        "CMP-Z2",
+        "CMP-C2"
+      ],
+      "claimedMaxLatencySeconds": 4
+    }
+  ],
+  "claimedMaxSkewSeconds": [
+    {
+      "dataItemId": "DI-02",
+      "originComponentId": "CMP-EK",
+      "seconds": 1
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-V04",
+      "statement": "入場ゲート内で保持している入場券情報一覧に該当する未使用の入場券があるとき、入場ゲート単独で有効と判定する。",
+      "dataItemIds": [
+        "DI-04"
+      ],
+      "communicationIds": [
+        "CM-05"
+      ],
+      "expectsImmediate": true
+    },
+    {
+      "id": "TC-V07",
+      "statement": "新しい時間枠の開始時に未使用のままだった入場券情報が無効へ変更され、入場管理側へ反映される。",
+      "dataItemIds": [
+        "DI-07"
+      ],
+      "communicationIds": [
+        "CM-07"
+      ],
+      "expectsImmediate": true
+    },
+    {
+      "id": "TC-V09",
+      "statement": "時間枠の開始時刻またはいますぐ入場券の購入時に入場管理が入場券情報を入場ゲートへ渡す。",
+      "dataItemIds": [
+        "DI-04"
+      ],
+      "communicationIds": [
+        "CM-05"
+      ]
+    },
+    {
+      "id": "TC-V10",
+      "statement": "入場ゲートが使用済へ変更した分の情報を入場管理へ渡し、入場管理がクラウド2の購入情報を更新する。",
+      "dataItemIds": [
+        "DI-06"
+      ],
+      "communicationIds": [
+        "CM-06",
+        "CM-08"
+      ],
+      "expectsImmediate": true,
+      "coveredDelayWindowIds": [
+        "DFW:DI-06:CMP-EG:CMP-C2",
+        "DSW:DI-06:CMP-EG"
+      ]
+    },
+    {
+      "id": "TC-V11",
+      "statement": "入場管理が60秒毎に使用済へ変更された入場券情報をクラウド2の購入情報へ反映する。",
+      "dataItemIds": [
+        "DI-06"
+      ],
+      "communicationIds": [
+        "CM-08"
+      ],
+      "coveredDelayWindowIds": [
+        "DFW:DI-06:CMP-EK:CMP-C2"
+      ]
+    },
+    {
+      "id": "TC-V12",
+      "statement": "入場管理が1秒周期で稼働状態を配信し、3回連続でACKの応答がない構成機器を障害発生と認識する。",
+      "dataItemIds": [
+        "DI-08"
+      ],
+      "communicationIds": [
+        "CM-18",
+        "CM-19",
+        "CM-20",
+        "CM-21",
+        "CM-22"
+      ],
+      "coveredDelayWindowIds": [
+        "DFW:DI-08:CMP-EK:CMP-EH",
+        "DFW:DI-08:CMP-EK:CMP-EG",
+        "DFW:DI-08:CMP-EK:CMP-Z1",
+        "DFW:DI-08:CMP-EK:CMP-Z2",
+        "DFW:DI-08:CMP-EK:CMP-C2",
+        "DSW:DI-08:CMP-EK"
+      ]
+    }
+  ],
+  "claimedDelayWindowCoveragePercent": 64.3
+}
