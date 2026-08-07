@@ -42,4 +42,5 @@ export const toolOutputSignatures: Record<string, ToolOutputSignature> = {
   analyze_data_flow_timing: { heading: "# データフロー・タイミング分析結果" },
   derive_test_purposes: { heading: "# テスト目的の導出結果" },
   audit_test_design_notations: { heading: "# テスト設計記法監査結果" },
+  audit_coverage_balance: { heading: "# 網羅バランス・用語定義監査結果" },
 };

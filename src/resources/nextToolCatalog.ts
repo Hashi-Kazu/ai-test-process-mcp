@@ -37,6 +37,7 @@ export const registeredToolNames: readonly string[] = [
   "analyze_data_flow_timing",
   "derive_test_purposes",
   "audit_test_design_notations",
+  "audit_coverage_balance",
 ];
 
 const DESIGN_FOLLOWUPS: NextToolCatalogEntry[] = [
@@ -161,6 +162,11 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       reason: "生成したテスト仕様の第三者レビューが未実施である",
     },
     {
+      toolName: "audit_coverage_balance",
+      when: "always",
+      reason: "観点カテゴリ・技法・テストレベル別のケース数分布の集計が未実施である",
+    },
+    {
       toolName: "audit_cross_matrix",
       when: "has-cases",
       reason: "テストケースの交差被覆監査が未実施である",
@@ -271,6 +277,23 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "review_test_specification",
       when: "has-consistency-findings",
       reason: "成果物間の不整合が残っており仕様レビューによる確認が必要",
+    },
+  ],
+  audit_coverage_balance: [
+    {
+      toolName: "generate_test_cases",
+      when: "has-zero-count-buckets",
+      reason: "割り当て0件の観点カテゴリ・技法・テストレベルがある",
+    },
+    {
+      toolName: "review_test_specification",
+      when: "always",
+      reason: "分布と用語定義の監査結果を踏まえた仕様レビューが未実施である",
+    },
+    {
+      toolName: "audit_deliverable_consistency",
+      when: "has-ungrounded-case-ids",
+      reason: "集計と成果物本文でケースIDが食い違っており成果物間整合性の確認が必要",
     },
   ],
   audit_basis_contradictions: [

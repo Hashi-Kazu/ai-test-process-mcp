@@ -50,6 +50,7 @@ src/
     crossMatrixAuditCriteria.ts # 多軸マトリクス監査の判定区分カタログ17区分 CMX-01〜CMX-17（testdesign://cross-matrix/audit-criteria）
     deliverableConsistencyCriteria.ts # 成果物間整合性監査の判定区分カタログ17区分 DCC-01〜DCC-17（分母の母集団照合・裸の達成度%検出を含む）＋ 共通項目種別カタログ6種 DSI-01〜DSI-06 ＋ 読了状態語彙 ＋ 網羅率宣言の既定主語カタログ・達成度語彙（testdesign://deliverable/consistency-criteria）
     testDesignNotationCatalog.ts # ASTER参加要項が例示するFV表/NGT/ゆもつよマトリクスの3記法の仕様（何を表現するか・必須要素・既存resource/toolとの対応・出典）＋判定区分カタログ25区分 TDN-01〜TDN-25（testdesign://notation/catalog）
+    coverageBalanceCriteria.ts  # audit_coverage_balance の判定区分カタログ13区分 CBC-01〜CBC-13＋用語集見出しキーワード・汎用語ストップリスト・独自用語候補の抽出規則 CBT-01〜CBT-04（testdesign://balance/coverage-balance-criteria。望ましい分布の基準値・目標比率は保持しない）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -72,6 +73,7 @@ src/
     auditCrossMatrix.ts  # audit_cross_matrix ツール（任意の2軸以上を汎用の軸データとして受け取り、軸ペアの直積表を決定的に生成して空行・空列＝片側にしかない要素を列挙する。充填率は分母を明示して算出し、軸母集団の縮退とテストベース本文の裏付けまで併せて照合する、renderCrossMatrixAudit純関数）
     auditDeliverableConsistency.ts # audit_deliverable_consistency ツール（複数成果物を突き合わせ、参照テストベース文書リストの差分・IDの成果物間相互参照の解決性・章節参照の実在性・同一項目の記述差分を決定的に検出する。件数・網羅率の宣言は本文の列挙実体と照合し、任意入力未指定の検査は「検査不能（要確認）」として出力する、renderDeliverableConsistencyAudit純関数）
     auditTestDesignNotations.ts # audit_test_design_notations ツール（FV表・NGT・ゆもつよマトリクスの各記法内検査＋記法間の相互参照・テスト条件母集団照合を決定的に行う。網羅率/充填率の宣言は分母を明示して実測と照合し、母集団未宣言時は裏付け不能として指摘する。未投入の記法は生成指示のみを返す、renderTestDesignNotationAudit純関数）
+    auditCoverageBalance.ts    # audit_coverage_balance ツール（観点カテゴリ別/技法別/テストレベル別のケース数分布とクロス表を決定的に集計し、分布は観測値として提示。合否は宣言と実体の食い違い（未知の区分ID・宣言件数と実集計の不一致・計上ケースIDの本文実在性）にのみ付ける。あわせて独自用語の定義有無を検査、renderCoverageBalanceAudit純関数）
   prompts/
     index.ts             # 全promptを登録
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
@@ -89,6 +91,7 @@ src/
   crossMatrixAnalysis.ts # 多軸マトリクス監査の決定的検査の共有純関数群（軸ペア解決・直積表構築・空行/空列検出・除外宣言の適用・充填率/行被覆率/列被覆率の算出・未宣言リンク/重複ID/自軸内リンク/片方向リンク/完全孤立要素の検出・軸母集団の縮退検出・テストベース本文との双方向裏付け照合・宣言充填率との照合・サマリ集計）
   deliverableConsistencyAnalysis.ts # 成果物間整合性監査の決定的検査の共有純関数群（成果物索引と呼称解決・参照テストベース文書の抽出と読了/未読マトリクス構築・宣言リストとの照合・未読宣言文書由来IDの実参照検出・IDレンジ展開と成果物間相互参照索引・対応主張の裏付け照合・後続未参照IDの検出・章節参照の実在性と見出しラベル照合・同一IDの単位別異値と2-gram包含率による記述乖離・件数/網羅率宣言と本文列挙実体の照合・共通項目列挙の片側欠落・指摘の安定採番とサマリ集計）
   testDesignNotationAnalysis.ts # FV表/NGT/ゆもつよマトリクス監査の決定的検査の共有純関数群（FV表: ID重複/欠番・検証内容未記入/定型語のみ検出・機能母集団との双方向照合・被覆率算出。NGT: ノードID重複・親子循環検出・ルート数検査・テスト条件に落ちない葉検出・縮退枝/粒度不揃い検出・葉深さ偏り検出・観点カテゴリIDとの双方向照合・葉ノード数算出。ゆもつよマトリクス: 行列ID重複・除外理由のない空セル検出・空行/空列検出・テスト条件母集団との双方向照合・充填率算出。記法間: FV↔NGT・ゆもつよ↔NGTの相互参照照合、3記法とテスト条件母集団の差分検出）
+  coverageBalanceAnalysis.ts   # 網羅バランス・用語定義監査の決定的検査の共有純関数群（分布: 観点カテゴリ/技法/テストレベル別の集計・0件区分と未指定行の保持・構成比算出・観点×テストレベルのクロス集計・集中度の観測値算出。宣言と実体の照合: 未知の観点カテゴリID/技法ID検出・分布軸の未宣言検出・宣言件数と実集計の照合・本文中ケースIDの抽出と双方向照合。用語: 用語集セクション検出・用語定義抽出・既知カタログ用語集合の構築・独自用語候補の抽出4規則・定義欠落/未使用定義/重複定義/表記ゆれの検査）
 test/
   generateTestPlan.test.ts        # renderTestPlan()の単体テスト
   reviewTestPlan.test.ts          # renderTestPlanReview()の単体テスト
@@ -136,6 +139,9 @@ test/
   testArchitectureDesignPrinciples.test.ts # テストコンテナ設計原則・判定区分カタログ構造データの単体テスト
   testDesignNotationCatalog.test.ts # FV表/NGT/ゆもつよマトリクス記法カタログ・判定区分カタログ構造データの単体テスト
   auditTestDesignNotations.test.ts # renderTestDesignNotationAudit()の単体テスト
+  coverageBalanceCriteria.test.ts # 網羅バランス・用語定義監査の判定区分カタログ構造データの単体テスト
+  coverageBalanceAnalysis.test.ts # 網羅バランス・用語定義監査の決定的検査純関数群の単体テスト
+  auditCoverageBalance.test.ts # renderCoverageBalanceAudit()の単体テスト
 ```
 
 ## 拡張パターン（Test Analysis・Test Design ほか各工程の tool 追加）

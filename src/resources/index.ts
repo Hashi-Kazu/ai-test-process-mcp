@@ -33,6 +33,7 @@ import { crossMatrixAuditCriteria } from "./crossMatrixAuditCriteria.js";
 import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
 import { deliverableConsistencyCriteria } from "./deliverableConsistencyCriteria.js";
+import { coverageBalanceCriteria } from "./coverageBalanceCriteria.js";
 import { testPurposeDerivationFrame } from "./testPurposeDerivationFrame.js";
 import { testDesignNotationCatalog } from "./testDesignNotationCatalog.js";
 import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
@@ -676,6 +677,34 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(deliverableConsistencyCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "coverage-balance-criteria",
+    "testdesign://balance/coverage-balance-criteria",
+    {
+      title: "Coverage Balance and Term Definition Audit Criteria",
+      description:
+        "Judgment category catalog for audit_coverage_balance (CBC-01..CBC-13): perspective category and " +
+        "technique ids that exist in neither catalog, distribution axes left undeclared, declared per-bucket " +
+        "case counts disagreeing with the actual tabulation, tabulated case ids absent from the deliverable " +
+        "body, body case ids never submitted for tabulation, buckets with zero cases, distribution " +
+        "concentration observations, custom terms used without any glossary section, custom terms with no " +
+        "definition anywhere, defined-but-unused terms, conflicting duplicate definitions, and spelling " +
+        "variants of known catalog terms. Also carries the glossary heading keywords, the common term stop " +
+        "word list, and the four custom term extraction rules (CBT-01..CBT-04). Distributions are reported as " +
+        "observations only; this catalog holds no target distribution and never judges a distribution itself.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(coverageBalanceCriteria, null, 2),
         },
       ],
     })
