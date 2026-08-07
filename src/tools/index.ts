@@ -28,6 +28,7 @@ import { registerAnalyzeExecutionOrderTool } from "./analyzeExecutionOrder.js";
 import { registerAuditDeliverableConsistencyTool } from "./auditDeliverableConsistency.js";
 import { registerAnalyzeDataFlowTimingTool } from "./analyzeDataFlowTiming.js";
 import { registerDeriveTestPurposesTool } from "./deriveTestPurposes.js";
+import { registerAuditCoverageBalanceTool } from "./auditCoverageBalance.js";
 import { registerAuditTestDesignNotationsTool } from "./auditTestDesignNotations.js";
 
 export function registerTools(server: McpServer): void {
@@ -61,4 +62,5 @@ export function registerTools(server: McpServer): void {
   registerAnalyzeDataFlowTimingTool(server);
   registerDeriveTestPurposesTool(server);
   registerAuditTestDesignNotationsTool(server);
+  registerAuditCoverageBalanceTool(server);
 }

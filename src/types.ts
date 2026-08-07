@@ -4402,3 +4402,156 @@ export interface TestPurposeDerivationSummary {
   coverageMismatchCount: number;
   unknownTestTypeNameCount: number;
 }
+
+// --- 網羅バランス・用語定義監査(audit_coverage_balance) ---
+
+export type CoverageBalanceCheckId =
+  | "CBC-01"
+  | "CBC-02"
+  | "CBC-03"
+  | "CBC-04"
+  | "CBC-05"
+  | "CBC-06"
+  | "CBC-07"
+  | "CBC-08"
+  | "CBC-09"
+  | "CBC-10"
+  | "CBC-11"
+  | "CBC-12"
+  | "CBC-13";
+
+export type CoverageBalanceSeverity = "high" | "medium" | "info";
+
+export interface CoverageBalanceCriteriaCategory {
+  id: CoverageBalanceCheckId;
+  nameJa: string;
+  severity: CoverageBalanceSeverity;
+  definition: string;
+  recommendedAction: string;
+}
+
+/** 独自用語候補の機械的な抽出規則。 */
+export interface CoverageBalanceTermCandidateKind {
+  id: string; // "CBT-01" 形式
+  label: string;
+  description: string;
+}
+
+export interface CoverageBalanceCriteria {
+  name: string;
+  summary: string;
+  categories: CoverageBalanceCriteriaCategory[];
+  /** 用語集セクションとみなす見出しキーワード */
+  glossaryHeadingKeywords: string[];
+  /** 独自用語候補から除外する汎用語 */
+  commonTermStopWords: string[];
+  /** 独自用語候補の抽出規則 */
+  termCandidateKinds: CoverageBalanceTermCandidateKind[];
+  notes: string[];
+}
+
+export type CoverageBalanceAxis = "perspective" | "technique" | "test-level";
+
+export interface CoverageBalanceTestCase {
+  caseId: string;
+  title?: string;
+  perspectiveCategoryId?: string;
+  techniqueId?: string;
+  testLevel?: TestLevelId;
+  testType?: string;
+}
+
+export interface CoverageBalanceDeliverable {
+  name: string;
+  content: string;
+}
+
+export interface CoverageBalanceDeclaredDistribution {
+  axis: CoverageBalanceAxis;
+  label: string; // 区分ID
+  declaredCount: number;
+}
+
+export interface AuditCoverageBalanceInput {
+  completedTools?: CompletedToolDeclaration[];
+  testCases: CoverageBalanceTestCase[];
+  deliverables?: CoverageBalanceDeliverable[];
+  declaredDistributions?: CoverageBalanceDeclaredDistribution[];
+  additionalKnownTerms?: string[];
+  minTermOccurrences?: number;
+  caseIdPatterns?: string[];
+}
+
+/** 分布行。0件区分と「未指定」行も必ず含む。 */
+export interface CoverageBalanceDistributionRow {
+  id: string;
+  label: string;
+  caseCount: number;
+  /** 構成比(%)。小数第1位まで。観測値であり達成度ではない。 */
+  sharePercent: number;
+  sampleCaseIds: string[];
+}
+
+export interface CoverageBalanceCrossTableRow {
+  id: string;
+  label: string;
+  counts: number[];
+  total: number;
+}
+
+export interface CoverageBalanceCrossTable {
+  levelIds: string[];
+  levelLabels: string[];
+  rows: CoverageBalanceCrossTableRow[];
+}
+
+/** 分布の偏りの観測値。合否判定は行わない。 */
+export interface CoverageBalanceConcentration {
+  topShare: number;
+  topTwoShare: number;
+  zeroBucketCount: number;
+  assignedCaseCount: number;
+}
+
+export interface CoverageBalancePlace {
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  snippet: string;
+}
+
+export interface CoverageBalanceFinding {
+  no: string; // "CB-001" 連番
+  checkId: CoverageBalanceCheckId;
+  severity: CoverageBalanceSeverity;
+  subject: string;
+  summary: string;
+  places: CoverageBalancePlace[];
+  question: string; // 意味的層への確認依頼
+  assumption: string; // 暫定的な扱い
+}
+
+export interface CoverageBalanceTermDefinition {
+  term: string;
+  deliverable: string;
+  lineIndex: number;
+  heading: string;
+  definition: string;
+}
+
+export interface CoverageBalanceTermCandidate {
+  term: string;
+  kindId: string;
+  occurrences: number;
+  places: CoverageBalancePlace[];
+}
+
+export interface CoverageBalanceSummary {
+  caseCount: number;
+  deliverableCount: number;
+  termCandidateCount: number;
+  termDefinitionCount: number;
+  totalFindings: number;
+  highFindings: number;
+  byCheckId: Record<string, number>;
+}
