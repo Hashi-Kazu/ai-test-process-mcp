@@ -2858,6 +2858,193 @@ export interface CrossMatrixAuditCriteria {
   notes: string[];
 }
 
+// --- テスト設計記法カタログ・記法監査（audit_test_design_notations / testdesign://notation/catalog） ---
+export type TestDesignNotationStructureKind = "list" | "diagram" | "matrix";
+export type TestDesignNotationTarget = "fv-table" | "ngt" | "yumotsuyo-matrix" | "cross-notation";
+
+export interface TestDesignNotationElement {
+  id: string;            // 例 "FV-EL-01"
+  nameJa: string;        // 必須の列・要素名（例「機能」「検証内容」）
+  required: boolean;
+  definition: string;    // その要素が何を保持するか（パラフレーズ）
+  emptyMeaning: string;  // 未記入だと何が主張できなくなるか
+}
+
+export interface TestDesignNotationSpec {
+  id: "NTN-FV" | "NTN-NGT" | "NTN-YMX";
+  nameJa: string;
+  structureKind: TestDesignNotationStructureKind;
+  expresses: string;
+  suitableWhen: string;
+  caution: string;
+  elements: TestDesignNotationElement[];
+  relatedToolNames: string[];
+  relatedResourceUris: string[];
+  sourceNote: string;
+  auditCategoryIds: string[];
+}
+
+export interface TestDesignNotationAuditCategory {
+  id: string;            // "TDN-01" 〜 "TDN-25"
+  nameJa: string;
+  appliesTo: TestDesignNotationTarget[];
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+
+export interface TestDesignNotationCatalog {
+  name: string;
+  note: string;
+  summary: string;
+  notations: TestDesignNotationSpec[];
+  auditCategories: TestDesignNotationAuditCategory[];
+  notes: string[];
+}
+
+// --- audit_test_design_notations 入力 ---
+export interface FvTableRow {
+  id: string;                     // 既定プレフィックス "FV-"
+  functionId?: string;
+  functionName: string;
+  verification: string;
+  requirementIds?: string[];
+  ngtNodeId?: string;
+  testConditionIds?: string[];
+  evidence?: string;
+}
+export interface NgtNode {
+  id: string;                     // 既定プレフィックス "NG-"
+  label: string;
+  parentId?: string;              // 未指定はルート
+  perspectiveCategoryId?: string; // TPC-xx / TPC-xx-xx
+  testConditionIds?: string[];
+  evidence?: string;
+}
+export interface NgtRelation {
+  fromId: string;
+  toId: string;
+  kind?: string;
+  note?: string;
+}
+export interface YumotsuyoAxisItem {
+  id: string;
+  label: string;
+  ngtNodeId?: string;
+}
+export interface YumotsuyoCell {
+  rowId: string;
+  columnId: string;
+  testConditionIds?: string[];
+  note?: string;
+  evidence?: string;
+}
+export interface YumotsuyoExclusion {
+  rowId: string;
+  columnId: string;
+  reason?: string;
+}
+export interface FvTableInput {
+  rows: FvTableRow[];
+  expectedFunctionIds?: string[];
+  claimedFunctionCoveragePercent?: number;
+  idPrefix?: string;
+}
+export interface NgtInput {
+  nodes: NgtNode[];
+  relations?: NgtRelation[];
+  claimedLeafCount?: number;
+  idPrefix?: string;
+}
+export interface YumotsuyoMatrixInput {
+  rows: YumotsuyoAxisItem[];
+  columns: YumotsuyoAxisItem[];
+  cells: YumotsuyoCell[];
+  exclusions?: YumotsuyoExclusion[];
+  claimedFillRatePercent?: number;
+}
+export interface AuditTestDesignNotationsInput {
+  completedTools?: CompletedToolDeclaration[];
+  fvTable?: FvTableInput;
+  ngt?: NgtInput;
+  yumotsuyoMatrix?: YumotsuyoMatrixInput;
+  testConditionIds?: string[];    // 3記法共通の母集団
+  documents?: TestBasisDocument[];
+  idPatterns?: string[];
+  maxCellCount?: number;          // 既定 20000
+}
+
+// --- audit_test_design_notations 決定的検査の結果型 ---
+export interface TestDesignNotationFinding {
+  categoryId: string;             // "TDN-01" 等
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+/** 宣言値（網羅率・件数）と実測値の照合結果。分母を必ず持ち回る。 */
+export interface TestDesignNotationClaimCheck {
+  /** computed = 実測を算出できた / unavailable = 母集団未宣言で算出不能 / skipped = 上限超過で算出せず */
+  basis: "computed" | "unavailable" | "skipped";
+  claimed?: number;
+  actual?: number;
+  numerator?: number;
+  denominator?: number;
+  denominatorNote: string;
+  skipReason?: string;
+}
+export interface FvTableAnalysis {
+  supplied: boolean;
+  rowCount: number;
+  coverage: TestDesignNotationClaimCheck;
+}
+export interface NgtNodeDepth {
+  id: string;
+  label: string;
+  depth: number;
+}
+export interface NgtAnalysis {
+  supplied: boolean;
+  nodeCount: number;
+  rootIds: string[];
+  leafIds: string[];
+  depths: NgtNodeDepth[];
+  /** 深さ優先の描画順（ルートから到達できたノードのみ） */
+  renderOrder: NgtNodeDepth[];
+  /** ルートから到達できなかったノードID（未宣言親・循環） */
+  unreachableIds: string[];
+  leafCount: TestDesignNotationClaimCheck;
+}
+export interface YumotsuyoAnalysis {
+  supplied: boolean;
+  rowCount: number;
+  columnCount: number;
+  totalCellCount: number;
+  excludedCellCount: number;
+  filledCellCount: number;
+  /** 直積を展開できたか（maxCellCount 超過時は false） */
+  expanded: boolean;
+  fillRate: TestDesignNotationClaimCheck;
+}
+export interface TestDesignNotationSummary {
+  suppliedNotationCount: number;
+  fvRowCount: number;
+  ngtNodeCount: number;
+  ngtLeafCount: number;
+  matrixRowCount: number;
+  matrixColumnCount: number;
+  testConditionPopulationCount: number;
+  findingTotal: number;
+  highFindingTotal: number;
+  mediumFindingTotal: number;
+}
+export interface TestDesignNotationAnalysisResult {
+  fvTable: FvTableAnalysis;
+  ngt: NgtAnalysis;
+  yumotsuyoMatrix: YumotsuyoAnalysis;
+  findings: TestDesignNotationFinding[];
+  summary: TestDesignNotationSummary;
+}
+
 // --- テストベース仕様矛盾監査（audit_basis_contradictions） ---
 export interface BasisContradictionOptions {
   idPatterns?: string[];
