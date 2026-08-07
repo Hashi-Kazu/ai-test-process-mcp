@@ -36,6 +36,7 @@ export const registeredToolNames: readonly string[] = [
   "audit_deliverable_consistency",
   "analyze_data_flow_timing",
   "derive_test_purposes",
+  "audit_test_design_notations",
 ];
 
 const DESIGN_FOLLOWUPS: NextToolCatalogEntry[] = [
@@ -147,6 +148,11 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       when: "always",
       reason: "テスト条件一覧の第三者レビューが未実施である",
     },
+    {
+      toolName: "audit_test_design_notations",
+      when: "always",
+      reason: "テスト条件をFV表・NGT・ゆもつよマトリクスの記法へ落とした際の記法監査が未実施である",
+    },
   ],
   generate_test_cases: [
     {
@@ -236,6 +242,23 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "review_test_specification",
       when: "always",
       reason: "監査結果を踏まえた仕様レビューが未実施である",
+    },
+    {
+      toolName: "audit_test_design_notations",
+      when: "always",
+      reason: "FV表・NGT・ゆもつよマトリクスの記法単位での宣言と実体の照合が未実施である",
+    },
+  ],
+  audit_test_design_notations: [
+    {
+      toolName: "generate_test_cases",
+      when: "always",
+      reason: "記法へ整理した観点・検証内容のテストケース化が未実施である",
+    },
+    {
+      toolName: "audit_cross_matrix",
+      when: "always",
+      reason: "記法をまたいだ多軸での交差被覆監査が未実施である",
     },
   ],
   audit_deliverable_consistency: [
@@ -415,6 +438,11 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
       toolName: "review_test_specification",
       when: "has-unassigned-conditions",
       reason: "どのコンテナにも帰属していないテスト条件が残っている",
+    },
+    {
+      toolName: "audit_test_design_notations",
+      when: "always",
+      reason: "観点階層(NGT)とテストタイプ割り付け(ゆもつよマトリクス)の記法監査が未実施である",
     },
   ],
   select_regression_suite: [

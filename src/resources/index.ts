@@ -34,6 +34,7 @@ import { basisContradictionCriteria } from "./basisContradictionCriteria.js";
 import { businessRequirementFrame } from "./businessRequirementFrame.js";
 import { deliverableConsistencyCriteria } from "./deliverableConsistencyCriteria.js";
 import { testPurposeDerivationFrame } from "./testPurposeDerivationFrame.js";
+import { testDesignNotationCatalog } from "./testDesignNotationCatalog.js";
 import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
 import { toolOutputSignatures } from "./toolOutputSignatures.js";
 
@@ -848,6 +849,41 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(testPurposeDerivationFrame, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-design-notation-catalog",
+    "testdesign://notation/catalog",
+    {
+      title: "Test Design Notation Catalog",
+      description:
+        "Structured catalog of the three test design notations the ASTER OPEN class participation guidelines cite as " +
+        "examples of the second deliverable: FV table (list, NTN-FV), NGT (diagram, NTN-NGT) and the Yumotsuyo matrix " +
+        "(matrix, NTN-YMX). Each notation carries what it expresses, when it suits, what it hides, its required elements " +
+        "with the meaning of leaving each one empty, the related tools and resources, and a source note giving only the " +
+        "location of the cited material. Also includes the judgment category catalog for audit_test_design_notations " +
+        "(TDN-01..TDN-25): FV row id duplicates / sequence gaps / prefix mismatches, blank or boilerplate verification " +
+        "statements, features with zero verification and rows outside the declared feature population, verification " +
+        "statements not substantiated by the test basis text, claimed-versus-computed function coverage, NGT node id " +
+        "duplicates and undeclared parent references, parent-child cycles, zero or multiple roots, leaves that never " +
+        "reach a test condition, degenerate single-child branches and mixed leaf/branch granularity, uneven leaf depth, " +
+        "malformed relations, perspective category ids missing from the catalog and catalog categories referenced by no " +
+        "node, claimed-versus-computed leaf count, matrix row/column id duplicates and undeclared references, empty cells " +
+        "with no exclusion, empty rows and columns, missing exclusion reasons, cell test condition ids versus the declared " +
+        "population in both directions, claimed-versus-computed fill rate with the denominator stated, and the " +
+        "cross-notation correspondence gaps between the FV table, the NGT leaves, the matrix axes and the test condition " +
+        "population, with severity and recommended actions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(testDesignNotationCatalog, null, 2),
         },
       ],
     })
