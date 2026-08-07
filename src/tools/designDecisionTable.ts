@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import {
+  factorInventoryShape,
+  renderFactorHandoverSection,
+  sourceFactorIdShape,
+} from "../factorHandoverAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   DecisionTableActionValue,
@@ -617,6 +622,21 @@ export function renderDecisionTable(spec: DecisionTableSpec): string {
     `- 条件数: ${result.conditionCount} / 全組合せ数: ${result.totalCombinationCount} / 無効: ${result.invalidCombinationCount} / 有効: ${result.validCombinationCount} / 動作定義済み: ${result.definedCombinationCount} / 未定義: ${result.undefinedCombinationIndexes.length} / 矛盾: ${result.conflictingCombinationIndexes.length} / 圧縮後列数: ${result.compressedRules.length} / 削減率: ${result.compressionRatioPercent.toFixed(1)}%`
   );
 
+  lines.push("");
+  lines.push(
+    ...renderFactorHandoverSection("## 8. 因子引き渡し検査(FHO-03)", {
+      conventionId: "FHO-03",
+      factorInventory: spec.factorInventory,
+      items: spec.conditions.map((c) => ({
+        itemLabel: c.id,
+        displayName: c.statement,
+        sourceFactorId: c.sourceFactorId,
+        levelBasis: "levels" as const,
+        levelLabels: c.levels,
+      })),
+    }).split("\n")
+  );
+
   const decisionTableSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
     decisionTableSignals.push("has-high-findings");
@@ -647,6 +667,7 @@ export const designDecisionTableInputShape = {
         id: z.string().describe("Condition id, unique within the table, e.g. C1"),
         statement: z.string().describe("Condition description"),
         levels: z.array(z.string()).min(1).describe("Possible levels for this condition; 2 or more expected"),
+        sourceFactorId: sourceFactorIdShape,
       })
     )
     .min(1)
@@ -682,6 +703,7 @@ export const designDecisionTableInputShape = {
     .optional()
     .describe("Rules mapping condition selectors to actions; unspecified action ids default to N"),
   maxCombinations: z.number().int().positive().optional().describe("Enumeration cap (default 4096)"),
+  factorInventory: factorInventoryShape,
 } as const;
 
 const designDecisionTableInputSchema = z.object(designDecisionTableInputShape);

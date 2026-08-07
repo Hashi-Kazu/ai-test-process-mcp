@@ -102,6 +102,20 @@ describe("factorRalphFrame", () => {
     }
   });
 
+  it("tells how to feed the factor table into the handover check in every notation", () => {
+    const expectedSourceField: Record<string, string> = {
+      design_boundary_values: "variables[].sourceFactorId",
+      design_equivalence_partitioning: "variables[].sourceFactorId",
+      design_decision_table: "conditions[].sourceFactorId",
+      design_pairwise: "factors[].sourceFactorId",
+    };
+    for (const handover of factorRalphFrame.handoverConventions) {
+      const text = handover.notation.join(" ");
+      expect(text).toContain("factorInventory");
+      expect(text).toContain(expectedSourceField[handover.targetTool]);
+    }
+  });
+
   it("references the actual argument names of each target tool in notation", () => {
     const byTool = new Map(
       factorRalphFrame.handoverConventions.map((h) => [h.targetTool, h])

@@ -1,7 +1,16 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import {
+  factorInventoryShape,
+  renderFactorHandoverSection,
+  sourceFactorIdShape,
+} from "../factorHandoverAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { CompletedToolDeclaration, EquivalencePartitioningVariableSpec } from "../types.js";
+import type {
+  CompletedToolDeclaration,
+  EquivalencePartitioningVariableSpec,
+  FactorInventoryEntry,
+} from "../types.js";
 
 const classShape = z.object({
   label: z.string().describe("クラス名"),
@@ -17,9 +26,11 @@ export const designEquivalencePartitioningInputShape = {
         name: z.string(),
         validClasses: z.array(classShape).min(1).describe("有効同値クラス"),
         invalidClasses: z.array(classShape).optional().describe("無効同値クラス"),
+        sourceFactorId: sourceFactorIdShape,
       })
     )
     .min(1),
+  factorInventory: factorInventoryShape,
 } as const;
 
 const designEquivalencePartitioningInputSchema = z.object(designEquivalencePartitioningInputShape);
@@ -54,6 +65,7 @@ export function listEquivalenceClasses(
 export function renderEquivalencePartitioning(input: {
   variables: EquivalencePartitioningVariableSpec[];
   completedTools?: CompletedToolDeclaration[];
+  factorInventory?: FactorInventoryEntry[];
 }): string {
   const { variables } = input;
 
@@ -161,6 +173,24 @@ export function renderEquivalencePartitioning(input: {
       lines.push(`  - ${u}`);
     }
   }
+
+  lines.push("");
+  lines.push(
+    ...renderFactorHandoverSection("## 4. 因子引き渡し検査(FHO-02)", {
+      conventionId: "FHO-02",
+      factorInventory: input.factorInventory,
+      items: variables.map((v, i) => ({
+        itemLabel: `variables[${i}]`,
+        displayName: v.name,
+        sourceFactorId: v.sourceFactorId,
+        levelBasis: "levels" as const,
+        levelLabels: [
+          ...v.validClasses.map((c) => c.label),
+          ...(v.invalidClasses ?? []).map((c) => c.label),
+        ],
+      })),
+    }).split("\n")
+  );
 
   const equivalenceSignals: string[] = [];
   if (uncoveredCount > 0) {

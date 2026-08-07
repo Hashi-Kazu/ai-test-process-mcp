@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import {
+  factorInventoryShape,
+  renderFactorHandoverSection,
+  sourceFactorIdShape,
+} from "../factorHandoverAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   PairwiseFactorSpec,
@@ -796,6 +801,21 @@ export function renderPairwise(spec: PairwiseSpec): string {
     );
   }
 
+  lines.push("");
+  lines.push(
+    ...renderFactorHandoverSection("## 9. 因子引き渡し検査(FHO-04)", {
+      conventionId: "FHO-04",
+      factorInventory: spec.factorInventory,
+      items: factors.map((f) => ({
+        itemLabel: f.id,
+        displayName: f.name,
+        sourceFactorId: f.sourceFactorId,
+        levelBasis: "levels" as const,
+        levelLabels: f.levels,
+      })),
+    }).split("\n")
+  );
+
   const pairwiseSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
     pairwiseSignals.push("has-high-findings");
@@ -826,6 +846,7 @@ export const designPairwiseInputShape = {
         id: z.string().describe("Factor id, unique within the set, e.g. F1"),
         name: z.string().describe("Factor name"),
         levels: z.array(z.string()).min(1).describe("Levels of this factor; 2 or more expected"),
+        sourceFactorId: sourceFactorIdShape,
       })
     )
     .min(2)
@@ -863,6 +884,7 @@ export const designPairwiseInputShape = {
     .positive()
     .optional()
     .describe("Node budget per reachability search (default 20000)"),
+  factorInventory: factorInventoryShape,
 } as const;
 
 const designPairwiseInputSchema = z.object(designPairwiseInputShape);

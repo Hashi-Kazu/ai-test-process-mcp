@@ -236,6 +236,86 @@ describe("renderDecisionTable", () => {
   });
 });
 
+describe("renderDecisionTable 因子引き渡し検査(FHO-03)", () => {
+  function inventorySpec(): DecisionTableSpec {
+    const spec = baseSpec();
+    return {
+      ...spec,
+      conditions: [
+        { ...spec.conditions[0], sourceFactorId: "FCT-04" },
+        { ...spec.conditions[1], sourceFactorId: "FCT-05" },
+        { ...spec.conditions[2], sourceFactorId: "FCT-06" },
+      ],
+      factorInventory: [
+        {
+          id: "FCT-04",
+          name: "券種",
+          categoryKey: "state",
+          levels: ["おとな", "こども"],
+          handoverTargetIds: ["FHO-03"],
+        },
+        {
+          id: "FCT-05",
+          name: "支払い方法",
+          categoryKey: "state",
+          levels: ["現金", "IC", "クレカ"],
+          handoverTargetIds: ["FHO-03"],
+        },
+        {
+          id: "FCT-06",
+          name: "枚数区分",
+          categoryKey: "state",
+          levels: ["1-9", "0または10以上"],
+          handoverTargetIds: ["FHO-03"],
+        },
+      ],
+    };
+  }
+
+  it("factorInventory 未指定なら未算出1行のみで、既存の出力は変わらない", () => {
+    const md = renderDecisionTable(baseSpec());
+    expect(md).toContain("## 8. 因子引き渡し検査(FHO-03)");
+    const section = md.split("## 8. 因子引き渡し検査(FHO-03)")[1].split("## ")[0];
+    expect(section.trim()).toBe(
+      "- 未算出(理由: factorInventory が未宣言のため因子引き渡し検査を行わなかった)"
+    );
+    expect(md).toContain("## 7. サマリ");
+    expect(md).toContain("削減率:");
+  });
+
+  it("factorInventory / sourceFactorId を足しても列挙・圧縮・決定的検査は変わらない", () => {
+    const base = computeDecisionTableRows(baseSpec());
+    const withInventory = computeDecisionTableRows(inventorySpec());
+    expect(withInventory.compressedRules).toEqual(base.compressedRules);
+    expect(withInventory.findings).toEqual(base.findings);
+    expect(withInventory.validCombinationCount).toBe(base.validCombinationCount);
+
+    const bodyOf = (md: string) => md.split("## 8. 因子引き渡し検査(FHO-03)")[0];
+    expect(bodyOf(renderDecisionTable(inventorySpec()))).toBe(bodyOf(renderDecisionTable(baseSpec())));
+  });
+
+  it("宣言と実体が一致していれば指摘なしで検証率を出す", () => {
+    const md = renderDecisionTable(inventorySpec());
+    const section = md.split("## 8. 因子引き渡し検査(FHO-03)")[1].split("## ")[0];
+    expect(section).toContain("| FCT-04 | 券種 | 状態因子 | FHO-03(design_decision_table) | C1 | 検証済み |");
+    expect(section).toContain("- 指摘なし");
+    expect(section).toContain("引き渡し検証率: 100.0%（分母: 本ツール担当因子数 3");
+  });
+
+  it("条件項目に対応する因子が無い場合は FHC-05 を指摘する", () => {
+    const spec = inventorySpec();
+    spec.conditions = spec.conditions.map((c) =>
+      c.id === "C3" ? { ...c, sourceFactorId: "FCT-99" } : c
+    );
+    const md = renderDecisionTable(spec);
+    const section = md.split("## 8. 因子引き渡し検査(FHO-03)")[1].split("## ")[0];
+    expect(section).toContain("FHC-05");
+    expect(section).toContain("FCT-99");
+    // 実体の無い FCT-06 側は FHC-04 として出る。
+    expect(section).toContain("FHC-04");
+  });
+});
+
 describe("renderDecisionTable 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderDecisionTable(baseSpec()));

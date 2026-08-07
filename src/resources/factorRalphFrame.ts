@@ -200,6 +200,7 @@ export const factorRalphFrame: FactorRalphFrame = {
         "整数か小数かを valueType（int / decimal）で明示し、刻みが1・0.1以外なら step を指定する。",
         "境界値そのものを因子表の水準欄に書き写さず、列挙はツールの出力に委ねる。",
         "2値か3値かは mode で宣言する。",
+        "因子表全体を factorInventory に、由来因子IDを variables[].sourceFactorId に渡し、引き渡し検査(FHC-xx)を受ける。",
       ],
       traceability:
         "出力された境界値行は、由来因子IDと水準ID（FLH-01の4点に対応）を添えて generate_test_cases の boundaryValues へ渡す。",
@@ -215,6 +216,7 @@ export const factorRalphFrame: FactorRalphFrame = {
         "仕様上受理されない水準は invalidClasses 側へ移し、有効水準と混ぜない。",
         "description に水準の判定条件（どの範囲・どの条件でその水準になるか）を書く。",
         "水準が1件しかない因子は渡さず、固定条件として別記する。",
+        "因子表全体を factorInventory に、由来因子IDを variables[].sourceFactorId に渡し、引き渡し検査(FHC-xx)を受ける。",
       ],
       traceability:
         "クラスラベルへ水準IDを併記し、generate_test_cases の equivalencePartitions まで因子IDを引き継ぐ。",
@@ -230,6 +232,7 @@ export const factorRalphFrame: FactorRalphFrame = {
         "同時に成立しない水準の組合せは invalidCombinations に reason 付きで登録し、除外理由を空にしない。",
         "動作項目（actions）は目的機能の結果側から起こし、因子ではなく期待される振る舞いを書く。",
         "条件項目の総数が多く maxCombinations に触れる場合は、誤差因子を条件項目へ入れずFHO-04側へ回す。",
+        "因子表全体を factorInventory に、由来因子IDを conditions[].sourceFactorId に渡し、因子IDと条件IDの対応表を引き渡し検査(FHC-xx)で確認する。",
       ],
       traceability: "圧縮後ルールの DT: 網羅対象IDに、由来因子IDを対応表で紐づける。",
     },
@@ -244,6 +247,7 @@ export const factorRalphFrame: FactorRalphFrame = {
         "必ず含めたい既知の重要組合せは seedRows に全因子の水準を指定して渡す。",
         "水準が1件しかない因子は factors に渡さず、固定条件として前提条件へ別記する。",
         "誤差因子は FLH-06 等で代表水準へ絞り、絞り込んだ理由を因子表に残す。",
+        "因子表全体を factorInventory に、由来因子IDを factors[].sourceFactorId に渡し、引き渡し検査(FHC-xx)を受ける。",
       ],
       traceability: "生成したペアの PW: 網羅対象IDに、由来因子ID・水準IDを対応表で紐づける。",
     },

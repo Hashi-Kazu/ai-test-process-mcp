@@ -88,6 +88,86 @@ describe("renderEquivalencePartitioning", () => {
   });
 });
 
+describe("renderEquivalencePartitioning 因子引き渡し検査(FHO-02)", () => {
+  const variables = [
+    {
+      name: "券種",
+      validClasses: [
+        { label: "おとな", representative: "adult" },
+        { label: "こども", representative: "child" },
+      ],
+      invalidClasses: [{ label: "未設定", representative: "" }],
+    },
+  ];
+
+  it("factorInventory 未指定なら未算出1行のみで、既存の出力は変わらない", () => {
+    const md = renderEquivalencePartitioning({ variables });
+
+    expect(md).toContain("## 4. 因子引き渡し検査(FHO-02)");
+    const section = md.split("## 4. 因子引き渡し検査(FHO-02)")[1].split("## ")[0];
+    expect(section.trim()).toBe(
+      "- 未算出(理由: factorInventory が未宣言のため因子引き渡し検査を行わなかった)"
+    );
+    expect(md).toContain("## 1. 同値クラス一覧");
+    expect(md).toContain("## 3. 被覆状況");
+    expect(md).toContain("- 未被覆: 0");
+  });
+
+  it("sourceFactorId を足してもクラス一覧・ケース生成は変わらない", () => {
+    const withId = renderEquivalencePartitioning({
+      variables: [{ ...variables[0], sourceFactorId: "FCT-04" }],
+    });
+    const bodyOf = (md: string) => md.split("## 4. 因子引き渡し検査(FHO-02)")[0];
+    expect(bodyOf(withId)).toBe(bodyOf(renderEquivalencePartitioning({ variables })));
+  });
+
+  it("validClasses と invalidClasses のラベルをまとめて実体水準として照合する", () => {
+    const md = renderEquivalencePartitioning({
+      variables: [{ ...variables[0], sourceFactorId: "FCT-04" }],
+      factorInventory: [
+        {
+          id: "FCT-04",
+          name: "券種",
+          categoryKey: "state",
+          levels: ["おとな", "こども", "未設定"],
+          handoverTargetIds: ["FHO-02"],
+        },
+      ],
+    });
+
+    const section = md.split("## 4. 因子引き渡し検査(FHO-02)")[1].split("## ")[0];
+    expect(section).toContain("| FCT-04 | 券種 | 状態因子 | FHO-02(design_equivalence_partitioning) | variables[0] | 検証済み |");
+    expect(section).toContain("- 指摘なし");
+    expect(section).toContain("引き渡し検証率: 100.0%（分母: 本ツール担当因子数 1");
+  });
+
+  it("因子表にある水準が投入されていない場合は FHC-07 を指摘する", () => {
+    const md = renderEquivalencePartitioning({
+      variables: [
+        {
+          name: "券種",
+          validClasses: [{ label: "おとな", representative: "adult" }],
+          sourceFactorId: "FCT-04",
+        },
+      ],
+      factorInventory: [
+        {
+          id: "FCT-04",
+          name: "券種",
+          categoryKey: "state",
+          levels: ["おとな", "こども"],
+          handoverTargetIds: ["FHO-02"],
+        },
+      ],
+    });
+
+    const section = md.split("## 4. 因子引き渡し検査(FHO-02)")[1].split("## ")[0];
+    expect(section).toContain("FHC-07");
+    expect(section).toContain("水準「こども」");
+    expect(section).toContain("実体照合済み: 0");
+  });
+});
+
 describe("renderEquivalencePartitioning 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderEquivalencePartitioning({

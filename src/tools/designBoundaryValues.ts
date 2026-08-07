@@ -1,11 +1,17 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import {
+  factorInventoryShape,
+  renderFactorHandoverSection,
+  sourceFactorIdShape,
+} from "../factorHandoverAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   BoundaryValueMode,
   CompletedToolDeclaration,
   BoundaryValueRow,
   BoundaryVariableSpec,
+  FactorInventoryEntry,
 } from "../types.js";
 
 export const designBoundaryValuesInputShape = {
@@ -18,11 +24,13 @@ export const designBoundaryValuesInputShape = {
         max: z.number().describe("有効範囲の上限（境界値）"),
         valueType: z.enum(["int", "decimal"]).optional().describe("既定 int"),
         step: z.number().positive().optional().describe("刻み幅。既定 int=1 / decimal=0.1"),
+        sourceFactorId: sourceFactorIdShape,
       })
     )
     .min(1)
     .describe("境界値分析の対象変数"),
   mode: z.enum(["two", "three"]).optional().describe("2値/3値。既定 three"),
+  factorInventory: factorInventoryShape,
 } as const;
 
 const designBoundaryValuesInputSchema = z.object(designBoundaryValuesInputShape);
@@ -130,6 +138,7 @@ export function renderBoundaryValues(input: {
   variables: BoundaryVariableSpec[];
   mode?: BoundaryValueMode;
   completedTools?: CompletedToolDeclaration[];
+  factorInventory?: FactorInventoryEntry[];
 }): string {
   const mode = input.mode ?? "three";
   const results = input.variables.map((v) => computeVariable(v, mode));
@@ -176,6 +185,21 @@ export function renderBoundaryValues(input: {
   lines.push("");
   lines.push(`- 総ケース数: ${totalCases}`);
   lines.push(`- 有効: ${totalValid} 件 / 無効: ${totalInvalid} 件`);
+
+  lines.push("");
+  lines.push(
+    ...renderFactorHandoverSection("## 因子引き渡し検査(FHO-01)", {
+      conventionId: "FHO-01",
+      factorInventory: input.factorInventory,
+      items: input.variables.map((v, i) => ({
+        itemLabel: `variables[${i}]`,
+        displayName: v.name,
+        sourceFactorId: v.sourceFactorId,
+        levelBasis: "range" as const,
+        rangeDeclared: Number.isFinite(v.min) && Number.isFinite(v.max) && v.min <= v.max,
+      })),
+    }).split("\n")
+  );
 
   const boundaryValueSignals: string[] = [];
   if (results.some((r) => r.error)) {

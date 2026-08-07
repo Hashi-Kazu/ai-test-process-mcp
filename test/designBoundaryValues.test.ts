@@ -75,6 +75,55 @@ describe("renderBoundaryValues", () => {
   });
 });
 
+describe("renderBoundaryValues 因子引き渡し検査(FHO-01)", () => {
+  it("factorInventory 未指定なら未算出1行のみで、既存の出力は変わらない", () => {
+    const base = renderBoundaryValues({ variables: [{ name: "x", min: 1, max: 10 }] });
+
+    expect(base).toContain("## 因子引き渡し検査(FHO-01)");
+    const section = base.split("## 因子引き渡し検査(FHO-01)")[1].split("## ")[0];
+    expect(section.trim()).toBe(
+      "- 未算出(理由: factorInventory が未宣言のため因子引き渡し検査を行わなかった)"
+    );
+    // 既存節（境界値表・サマリ）は追加節の影響を受けない。
+    expect(base).toContain("- 総ケース数: 6");
+    expect(base).toContain("- 有効: 4 件 / 無効: 2 件");
+    expect(base).toContain("| 0 | 下限-刻み | 無効 |");
+  });
+
+  it("sourceFactorId を足しても境界値の列挙結果は変わらない", () => {
+    const withoutId = renderBoundaryValues({ variables: [{ name: "x", min: 1, max: 10 }] });
+    const withId = renderBoundaryValues({
+      variables: [{ name: "x", min: 1, max: 10, sourceFactorId: "FCT-01" }],
+    });
+    const bodyOf = (md: string) => md.split("## 因子引き渡し検査(FHO-01)")[0];
+    expect(bodyOf(withId)).toBe(bodyOf(withoutId));
+  });
+
+  it("因子ID併記違反(FHC-06)と min > max(FHC-08) を指摘する", () => {
+    const md = renderBoundaryValues({
+      variables: [{ name: "入場制限人数", min: 10, max: 1, sourceFactorId: "FCT-01" }],
+      factorInventory: [
+        {
+          id: "FCT-01",
+          name: "入場制限人数",
+          categoryKey: "control",
+          handoverTargetIds: ["FHO-01"],
+        },
+      ],
+    });
+
+    const section = md.split("## 因子引き渡し検査(FHO-01)")[1].split("## ")[0];
+    expect(section).toContain("| FCT-01 | 入場制限人数 | 制御因子 | FHO-01(design_boundary_values) |");
+    expect(section).toContain("FHC-06");
+    expect(section).toContain("因子ID「FCT-01」");
+    expect(section).toContain("FHC-08");
+    expect(section).toContain("min が max を上回っており");
+    expect(section).toContain("実体照合済み: 0");
+    // 既存の min > max のメッセージは従来どおり残る。
+    expect(md).toContain("- 入場制限人数: min が max を上回るため境界を列挙できません");
+  });
+});
+
 describe("renderBoundaryValues 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderBoundaryValues({ variables: [{ name: "x", min: 1, max: 10 }] }));

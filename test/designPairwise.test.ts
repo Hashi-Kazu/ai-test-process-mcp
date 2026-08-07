@@ -387,6 +387,53 @@ describe("renderPairwise", () => {
   });
 });
 
+describe("renderPairwise 因子引き渡し検査(FHO-04)", () => {
+  function inventorySpec(): PairwiseSpec {
+    const spec = baseSpec();
+    return {
+      ...spec,
+      factors: spec.factors.map((f, i) => ({ ...f, sourceFactorId: `FCT-0${i + 1}` })),
+      factorInventory: spec.factors.map((f, i) => ({
+        id: `FCT-0${i + 1}`,
+        name: f.name,
+        categoryKey: "control",
+        levels: f.levels,
+        handoverTargetIds: ["FHO-04"],
+      })),
+    };
+  }
+
+  it("factorInventory 未指定なら未算出1行のみで、既存の出力は変わらない", () => {
+    const md = renderPairwise(baseSpec());
+    expect(md).toContain("## 9. 因子引き渡し検査(FHO-04)");
+    const section = md.split("## 9. 因子引き渡し検査(FHO-04)")[1].split("## ")[0];
+    expect(section.trim()).toBe(
+      "- 未算出(理由: factorInventory が未宣言のため因子引き渡し検査を行わなかった)"
+    );
+    expect(md).toContain("## 8. サマリ");
+    expect(md).toContain("ペア被覆率: 100.0%");
+  });
+
+  it("factorInventory / sourceFactorId を足しても行生成・被覆率・findings は変わらない", () => {
+    const base = computePairwiseRows(baseSpec());
+    const withInventory = computePairwiseRows(inventorySpec());
+    expect(withInventory.rows).toEqual(base.rows);
+    expect(withInventory.pairCoverageRatioPercent).toBe(base.pairCoverageRatioPercent);
+    expect(withInventory.findings).toEqual(base.findings);
+
+    const bodyOf = (md: string) => md.split("## 9. 因子引き渡し検査(FHO-04)")[0];
+    expect(bodyOf(renderPairwise(inventorySpec()))).toBe(bodyOf(renderPairwise(baseSpec())));
+  });
+
+  it("宣言と実体が一致していれば指摘なしで検証率を出す", () => {
+    const md = renderPairwise(inventorySpec());
+    const section = md.split("## 9. 因子引き渡し検査(FHO-04)")[1].split("## ")[0];
+    expect(section).toContain("| FCT-01 | 券種 | 制御因子 | FHO-04(design_pairwise) | F1 | 検証済み |");
+    expect(section).toContain("- 指摘なし");
+    expect(section).toContain("引き渡し検証率: 100.0%（分母: 本ツール担当因子数 4");
+  });
+});
+
 describe("renderPairwise 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderPairwise(baseSpec()));

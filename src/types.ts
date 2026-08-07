@@ -243,6 +243,7 @@ export interface BoundaryVariableSpec {
   max: number;
   valueType?: BoundaryVariableType; // 既定 "int"
   step?: number;                    // 既定: int=1 / decimal=0.1
+  sourceFactorId?: string;          // 因子表（factorInventory）の由来因子ID
 }
 
 export interface BoundaryValueRow {
@@ -262,6 +263,7 @@ export interface EquivalencePartitioningVariableSpec {
   name: string;
   validClasses: EquivalenceClassSpec[];
   invalidClasses?: EquivalenceClassSpec[];
+  sourceFactorId?: string;          // 因子表（factorInventory）の由来因子ID
 }
 
 // --- テストベースレビュー ---
@@ -685,6 +687,76 @@ export interface FactorRalphFrame {
   completenessChecks: string[];              // 洗い出し漏れの自己点検、5件以上
 }
 
+// --- 因子引き渡し検査（FHO-01〜FHO-04 の宣言 vs 実体の照合） ---
+
+/** 因子表の1行。design_* ツールの factorInventory に渡す「宣言」側。 */
+export interface FactorInventoryEntry {
+  id: string;                        // 因子ID 例 "FCT-01"
+  name: string;                      // 因子名
+  categoryKey: string;               // signal / noise / state / control（frame 側の key と照合する）
+  levels?: string[];                 // 因子表に書いた水準一覧
+  handoverTargetIds?: string[];      // "FHO-01".."FHO-04" または "design_pairwise" 等の targetTool
+  droppedReason?: string;            // どの技法にも渡さない場合の理由
+  fixedCondition?: boolean;          // 固定条件として分離した因子
+}
+
+export type FactorHandoverLevelBasis = "levels" | "range";
+
+/** 各ツールへ実際に投入された項目（実体）側。 */
+export interface FactorHandoverItem {
+  itemLabel: string;                 // 表示用ラベル（"variables[0]" / "C1" / "F1"）
+  displayName: string;               // 実体テキスト（variables[].name / conditions[].statement / factors[].name）
+  sourceFactorId?: string;
+  levelBasis: FactorHandoverLevelBasis;
+  levelLabels?: string[];            // levelBasis="levels" のときの実体水準
+  rangeDeclared?: boolean;           // levelBasis="range" のとき min/max が有効範囲を成すか
+}
+
+export interface FactorHandoverFinding {
+  categoryId: string;                // "FHC-01".."FHC-12"
+  severity: "high" | "medium" | "info";
+  target: string;
+  detail: string;
+}
+
+export type FactorHandoverVerdict =
+  | "verified"        // 本ツール担当かつ実体照合を通過
+  | "no-entity"       // 本ツール担当だが実体が無い
+  | "other-tool"      // 他ツール担当（本呼び出しでは未検証）
+  | "unassigned"      // 引き渡し先未宣言かつ除外理由なし
+  | "dropped";        // 除外理由あり
+
+export interface FactorHandoverEntryEvaluation {
+  factorId: string;
+  name: string;
+  categoryKey: string;
+  categoryNameJa?: string;           // frame から解決。未知なら undefined
+  handoverTargetIds: string[];
+  matchedItemLabels: string[];
+  verdict: FactorHandoverVerdict;
+  /**
+   * verdict==="verified" かつ実体照合の指摘(FHC-03/06/07/08/10)が1件も無い因子だけ true。
+   * verifiedFactorCount の分子と一致し、表示上も「検証済み」と書けるのはこの因子だけ。
+   */
+  verifiedByEntity: boolean;
+}
+
+export interface FactorHandoverEvaluation {
+  conventionId: string;              // "FHO-01".."FHO-04"
+  targetTool: string;
+  available: boolean;                // factorInventory が宣言されているか
+  unavailableReason?: string;
+  entries: FactorHandoverEntryEvaluation[];
+  assignedFactorCount: number;       // 本ツール担当（verdict が verified/no-entity）
+  verifiedFactorCount: number;
+  verifiedRatioPercent: number;      // assignedFactorCount===0 のとき 0
+  ratioBasis: "verified" | "unavailable";
+  otherToolFactorCount: number;
+  unassignedFactorCount: number;
+  droppedFactorCount: number;
+  findings: FactorHandoverFinding[];
+}
+
 // --- derivedFrom 参照種別（要件/リスク/ステークホルダー/ガイドワード） ---
 export type DerivedFromKind = "requirement" | "risk" | "stakeholder" | "guideword";
 export interface DerivedFromRef { kind: DerivedFromKind; id: string; }
@@ -956,6 +1028,7 @@ export interface DecisionTableConditionSpec {
   id: string;                 // 表内で一意(例 "C1")
   statement: string;          // 条件の説明(例 "券種")
   levels: string[];           // 取り得る水準。2件以上・重複不可・宣言順を保持
+  sourceFactorId?: string;    // 因子表（factorInventory）の由来因子ID
 }
 export interface DecisionTableActionSpec {
   id: string;                 // 表内で一意(例 "A1")
@@ -984,6 +1057,7 @@ export interface DecisionTableSpec {
   invalidCombinations?: DecisionTableInvalidCombination[];
   rules?: DecisionTableRuleSpec[];
   maxCombinations?: number;   // 全列挙上限。既定 4096
+  factorInventory?: FactorInventoryEntry[]; // 因子分解フレームの因子表（因子引き渡し検査 FHO-03 用）
 }
 
 export interface DecisionTableCombination {
@@ -1042,6 +1116,7 @@ export interface PairwiseFactorSpec {
   id: string;              // 表内で一意(例 "F1")
   name: string;            // 因子名(例 "支払い方法")
   levels: string[];        // 水準。2件以上・重複不可・宣言順を保持
+  sourceFactorId?: string; // 因子表（factorInventory）の由来因子ID
 }
 /** 因子IDごとに対象水準を指定する部分割当。未指定の因子は全水準に一致する。 */
 export type PairwiseSelector = Record<string, string | string[]>;
@@ -1066,6 +1141,7 @@ export interface PairwiseSpec {
   maxPairCount?: number;           // ペア数上限。既定 5000
   maxEnumerationCombinations?: number; // 有効全組合せの厳密列挙上限。既定 4096
   maxSearchNodes?: number;         // 到達可否探索の1回あたりノード上限。既定 20000
+  factorInventory?: FactorInventoryEntry[]; // 因子分解フレームの因子表（因子引き渡し検査 FHO-04 用）
 }
 
 export type PairwisePairStatus = "reachable" | "unreachable" | "undetermined";
