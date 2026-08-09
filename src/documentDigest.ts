@@ -4,6 +4,7 @@ import {
   extractQuantityExpressions,
   type TestBasisAnalysisOptions,
 } from "./testBasisAnalysis.js";
+import { countBidiControls, stripBidiControls } from "./groundingNormalization.js";
 import type {
   DocumentDigestFinding,
   DocumentDigestRow,
@@ -111,8 +112,25 @@ export function extractTableCells(content: string): string[] {
   return cells;
 }
 
-/** content から DocumentInputQualityMetrics を算出する。 */
-export function computeInputQualityMetrics(content: string): DocumentInputQualityMetrics {
+/**
+ * 投入配列・投入オブジェクトを破壊せず、テストベース文書の content を双方向制御文字除去後の
+ * 内容に差し替えたコピーを返す共通ヘルパ。documents/testBasisDocuments/documentsBefore/documentsAfter を
+ * 受け取る各ツールの入口で1回だけ適用する。
+ */
+export function sanitizeTestBasisDocuments<T extends { name: string; content: string }>(
+  documents: T[]
+): T[] {
+  return documents.map((doc) => ({ ...doc, content: stripBidiControls(doc.content) }));
+}
+
+/**
+ * content（サニタイズ前）から DocumentInputQualityMetrics を算出する。
+ * bidiControlCount / bidiControlCounts はサニタイズ前の content から数える。
+ * それ以外の指標（表セル・ふりがな・表崩れ）は双方向制御文字を除去した内容を対象とする。
+ */
+export function computeInputQualityMetrics(rawContent: string): DocumentInputQualityMetrics {
+  const { total: bidiControlCount, byCodePoint: bidiControlCounts } = countBidiControls(rawContent);
+  const content = stripBidiControls(rawContent);
   const cells = extractTableCells(content);
   const isolatedNumericSet = new Set<string>();
   let isolatedNumericCount = 0;
@@ -146,6 +164,8 @@ export function computeInputQualityMetrics(content: string): DocumentInputQualit
     furiganaRunCount,
     furiganaCharCount,
     brokenTableCellCount,
+    bidiControlCount,
+    bidiControlCounts,
   };
 }
 
@@ -153,7 +173,8 @@ export function buildDocumentDigests(
   documents: TestBasisDocument[],
   options: TestBasisAnalysisOptions = {}
 ): DocumentDigestRow[] {
-  const perDoc = documents.map((doc) => {
+  const perDoc = documents.map((rawDoc) => {
+    const doc = { ...rawDoc, content: stripBidiControls(rawDoc.content) };
     const occurrences = extractIdOccurrences([doc], options);
     const definitions = occurrences.filter((o) => o.role === "definition");
     const prefixOrder: string[] = [];
@@ -168,7 +189,7 @@ export function buildDocumentDigests(
       }
       prefixCountMap.set(def.prefix, (prefixCountMap.get(def.prefix) as number) + 1);
     }
-    return { doc, occurrences, definitions, prefixOrder, prefixCountMap };
+    return { doc, rawContent: rawDoc.content, occurrences, definitions, prefixOrder, prefixCountMap };
   });
 
   const globalPrefixes = new Set<string>();
@@ -178,7 +199,7 @@ export function buildDocumentDigests(
     }
   }
 
-  return perDoc.map(({ doc, occurrences, definitions, prefixOrder, prefixCountMap }) => {
+  return perDoc.map(({ doc, rawContent, occurrences, definitions, prefixOrder, prefixCountMap }) => {
     let otherPrefixReferenceCount = 0;
     if (occurrences.length === 0) {
       for (const prefix of globalPrefixes) {
@@ -200,7 +221,7 @@ export function buildDocumentDigests(
         definitionCount: prefixCountMap.get(prefix) as number,
       })),
       otherPrefixReferenceCount,
-      inputQuality: computeInputQualityMetrics(doc.content),
+      inputQuality: computeInputQualityMetrics(rawContent),
     };
   });
 }
@@ -217,7 +238,7 @@ export function findUnmatchedIdPatterns(
   return sources.filter((source) => {
     const regex = new RegExp(source, "gi");
     for (const doc of documents) {
-      for (const line of doc.content.split("\n")) {
+      for (const line of stripBidiControls(doc.content).split("\n")) {
         regex.lastIndex = 0;
         if (regex.test(line)) return false;
       }
@@ -362,11 +383,30 @@ export function findDocumentDigestFindings(rows: DocumentDigestRow[]): DocumentD
         )}%）が助詞・読点で終わっている。表のセルが行方向に分断され、断片が1セルとして抽出されている可能性がある。セル結合を保持した変換テキストで再実行すること。`,
       });
     }
+
+    // IQC-05: 双方向制御文字（除去済み。件数を明示する）
+    if (q.bidiControlCount > 0) {
+      const breakdown = q.bidiControlCounts
+        .map((b) => `${b.codePoint} ${formatCount(b.count)}字`)
+        .join(" / ");
+      findings.push({
+        document: row.document,
+        kind: "bidi-control-chars",
+        severity: "medium",
+        detail: `[IQC-05] 双方向制御文字を${formatCount(q.bidiControlCount)}字（内訳: ${breakdown}）検出し、除去した上で以降の全検査を実施した。` +
+          `本ダイジェストの文字数${formatCount(row.charCount)}字は除去後の値である。` +
+          `除去しない場合、行頭マーカー直後のID定義が参照と誤判定され、本文に実在する逐語引用が未照合（偽陽性）になる。` +
+          `原本の変換設定を見直し、双方向制御文字を含まないテキストを投入することが望ましいが、本実行の検査結果は除去後の本文に基づく。`,
+      });
+    }
   }
 
   return findings;
 }
 
+// IQC-01〜IQC-04 は「原本から再変換したテキストで再実行すること」という汎用注記(IQC_NOTE)の対象。
+// bidi-control-chars（IQC-05）は本ツールが検出時点で除去して以降の全検査を実施済みであり、
+// 再実行を要求する指摘ではないため、意図的にこの集合へ含めない。
 const IQC_FINDING_KINDS: DocumentDigestFinding["kind"][] = [
   "isolated-numeric-cells",
   "furigana-contamination",

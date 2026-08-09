@@ -37,6 +37,7 @@ import { resolveSourceRefs } from "../testConditionAnalysis.js";
 import { formatSourceCitation } from "../testBasisAnalysis.js";
 import { derivedFromSchema, formatDerivedFromEntry, formatDerivedFromList } from "../derivedFromRefs.js";
 import { dataClassShape, testDataCaseShape } from "./designTestData.js";
+import { sanitizeTestBasisDocuments } from "../documentDigest.js";
 import type { GenerateTestCasesInput, TestCaseSpec, TestTechniqueCatalog } from "../types.js";
 
 function escapeCell(value: string): string {
@@ -96,7 +97,9 @@ export function renderTestCases(
     stripUnsubstantiatedCoverageTargets(testCases, unsubstantiatedTargets),
     catalog
   );
-  const testBasisDocuments = input.testBasisDocuments;
+  const testBasisDocuments = input.testBasisDocuments
+    ? sanitizeTestBasisDocuments(input.testBasisDocuments)
+    : input.testBasisDocuments;
   const groundingOptions = {
     idPrefix,
     internalIds: [

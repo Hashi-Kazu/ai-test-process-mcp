@@ -18,6 +18,7 @@ import {
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import type { AuditIdPopulationInput, IdPopulationAuditCriteria } from "../types.js";
 
@@ -29,7 +30,8 @@ export function renderIdPopulationAudit(
   input: AuditIdPopulationInput,
   criteria: IdPopulationAuditCriteria = idPopulationAuditCriteria
 ): string {
-  const { documents, declaredPopulations, exclusions, expectedDocumentNames, idPatterns } = input;
+  const { declaredPopulations, exclusions, expectedDocumentNames, idPatterns } = input;
+  const documents = sanitizeTestBasisDocuments(input.documents);
   const includeCoverageTargetIds = input.includeCoverageTargetIds ?? true;
 
   const defined = buildDefinedIdIndex(documents, { idPatterns, includeCoverageTargetIds });

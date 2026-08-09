@@ -138,6 +138,65 @@ describe("renderIdPopulationAudit 次に実行すべきツール節", () => {
   });
 });
 
+describe("renderIdPopulationAudit - 双方向制御文字の除去（生＝除去済み同値性）", () => {
+  function stripIqc05Lines(md: string): string {
+    return md
+      .split("\n")
+      .filter((l) => !l.includes("[IQC-05]"))
+      .join("\n");
+  }
+
+  const rawDocuments: AuditIdPopulationInput["documents"] = [
+    {
+      name: "doc-A",
+      content: ["# doc-A", "‭EH-100 発券機起動‬", "‭EH-101 発券機停止‬"].join("\n"),
+    },
+    {
+      name: "doc-B",
+      content: ["# doc-B", "W-001 警告表示", "W-002 警告解除"].join("\n"),
+    },
+  ];
+  const cleanDocuments: AuditIdPopulationInput["documents"] = [
+    {
+      name: "doc-A",
+      content: ["# doc-A", "EH-100 発券機起動", "EH-101 発券機停止"].join("\n"),
+    },
+    {
+      name: "doc-B",
+      content: ["# doc-B", "W-001 警告表示", "W-002 警告解除"].join("\n"),
+    },
+  ];
+
+  it("produces identical output (excluding IQC-05 lines) whether or not the input has embedded bidi controls", () => {
+    const rawMd = renderIdPopulationAudit({
+      documents: rawDocuments,
+      declaredPopulations: [{ toolName: "extract_test_conditions", ids: ["EH-100", "EH-101"] }],
+    });
+    const cleanMd = renderIdPopulationAudit({
+      documents: cleanDocuments,
+      declaredPopulations: [{ toolName: "extract_test_conditions", ids: ["EH-100", "EH-101"] }],
+    });
+    expect(stripIqc05Lines(rawMd)).toBe(stripIqc05Lines(cleanMd));
+  });
+
+  it("does not degrade definitions to references when a bidi control char sits at the start of the definition line", () => {
+    const rawMd = renderIdPopulationAudit({
+      documents: rawDocuments,
+      declaredPopulations: [],
+    });
+    const cleanMd = renderIdPopulationAudit({
+      documents: cleanDocuments,
+      declaredPopulations: [],
+    });
+    const definedCountOf = (md: string): string => {
+      const match = /定義ID総数: (\d+)/.exec(md);
+      return match ? match[1] : "";
+    };
+    expect(definedCountOf(rawMd)).toBe(definedCountOf(cleanMd));
+    expect(definedCountOf(rawMd)).not.toBe("0");
+  });
+});
+
 describe("renderIdPopulationAudit 次に実行すべきツール節の内容", () => {
   function nextToolsSection(md: string): string {
     return md.split("## 次に実行すべきツール")[1];

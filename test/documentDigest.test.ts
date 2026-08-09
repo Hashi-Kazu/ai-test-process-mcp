@@ -8,6 +8,7 @@ import {
   findUnmatchedIdPatterns,
   formatPercent,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../src/documentDigest.js";
 import {
   IQC_FURIGANA_MIN_RUNS,
@@ -498,6 +499,93 @@ describe("determinism and non-mutation with IQC metrics", () => {
     const firstLines = renderDocumentDigestLines(firstRows, firstFindings);
     const secondLines = renderDocumentDigestLines(secondRows, secondFindings);
     expect(secondLines).toEqual(firstLines);
+  });
+});
+
+describe("computeInputQualityMetrics / findDocumentDigestFindings (IQC-05 bidi control chars)", () => {
+  it("counts bidi control chars from the raw content while other metrics are computed on the sanitized content", () => {
+    const content = "‭見出し‬\nEH-100 発券機起動";
+    const metrics = computeInputQualityMetrics(content);
+    expect(metrics.bidiControlCount).toBe(2);
+    expect(metrics.bidiControlCounts).toEqual([
+      { codePoint: "U+202C", count: 1 },
+      { codePoint: "U+202D", count: 1 },
+    ]);
+  });
+
+  it("returns bidiControlCount 0 and an empty breakdown for content without bidi control chars", () => {
+    const metrics = computeInputQualityMetrics("普通の本文である。");
+    expect(metrics.bidiControlCount).toBe(0);
+    expect(metrics.bidiControlCounts).toEqual([]);
+  });
+
+  it("computes charCount as the sanitized (post-removal) length while lineCount is unchanged", () => {
+    const raw = "‭# 見出し‬\nEH-100 発券機起動\n以上とする。";
+    const documents = [{ name: "制御文字文書", content: raw }];
+    const rows = buildDocumentDigests(documents);
+    const sanitizedLength = raw.replace(/[‪-‮⁦-⁩‎‏]/gu, "").length;
+    expect(rows[0].charCount).toBe(sanitizedLength);
+    expect(rows[0].charCount).toBeLessThan(raw.length);
+    expect(rows[0].lineCount).toBe(raw.split("\n").length);
+  });
+
+  it("emits an IQC-05 finding whose detail contains the total count and the per-codepoint breakdown", () => {
+    const content = "‭見出し‬".repeat(3);
+    const rows = buildDocumentDigests([{ name: "双方向制御文字文書", content }]);
+    const findings = findDocumentDigestFindings(rows);
+    const iqc05 = findings.filter((f) => f.kind === "bidi-control-chars");
+    expect(iqc05).toHaveLength(1);
+    expect(iqc05[0].severity).toBe("medium");
+    expect(iqc05[0].detail).toContain("[IQC-05]");
+    expect(iqc05[0].detail).toContain("6字");
+    expect(iqc05[0].detail).toContain("U+202C 3字");
+    expect(iqc05[0].detail).toContain("U+202D 3字");
+  });
+
+  it("does not append the generic [IQC] note when only IQC-05 fires among the IQC-01..04 kinds", () => {
+    const content = "‭見出し‬";
+    const rows = buildDocumentDigests([{ name: "双方向制御文字のみ文書", content }]);
+    const findings = findDocumentDigestFindings(rows);
+    expect(findings.some((f) => f.kind === "bidi-control-chars")).toBe(true);
+    expect(
+      findings.some((f) =>
+        ["isolated-numeric-cells", "furigana-contamination", "no-heading", "broken-table-cells"].includes(
+          f.kind
+        )
+      )
+    ).toBe(false);
+    const lines = renderDocumentDigestLines(rows, findings);
+    expect(lines.some((l) => l.startsWith("- [IQC]"))).toBe(false);
+  });
+
+  it("does not mutate the input documents when bidi control chars are present", () => {
+    const documents = [{ name: "制御文字文書", content: "‭見出し‬\n本文" }];
+    const snapshot = JSON.stringify(documents);
+    buildDocumentDigests(documents);
+    expect(JSON.stringify(documents)).toBe(snapshot);
+  });
+});
+
+describe("sanitizeTestBasisDocuments", () => {
+  it("strips bidi control characters from content without mutating the input array or objects", () => {
+    const documents = [
+      { name: "doc1", content: "‭見出し‬\n本文" },
+      { name: "doc2", content: "制御文字なし" },
+    ];
+    const snapshot = JSON.stringify(documents);
+    const sanitized = sanitizeTestBasisDocuments(documents);
+    expect(sanitized).toEqual([
+      { name: "doc1", content: "見出し\n本文" },
+      { name: "doc2", content: "制御文字なし" },
+    ]);
+    expect(JSON.stringify(documents)).toBe(snapshot);
+  });
+
+  it("preserves line count and line numbers (bidi control chars never contain newlines)", () => {
+    const documents = [{ name: "doc1", content: "‭行1‬\n行2\n‭行3‬" }];
+    const sanitized = sanitizeTestBasisDocuments(documents);
+    expect(sanitized[0].content.split("\n").length).toBe(documents[0].content.split("\n").length);
+    expect(sanitized[0].content.split("\n")).toEqual(["行1", "行2", "行3"]);
   });
 });
 

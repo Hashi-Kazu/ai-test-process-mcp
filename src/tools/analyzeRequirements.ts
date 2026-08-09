@@ -24,6 +24,7 @@ import {
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import type { AnalyzeRequirementsInput, QualityCharacteristicModel } from "../types.js";
 
@@ -42,7 +43,6 @@ export function renderRequirementsAnalysis(
   inUseModel: QualityCharacteristicModel = qualityInUseCharacteristicModel
 ): string {
   const {
-    documents,
     idPatterns,
     additionalAmbiguousTerms,
     background,
@@ -53,6 +53,7 @@ export function renderRequirementsAnalysis(
     changeItems,
     qualityCharacteristicIds,
   } = input;
+  const documents = sanitizeTestBasisDocuments(input.documents);
 
   const options = { idPatterns, additionalAmbiguousTerms };
 

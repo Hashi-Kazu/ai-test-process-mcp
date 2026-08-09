@@ -394,6 +394,8 @@ export interface DocumentInputQualityMetrics {
   furiganaRunCount: number;        // ふりがな候補カタカナ列の検出数
   furiganaCharCount: number;       // 上記カタカナ列の合計文字数
   brokenTableCellCount: number;    // 末尾が助詞・読点で終わる表セル数
+  bidiControlCount: number;                                    // 除去した双方向制御文字の総数
+  bidiControlCounts: { codePoint: string; count: number }[];   // 符号位置別内訳（昇順）
 }
 
 // --- 入力ダイジェスト（documents 系ツール共通。抜粋投入の可視化） ---
@@ -413,7 +415,8 @@ export interface DocumentDigestRow {
 export interface DocumentDigestFinding {
   document: string;
   kind: "no-id" | "sparse-prefix" | "no-id-system"
-    | "isolated-numeric-cells" | "furigana-contamination" | "no-heading" | "broken-table-cells";
+    | "isolated-numeric-cells" | "furigana-contamination" | "no-heading" | "broken-table-cells"
+    | "bidi-control-chars";
   severity: "high" | "medium" | "info";
   detail: string;
 }
