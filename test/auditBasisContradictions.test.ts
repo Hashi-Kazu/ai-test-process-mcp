@@ -103,13 +103,44 @@ describe("renderBasisContradictionAudit", () => {
   it("サマリ行が期待フォーマットで出る", () => {
     const section = markdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
     expect(section).toMatch(
-      /- 総候補数: \d+\(high:\d+ \/ medium:\d+ \/ low:\d+\) \/ 検査別: BC-01:\d+, BC-02:\d+, BC-03:\d+, BC-04:\d+, BC-05:\d+, BC-06:\d+, BC-07:\d+, BC-08:\d+, BC-09:\d+, BC-10:\d+ \/ 対象文書数: \d+ \/ 確信度抑制件数: \d+ \/ 既知解消除外件数: \d+/
+      /- 総候補数: \d+\(high:\d+ \/ medium:\d+ \/ low:\d+\) \/ 検査別: BC-01:\d+, BC-02:\d+, BC-03:\d+, BC-04:\d+, BC-05:\d+, BC-06:\d+, BC-07:\d+, BC-08:\d+, BC-09:\d+, BC-10:\d+ \/ 対象文書数: \d+ \/ 確信度抑制件数: \d+ \/ 既知解消除外件数: \d+ \/ 抽出品質により除外: \d+件\(NF-01:\d+ \/ NF-02:\d+ \/ NF-03:\d+ \/ NF-04:\d+\)/
     );
   });
 
   it("ends with exactly one trailing newline", () => {
     expect(markdown.endsWith("\n")).toBe(true);
     expect(markdown.endsWith("\n\n")).toBe(false);
+  });
+});
+
+describe("renderBasisContradictionAudit 抽出品質フィルタの自己申告", () => {
+  it("2.11サマリに抽出品質による除外件数が出る。断片を含まない入力では0件になる", () => {
+    const noFragmentMarkdown = renderBasisContradictionAudit({
+      documents: [{ name: "doc", content: "特に矛盾のない普通の文章です。" }],
+    });
+    const summarySection = noFragmentMarkdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    expect(summarySection).toMatch(/抽出品質により除外: 0件\(NF-01:0 \/ NF-02:0 \/ NF-03:0 \/ NF-04:0\)/);
+  });
+
+  it("表セル断片を含む入力では除外件数が非ゼロになり、5章に(d)の自己申告項が出て件数が本文と一致する", () => {
+    const fragmentInput: AuditBasisContradictionsInput = {
+      documents: [
+        {
+          name: "doc",
+          content: ["EH-900 発券機起動", "EH-900 い", "EH-900 パスワードの"].join("\n"),
+        },
+      ],
+    };
+    const markdown = renderBasisContradictionAudit(fragmentInput);
+    const summarySection = markdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    const summaryMatch = summarySection.match(/抽出品質により除外: (\d+)件\(NF-01:(\d+) \/ NF-02:(\d+) \/ NF-03:(\d+) \/ NF-04:(\d+)\)/);
+    expect(summaryMatch).not.toBeNull();
+    const excludedTotal = Number(summaryMatch![1]);
+    expect(excludedTotal).toBe(2);
+
+    const section5 = markdown.split("## 5. 決定的層で検出できない矛盾の型")[1];
+    expect(section5).toContain("(d)");
+    expect(section5).toContain(`${excludedTotal} 件`);
   });
 });
 

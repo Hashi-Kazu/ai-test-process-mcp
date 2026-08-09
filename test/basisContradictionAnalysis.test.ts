@@ -9,7 +9,9 @@ import {
   checkUiLabelMismatch,
   checkUndescribedOperationElements,
   checkUnresolvedTransitionTarget,
+  classifyEntityNameFragment,
   extractEntityOccurrences,
+  extractEntityOccurrencesWithQuality,
   extractRevisionClaims,
   extractTransitions,
   extractUiElements,
@@ -211,6 +213,100 @@ describe("BC-10: 少数派の遷移先(参考)", () => {
     expect(candidates[0].checkId).toBe("BC-10");
     expect(candidates[0].confidence).toBe("low");
     expect(candidates[0].differingValues).toEqual(["初期画面"]);
+  });
+});
+
+describe("classifyEntityNameFragment: NF-01 短すぎる名称候補", () => {
+  it("NF-01: 2文字以下は除外し、3文字以上は採用する", () => {
+    expect(classifyEntityNameFragment("い")).toBe("NF-01");
+    expect(classifyEntityNameFragment("ゲート")).toBeNull();
+  });
+});
+
+describe("classifyEntityNameFragment: NF-02 閉じ記号・読点・句点で始まる断片", () => {
+  it("NF-02: 閉じ括弧・鉤括弧閉じ・読点・句点で始まる断片を除外する", () => {
+    expect(classifyEntityNameFragment(")を表示し")).toBe("NF-02");
+    expect(classifyEntityNameFragment("」を押す")).toBe("NF-02");
+    expect(classifyEntityNameFragment("、確認画面")).toBe("NF-02");
+    expect(classifyEntityNameFragment("。以上")).toBe("NF-02");
+  });
+});
+
+describe("classifyEntityNameFragment: NF-03 助詞または読点で終わる断片", () => {
+  it("NF-03: 助詞・読点で終わる断片を除外し、助詞で終わらない名称は採用する", () => {
+    expect(classifyEntityNameFragment("パスワードの")).toBe("NF-03");
+    expect(classifyEntityNameFragment("入場ゲートを")).toBe("NF-03");
+    expect(classifyEntityNameFragment("券売機、")).toBe("NF-03");
+    expect(classifyEntityNameFragment("氏名が入力されていません")).toBeNull();
+  });
+});
+
+describe("classifyEntityNameFragment: NF-04 波ダッシュ・チルダのみ", () => {
+  it("NF-04: 波ダッシュ・チルダのみの断片を除外する", () => {
+    expect(classifyEntityNameFragment("~")).not.toBeNull();
+    expect(classifyEntityNameFragment("～～")).not.toBeNull();
+    expect(classifyEntityNameFragment("〜〜〜")).toBe("NF-04");
+  });
+});
+
+describe("classifyEntityNameFragment: 判定順序", () => {
+  it("NF-01→NF-02→NF-03→NF-04 の固定順で最初に一致したルールIDを返す(例: 短い波ダッシュはNF-04でなくNF-01)", () => {
+    expect(classifyEntityNameFragment("~")).toBe("NF-01");
+  });
+});
+
+describe("extractEntityOccurrencesWithQuality / extractEntityOccurrences", () => {
+  it("抽出品質フィルタで除外された断片は occurrences に含めず excluded に積み、採用名だけが occurrences に残る", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc",
+        content: ["EH-300 発券機起動", "EH-300 い", "EH-300 パスワードの"].join("\n"),
+      },
+    ];
+    const lines = buildBasisLines(documents);
+    const { occurrences, excluded } = extractEntityOccurrencesWithQuality(lines);
+
+    expect(occurrences.map((o) => o.name)).toEqual(["発券機起動"]);
+    expect(excluded).toEqual([
+      { id: "EH-300", document: "doc", lineIndex: 1, name: "い", ruleId: "NF-01" },
+      { id: "EH-300", document: "doc", lineIndex: 2, name: "パスワードの", ruleId: "NF-03" },
+    ]);
+
+    expect(extractEntityOccurrences(lines)).toEqual(occurrences);
+  });
+
+  it("断片除外により同一IDの残存名称が1種になった場合、BC-01候補は生成されない", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc", content: ["EH-400 発券機起動", "EH-400 い"].join("\n") },
+    ];
+    const candidates = buildContradictionCandidates(documents);
+    expect(candidates.filter((c) => c.checkId === "BC-01" && c.subject === "EH-400")).toHaveLength(0);
+  });
+});
+
+describe("EH-100 回帰: 真陽性の名称不一致は抽出品質フィルタで消えない", () => {
+  it("離れた2行に異なる名称を持つ同一IDはBC-01候補として1件残り、除外もされない", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "11_園内チケットシステム要求仕様書",
+        content: [
+          "EH-100 発券機起動",
+          "システムは起動処理を実行する",
+          "EH-200 予約確認",
+          "対象時刻に更新する",
+          "EH-100 ゲートハブ起動",
+        ].join("\n"),
+      },
+    ];
+    const lines = buildBasisLines(documents);
+    const { excluded } = extractEntityOccurrencesWithQuality(lines);
+    expect(excluded.some((e) => e.name === "発券機起動" || e.name === "ゲートハブ起動")).toBe(false);
+
+    const candidates = buildContradictionCandidates(documents);
+    const bc01 = candidates.filter((c) => c.checkId === "BC-01" && c.subject === "EH-100");
+    expect(bc01).toHaveLength(1);
+    expect(bc01[0].confidence).toBe("high");
+    expect(bc01[0].differingValues).toEqual(expect.arrayContaining(["発券機起動", "ゲートハブ起動"]));
   });
 });
 

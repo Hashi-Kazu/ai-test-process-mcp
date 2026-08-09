@@ -7,7 +7,7 @@ import {
   buildContradictionCandidates,
   buildDeclarationReconciliation,
   buildRevisionReconciliation,
-  extractEntityOccurrences,
+  extractEntityOccurrencesWithQuality,
   extractParameterValues,
   extractRevisionClaims,
   extractTransitions,
@@ -77,7 +77,7 @@ export function renderBasisContradictionAudit(
   const options = { idPatterns, relativeTargetTerms };
 
   const lines = buildBasisLines(documents, options);
-  const occurrences = extractEntityOccurrences(lines);
+  const { occurrences, excluded } = extractEntityOccurrencesWithQuality(lines);
   const uiElements = extractUiElements(lines);
   const transitions = extractTransitions(lines, options);
   const parameters = extractParameterValues(documents, lines);
@@ -191,12 +191,16 @@ export function renderBasisContradictionAudit(
   lineOut.push("### 2.11 サマリ");
   lineOut.push("");
   const checkIdSummary = CHECK_IDS.map((id) => `${id}:${summary.byCheckId[id] ?? 0}`).join(", ");
+  const excludedByRule = { "NF-01": 0, "NF-02": 0, "NF-03": 0, "NF-04": 0 } as Record<string, number>;
+  for (const e of excluded) excludedByRule[e.ruleId] = (excludedByRule[e.ruleId] ?? 0) + 1;
   lineOut.push(
     `- 総候補数: ${summary.totalCandidates}(high:${summary.byConfidence.high ?? 0} / medium:${
       summary.byConfidence.medium ?? 0
     } / low:${summary.byConfidence.low ?? 0}) / 検査別: ${checkIdSummary} / 対象文書数: ${
       summary.documentCount
-    } / 確信度抑制件数: ${suppressedByConfidence} / 既知解消除外件数: ${resolvedCandidates.length}`
+    } / 確信度抑制件数: ${suppressedByConfidence} / 既知解消除外件数: ${resolvedCandidates.length} / 抽出品質により除外: ${
+      excluded.length
+    }件(NF-01:${excludedByRule["NF-01"]} / NF-02:${excludedByRule["NF-02"]} / NF-03:${excludedByRule["NF-03"]} / NF-04:${excludedByRule["NF-04"]})`
   );
   lineOut.push("");
 
@@ -237,6 +241,9 @@ export function renderBasisContradictionAudit(
     "- (c) 記述はあるが業務的に不適切な操作の許可: 記述として矛盾なく整合していても、業務要件やリスクの観点で許可すべきでない操作を許可している場合は検出できない。"
   );
   lineOut.push("- 上記の型は候補が0件であっても存在し得る。候補0件は「これらの矛盾が無いこと」を意味しない。");
+  lineOut.push(
+    `- (d) 抽出品質フィルタによる除外: 表セル連結由来の断片として ${excluded.length} 件の名称候補を母集団から除外している。除外は矛盾が無いことの証明ではなく、除外された断片の裏に真の矛盾が隠れていないかは原本で確認すること。`
+  );
   lineOut.push("");
 
   lineOut.push(
