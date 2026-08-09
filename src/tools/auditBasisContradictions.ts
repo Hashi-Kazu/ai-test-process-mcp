@@ -281,7 +281,12 @@ export const auditBasisContradictionsInputShape = {
     )
     .optional()
     .describe("Subjects already judged resolved/intentional, excluded from candidates and listed with reasons in 1.3"),
-  idPatterns: z.array(z.string()).optional().describe("Additional ID regular expression patterns, appended to the default pattern"),
+  idPatterns: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Extra regular expression sources for requirement/feature IDs, added to the default pattern. Capture group count decides how the ID is built: 1 group = group 1 is used as the whole ID as-is (no hyphen joining), 2 groups = reconstructed as `${group1}-${group2}` (default pattern behavior), 0 groups = the whole match is used. Use a 1-group pattern for numeric-only IDs (031), dot-separated IDs (3.1.2) and underscore IDs (REQ_001) so the reported ID matches the notation in the source document. If a given pattern matches nothing, a [high] finding is emitted in the input digest."
+    ),
   relativeTargetTerms: z
     .array(z.string())
     .optional()

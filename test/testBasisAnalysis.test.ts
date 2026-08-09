@@ -61,6 +61,63 @@ describe("extractIdOccurrences", () => {
     expect(withExtra.length).toBe(1);
     expect(withExtra[0].id).toBe("REQ-100");
   });
+
+  it("treats a 1-group custom pattern's whole match as-is (no hyphen joining) for numeric-only IDs", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "| 031 | 1 | 宛名番号 | 説明 |" },
+    ];
+    const occurrences = extractIdOccurrences(documents, {
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    const target = occurrences.find((o) => o.id === "031");
+    expect(target).toBeDefined();
+    expect(target?.prefix).toBe("");
+    expect(target?.numberPart).toBe("031");
+    expect(target?.role).toBe("definition");
+  });
+
+  it("treats a leading empty pipe cell as the row-start marker so the next cell can be a definition", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "| | 031 | 1 | 宛名番号 | 説明 |" },
+    ];
+    const occurrences = extractIdOccurrences(documents, {
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    const target = occurrences.find((o) => o.id === "031");
+    expect(target?.role).toBe("definition");
+  });
+
+  it("keeps a non-empty leading cell's later ID as reference (does not over-skip)", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "| 宛名番号 | 031 | 説明 |" },
+    ];
+    const occurrences = extractIdOccurrences(documents, {
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    const target = occurrences.find((o) => o.id === "031");
+    expect(target?.role).toBe("reference");
+  });
+
+  it("never produces an id containing the literal string 'undefined' for 1-group or 0-group patterns", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "031 と XYZ123 が定義されている。" },
+    ];
+    const oneGroup = extractIdOccurrences(documents, {
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    const zeroGroup = extractIdOccurrences(documents, {
+      idPatterns: ["\\bXYZ\\d{3}\\b"],
+    });
+    for (const o of [...oneGroup, ...zeroGroup]) {
+      expect(o.id).not.toContain("undefined");
+    }
+  });
+
+  it("uses the whole match as id for a 0-group custom pattern", () => {
+    const documents: TestBasisDocument[] = [{ name: "doc1.md", content: "XYZ123 を参照する。" }];
+    const occurrences = extractIdOccurrences(documents, { idPatterns: ["\\bXYZ\\d{3}\\b"] });
+    expect(occurrences.some((o) => o.id === "XYZ123")).toBe(true);
+  });
 });
 
 describe("COVERAGE_TARGET_ID_PATTERN_SOURCE / includeCoverageTargetIds", () => {
@@ -193,6 +250,18 @@ describe("analyzePrefixes", () => {
     const occurrences = extractIdOccurrences(documents);
     const { issues } = analyzePrefixes(occurrences);
     expect(issues.some((i) => i.kind === "rare-prefix" && i.prefixes.includes("Z"))).toBe(true);
+  });
+
+  it("excludes empty-prefix (non-prefix ID system) definitions from stats and issues", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "| 031 | 1 | 宛名番号 |\n| 999 | 2 | 別項目 |" },
+    ];
+    const occurrences = extractIdOccurrences(documents, {
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    const { stats, issues } = analyzePrefixes(occurrences);
+    expect(stats.some((s) => s.prefix === "")).toBe(false);
+    expect(issues.some((i) => i.prefixes.includes(""))).toBe(false);
   });
 });
 

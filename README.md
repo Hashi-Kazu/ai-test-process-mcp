@@ -129,7 +129,7 @@ JSTQB（ISTQB）用語のパラフレーズ集（テストレベル・テスト�
 
 ### Resource: `testbasis://id-patterns`
 
-要件ID・機能IDの表記ゆれに対応する正規表現パターン集を構造化データ（JSON）として公開する。`analyze_requirements` / `review_test_basis` の `idPatterns` 引数にそのままコピーして使える。
+要件ID・機能IDの表記ゆれに対応する正規表現パターン集を構造化データ（JSON）として公開する。`analyze_requirements` / `review_test_basis` の `idPatterns` 引数にそのままコピーして使える。`idPatterns` に渡すパターンはキャプチャグループ数で解釈が変わる（1グループ＝group 1 全体をIDとして扱う／2グループ＝`prefix-number` として再構成／0グループ＝マッチ全体）。数値のみ・ドット区切り・アンダースコア区切りのIDは1グループのパターンで指定すると原本と同じ表記のIDになる。
 
 ### Tool: `extract_test_conditions`
 

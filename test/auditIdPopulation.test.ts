@@ -98,6 +98,40 @@ describe("renderIdPopulationAudit - 入力ダイジェスト", () => {
   });
 });
 
+describe("renderIdPopulationAudit - 数値のみのID体系（項目定義書相当）", () => {
+  const itemDefinitionDocuments: AuditIdPopulationInput["documents"] = [
+    {
+      name: "item-definition",
+      content: [
+        "# 項目定義書",
+        "| 031 | 1 | 宛名番号 |",
+        "| 031 | 2 | 氏名 |",
+        "| 031 | 3 | 生年月日 |",
+      ].join("\n"),
+    },
+  ];
+
+  it("populates 2.1 with numeric ids and a non-zero 2.8 defined id total when a 1-group idPatterns is given", () => {
+    const md = renderIdPopulationAudit({
+      documents: itemDefinitionDocuments,
+      declaredPopulations: [],
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    const section21 = md.split("### 2.1")[1].split("### 2.2")[0];
+    expect(section21).toContain("| 031 |");
+    expect(md).not.toContain("定義ID総数: 0 ");
+  });
+
+  it("emits the [high] unmatched idPatterns finding in 1.1 digest when the pattern matches nothing", () => {
+    const md = renderIdPopulationAudit({
+      documents: itemDefinitionDocuments,
+      declaredPopulations: [],
+      idPatterns: ["\\b(ZZZ)-(\\d+)\\b"],
+    });
+    expect(md).toContain("- [high] 指定パターンが1件も一致しなかった");
+  });
+});
+
 describe("renderIdPopulationAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderIdPopulationAudit(input));

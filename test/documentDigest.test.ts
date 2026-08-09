@@ -5,6 +5,7 @@ import {
   computeInputQualityMetrics,
   extractTableCells,
   findDocumentDigestFindings,
+  findUnmatchedIdPatterns,
   formatPercent,
   renderDocumentDigestLines,
 } from "../src/documentDigest.js";
@@ -48,6 +49,17 @@ describe("buildDocumentDigests", () => {
     expect(rows[0].quantityCount).toBe(1);
     expect(rows[0].prefixCounts).toEqual([{ prefix: "EH", definitionCount: 1 }]);
     expect(rows[0].otherPrefixReferenceCount).toBe(0);
+  });
+
+  it("excludes empty-prefix (non-prefix ID system) definitions from prefixCounts", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc.md", content: "| 031 | 1 | 宛名番号 |\n| 999 | 2 | 別項目 |" },
+    ];
+    const rows = buildDocumentDigests(documents, {
+      idPatterns: ["(?<![0-9A-Za-z])(\\d{3})(?![0-9A-Za-z])"],
+    });
+    expect(rows[0].prefixCounts).toEqual([]);
+    expect(rows[0].definedIdCount).toBeGreaterThan(0);
   });
 
   it("is deterministic and does not mutate the input", () => {
@@ -155,6 +167,40 @@ describe("renderDocumentDigestLines", () => {
       "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
     );
     expect(renderDocumentDigestLines(rows, findings)).toEqual(lines);
+  });
+
+  it("emits a [high] finding line for each unmatched idPatterns source", () => {
+    const rows = buildDocumentDigests([{ name: "doc.md", content: "EH-100 発券機起動" }]);
+    const findings = findDocumentDigestFindings(rows);
+    const lines = renderDocumentDigestLines(rows, findings, ["\\b(ZZZ)-(\\d+)\\b"]);
+    expect(
+      lines.some((l) => l.startsWith("- [high] 指定パターンが1件も一致しなかった:") && l.includes("ZZZ"))
+    ).toBe(true);
+  });
+
+  it("does not emit the unmatched-pattern line when the third argument is omitted", () => {
+    const rows = buildDocumentDigests([{ name: "doc.md", content: "EH-100 発券機起動" }]);
+    const findings = findDocumentDigestFindings(rows);
+    const lines = renderDocumentDigestLines(rows, findings);
+    expect(lines.some((l) => l.includes("指定パターンが1件も一致しなかった"))).toBe(false);
+  });
+});
+
+describe("findUnmatchedIdPatterns", () => {
+  it("returns only the patterns that matched no line across all documents", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc1.md", content: "REQ_100 is defined here." },
+      { name: "doc2.md", content: "何もIDらしき記述は無い。" },
+    ];
+    const unmatched = findUnmatchedIdPatterns(documents, {
+      idPatterns: ["\\b(REQ)_(\\d+)\\b", "\\b(ZZZ)-(\\d+)\\b"],
+    });
+    expect(unmatched).toEqual(["\\b(ZZZ)-(\\d+)\\b"]);
+  });
+
+  it("returns an empty array when idPatterns is not specified", () => {
+    const documents: TestBasisDocument[] = [{ name: "doc1.md", content: "EH-100" }];
+    expect(findUnmatchedIdPatterns(documents)).toEqual([]);
   });
 });
 
