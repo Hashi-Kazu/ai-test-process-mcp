@@ -63,6 +63,7 @@ export function renderRequirementsAnalysis(
   const { stats } = analyzePrefixes(occurrences);
   const definitionCount = occurrences.filter((o) => o.role === "definition").length;
   const referenceCount = occurrences.filter((o) => o.role === "reference").length;
+  const tocCount = occurrences.filter((o) => o.role === "toc").length;
 
   const aggregates = aggregateQuantitiesByUnit(documents);
   const boundaryCandidates = buildBoundaryCandidates(aggregates);
@@ -127,7 +128,7 @@ export function renderRequirementsAnalysis(
     );
   }
   lines.push("");
-  lines.push(`- 定義数: ${definitionCount} / 参照数: ${referenceCount}`);
+  lines.push(`- 定義数: ${definitionCount} / 参照数: ${referenceCount} / 目次除外: ${tocCount}`);
   if (duplicates.length === 0) {
     lines.push("- ID重複: なし");
   } else {
@@ -256,7 +257,7 @@ export function renderRequirementsAnalysis(
   lines.push("### 2.7 サマリ");
   lines.push("");
   lines.push(
-    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / 数量矛盾候補: ${aggregates.filter(
+    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount} / 目次 ${tocCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / 数量矛盾候補: ${aggregates.filter(
       (a) => a.crossDocumentVariance
     ).length} / 境界値候補: ${boundaryCandidates.length} / 用語照合数: ${termFindings.length} / 指摘件数: ${findings.length} / 根拠位置数: ${requirementSources.length} / ダイジェスト指摘数: ${digestFindings.length}`
   );

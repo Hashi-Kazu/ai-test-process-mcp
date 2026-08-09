@@ -177,6 +177,7 @@ export function buildDocumentDigests(
     const doc = { ...rawDoc, content: stripBidiControls(rawDoc.content) };
     const occurrences = extractIdOccurrences([doc], options);
     const definitions = occurrences.filter((o) => o.role === "definition");
+    const tocIdCount = occurrences.filter((o) => o.role === "toc").length;
     const prefixOrder: string[] = [];
     const prefixCountMap = new Map<string, number>();
     for (const def of definitions) {
@@ -189,7 +190,7 @@ export function buildDocumentDigests(
       }
       prefixCountMap.set(def.prefix, (prefixCountMap.get(def.prefix) as number) + 1);
     }
-    return { doc, rawContent: rawDoc.content, occurrences, definitions, prefixOrder, prefixCountMap };
+    return { doc, rawContent: rawDoc.content, occurrences, definitions, tocIdCount, prefixOrder, prefixCountMap };
   });
 
   const globalPrefixes = new Set<string>();
@@ -199,7 +200,7 @@ export function buildDocumentDigests(
     }
   }
 
-  return perDoc.map(({ doc, rawContent, occurrences, definitions, prefixOrder, prefixCountMap }) => {
+  return perDoc.map(({ doc, rawContent, occurrences, definitions, tocIdCount, prefixOrder, prefixCountMap }) => {
     let otherPrefixReferenceCount = 0;
     if (occurrences.length === 0) {
       for (const prefix of globalPrefixes) {
@@ -215,6 +216,7 @@ export function buildDocumentDigests(
       headingCount: parseHeadings(doc.content).length,
       idCount: occurrences.length,
       definedIdCount: definitions.length,
+      tocIdCount,
       quantityCount: extractQuantityExpressions([doc]).length,
       prefixCounts: prefixOrder.map((prefix) => ({
         prefix,
@@ -423,15 +425,15 @@ export function renderDocumentDigestLines(
   unmatchedIdPatterns: string[] = []
 ): string[] {
   const lines: string[] = [];
-  lines.push("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+  lines.push("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
   lines.push("| --- | --- | --- | --- | --- | --- |");
   for (const row of rows) {
     lines.push(
       `| ${escapeCell(row.document)} | ${formatCount(row.charCount)} | ${formatCount(
         row.lineCount
       )} | ${formatCount(row.headingCount)} | ${formatCount(row.definedIdCount)} / ${formatCount(
-        row.idCount - row.definedIdCount
-      )} | ${formatCount(row.quantityCount)} |`
+        row.idCount - row.definedIdCount - row.tocIdCount
+      )} / ${formatCount(row.tocIdCount)} | ${formatCount(row.quantityCount)} |`
     );
   }
   lines.push("");

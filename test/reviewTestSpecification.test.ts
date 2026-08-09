@@ -392,7 +392,7 @@ describe("renderTestSpecificationReview - 入力ダイジェストと事実照�
       baseInput({ testCases: [makeCase({ caseId: "TCS-001" })] })
     );
     const section11 = markdown.split("### 1.1 対象文書")[1].split("### 1.2")[0];
-    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
     expect(section11).toContain("| 要求仕様書 |");
     expect(section11).toContain(
       "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"

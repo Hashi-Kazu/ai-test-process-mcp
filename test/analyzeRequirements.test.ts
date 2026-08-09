@@ -171,7 +171,7 @@ describe("renderRequirementsAnalysis - 入力ダイジェスト", () => {
     const markdown = renderRequirementsAnalysis(baseInput);
     const section1 = markdown.split("## 1. 対象文書")[1].split("### 開発背景")[0];
     expect(section1).toContain("### 入力ダイジェスト");
-    expect(section1).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section1).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
     expect(section1).toContain("| doc-a.md |");
     expect(section1).toContain("| doc-b.md |");
     expect(section1).toContain("- doc-a.md(行数: 9)");

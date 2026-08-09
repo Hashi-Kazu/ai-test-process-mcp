@@ -45,6 +45,7 @@ export function renderTestBasisReview(
 
   const definitionCount = occurrences.filter((o) => o.role === "definition").length;
   const referenceCount = occurrences.filter((o) => o.role === "reference").length;
+  const tocCount = occurrences.filter((o) => o.role === "toc").length;
   const boundaryCount = quantities.filter((q) => q.hasBoundaryWord).length;
   const noBoundary = quantities.filter((q) => !q.hasBoundaryWord);
   const ambiguousTotal = ambiguousTerms.reduce((sum, t) => sum + t.total, 0);
@@ -147,7 +148,7 @@ export function renderTestBasisReview(
   lines.push("### 1.8 サマリ");
   lines.push("");
   lines.push(
-    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / プレフィックス逸脱数: ${issues.length} / 曖昧語出現数: ${ambiguousTotal} / 数量表現数(境界語なし): ${noBoundary.length} / ダイジェスト指摘数: ${digestFindings.length}`
+    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount} / 目次 ${tocCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / プレフィックス逸脱数: ${issues.length} / 曖昧語出現数: ${ambiguousTotal} / 数量表現数(境界語なし): ${noBoundary.length} / ダイジェスト指摘数: ${digestFindings.length}`
   );
   lines.push("");
 

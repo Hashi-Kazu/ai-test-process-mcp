@@ -10,6 +10,7 @@ import {
   findUnresolvedReferences,
   formatSourceCitation,
   formatSourceRef,
+  isTableOfContentsLine,
 } from "../src/testBasisAnalysis.js";
 import type { TestBasisDocument } from "../src/types.js";
 
@@ -204,6 +205,137 @@ describe("findUnresolvedReferences", () => {
     const unresolved = findUnresolvedReferences(occurrences);
     expect(unresolved.length).toBe(1);
     expect(unresolved[0].id).toBe("E-999");
+  });
+});
+
+describe("目次行のID出現 (toc ロール)", () => {
+  it("1. detects a toc line (dot leader + trailing page number) via isTableOfContentsLine", () => {
+    expect(
+      isTableOfContentsLine("W-001 新規登録.......................................... 5")
+    ).toBe(true);
+    const documents: TestBasisDocument[] = [
+      {
+        name: "toc.md",
+        content: "W-001 新規登録.......................................... 5",
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    expect(occurrences).toHaveLength(1);
+    expect(occurrences[0].role).toBe("toc");
+  });
+
+  it("2. duplicate count excludes the toc line's occurrence and its lineText from places", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc.md",
+        content: [
+          "W-001 新規登録.......................................... 5",
+          "W-001  ナビゲーション  概要説明",
+          "## W-001 新規登録",
+        ].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].id).toBe("W-001");
+    expect(duplicates[0].count).toBe(2);
+    expect(
+      duplicates[0].places.some((p) =>
+        p.lineText.startsWith("W-001 新規登録..........")
+      )
+    ).toBe(false);
+  });
+
+  it("3. an id with a toc line plus only one body definition line does not appear as a duplicate", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc.md",
+        content: [
+          "W-001 新規登録.......................................... 5",
+          "W-001 新規登録",
+        ].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    expect(findDuplicateIds(occurrences)).toEqual([]);
+  });
+
+  it("4. an id that only appears on a toc line is neither definition nor reference, and never unresolved", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc.md",
+        content: "W-001 新規登録.......................................... 5",
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    expect(occurrences.every((o) => o.role === "toc")).toBe(true);
+    expect(findUnresolvedReferences(occurrences)).toEqual([]);
+  });
+
+  it("5. a second id occurrence on the same toc line is also 'toc', not 'reference'", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc.md",
+        content: "W-001 新規登録 W-002 ログイン.......................................... 5",
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    expect(occurrences).toHaveLength(2);
+    expect(occurrences.map((o) => o.role)).toEqual(["toc", "toc"]);
+  });
+
+  it("6. false-positive guards keep non-toc lines as 'definition'", () => {
+    const shortDotLeader: TestBasisDocument[] = [
+      { name: "doc.md", content: "EH-100 発券機起動.....5" },
+    ];
+    expect(extractIdOccurrences(shortDotLeader)[0].role).toBe("definition");
+
+    const nonNumericTail: TestBasisDocument[] = [
+      { name: "doc.md", content: "EH-100 発券機起動.......................... 概要" },
+    ];
+    expect(extractIdOccurrences(nonNumericTail)[0].role).toBe("definition");
+
+    const noDotLeader: TestBasisDocument[] = [
+      { name: "doc.md", content: "EH-100 発券機起動 5秒以内" },
+    ];
+    expect(extractIdOccurrences(noDotLeader)[0].role).toBe("definition");
+  });
+
+  it("7. regression: EH-100 duplicate true positive is preserved when there is no toc line", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc.md",
+        content: ["EH-100 発券機起動", "EH-100 ゲートハブ起動"].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].id).toBe("EH-100");
+    expect(duplicates[0].count).toBe(2);
+    expect(duplicates[0].sameText).toBe(false);
+  });
+
+  it("8. regression: EH-241 unresolved reference is preserved, unaffected by an added toc line", () => {
+    const baseContent = "異常系は EH-241～EH-244 に定義する。";
+    const documentsWithoutToc: TestBasisDocument[] = [{ name: "doc.md", content: baseContent }];
+    const occurrencesWithoutToc = extractIdOccurrences(documentsWithoutToc);
+    const unresolvedWithoutToc = findUnresolvedReferences(occurrencesWithoutToc);
+    expect(unresolvedWithoutToc.some((u) => u.id === "EH-241")).toBe(true);
+
+    const documentsWithToc: TestBasisDocument[] = [
+      {
+        name: "doc.md",
+        content: [
+          "EH-241 発券機起動.......................................... 5",
+          baseContent,
+        ].join("\n"),
+      },
+    ];
+    const occurrencesWithToc = extractIdOccurrences(documentsWithToc);
+    const unresolvedWithToc = findUnresolvedReferences(occurrencesWithToc);
+    expect(unresolvedWithToc.some((u) => u.id === "EH-241")).toBe(true);
   });
 });
 
