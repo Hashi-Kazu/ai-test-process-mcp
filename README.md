@@ -291,6 +291,17 @@ ASTER参加要項が例示するFV表・NGT・ゆもつよマトリクスの3記
 
 全ツールの出力末尾に付く「次に実行すべきツール」節が参照する静的カタログを構造化データ（JSON）として公開する。実行元ツール名ごとの後続ツール候補（後続ツール名・提示理由・提示条件となるシグナルキー。`always` は常に提示）と、本MCPが登録する全ツール名の一覧（`registeredToolNames`）、各ツールの出力見出し署名テーブル（`toolOutputSignatures`）を含む。各ツールは自身の後続表と生成物の内容から機械的に導いたシグナルを突き合わせ、未実施の後続ツールを列挙する。呼び出し側は `completedTools`（`toolName` と証跡 `evidence`、実出力の抜粋 `outputExcerpt`）で実施済みを申告できるが、証跡が参照形式（ファイルパスまたは `#` から始まる見出し）でない申告・`registeredToolNames` に無いツール名の申告は実施済みと認めず、警告付きで未実施のまま残す。証跡が参照形式であっても、`outputExcerpt` に当該ツール自身の出力見出し（`toolOutputSignatures`）が実在しない申告は「実施済み(証跡未照合)」として未実施件数に含める。
 
+## テストベースの投入（バイナリ形式のテキスト化）
+
+MCPツールはフォーマット不問の自由テキストを受け取るため、Word / Excel / PDF は呼び出し側でテキスト化して投入する。
+何を保ち何を落とすかの規約と参照実装は [docs/ai/testbase-ingestion.md](./docs/ai/testbase-ingestion.md) を参照。
+
+```bash
+bash scripts/extract-testbase-text.sh 2025            # PDF（pdftotext -layout 固定）
+node scripts/extract-testbase-xlsx.mjs <in.xlsx> --out <out.txt>   # Excel（図形内テキストを独立セクションで出力）
+node scripts/extract-testbase-docx.mjs <in.docx> --out <out.txt>   # Word（目次・削除履歴を除去し見出しを # へ）
+```
+
 ## コマンド
 
 ```bash
