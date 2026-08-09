@@ -133,6 +133,49 @@ describe("renderIdPopulationAudit - 数値のみのID体系（項目定義書相
   });
 });
 
+describe("renderIdPopulationAudit - verbose", () => {
+  const verboseInput: AuditIdPopulationInput = {
+    documents,
+    declaredPopulations: [{ toolName: "extract_test_conditions", ids: ["EH-100", "EH-101"] }],
+    exclusions: [{ id: "W-002", reason: "対象外機能のため" }],
+  };
+
+  it("shows the default-summary notice at the top of the output", () => {
+    const md = renderIdPopulationAudit(verboseInput);
+    expect(md).toContain(
+      "既定(verbose未指定/false)は要約表示。2.1節は判定フラグ(never-declared/excluded)付きの行のみ表示する。全件が必要な場合は `verbose: true` を指定すること。"
+    );
+  });
+
+  it("by default lists only never-declared/excluded rows in 2.1, excluding declared rows", () => {
+    const md = renderIdPopulationAudit(verboseInput);
+    const section21 = md.split("### 2.1")[1].split("### 2.2")[0];
+    expect(section21).toContain("W-001");
+    expect(section21).toContain("W-002");
+    const tableSection = section21.split("| ID | 定義文書 | 行 | 章節 | 宣言された母集団 | 状態 |")[1] ?? "";
+    expect(tableSection).not.toContain("EH-100");
+    expect(tableSection).not.toContain("EH-101");
+  });
+
+  it("lists every defined-id row in 2.1 when verbose is true", () => {
+    const md = renderIdPopulationAudit({ ...verboseInput, verbose: true });
+    const section21 = md.split("### 2.1")[1].split("### 2.2")[0];
+    const tableSection = section21.split("| ID | 定義文書 | 行 | 章節 | 宣言された母集団 | 状態 |")[1] ?? "";
+    expect(tableSection).toContain("EH-100");
+    expect(tableSection).toContain("EH-101");
+    expect(tableSection).toContain("W-001");
+    expect(tableSection).toContain("W-002");
+  });
+
+  it("shows a per-prefix count summary table in 2.1", () => {
+    const md = renderIdPopulationAudit(verboseInput);
+    const section21 = md.split("### 2.1")[1].split("### 2.2")[0];
+    expect(section21).toContain("| プレフィックス | 定義ID数 | declared | excluded | never-declared |");
+    expect(section21).toContain("| EH- |");
+    expect(section21).toContain("| W- |");
+  });
+});
+
 describe("renderIdPopulationAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderIdPopulationAudit(input));

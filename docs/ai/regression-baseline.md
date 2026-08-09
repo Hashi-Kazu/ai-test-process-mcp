@@ -40,6 +40,7 @@
 | 2025年版の投入文書 | `.work/testbase/2025/*.txt` 9件 |
 | 2024年版の投入文書 | `.work/testbase/2024/*.txt` 9件 |
 | 2024年版の補助版 | `.work/testbase/2024-stripped/*.txt` 9件（双方向制御文字を除去したもの） |
+| `analyze_requirements` / `audit_id_population` の `verbose` | `true`（既存指標は全件列挙相当で測定。`verbose` 追加前の実装のため既定=全件列挙だった） |
 
 投入文書の文字数（`01_ID母集団監査_*.md` 1.1 のダイジェストが数えた値。`wc -m` の値とは一致しない）:
 

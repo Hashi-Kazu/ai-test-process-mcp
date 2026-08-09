@@ -13,6 +13,7 @@ import {
   findUndefinedPopulationIds,
   summarizeIdPopulation,
 } from "../idPopulationAnalysis.js";
+import { splitIdIntoPrefixAndNumber } from "../testBasisAnalysis.js";
 import {
   buildDocumentDigests,
   findDocumentDigestFindings,
@@ -33,6 +34,7 @@ export function renderIdPopulationAudit(
   const { declaredPopulations, exclusions, expectedDocumentNames, idPatterns } = input;
   const documents = sanitizeTestBasisDocuments(input.documents);
   const includeCoverageTargetIds = input.includeCoverageTargetIds ?? true;
+  const verbose = input.verbose ?? false;
 
   const defined = buildDefinedIdIndex(documents, { idPatterns, includeCoverageTargetIds });
   const rows = buildIdPopulationMatrix(defined, declaredPopulations, exclusions);
@@ -50,6 +52,10 @@ export function renderIdPopulationAudit(
 
   const lines: string[] = [];
   lines.push("# ID母集団監査結果");
+  lines.push("");
+  lines.push(
+    "既定(verbose未指定/false)は要約表示。2.1節は判定フラグ(never-declared/excluded)付きの行のみ表示する。全件が必要な場合は `verbose: true` を指定すること。"
+  );
   lines.push("");
 
   lines.push("## 1. 監査対象");
@@ -77,14 +83,46 @@ export function renderIdPopulationAudit(
 
   lines.push("### 2.1 定義済みID × 母集団 突き合わせ表");
   lines.push("");
+  const prefixRowStats = new Map<
+    string,
+    { total: number; declared: number; excluded: number; neverDeclared: number }
+  >();
+  for (const row of rows) {
+    const { prefix } = splitIdIntoPrefixAndNumber(row.id);
+    const stat = prefixRowStats.get(prefix) ?? {
+      total: 0,
+      declared: 0,
+      excluded: 0,
+      neverDeclared: 0,
+    };
+    stat.total += 1;
+    if (row.status === "declared") stat.declared += 1;
+    else if (row.status === "excluded") stat.excluded += 1;
+    else if (row.status === "never-declared") stat.neverDeclared += 1;
+    prefixRowStats.set(prefix, stat);
+  }
+  lines.push("| プレフィックス | 定義ID数 | declared | excluded | never-declared |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const [prefix, stat] of prefixRowStats) {
+    lines.push(
+      `| ${escapeCell(prefix)} | ${stat.total} | ${stat.declared} | ${stat.excluded} | ${stat.neverDeclared} |`
+    );
+  }
+  lines.push("");
+
+  const rowsToShow = verbose ? rows : rows.filter((r) => r.status !== "declared");
   lines.push("| ID | 定義文書 | 行 | 章節 | 宣言された母集団 | 状態 |");
   lines.push("| --- | --- | --- | --- | --- | --- |");
-  for (const row of rows) {
+  for (const row of rowsToShow) {
     lines.push(
       `| ${escapeCell(row.id)} | ${escapeCell(row.document)} | ${row.lineIndex + 1} | ${escapeCell(
         row.heading
       )} | ${escapeCell(row.declaredIn.length > 0 ? row.declaredIn.join(", ") : "-")} | ${row.status} |`
     );
+  }
+  if (rowsToShow.length === 0 && rows.length > 0) {
+    lines.push("");
+    lines.push("- フラグ対象の行なし（全IDが declared）。全件を見るには verbose: true を指定。");
   }
   lines.push("");
 
@@ -267,6 +305,12 @@ export const auditIdPopulationInputShape = {
     .optional()
     .describe(
       "Include colon-separated coverage target IDs (BV:/EP:/ST:/DT:/PW:/SC:/UC:/DL:/CFG:) emitted by design_* tools in the ID index. Defaults to true."
+    ),
+  verbose: z
+    .boolean()
+    .optional()
+    .describe(
+      "If false/omitted (default), section 2.1 shows a per-prefix count summary and lists rows only for IDs with status 'never-declared' or 'excluded'. If true, lists every defined-ID row in full (as in previous versions)."
     ),
 } as const;
 

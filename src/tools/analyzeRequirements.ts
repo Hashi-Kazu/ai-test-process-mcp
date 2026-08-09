@@ -11,6 +11,7 @@ import {
   findAmbiguousTerms,
   findDuplicateIds,
   findUnresolvedReferences,
+  splitIdIntoPrefixAndNumber,
 } from "../testBasisAnalysis.js";
 import {
   aggregateQuantitiesByUnit,
@@ -53,6 +54,7 @@ export function renderRequirementsAnalysis(
     changeItems,
     qualityCharacteristicIds,
   } = input;
+  const verbose = input.verbose ?? false;
   const documents = sanitizeTestBasisDocuments(input.documents);
 
   const options = { idPatterns, additionalAmbiguousTerms };
@@ -81,6 +83,10 @@ export function renderRequirementsAnalysis(
 
   const lines: string[] = [];
   lines.push("# 要件分析結果");
+  lines.push("");
+  lines.push(
+    "既定(verbose未指定/false)は要約表示。2.6節は根拠位置を絞り込んで表示する。全件が必要な場合は `verbose: true` を指定すること。"
+  );
   lines.push("");
 
   // --- 1. 対象文書 ---
@@ -223,16 +229,42 @@ export function renderRequirementsAnalysis(
 
   lines.push("### 2.6 要件ID → テストベース根拠位置");
   lines.push("");
-  if (requirementSources.length === 0) {
-    lines.push("- 定義された要件IDが無い");
+  const flaggedIds = new Set<string>([
+    ...duplicates.map((d) => d.id),
+    ...unresolved.map((u) => u.id),
+  ]);
+  const sourcesToShow = verbose
+    ? requirementSources
+    : requirementSources.filter((r) => flaggedIds.has(r.requirementId));
+
+  const prefixSourceCounts = new Map<string, number>();
+  for (const ref of requirementSources) {
+    const { prefix } = splitIdIntoPrefixAndNumber(ref.requirementId);
+    prefixSourceCounts.set(prefix, (prefixSourceCounts.get(prefix) ?? 0) + 1);
+  }
+  lines.push("| プレフィックス | 根拠位置数 |");
+  lines.push("| --- | --- |");
+  for (const [prefix, count] of prefixSourceCounts) {
+    lines.push(`| ${escapeCell(prefix)} | ${count} |`);
+  }
+  lines.push("");
+
+  if (sourcesToShow.length === 0) {
+    if (requirementSources.length === 0) {
+      lines.push("- 定義された要件IDが無い");
+    } else {
+      lines.push(
+        "- フラグ対象の根拠位置なし（重複・未解決参照が無いため）。全件を見るには verbose: true を指定。"
+      );
+    }
     lines.push("");
     lines.push("```json");
-    lines.push(JSON.stringify({ requirementSources: [] }, null, 2));
+    lines.push(JSON.stringify({ requirementSources: sourcesToShow }, null, 2));
     lines.push("```");
   } else {
     lines.push("| 要件ID | 文書 | 行範囲 | 章節 | 引用ラベル |");
     lines.push("| --- | --- | --- | --- | --- |");
-    for (const ref of requirementSources) {
+    for (const ref of sourcesToShow) {
       const lineRange =
         ref.endLine === undefined || ref.endLine === ref.startLine
           ? `${ref.startLine}`
@@ -245,12 +277,14 @@ export function renderRequirementsAnalysis(
     }
     lines.push("");
     lines.push("```json");
-    lines.push(JSON.stringify({ requirementSources }, null, 2));
+    lines.push(JSON.stringify({ requirementSources: sourcesToShow }, null, 2));
     lines.push("```");
   }
   lines.push("");
   lines.push(
-    "このJSONの requirementSources を extract_test_conditions / generate_test_cases にそのまま渡せる。"
+    verbose
+      ? "このJSONの requirementSources を extract_test_conditions / generate_test_cases にそのまま渡せる。"
+      : "既定では絞り込み後のJSON。extract_test_conditions / generate_test_cases に全件を渡す必要がある場合は verbose: true で再実行すること。"
   );
   lines.push("");
 
@@ -471,6 +505,12 @@ export const analyzeRequirementsInputShape = {
     .array(z.string())
     .optional()
     .describe("If provided, restrict the quality characteristic mapping section to these characteristic ids"),
+  verbose: z
+    .boolean()
+    .optional()
+    .describe(
+      "If false/omitted (default), section 2.6 shows a per-prefix count summary and lists source references only for requirement IDs flagged as duplicate or unresolved-reference. If true, lists every requirement-source reference in full (as in previous versions)."
+    ),
 } as const;
 
 export function registerAnalyzeRequirementsTool(server: McpServer): void {
