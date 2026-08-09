@@ -19,6 +19,7 @@ import {
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import {
   COVERAGE_CRITERIA_KEYWORDS,
@@ -87,7 +88,6 @@ export function renderTestSpecificationReview(
   checklist: TestSpecificationReviewChecklist = testSpecificationReviewChecklist
 ): string {
   const {
-    testBasisDocuments,
     testSpecificationText,
     testConditions,
     risks,
@@ -95,6 +95,7 @@ export function renderTestSpecificationReview(
     additionalAmbiguousTerms,
     additionalSubjectiveTerms,
   } = input;
+  const testBasisDocuments = sanitizeTestBasisDocuments(input.testBasisDocuments);
   const testCases: TestCaseSpec[] = input.testCases ?? [];
   const hasCases = testCases.length > 0;
   const analysisOptions = { idPatterns, additionalAmbiguousTerms };

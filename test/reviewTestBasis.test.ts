@@ -143,6 +143,45 @@ describe("renderTestBasisReview - 入力ダイジェスト", () => {
   });
 });
 
+describe("renderTestBasisReview - 双方向制御文字の除去（生＝除去済み同値性）", () => {
+  function stripIqc05Lines(md: string): string {
+    return md
+      .split("\n")
+      .filter((l) => !l.includes("[IQC-05]"))
+      .join("\n");
+  }
+
+  const rawDocuments: TestBasisDocument[] = [
+    {
+      name: "spec-c.md",
+      content: ["## 見出しD", "‭E-200 発券機起動‬", "本文では ‭E-200‬ を参照する。"].join("\n"),
+    },
+  ];
+  const cleanDocuments2: TestBasisDocument[] = [
+    {
+      name: "spec-c.md",
+      content: ["## 見出しD", "E-200 発券機起動", "本文では E-200 を参照する。"].join("\n"),
+    },
+  ];
+
+  it("produces identical output (excluding IQC-05 lines) whether or not the input has embedded bidi controls", () => {
+    const rawMd = renderTestBasisReview(rawDocuments);
+    const cleanMd = renderTestBasisReview(cleanDocuments2);
+    expect(stripIqc05Lines(rawMd)).toBe(stripIqc05Lines(cleanMd));
+  });
+
+  it("does not degrade the definition count when a bidi control char sits at the start of the definition line", () => {
+    const rawMd = renderTestBasisReview(rawDocuments);
+    const cleanMd = renderTestBasisReview(cleanDocuments2);
+    const definedCountOf = (md: string): string => {
+      const match = /抽出ID数\(定義 (\d+)/.exec(md);
+      return match ? match[1] : "";
+    };
+    expect(definedCountOf(rawMd)).toBe(definedCountOf(cleanMd));
+    expect(definedCountOf(rawMd)).not.toBe("0");
+  });
+});
+
 describe("renderTestBasisReview 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestBasisReview(cleanDocuments));

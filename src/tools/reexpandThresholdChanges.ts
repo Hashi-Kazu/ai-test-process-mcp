@@ -20,6 +20,7 @@ import {
   buildDocumentDigests,
   findDocumentDigestFindings,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import type {
   ReexpandThresholdChangesInput,
@@ -54,12 +55,19 @@ export function renderThresholdChangeReexpansion(
   const boundaryBindings = input.boundaryBindings ?? [];
   const equivalenceBindings = input.equivalenceBindings ?? [];
 
+  const documentsBefore = input.documentsBefore
+    ? sanitizeTestBasisDocuments(input.documentsBefore)
+    : input.documentsBefore;
+  const documentsAfter = input.documentsAfter
+    ? sanitizeTestBasisDocuments(input.documentsAfter)
+    : input.documentsAfter;
+
   // 1. documents があれば候補抽出・突合・候補差分・承認検証を行う
   const extraction = analyzeThresholdExtraction({
     parametersBefore: input.parametersBefore,
     parametersAfter: input.parametersAfter,
-    documentsBefore: input.documentsBefore,
-    documentsAfter: input.documentsAfter,
+    documentsBefore,
+    documentsAfter,
     approvedExtractions: input.approvedExtractions,
   });
 
@@ -110,8 +118,8 @@ export function renderThresholdChangeReexpansion(
       return renderDocumentDigestLines(rows, findDocumentDigestFindings(rows));
     };
     for (const l of renderThresholdExtractionLines(extraction, extractionCriteria, {
-      before: digestFor(input.documentsBefore),
-      after: digestFor(input.documentsAfter),
+      before: digestFor(documentsBefore),
+      after: digestFor(documentsAfter),
     })) {
       lines.push(l);
     }

@@ -14,6 +14,7 @@ import {
   extractUiElements,
   summarizeContradictions,
 } from "../basisContradictionAnalysis.js";
+import { sanitizeTestBasisDocuments } from "../documentDigest.js";
 import type {
   AuditBasisContradictionsInput,
   BasisContradictionCandidate,
@@ -71,7 +72,8 @@ export function renderBasisContradictionAudit(
   input: AuditBasisContradictionsInput,
   criteria: BasisContradictionCriteria = basisContradictionCriteria
 ): string {
-  const { documents, declaredEntities, knownResolved, idPatterns, relativeTargetTerms, minConfidence } = input;
+  const { declaredEntities, knownResolved, idPatterns, relativeTargetTerms, minConfidence } = input;
+  const documents = sanitizeTestBasisDocuments(input.documents);
   const options = { idPatterns, relativeTargetTerms };
 
   const lines = buildBasisLines(documents, options);

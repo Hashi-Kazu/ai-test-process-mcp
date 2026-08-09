@@ -8,6 +8,7 @@ import {
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import type {
   AuditCrossMatrixInput,
@@ -112,9 +113,12 @@ function renderEmptyLines(lines: string[], entries: CrossMatrixEmptyLine[], kind
 }
 
 export function renderCrossMatrixAudit(
-  input: AuditCrossMatrixInput,
+  rawInput: AuditCrossMatrixInput,
   criteria: CrossMatrixAuditCriteria = crossMatrixAuditCriteria
 ): string {
+  const input: AuditCrossMatrixInput = rawInput.documents
+    ? { ...rawInput, documents: sanitizeTestBasisDocuments(rawInput.documents) }
+    : rawInput;
   const result = analyzeCrossMatrix({
     ...input,
     includeCoverageTargetIds: input.includeCoverageTargetIds ?? true,

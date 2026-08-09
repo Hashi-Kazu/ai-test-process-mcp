@@ -8,6 +8,7 @@ import {
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import type {
   AuditTestDesignNotationsInput,
@@ -99,9 +100,12 @@ function renderGenerationInstruction(lines: string[], spec: TestDesignNotationSp
 }
 
 export function renderTestDesignNotationAudit(
-  input: AuditTestDesignNotationsInput,
+  rawInput: AuditTestDesignNotationsInput,
   catalog: TestDesignNotationCatalog = testDesignNotationCatalog
 ): string {
+  const input: AuditTestDesignNotationsInput = rawInput.documents
+    ? { ...rawInput, documents: sanitizeTestBasisDocuments(rawInput.documents) }
+    : rawInput;
   const result = analyzeTestDesignNotations(input);
   const { fvTable, ngt, yumotsuyoMatrix, findings, summary } = result;
 

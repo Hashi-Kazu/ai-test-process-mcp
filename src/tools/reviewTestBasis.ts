@@ -9,6 +9,7 @@ import {
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
   renderDocumentDigestLines,
+  sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
 import {
   analyzePrefixes,
@@ -29,11 +30,12 @@ function place(document: string, lineIndex: number, heading: string): string {
 }
 
 export function renderTestBasisReview(
-  documents: TestBasisDocument[],
+  rawDocuments: TestBasisDocument[],
   options: TestBasisAnalysisOptions = {},
   checklist: TestBasisReviewChecklist = testBasisReviewChecklist,
   completedTools: readonly CompletedToolDeclaration[] = []
 ): string {
+  const documents = sanitizeTestBasisDocuments(rawDocuments);
   const occurrences = extractIdOccurrences(documents, options);
   const duplicates = findDuplicateIds(occurrences);
   const unresolved = findUnresolvedReferences(occurrences);
