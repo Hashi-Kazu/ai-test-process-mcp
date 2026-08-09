@@ -2,29 +2,82 @@
 
 ## 1. 目的と適用範囲
 
-本書は、本リポジトリの決定的検査（`audit_id_population` / `analyze_requirements` / `review_test_basis` /
-`generate_test_cases` / `review_test_specification` / `analyze_data_flow_timing`）が
-**特定のテストベース構成に依存していないかを判定するための基準値**を記録する。
+本書は、**決定的検査を持つ全ツール**が**特定のテストベース構成に依存していないかを判定するための基準値**を記録する。
+決定的検査を持たないツール、またはテスト計画書系ツール（後述のC群）は対象外とする。
+
+管理対象は次の3群へ分類する。列の意味は次のとおり。「テストベース由来入力」は年度別テストベース文書、または
+テストベースから導出された上流成果物のどちらを入力に取るか。「決定的検査の判定区分」はツールが持つ区分ID接頭辞
+（`BC-` `CMX-` `TDN-` `PDC-` `TAC-` `DCC-` `CBC-` など）。「本書での指標番号」は第5章の指標番号（未設置のものは
+「未着手（別Issueで追加）」）。
+
+| ツール名 | 群 | テストベース由来入力 | 決定的検査の判定区分 | 本書での指標番号 |
+| --- | --- | --- | --- | --- |
+| `audit_id_population` | A | `documents` | ID母集団反映率検査 | 指標1/2/11 |
+| `review_test_basis` | A | `documents` | ID重複・未解決参照・曖昧語等 | 指標3 |
+| `analyze_requirements` | A | `documents` | 数量矛盾・境界値候補等 | 指標4/5 |
+| `generate_test_cases` | A | `testBasisDocuments` | 事実照合・網羅対象裏付け等 | 指標6/7/8 |
+| `review_test_specification` | A | `testBasisDocuments` | 事実照合・仕様書レビュー | 指標8/9 |
+| `audit_basis_contradictions` | A | `documents` | BC-01〜BC-10 | 指標12/BC-01〜BC-10 |
+| `audit_cross_matrix` | A | `documents` | CMX-01〜17 | 指標15/CMX-01〜17 |
+| `audit_test_design_notations` | A | `documents` | TDN-01〜25 | 指標18/TDN-01〜25 |
+| `derive_test_purposes` | A | `requestDocuments` | PDC-01〜17 | 指標13/PDC-01〜17 |
+| `reexpand_threshold_changes` | A | `documentsBefore` / `documentsAfter` | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `analyze_data_flow_timing` | B | テスト条件・データフロー定義（テストベース由来の上流成果物） | DFT-01〜 | 指標10 |
+| `design_test_architecture` | B | テスト条件一覧・コンテナ定義（テストベース由来の上流成果物） | TAC-01〜17 | 指標14/TAC-01〜17 |
+| `audit_deliverable_consistency` | B | 成果物本文（テストベース由来の上流成果物） | DCC-01〜17 | 指標16/DCC-01〜17 |
+| `audit_coverage_balance` | B | 成果物本文・宣言網羅率（テストベース由来の上流成果物） | CBC-01〜13 | 指標17/CBC-01〜13 |
+| `extract_test_conditions` | B | テスト条件抽出元成果物 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `analyze_cause_effect` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_decision_table` | B | 因果関係分析結果 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_pairwise` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_config_matrix` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_scenario_flows` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_test_data` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `analyze_execution_order` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `select_regression_suite` | B | テストケース一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `generate_user_story_map` | B | 要件分析結果等の上流成果物 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `generate_exploratory_charters` | B | 要件分析結果等の上流成果物 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `generate_business_requirement_model` | B | 要件分析結果等の上流成果物 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_boundary_values` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `design_equivalence_partitioning` | B | テスト条件一覧 | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `create_test_plan` | C | なし（対象外） | — | — |
+| `review_test_plan` | C | なし（対象外） | — | — |
+| `revise_test_plan` | C | なし（対象外） | — | — |
+
+この区切り（A群10・B群18のうち今回指標を新設したのは判定区分カタログを持つ6ツールのみ）は、
+Issue #171 備考「一度に全ツールを埋めるのが重い場合は、判定区分カタログを持つツールから優先する」に沿ったものである。
+
+B群はテストベース文書を引数で受けないが、入力となる成果物がテストベースから導出されるため対象に含める。
+C群と区別する基準は「入力が年度別テストベースに由来するか」であって、`documents` 引数の有無ではない。
+`analyze_data_flow_timing`（指標10）が既にこの基準で対象化されている先例である。
 
 - **基準とするもの**: 同一のツール群・同一の投入方法で、構成の異なる2つのテストベースへ適用したときの決定的検査の出力件数。
 - **比較の軸**: 2025年版テストベース（V03構成：入場ゲートハブあり）と 2024年版テストベース（V02構成：入場ゲートハブなし）。
 - **いつ再測定するか**:
   1. `src/` 配下の決定的検査ロジック（`testBasisAnalysis.ts` / `idPopulationAnalysis.ts` / `testCaseAnalysis.ts` /
      `testSpecificationAnalysis.ts` / `dataFlowTimingAnalysis.ts` / `basisContradictionAnalysis.ts` /
-     `groundingNormalization.ts` など）を変更したとき。
+     `groundingNormalization.ts` / `requirementsAnalysis.ts` / `documentDigest.ts` / `testPurposeAnalysis.ts` /
+     `crossMatrixAnalysis.ts` / `deliverableConsistencyAnalysis.ts` / `coverageBalanceAnalysis.ts` /
+     `testDesignNotationAnalysis.ts` など）を変更したとき。決定的検査の本体が `src/tools/<name>.ts` 内の
+     レンダリング関数に置かれているツールがある（`design_test_architecture` の `src/tools/designTestArchitecture.ts`
+     など）ため、`src/` 直下の解析モジュールだけを見ていると再測定の要否を取りこぼす。
+     未着手のB群（指標追加後に再測定対象へ入る）: `testConditionAnalysis.ts` / `causeEffectAnalysis.ts` /
+     `thresholdExtraction.ts` / `thresholdChangeAnalysis.ts` / `factorHandoverAnalysis.ts` /
+     `stakeholderWeightingAnalysis.ts` / `testSizeAnalysis.ts` / `userStoryMapAnalysis.ts` /
+     `exploratoryCharterAnalysis.ts` / `businessRequirementAnalysis.ts` / `nextToolAnalysis.ts` / `derivedFromRefs.ts`。
   2. 新しい決定的検査を追加したとき。
   3. `scripts/extract-testbase-text.sh` の抽出条件、または `pdftotext` の版を変えたとき。
      `scripts/extract-testbase-xlsx.mjs` / `scripts/extract-testbase-docx.mjs`（`docs/ai/testbase-ingestion.md`
      の変換規約の参照実装）の変換条件を変えたときも同様に再測定対象へ含める。
 - **適用範囲外**: テスト計画書系ツール（`create_test_plan` / `review_test_plan` / `revise_test_plan`）はテストベース文書を
-  入力に取らないため、構成差の影響を受けない。本書の対比表には含めない。
+  入力に取らないため、構成差の影響を受けない。本書の対比表には含めない。上表のC群がこれに相当する。
 
 **決定的検査の件数をそのまま仕様欠陥の件数として扱わないこと。** 件数は「宣言と実体を機械的に突き合わせた結果の件数」であり、
 偽陽性（PDF→テキスト変換に起因するもの、文書の性格による正常な結果）を含む。妥当性の判断は意味的層（呼び出し側）が行う。
 2025年版の読み取り注意は `sample/contest_testbase/2025/00_成果物生成手順.md` 3.8 に、2024年版の注意は
 `sample/contest_testbase/2024/00_成果物生成手順_V02汎化検証.md` 5章に書いてある。
 
-追跡: GitHub Issue #98（親 #69） / Jira HSKZ-142。
+追跡: GitHub Issue #98（親 #69） / Jira HSKZ-142。GitHub Issue #171 / Jira HSKZ-195（本書の管理対象を全ツールへ拡大）。
 
 ---
 
@@ -502,6 +555,158 @@ BC-01 と総候補数・high 件数は減少方向へ変化し、上記の数値
 これらも同方向に変化し得る。BC-02/03/04/06/08/09/10 は名称候補を参照しないため変化しない。本PRでは `pdftotext` 実行環境と
 `.work/` 抽出テキストが無いため再測定せず、次回再測定時に上記の数値表全体を測り直すこと。
 
+### 指標13: テスト目的導出（PDC-01〜17）の決定的検査件数
+
+出典: `derive_test_purposes` の `### 3.18 サマリ`（`src/tools/deriveTestPurposes.ts`）。
+測定成果物の置き場所: `.work/aux-derive-test-purposes/{2025,2024}.md`（中間ファイルのため未コミット）。
+
+| 項目 | 2025年版 | 2024年版（生） | 2024年版（除去） | 差の解釈 |
+| --- | --- | --- | --- | --- |
+| 未解決参照数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| ID重複数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| プレフィックス不一致数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 欠番数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 孤立期待数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 期待未紐づけ要求数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 未使用要求数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 要求未紐づけ目的数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 系統欠落数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 目的未紐づけ条件数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 条件未展開目的数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| タイプ選択不整合数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| タイプ未紐づけ目的数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 達成基準未記入数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 優先順位問題数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 品質特性問題数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 裏付けなし期待数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 被覆率不一致数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| カタログ外タイプ名数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+
+Issue #164（HSKZ-188）の注記のとおり、`2024年版（除去）` 列は次回再測定時に統合してよい。
+
+測定に必要な入力: A群。テストベース文書は `requestDocuments` キーへ投入する（PDC-15 の期待裏付け照合に使われる）。
+`scripts/call-mcp-tool.mjs --documents-dir .work/testbase/{2025,2024} --documents-key requestDocuments` の形で渡す。
+
+### 指標14: テストアーキテクチャ設計（TAC-01〜17）の決定的検査件数
+
+出典: `design_test_architecture` の `## 9. サマリ`（`src/tools/designTestArchitecture.ts`）。
+測定成果物の置き場所: `.work/aux-design-test-architecture/{2025,2024}.md`（中間ファイルのため未コミット）。
+
+| 項目 | 2025年版 | 2024年版（生） | 2024年版（除去） | 差の解釈 |
+| --- | --- | --- | --- | --- |
+| コンテナ数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 葉コンテナ数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| テスト条件総数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 帰属済み条件数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 未帰属件数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 帰属率(%) | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 重複帰属件数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 指摘件数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+
+注記: 入力に致命的指摘があり生成をスキップした場合はサマリ行の書式が変わり（`帰属率` / `未帰属(N件)` / `指摘` のみ）、
+記録項目が上表より少なくなる。
+
+Issue #164（HSKZ-188）の注記のとおり、`2024年版（除去）` 列は次回再測定時に統合してよい。
+
+測定に必要な入力: B群。テストベース文書は取らない。テスト条件一覧とコンテナ定義を payload で渡す。
+`scripts/call-mcp-tool.mjs --json-file <上流成果物.json> --json-key testConditions` および `--json-key containers` の
+形で渡す。
+
+### 指標15: 横断マトリクス監査（CMX-01〜17）の決定的検査件数
+
+出典: `audit_cross_matrix` の `### 2.11 サマリ`（`src/tools/auditCrossMatrix.ts`）。
+測定成果物の置き場所: `.work/aux-audit-cross-matrix/{2025,2024}.md`（中間ファイルのため未コミット）。
+
+| 項目 | 2025年版 | 2024年版（生） | 2024年版（除去） | 差の解釈 |
+| --- | --- | --- | --- | --- |
+| 軸数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 軸ペア数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 生成済みペア数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 要素総数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 完全孤立要素数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 空行数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 空列数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 除外宣言数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 全体充填率(%) | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 検出事項数（うち high） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 根拠未記入リンク数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 未裏付けリンク数 | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 全体根拠裏付け充填率(%) | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+
+注記: `documents` を渡さないと根拠裏付け充填率が算出されず「documents が未指定のためテストベース本文との裏付け照合を
+行えない(要確認)」が出るため、`documents` を必ず渡す構成で測定すること。
+
+Issue #164（HSKZ-188）の注記のとおり、`2024年版（除去）` 列は次回再測定時に統合してよい。
+
+測定に必要な入力: A群。`documents` を渡す。
+`scripts/call-mcp-tool.mjs --documents-dir .work/testbase/{2025,2024} --documents-key documents` に加え、
+軸・リンク定義は `--json-file` / `--json-key axes` `--json-key links` で渡す。
+
+### 指標16: 成果物間整合監査（DCC-01〜17）の決定的検査件数
+
+出典: `audit_deliverable_consistency` の `### 1.3 抽出サマリ` と `### 2.7 サマリ`（`src/tools/auditDeliverableConsistency.ts`）。
+測定成果物の置き場所: `.work/aux-audit-deliverable-consistency/{2025,2024}.md`（中間ファイルのため未コミット）。
+
+| 項目 | 2025年版 | 2024年版（生） | 2024年版（除去） | 差の解釈 |
+| --- | --- | --- | --- | --- |
+| 成果物数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 参照テストベース文書数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 検出ID数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 章節参照数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 対応主張数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 件数・網羅率宣言数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 共通項目列挙数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 検査対象IDプレフィックス（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 総指摘数（うち high）（2.7） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 区分別内訳（2.7、`DCC-01=n / DCC-02=n / …` の形式のまま記録） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+
+Issue #164（HSKZ-188）の注記のとおり、`2024年版（除去）` 列は次回再測定時に統合してよい。
+
+測定に必要な入力: B群。成果物本文（markdown）を渡す。テストベース文書そのものは渡さない。
+`scripts/call-mcp-tool.mjs --json-file <上流成果物.json> --json-key deliverables` の形で渡す。
+
+### 指標17: 網羅バランス監査（CBC-01〜13）の決定的検査件数
+
+出典: `audit_coverage_balance` の `### 2.9 サマリ`（`src/tools/auditCoverageBalance.ts`）。
+測定成果物の置き場所: `.work/aux-audit-coverage-balance/{2025,2024}.md`（中間ファイルのため未コミット）。
+
+| 項目 | 2025年版 | 2024年版（生） | 2024年版（除去） | 差の解釈 |
+| --- | --- | --- | --- | --- |
+| 総指摘数（うち high） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 区分別内訳（`CBC-nn=n` の並びのまま記録） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 検査不能(要確認)の区分（`deliverables` 未指定なら CBC-05/06/09/10/11/12/13、`declared` 未指定なら CBC-04） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+
+注記: 「検査不能(要確認)の区分」は未指摘＝合格ではないため、この行を空欄にしたまま総指摘数だけを比較しないこと
+（ツール出力の文言「未指摘は合格を意味しない」に対応）。
+
+Issue #164（HSKZ-188）の注記のとおり、`2024年版（除去）` 列は次回再測定時に統合してよい。
+
+測定に必要な入力: B群。
+`scripts/call-mcp-tool.mjs --json-file <上流成果物.json> --json-key deliverables` および `--json-key declared` の
+形で渡す。
+
+### 指標18: テスト設計記法監査（TDN-01〜25）の決定的検査件数
+
+出典: `audit_test_design_notations` の `## 1. 入力サマリ`（1.1 / 1.3）、`## 5. 記法間整合`、
+`## 6. 指摘一覧` 末尾の集計行（`src/tools/auditTestDesignNotations.ts`）。
+測定成果物の置き場所: `.work/aux-audit-test-design-notations/{2025,2024}.md`（中間ファイルのため未コミット）。
+
+| 項目 | 2025年版 | 2024年版（生） | 2024年版（除去） | 差の解釈 |
+| --- | --- | --- | --- | --- |
+| FV表の投入有無と行数（1.1） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| NGTの投入有無とノード数（うち葉）（1.1） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| ゆもつよマトリクスの投入有無と行数×列数（1.1） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| テスト条件ID母集団件数（1.3） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 照合できた組合せ（5章。`FV表 × NGT(TDN-23)` / `ゆもつよマトリクス × NGT(TDN-24)` / `3記法 × テスト条件ID母集団(TDN-25)`） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 投入記法数（6章） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+| 検出事項数（うち high / medium）（6章） | 未測定 | 未測定 | 未測定 | 未測定（プローブ payload 未整備） |
+
+Issue #164（HSKZ-188）の注記のとおり、`2024年版（除去）` 列は次回再測定時に統合してよい。
+
+測定に必要な入力: A群。`documents` を渡すと入力ダイジェストが出る。
+`scripts/call-mcp-tool.mjs --documents-dir .work/testbase/{2025,2024} --documents-key documents` に加え、
+FV表・NGT・ゆもつよマトリクス定義は `--json-file` / `--json-key fvTable` `--json-key ngt` `--json-key yumotsuyoMatrix` で渡す。
+
 ---
 
 ## 6. V03固有の前提に依存して破綻した検査の記録
@@ -538,12 +743,17 @@ BC-01 と総候補数・high 件数は減少方向へ変化し、上記の数値
    **Issue #164（HSKZ-188）以降は本手順は不要。** ツール側（`stripBidiControls` / IQC-05）が投入時に双方向制御文字を
    自動除去するため、生の抽出のみで測定すればよく、`2024年版（除去）` 列は次回再測定時に廃止してよい。
 5. **本書第5章の表を埋め直す。** 各指標の出典（`01_` 2.5 / 2.8、`07_` 2.2 / 末尾サマリ、`08_` 末尾サマリ、
-   `14_` 4.1 / 4.3 / 4.12、`16_` サマリ、`19_` 3.1 / 3.3 / 5.2 / 6 / 8）から値を転記する。
+   `14_` 4.1 / 4.3 / 4.12、`16_` サマリ、`19_` 3.1 / 3.3 / 5.2 / 6 / 8、`derive_test_purposes` 3.18、
+   `design_test_architecture` 9、`audit_cross_matrix` 2.11、`audit_deliverable_consistency` 1.3・2.7、
+   `audit_coverage_balance` 2.9、`audit_test_design_notations` 1.1・1.3・5・6）から値を転記する。
    数値は必ず成果物ファイルから取り、本書やIssue本文の値を転記して使わない。
 6. **差が出た指標を3区分（構成差 / 抽出品質 / 汎化不良）へ分類する。** 完全一致する5文書（12号・13号・21号・22号・71号）
    由来の指標に差が出た場合は構成差では説明できないため、**汎化不良として第6章へ記録する**。
 7. 第6章の破綻検査の記録を更新する。**破綻が0件だった場合も「0件であること」を明記する。**
 8. 第2章の測定条件（測定日・MCPサーバ版・コミットハッシュ）を更新する。
+9. **指標13〜18の実測に着手する場合。** 年度別プローブ payload が未整備のため、まず
+   `sample/contest_testbase/{2025,2024}/payloads/` へ各ツールの payload を追加する必要がある。
+   payload の新規作成は本書の更新とは別作業である。
 
 指標の再測定に使うコマンドの全文は `sample/contest_testbase/2024/00_成果物生成手順_V02汎化検証.md` 第3章・第4章と
 `sample/contest_testbase/2025/00_成果物生成手順.md` 第3章にある。本書ではコマンドを重複して持たない。
