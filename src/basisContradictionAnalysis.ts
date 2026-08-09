@@ -1,5 +1,11 @@
 import { parseHeadings } from "./tools/reviewTestPlan.js";
 import { DEFAULT_ID_PATTERN_SOURCE, extractQuantityExpressions } from "./testBasisAnalysis.js";
+import {
+  ENTITY_NAME_LEADING_REJECT_CHARS,
+  ENTITY_NAME_MIN_LENGTH,
+  ENTITY_NAME_SYMBOL_ONLY_PATTERN,
+  ENTITY_NAME_TRAILING_REJECT_CHARS,
+} from "./resources/basisContradictionCriteria.js";
 import type {
   BasisContradictionCandidate,
   BasisContradictionOptions,
@@ -7,6 +13,7 @@ import type {
   BasisDeclarationReconciliationRow,
   BasisDeclaredEntity,
   BasisEntityOccurrence,
+  BasisExcludedEntityName,
   BasisLine,
   BasisParameterValue,
   BasisRevisionClaim,
@@ -16,6 +23,7 @@ import type {
   ContradictionCheckId,
   ContradictionConfidence,
   ContradictionPlace,
+  EntityNameFragmentRuleId,
   TestBasisDocument,
 } from "./types.js";
 
@@ -154,8 +162,23 @@ export function buildBasisLines(
 
 // --- 抽出 ---
 
-export function extractEntityOccurrences(lines: BasisLine[]): BasisEntityOccurrence[] {
-  const results: BasisEntityOccurrence[] = [];
+/**
+ * 名称候補が表セル連結由来の断片かどうかを判定する(NF-01→NF-02→NF-03→NF-04の固定順)。
+ * 最初に一致したルールIDを返し、どれにも当たらなければ null(=採用)を返す。
+ */
+export function classifyEntityNameFragment(name: string): EntityNameFragmentRuleId | null {
+  if (name.length < ENTITY_NAME_MIN_LENGTH) return "NF-01";
+  if (name.length > 0 && ENTITY_NAME_LEADING_REJECT_CHARS.has(name[0])) return "NF-02";
+  if (name.length > 0 && ENTITY_NAME_TRAILING_REJECT_CHARS.has(name[name.length - 1])) return "NF-03";
+  if (ENTITY_NAME_SYMBOL_ONLY_PATTERN.test(name)) return "NF-04";
+  return null;
+}
+
+export function extractEntityOccurrencesWithQuality(
+  lines: BasisLine[]
+): { occurrences: BasisEntityOccurrence[]; excluded: BasisExcludedEntityName[] } {
+  const occurrences: BasisEntityOccurrence[] = [];
+  const excluded: BasisExcludedEntityName[] = [];
   for (const line of lines) {
     const idRegexes = buildIdRegexes([DEFAULT_ID_PATTERN_SOURCE]);
     for (const re of idRegexes) {
@@ -170,9 +193,14 @@ export function extractEntityOccurrences(lines: BasisLine[]): BasisEntityOccurre
         const name = (nameMatch ? nameMatch[0] : "").trim();
         if (m[0].length === 0) re.lastIndex++;
         if (!name) continue;
+        const ruleId = classifyEntityNameFragment(name);
+        if (ruleId) {
+          excluded.push({ id, document: line.document, lineIndex: line.lineIndex, name, ruleId });
+          continue;
+        }
         const source: BasisEntityOccurrence["source"] =
           m.index === 0 ? "section-heading" : line.raw.includes("|") ? "list-row" : "inline";
-        results.push({
+        occurrences.push({
           id,
           document: line.document,
           lineIndex: line.lineIndex,
@@ -183,7 +211,11 @@ export function extractEntityOccurrences(lines: BasisLine[]): BasisEntityOccurre
       }
     }
   }
-  return results;
+  return { occurrences, excluded };
+}
+
+export function extractEntityOccurrences(lines: BasisLine[]): BasisEntityOccurrence[] {
+  return extractEntityOccurrencesWithQuality(lines).occurrences;
 }
 
 export function extractUiElements(lines: BasisLine[]): BasisUiElement[] {

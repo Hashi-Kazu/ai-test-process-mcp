@@ -1,4 +1,4 @@
-import type { BasisContradictionCriteria } from "../types.js";
+import type { BasisContradictionCriteria, EntityNameFragmentRuleId } from "../types.js";
 
 // audit_basis_contradictions の判定区分カタログ。自作のパラフレーズであり、原典の逐語転載はしない。
 export const basisContradictionCriteria: BasisContradictionCriteria = {
@@ -92,3 +92,75 @@ export const basisContradictionCriteria: BasisContradictionCriteria = {
     "候補0件は矛盾が無いことを意味しない。決定的層のパターンに一致しない矛盾は検出できないため、意味的層での確認を省略しないこと。",
   ],
 };
+
+// --- 名称抽出の抽出品質フィルタ（NF-01〜NF-04） ---
+// 以下は表セル連結由来の断片を候補母集団から外すための抽出品質基準であり、
+// 矛盾の判定区分(BC-nn)ではない。basisContradictionCriteria(リソースJSONの直列化対象)には含めない。
+
+/** これ未満の文字数の名称候補は表セル断片として除外する(NF-01)。 */
+export const ENTITY_NAME_MIN_LENGTH = 3;
+
+/** 閉じ記号・読点・句点で始まる名称候補を除外する(NF-02)。normalizeText は NFKC 正規化済みである点を踏まえた集合。 */
+export const ENTITY_NAME_LEADING_REJECT_CHARS = new Set([
+  ")",
+  "]",
+  "}",
+  "）",
+  "］",
+  "｝",
+  "】",
+  "〕",
+  "》",
+  "」",
+  "』",
+  "、",
+  "。",
+  "，",
+  "．",
+]);
+
+/** 助詞または読点で終わる名称候補を除外する(NF-03)。 */
+export const ENTITY_NAME_TRAILING_REJECT_CHARS = new Set([
+  "の",
+  "を",
+  "に",
+  "は",
+  "が",
+  "で",
+  "と",
+  "や",
+  "へ",
+  "、",
+  "，",
+  "．",
+]);
+
+/** 波ダッシュ・チルダのみで構成される名称候補を除外する(NF-04)。U+007E / U+FF5E / U+301C / U+223C。 */
+export const ENTITY_NAME_SYMBOL_ONLY_PATTERN = /^[~～〜∼]+$/;
+
+export const ENTITY_NAME_FRAGMENT_RULES: {
+  id: EntityNameFragmentRuleId;
+  nameJa: string;
+  definition: string;
+}[] = [
+  {
+    id: "NF-01",
+    nameJa: "短すぎる名称候補",
+    definition: `名称候補の文字数が ${ENTITY_NAME_MIN_LENGTH} 文字未満(2文字以下)であり、表セル連結由来の断片である可能性が高い。`,
+  },
+  {
+    id: "NF-02",
+    nameJa: "閉じ記号・読点・句点で始まる断片",
+    definition: "名称候補が閉じ括弧・鉤括弧閉じ・読点・句点で始まっており、直前セルの続きの断片である可能性が高い。",
+  },
+  {
+    id: "NF-03",
+    nameJa: "助詞または読点で終わる断片",
+    definition: "名称候補が助詞(の/を/に/は/が/で/と/や/へ)または読点で終わっており、文の途中で切れた断片である可能性が高い。",
+  },
+  {
+    id: "NF-04",
+    nameJa: "波ダッシュ・チルダのみ",
+    definition: "名称候補が波ダッシュ・チルダのみで構成されており、範囲区切り記号の断片である可能性が高い。",
+  },
+];

@@ -3214,6 +3214,16 @@ export interface BasisContradictionSummary {
   totalCandidates: number;
 }
 
+// --- 名称抽出の抽出品質フィルタ（表セル連結由来の断片除外。BC-nn の判定区分ではない） ---
+export type EntityNameFragmentRuleId = "NF-01" | "NF-02" | "NF-03" | "NF-04";
+export interface BasisExcludedEntityName {
+  id: string;
+  document: string;
+  lineIndex: number;
+  name: string;
+  ruleId: EntityNameFragmentRuleId;
+}
+
 export interface AuditBasisContradictionsInput {
   completedTools?: CompletedToolDeclaration[];
   documents: TestBasisDocument[];
