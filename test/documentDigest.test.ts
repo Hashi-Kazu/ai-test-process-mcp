@@ -47,9 +47,28 @@ describe("buildDocumentDigests", () => {
     expect(rows[0].headingCount).toBe(1);
     expect(rows[0].idCount).toBe(2);
     expect(rows[0].definedIdCount).toBe(1);
+    expect(rows[0].tocIdCount).toBe(0);
     expect(rows[0].quantityCount).toBe(1);
     expect(rows[0].prefixCounts).toEqual([{ prefix: "EH", definitionCount: 1 }]);
     expect(rows[0].otherPrefixReferenceCount).toBe(0);
+  });
+
+  it("counts toc-role occurrences separately in tocIdCount", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "13_設計書",
+        content: [
+          "# 目次",
+          "EH-100 発券機起動.......................................... 5",
+          "# 発券機",
+          "EH-100 発券機起動",
+        ].join("\n"),
+      },
+    ];
+    const rows = buildDocumentDigests(documents);
+    expect(rows[0].tocIdCount).toBe(1);
+    expect(rows[0].definedIdCount).toBe(1);
+    expect(rows[0].idCount).toBe(2);
   });
 
   it("excludes empty-prefix (non-prefix ID system) definitions from prefixCounts", () => {
@@ -156,11 +175,11 @@ describe("renderDocumentDigestLines", () => {
     const rows = buildDocumentDigests(documents);
     const findings = findDocumentDigestFindings(rows);
     const lines = renderDocumentDigestLines(rows, findings);
-    expect(lines[0]).toBe("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(lines[0]).toBe("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
     expect(lines[1]).toBe("| --- | --- | --- | --- | --- | --- |");
     expect(lines[2]).toContain("11_要求\\|仕様書");
     expect(lines[2]).toContain("| 35,525 |");
-    expect(lines[2]).toContain("| 0 / 0 |");
+    expect(lines[2]).toContain("| 0 / 0 / 0 |");
     expect(lines).toContain(
       "- [info] 11_要求\\|仕様書: 検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。"
     );
@@ -168,6 +187,24 @@ describe("renderDocumentDigestLines", () => {
       "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
     );
     expect(renderDocumentDigestLines(rows, findings)).toEqual(lines);
+  });
+
+  it("renders the toc id count as the third value in the 検出ID cell", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "13_設計書",
+        content: [
+          "# 目次",
+          "EH-100 発券機起動.......................................... 5",
+          "# 発券機",
+          "EH-100 発券機起動",
+        ].join("\n"),
+      },
+    ];
+    const rows = buildDocumentDigests(documents);
+    const findings = findDocumentDigestFindings(rows);
+    const lines = renderDocumentDigestLines(rows, findings);
+    expect(lines[2]).toContain("| 1 / 0 / 1 |");
   });
 
   it("emits a [high] finding line for each unmatched idPatterns source", () => {

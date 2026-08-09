@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { renderIdPopulationAudit } from "../src/tools/auditIdPopulation.js";
-import type { AuditIdPopulationInput } from "../src/types.js";
+import { buildDefinedIdIndex } from "../src/idPopulationAnalysis.js";
+import type { AuditIdPopulationInput, TestBasisDocument } from "../src/types.js";
 
 const documents: AuditIdPopulationInput["documents"] = [
   {
@@ -71,7 +72,7 @@ describe("renderIdPopulationAudit", () => {
 describe("renderIdPopulationAudit - 入力ダイジェスト", () => {
   it("renders the input digest table in 1.1 with escaped document names", () => {
     const section11 = markdown.split("### 1.1 投入されたテストベース文書")[1].split("### 1.2")[0];
-    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
     expect(section11).toContain("| doc-A |");
     expect(section11).toContain("| doc-B |");
     const escaped = renderIdPopulationAudit({
@@ -219,5 +220,21 @@ describe("renderIdPopulationAudit 次に実行すべきツール節の内容", (
     );
     expect(section).not.toContain("| 未実施 | extract_test_conditions |");
     expect(section).not.toContain("| 未実施 | generate_test_cases |");
+  });
+});
+
+describe("buildDefinedIdIndex - 目次行のIDが定義ID母集団に入らないこと", () => {
+  it("excludes an id that only appears on a toc line from the defined id index", () => {
+    const tocOnlyDocuments: TestBasisDocument[] = [
+      {
+        name: "13_設計書",
+        content: [
+          "# 目次",
+          "W-001 新規登録.......................................... 5",
+        ].join("\n"),
+      },
+    ];
+    const index = buildDefinedIdIndex(tocOnlyDocuments);
+    expect(index.some((e) => e.id === "W-001")).toBe(false);
   });
 });

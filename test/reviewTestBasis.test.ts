@@ -122,7 +122,7 @@ describe("renderTestBasisReview - 入力ダイジェスト", () => {
   it("renders the input digest table in 1.1 and keeps the document list lines", () => {
     const markdown = renderTestBasisReview(flawedDocuments);
     const section11 = markdown.split("### 1.1 対象文書")[1].split("### 1.2")[0];
-    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(section11).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
     expect(section11).toContain("| spec-a.md |");
     expect(section11).toContain("- spec-a.md(行数: 9)");
     expect(section11).toContain(

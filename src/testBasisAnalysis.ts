@@ -79,6 +79,14 @@ export interface TestBasisAnalysisOptions {
 // \s* はパイプを消費しないため、非空セルの手前で必ず停止する。
 const LEADING_MARKER_REGEX = /^\s*(?:#{1,6}\s+|[-*]\s+|\d+[.).]\s*|(?:\|\s*)+)?/;
 
+// 目次行の検出パターン。ドットリーダ（"." または "…" が6文字以上連続）＋任意の空白＋末尾がページ番号（数字のみ）。
+// 例: "W-001 新規登録.......................................... 5"
+const TOC_DOT_LEADER_REGEX = /[.…]{6,}\s*\d+\s*$/;
+
+export function isTableOfContentsLine(line: string): boolean {
+  return TOC_DOT_LEADER_REGEX.test(line);
+}
+
 function headingsPerLine(content: string): string[] {
   const lines = content.split("\n");
   const headings = parseHeadings(content);
@@ -207,8 +215,15 @@ export function extractIdOccurrences(
       const leadPos = leadMatch ? leadMatch[0].length : 0;
       const heading = headingPerLine[lineIndex] ?? "(見出しなし)";
       const lineText = line.trim();
+      const isToc = isTableOfContentsLine(line);
       matches.forEach((match, i) => {
-        const isDefinition = i === 0 && match.start === leadPos;
+        let role: "definition" | "reference" | "toc";
+        if (isToc) {
+          role = "toc";
+        } else {
+          const isDefinition = i === 0 && match.start === leadPos;
+          role = isDefinition ? "definition" : "reference";
+        }
         occurrences.push({
           id: match.id,
           prefix: match.prefix,
@@ -217,7 +232,7 @@ export function extractIdOccurrences(
           lineIndex,
           heading,
           lineText,
-          role: isDefinition ? "definition" : "reference",
+          role,
           kind: match.kind,
         });
       });

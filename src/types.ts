@@ -272,7 +272,7 @@ export interface TestBasisDocument {
   content: string; // 自由テキスト（Markdown / プレーンテキスト、フォーマット不問）
 }
 
-export type TestBasisIdRole = "definition" | "reference";
+export type TestBasisIdRole = "definition" | "reference" | "toc";
 
 /**
  * "requirement": 既定パターンの要件ID・機能ID（プレフィックス-連番形式）。
@@ -404,8 +404,9 @@ export interface DocumentDigestRow {
   charCount: number;       // content.length
   lineCount: number;       // content.split("\n").length
   headingCount: number;    // parseHeadings(content).length
-  idCount: number;         // 定義+参照の出現数
+  idCount: number;         // 全ロール（定義+参照+目次）の出現数合計
   definedIdCount: number;  // role === "definition"
+  tocIdCount: number;      // role === "toc"（目次行のID出現数）
   quantityCount: number;   // extractQuantityExpressions の件数
   prefixCounts: { prefix: string; definitionCount: number }[]; // 出現順
   otherPrefixReferenceCount: number; // idCount===0 の文書のみ算出。他文書が定義したIDプレフィックスへの緩い単語一致件数
@@ -3901,7 +3902,7 @@ export interface CrossRefIdOccurrenceRef {
   lineIndex: number;
   heading: string;
   lineText: string;
-  role: "definition" | "reference";
+  role: TestBasisIdRole;
 }
 
 export interface CrossRefIdStatement {

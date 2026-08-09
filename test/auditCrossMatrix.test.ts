@@ -121,7 +121,7 @@ describe("renderCrossMatrixAudit", () => {
       ],
     });
     expect(md).toContain("### 1.2 投入されたテストベース文書");
-    expect(md).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
+    expect(md).toContain("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
     expect(md).toContain("| risk-list.md |");
 
     const findingSection = md.split("### 2.10 検出事項一覧")[1].split("### 2.11")[0];
