@@ -14,6 +14,8 @@
      `groundingNormalization.ts` など）を変更したとき。
   2. 新しい決定的検査を追加したとき。
   3. `scripts/extract-testbase-text.sh` の抽出条件、または `pdftotext` の版を変えたとき。
+     `scripts/extract-testbase-xlsx.mjs` / `scripts/extract-testbase-docx.mjs`（`docs/ai/testbase-ingestion.md`
+     の変換規約の参照実装）の変換条件を変えたときも同様に再測定対象へ含める。
 - **適用範囲外**: テスト計画書系ツール（`create_test_plan` / `review_test_plan` / `revise_test_plan`）はテストベース文書を
   入力に取らないため、構成差の影響を受けない。本書の対比表には含めない。
 
