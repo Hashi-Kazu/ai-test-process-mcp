@@ -159,6 +159,9 @@ export function buildDocumentDigests(
     const prefixOrder: string[] = [];
     const prefixCountMap = new Map<string, number>();
     for (const def of definitions) {
+      // prefix === "" は接頭辞ベースのID体系ではない（数値のみのID等）ため、
+      // 接頭辞別集計（prefixCounts）には載せない。definedIdCount/idCountからは除外しない。
+      if (def.prefix === "") continue;
       if (!prefixCountMap.has(def.prefix)) {
         prefixCountMap.set(def.prefix, 0);
         prefixOrder.push(def.prefix);
@@ -199,6 +202,27 @@ export function buildDocumentDigests(
       otherPrefixReferenceCount,
       inputQuality: computeInputQualityMetrics(doc.content),
     };
+  });
+}
+
+/**
+ * idPatterns で指定されたパターンのうち、投入文書のどの行にも1件も一致しなかったものを返す。
+ * findRawIdMatches と同じ行単位・同じフラグ(gi)で走査する。既定パターンは対象外。
+ */
+export function findUnmatchedIdPatterns(
+  documents: TestBasisDocument[],
+  options: TestBasisAnalysisOptions = {}
+): string[] {
+  const sources = options.idPatterns ?? [];
+  return sources.filter((source) => {
+    const regex = new RegExp(source, "gi");
+    for (const doc of documents) {
+      for (const line of doc.content.split("\n")) {
+        regex.lastIndex = 0;
+        if (regex.test(line)) return false;
+      }
+    }
+    return true;
   });
 }
 
@@ -355,7 +379,8 @@ const IQC_NOTE =
 
 export function renderDocumentDigestLines(
   rows: DocumentDigestRow[],
-  findings: DocumentDigestFinding[]
+  findings: DocumentDigestFinding[],
+  unmatchedIdPatterns: string[] = []
 ): string[] {
   const lines: string[] = [];
   lines.push("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照) | 数値トークン |");
@@ -372,6 +397,12 @@ export function renderDocumentDigestLines(
   lines.push("");
   for (const f of findings) {
     lines.push(`- [${f.severity}] ${escapeCell(f.document)}: ${f.detail}`);
+  }
+  for (const source of unmatchedIdPatterns) {
+    lines.push(
+      `- [high] 指定パターンが1件も一致しなかった: \`${source}\`。idPatterns の誤りか、投入文書にそのID体系が無い。` +
+        `この状態では実在ID母集団が縮退したまま以降の検査・網羅率が算出されるため、パターンを修正するか指定を外して再実行すること。`
+    );
   }
   if (findings.some((f) => IQC_FINDING_KINDS.includes(f.kind))) {
     lines.push(IQC_NOTE);

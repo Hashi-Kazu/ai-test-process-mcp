@@ -708,7 +708,10 @@ export function resolveCrossRefPrefixes(
   if (crossRefIdPrefixes !== undefined && crossRefIdPrefixes.length > 0) {
     return uniqueStrings(crossRefIdPrefixes.map((p) => p.replace(/-$/, "")));
   }
-  return uniqueStrings(index.filter((e) => e.owner !== undefined).map((e) => e.prefix));
+  // prefix === "" は接頭辞ベースのID体系ではないため、既定の検査対象プレフィックスから除外する。
+  return uniqueStrings(
+    index.filter((e) => e.owner !== undefined && e.prefix !== "").map((e) => e.prefix)
+  );
 }
 
 function inPrefixes(entryOrId: string, prefixes: string[]): boolean {

@@ -22,6 +22,7 @@ import {
 import {
   buildDocumentDigests,
   findDocumentDigestFindings,
+  findUnmatchedIdPatterns,
   renderDocumentDigestLines,
 } from "../documentDigest.js";
 import type { AnalyzeRequirementsInput, QualityCharacteristicModel } from "../types.js";
@@ -74,6 +75,7 @@ export function renderRequirementsAnalysis(
 
   const digestRows = buildDocumentDigests(documents, options);
   const digestFindings = findDocumentDigestFindings(digestRows);
+  const unmatchedIdPatterns = findUnmatchedIdPatterns(documents, options);
 
   const lines: string[] = [];
   lines.push("# 要件分析結果");
@@ -89,7 +91,7 @@ export function renderRequirementsAnalysis(
   lines.push("");
   lines.push("### 入力ダイジェスト");
   lines.push("");
-  for (const l of renderDocumentDigestLines(digestRows, digestFindings)) lines.push(l);
+  for (const l of renderDocumentDigestLines(digestRows, digestFindings, unmatchedIdPatterns)) lines.push(l);
   lines.push("");
   lines.push("### 開発背景");
   lines.push("");
@@ -429,7 +431,9 @@ export const analyzeRequirementsInputShape = {
   idPatterns: z
     .array(z.string())
     .optional()
-    .describe("Extra regular expression sources for requirement/feature IDs, added to the default pattern"),
+    .describe(
+      "Extra regular expression sources for requirement/feature IDs, added to the default pattern. Capture group count decides how the ID is built: 1 group = group 1 is used as the whole ID as-is (no hyphen joining), 2 groups = reconstructed as `${group1}-${group2}` (default pattern behavior), 0 groups = the whole match is used. Use a 1-group pattern for numeric-only IDs (031), dot-separated IDs (3.1.2) and underscore IDs (REQ_001) so the reported ID matches the notation in the source document. If a given pattern matches nothing, a [high] finding is emitted in the input digest."
+    ),
   additionalAmbiguousTerms: z
     .array(z.string())
     .optional()

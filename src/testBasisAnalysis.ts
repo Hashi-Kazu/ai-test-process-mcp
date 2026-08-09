@@ -75,7 +75,9 @@ export interface TestBasisAnalysisOptions {
   includeCoverageTargetIds?: boolean;
 }
 
-const LEADING_MARKER_REGEX = /^\s*(?:#{1,6}\s+|[-*]\s+|\d+[.).]\s*|\|\s*)?/;
+// 先頭の「空セルだけ」を読み飛ばす。"| | 031 |" の 031 は定義、"| 名前 | 031 |" の 031 は参照のまま。
+// \s* はパイプを消費しないため、非空セルの手前で必ず停止する。
+const LEADING_MARKER_REGEX = /^\s*(?:#{1,6}\s+|[-*]\s+|\d+[.).]\s*|(?:\|\s*)+)?/;
 
 function headingsPerLine(content: string): string[] {
   const lines = content.split("\n");
@@ -104,6 +106,17 @@ interface RawIdMatch {
 
 function overlapsRange(a: [number, number], b: [number, number]): boolean {
   return a[0] < b[1] && b[0] < a[1];
+}
+
+// ID末尾の数値列（"-" "_" "." 区切りの多階層を含む）を numberPart として切り出す。
+// 例: "REQ_001" -> {prefix:"REQ_", numberPart:"001"} / "031" -> {prefix:"", numberPart:"031"}
+//     "FR1.2.3" -> {prefix:"FR", numberPart:"1.2.3"} / "ABC" -> {prefix:"ABC", numberPart:""}
+const ID_TAIL_NUMBER_REGEX = /^(.*?)(\d+(?:[-._]\d+)*)$/;
+
+export function splitIdIntoPrefixAndNumber(id: string): { prefix: string; numberPart: string } {
+  const m = ID_TAIL_NUMBER_REGEX.exec(id);
+  if (m === null) return { prefix: id, numberPart: "" };
+  return { prefix: m[1], numberPart: m[2] };
 }
 
 function findRawIdMatches(
@@ -135,8 +148,6 @@ function findRawIdMatches(
     const regex = new RegExp(source, "gi");
     let m: RegExpExecArray | null;
     while ((m = regex.exec(line)) !== null) {
-      const prefix = m[1];
-      const numberPart = m[2];
       const start = m.index;
       const end = start + m[0].length;
       if (coverageMatches.some((c) => overlapsRange([c.start, c.end], [start, end]))) {
@@ -145,8 +156,27 @@ function findRawIdMatches(
       }
       const key = `${start}:${end}`;
       if (!seen.has(key)) {
+        // キャプチャグループ数でID組み立て規約を切り替える。
+        // 2グループ以上: 従来どおり `${m[1]}-${m[2]}` として再構成する（既定パターンの挙動を維持）。
+        // 1グループ:     m[1] 全体をIDとして扱い、ハイフン結合しない。
+        // 0グループ:     m[0]（マッチ全体）をIDとして扱う。
+        // m[2] が undefined（省略可能グループが不参加）のときも1グループ扱いにし、"…-undefined" を作らない。
+        let id: string;
+        let prefix: string;
+        let numberPart: string;
+        if (m.length >= 3 && m[2] !== undefined && m[1] !== undefined) {
+          id = `${m[1]}-${m[2]}`;
+          prefix = m[1];
+          numberPart = m[2];
+        } else if (m.length >= 2 && m[1] !== undefined) {
+          id = m[1];
+          ({ prefix, numberPart } = splitIdIntoPrefixAndNumber(id));
+        } else {
+          id = m[0];
+          ({ prefix, numberPart } = splitIdIntoPrefixAndNumber(id));
+        }
         seen.set(key, {
-          id: `${prefix}-${numberPart}`,
+          id,
           prefix,
           numberPart,
           start,
@@ -357,7 +387,12 @@ export function analyzePrefixes(occurrences: TestBasisIdOccurrence[]): {
   stats: TestBasisPrefixStat[];
   issues: TestBasisPrefixIssue[];
 } {
-  const definitions = occurrences.filter((o) => o.role === "definition" && o.kind !== "coverageTarget");
+  // prefix === "" は接頭辞ベースのID体系ではない（数値のみのID等）ことを意味するため、
+  // 接頭辞の一貫性検査（桁数/セグメント数/大文字小文字/希少プレフィックス）の対象から除外する。
+  // 既定パターンでは prefix が空になることは無いため、既存挙動への影響は無い。
+  const definitions = occurrences.filter(
+    (o) => o.role === "definition" && o.kind !== "coverageTarget" && o.prefix !== ""
+  );
 
   const prefixOrder: string[] = [];
   const byPrefix = new Map<string, TestBasisIdOccurrence[]>();
