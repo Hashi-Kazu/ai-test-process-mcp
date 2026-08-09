@@ -292,6 +292,7 @@ export interface TestBasisIdOccurrence {
   lineText: string; // 行全体（trim済み）
   role: TestBasisIdRole;
   kind: TestBasisIdKind;
+  isHeadingLine: boolean; // 行自体がMarkdown見出し行かどうか
 }
 
 /** テストベース文書内の根拠位置（行番号・章節） */
@@ -312,6 +313,11 @@ export interface TestBasisDuplicateId {
   count: number;
   places: { document: string; lineIndex: number; heading: string; lineText: string }[];
   sameText: boolean; // 定義行のテキストが全て一致するなら true（単純な再掲の可能性）
+  /**
+   * "medium": 一覧行(見出しでない)＋本文見出し行の2件のみ（list+detail の正常な構造の疑いあり）。
+   * "high": それ以外（3件以上、見出し2件、非見出し2件など。同一IDの再利用等の真の欠陥の疑い）。
+   */
+  severity: "high" | "medium";
 }
 
 export interface TestBasisUnresolvedReference {

@@ -208,6 +208,7 @@ export function extractIdOccurrences(
   for (const doc of documents) {
     const lines = doc.content.split("\n");
     const headingPerLine = headingsPerLine(doc.content);
+    const headingLineIndexSet = new Set(parseHeadings(doc.content).map((h) => h.lineIndex));
     lines.forEach((line, lineIndex) => {
       const matches = findRawIdMatches(line, patterns, options);
       if (matches.length === 0) return;
@@ -216,6 +217,7 @@ export function extractIdOccurrences(
       const heading = headingPerLine[lineIndex] ?? "(見出しなし)";
       const lineText = line.trim();
       const isToc = isTableOfContentsLine(line);
+      const isHeadingLine = headingLineIndexSet.has(lineIndex);
       matches.forEach((match, i) => {
         let role: "definition" | "reference" | "toc";
         if (isToc) {
@@ -234,6 +236,7 @@ export function extractIdOccurrences(
           lineText,
           role,
           kind: match.kind,
+          isHeadingLine,
         });
       });
     });
@@ -360,6 +363,9 @@ export function findDuplicateIds(occurrences: TestBasisIdOccurrence[]): TestBasi
     const defs = byId.get(id)!;
     if (defs.length < 2) continue;
     const sameText = defs.every((d) => d.lineText === defs[0].lineText);
+    const headingCount = defs.filter((d) => d.isHeadingLine).length;
+    const severity: "high" | "medium" =
+      defs.length === 2 && headingCount === 1 ? "medium" : "high";
     result.push({
       id,
       count: defs.length,
@@ -370,6 +376,7 @@ export function findDuplicateIds(occurrences: TestBasisIdOccurrence[]): TestBasi
         lineText: d.lineText,
       })),
       sameText,
+      severity,
     });
   }
   return result;

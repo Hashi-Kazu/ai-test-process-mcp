@@ -92,7 +92,7 @@ export function renderTestBasisReview(
       const placesText = dup.places
         .map((p) => place(p.document, p.lineIndex, p.heading))
         .join(" / ");
-      lines.push(`- [high] ${dup.id}(${dup.count}件): ${placesText}`);
+      lines.push(`- [${dup.severity}] ${dup.id}(${dup.count}件): ${placesText}`);
     }
   }
   lines.push("");
@@ -184,10 +184,17 @@ export function renderTestBasisReview(
 
   for (const dup of duplicates) {
     const first = dup.places[0];
+    const importance = dup.severity === "medium" ? "中" : "高";
+    const questionText =
+      dup.severity === "medium"
+        ? `${dup.id} が一覧と本文の両方に出現している（同一IDの再利用か、一覧＋詳細の正常な構造かを確認すること）`
+        : `${dup.id} が複数箇所で定義されている。どちらが正か、採番の是正方針を確認したい`;
+    const assumptionText =
+      dup.severity === "medium" ? "一覧＋詳細の正常な構造とみなす" : "先に定義されたIDを正とみなす";
     lines.push(
-      `| ${nextQid()} | 高 | ${escapeCell(place(first.document, first.lineIndex, first.heading))} | ${escapeCell(
-        `${dup.id} が複数箇所で定義されている。どちらが正か、採番の是正方針を確認したい`
-      )} | ${escapeCell("先に定義されたIDを正とみなす")} |`
+      `| ${nextQid()} | ${importance} | ${escapeCell(place(first.document, first.lineIndex, first.heading))} | ${escapeCell(
+        questionText
+      )} | ${escapeCell(assumptionText)} |`
     );
   }
   for (const ref of unresolved) {
