@@ -367,6 +367,35 @@ export interface TestBasisQuantityExpression {
   hasBoundaryWord: boolean; // 同一マッチ内に 以上/以下/未満/超/以内 を含むか
 }
 
+// --- 入力品質（変換品質）判定区分カタログ（inputQualityCriteria.ts） ---
+export interface InputQualityCriterion {
+  id: string;                 // "IQC-01" 形式
+  nameJa: string;
+  severity: "high" | "medium";
+  metric: string;             // 何を測るか（決定的な定義）
+  threshold: string;          // 閾値の説明（定数値を文中に含める）
+  description: string;
+  action: string;
+  measuredEvidence: string[]; // 実測サンプルと観測値
+}
+
+export interface InputQualityCriteria {
+  name: string;
+  summary: string;
+  criteria: InputQualityCriterion[];
+  notes: string[];
+}
+
+/** 変換品質の決定的指標。すべて整数カウントで保持し、比率は表示時にのみ算出する。 */
+export interface DocumentInputQualityMetrics {
+  tableCellCount: number;          // 表行から抽出した非空セル数（判定の母数）
+  isolatedNumericCount: number;    // 2桁以上の数値のみのセル数
+  isolatedNumericDistinct: number; // 上記セルの異なり値数
+  furiganaRunCount: number;        // ふりがな候補カタカナ列の検出数
+  furiganaCharCount: number;       // 上記カタカナ列の合計文字数
+  brokenTableCellCount: number;    // 末尾が助詞・読点で終わる表セル数
+}
+
 // --- 入力ダイジェスト（documents 系ツール共通。抜粋投入の可視化） ---
 export interface DocumentDigestRow {
   document: string;
@@ -378,12 +407,14 @@ export interface DocumentDigestRow {
   quantityCount: number;   // extractQuantityExpressions の件数
   prefixCounts: { prefix: string; definitionCount: number }[]; // 出現順
   otherPrefixReferenceCount: number; // idCount===0 の文書のみ算出。他文書が定義したIDプレフィックスへの緩い単語一致件数
+  inputQuality: DocumentInputQualityMetrics;
 }
 
 export interface DocumentDigestFinding {
   document: string;
-  kind: "no-id" | "sparse-prefix" | "no-id-system";
-  severity: "medium" | "info";
+  kind: "no-id" | "sparse-prefix" | "no-id-system"
+    | "isolated-numeric-cells" | "furigana-contamination" | "no-heading" | "broken-table-cells";
+  severity: "high" | "medium" | "info";
   detail: string;
 }
 
