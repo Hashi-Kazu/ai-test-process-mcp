@@ -1,4 +1,4 @@
-import { parseHeadings } from "./tools/reviewTestPlan.js";
+import { escapeRegExp, parseHeadings } from "./tools/reviewTestPlan.js";
 import {
   extractIdOccurrences,
   extractQuantityExpressions,
@@ -31,7 +31,7 @@ export function buildDocumentDigests(
   documents: TestBasisDocument[],
   options: TestBasisAnalysisOptions = {}
 ): DocumentDigestRow[] {
-  return documents.map((doc) => {
+  const perDoc = documents.map((doc) => {
     const occurrences = extractIdOccurrences([doc], options);
     const definitions = occurrences.filter((o) => o.role === "definition");
     const prefixOrder: string[] = [];
@@ -42,6 +42,25 @@ export function buildDocumentDigests(
         prefixOrder.push(def.prefix);
       }
       prefixCountMap.set(def.prefix, (prefixCountMap.get(def.prefix) as number) + 1);
+    }
+    return { doc, occurrences, definitions, prefixOrder, prefixCountMap };
+  });
+
+  const globalPrefixes = new Set<string>();
+  for (const entry of perDoc) {
+    for (const prefix of entry.prefixOrder) {
+      globalPrefixes.add(prefix);
+    }
+  }
+
+  return perDoc.map(({ doc, occurrences, definitions, prefixOrder, prefixCountMap }) => {
+    let otherPrefixReferenceCount = 0;
+    if (occurrences.length === 0) {
+      for (const prefix of globalPrefixes) {
+        const pattern = new RegExp("\\b" + escapeRegExp(prefix) + "\\b", "g");
+        const matches = doc.content.match(pattern);
+        if (matches) otherPrefixReferenceCount += matches.length;
+      }
     }
     return {
       document: doc.name,
@@ -55,6 +74,7 @@ export function buildDocumentDigests(
         prefix,
         definitionCount: prefixCountMap.get(prefix) as number,
       })),
+      otherPrefixReferenceCount,
     };
   });
 }
@@ -64,13 +84,23 @@ export function findDocumentDigestFindings(rows: DocumentDigestRow[]): DocumentD
 
   for (const row of rows) {
     if (row.idCount === 0) {
-      findings.push({
-        document: row.document,
-        kind: "no-id",
-        severity: "medium",
-        detail:
-          "検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。",
-      });
+      if (row.otherPrefixReferenceCount > 0) {
+        findings.push({
+          document: row.document,
+          kind: "no-id",
+          severity: "medium",
+          detail:
+            "検出IDが0件だが、他文書が持つIDプレフィックスへの参照が見つかった。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。",
+        });
+      } else {
+        findings.push({
+          document: row.document,
+          kind: "no-id-system",
+          severity: "info",
+          detail:
+            "検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。",
+        });
+      }
     }
   }
 

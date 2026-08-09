@@ -38,6 +38,7 @@ describe("buildDocumentDigests", () => {
     expect(rows[0].definedIdCount).toBe(1);
     expect(rows[0].quantityCount).toBe(1);
     expect(rows[0].prefixCounts).toEqual([{ prefix: "EH", definitionCount: 1 }]);
+    expect(rows[0].otherPrefixReferenceCount).toBe(0);
   });
 
   it("is deterministic and does not mutate the input", () => {
@@ -51,16 +52,58 @@ describe("buildDocumentDigests", () => {
 });
 
 describe("findDocumentDigestFindings", () => {
-  it("flags a document with no detected ids as a possible excerpt", () => {
+  it("flags a document with no detected ids and no other-prefix reference as ID-system-less", () => {
     const rows = buildDocumentDigests([{ name: "抜粋メモ", content: "残数が少ない場合の扱い\n以上" }]);
     const findings = findDocumentDigestFindings(rows);
     expect(findings).toHaveLength(1);
     expect(findings[0]).toEqual({
       document: "抜粋メモ",
+      kind: "no-id-system",
+      severity: "info",
+      detail:
+        "検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。",
+    });
+  });
+
+  it("keeps medium severity when a loose reference to another document's prefix exists", () => {
+    const docA = prefixDoc("docA", DIGEST_PREFIX_MIN_PEAK);
+    const docB: TestBasisDocument = {
+      name: "docB",
+      content: "# 概要\n本文中にEHという単語のみが登場する。IDらしき表記は無い。",
+    };
+    const rows = buildDocumentDigests([docA, docB]);
+    const docBRow = rows.find((r) => r.document === "docB");
+    expect(docBRow?.otherPrefixReferenceCount).toBe(1);
+    const findings = findDocumentDigestFindings(rows);
+    const docBFinding = findings.find((f) => f.document === "docB");
+    expect(docBFinding).toEqual({
+      document: "docB",
       kind: "no-id",
       severity: "medium",
-      detail: "検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。",
+      detail:
+        "検出IDが0件だが、他文書が持つIDプレフィックスへの参照が見つかった。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。",
     });
+  });
+
+  it("reports info when there is no reference to any other document's prefix", () => {
+    const docA = prefixDoc("docA", DIGEST_PREFIX_MIN_PEAK);
+    const docC: TestBasisDocument = {
+      name: "docC",
+      content: "# 一般業務文書\n本文書は発注業務の手順を説明する一般的な業務文書であり、特定の識別子体系を持たない。",
+    };
+    const rows = buildDocumentDigests([docA, docC]);
+    const docCRow = rows.find((r) => r.document === "docC");
+    expect(docCRow?.otherPrefixReferenceCount).toBe(0);
+    const findings = findDocumentDigestFindings(rows);
+    const docCFinding = findings.find((f) => f.document === "docC");
+    expect(docCFinding).toEqual({
+      document: "docC",
+      kind: "no-id-system",
+      severity: "info",
+      detail:
+        "検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。",
+    });
+    expect(findings.some((f) => f.document === "docC" && f.severity === "medium")).toBe(false);
   });
 
   it("flags only the sparse document when one document holds far more definitions of a prefix", () => {
@@ -97,7 +140,7 @@ describe("renderDocumentDigestLines", () => {
     expect(lines[2]).toContain("| 35,525 |");
     expect(lines[2]).toContain("| 0 / 0 |");
     expect(lines).toContain(
-      "- [medium] 11_要求\\|仕様書: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
+      "- [info] 11_要求\\|仕様書: 検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。"
     );
     expect(lines[lines.length - 1]).toBe(
       "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"

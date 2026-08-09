@@ -180,12 +180,12 @@ describe("renderRequirementsAnalysis - 入力ダイジェスト", () => {
     );
   });
 
-  it("flags a document with no detected ids as [medium] and counts it in the 2.7 summary", () => {
+  it("flags a document with no detected ids and no other-prefix reference as [info] and counts it in the 2.7 summary", () => {
     const markdown = renderRequirementsAnalysis({
       documents: [...baseInput.documents, { name: "memo.md", content: "抜粋メモのみ" }],
     });
     expect(markdown).toContain(
-      "- [medium] memo.md: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
+      "- [info] memo.md: 検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。"
     );
     expect(markdown).toContain("ダイジェスト指摘数: 1");
   });

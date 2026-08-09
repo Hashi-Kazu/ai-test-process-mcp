@@ -86,13 +86,13 @@ describe("renderIdPopulationAudit - 入力ダイジェスト", () => {
     expect(markdown).toContain("ダイジェスト指摘数: 0");
   });
 
-  it("flags a document with no detected ids as [medium] and counts it in the 2.8 summary", () => {
+  it("flags a document with no detected ids and no other-prefix reference as [info] and counts it in the 2.8 summary", () => {
     const md = renderIdPopulationAudit({
       ...input,
       documents: [...documents, { name: "doc-C", content: "抜粋メモのみ" }],
     });
     expect(md).toContain(
-      "- [medium] doc-C: 検出IDが0件。抜粋のみが投入されている可能性がある。全文を投入して再実行すること。"
+      "- [info] doc-C: 検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。"
     );
     expect(md).toContain("ダイジェスト指摘数: 1");
   });
