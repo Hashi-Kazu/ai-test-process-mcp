@@ -377,12 +377,13 @@ export interface DocumentDigestRow {
   definedIdCount: number;  // role === "definition"
   quantityCount: number;   // extractQuantityExpressions の件数
   prefixCounts: { prefix: string; definitionCount: number }[]; // 出現順
+  otherPrefixReferenceCount: number; // idCount===0 の文書のみ算出。他文書が定義したIDプレフィックスへの緩い単語一致件数
 }
 
 export interface DocumentDigestFinding {
   document: string;
-  kind: "no-id" | "sparse-prefix";
-  severity: "medium";
+  kind: "no-id" | "sparse-prefix" | "no-id-system";
+  severity: "medium" | "info";
   detail: string;
 }
 
