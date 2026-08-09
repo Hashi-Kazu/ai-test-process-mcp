@@ -191,6 +191,38 @@ describe("renderRequirementsAnalysis - 入力ダイジェスト", () => {
   });
 });
 
+describe("renderRequirementsAnalysis - verbose", () => {
+  it("shows the default-summary notice at the top of the output", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    expect(markdown).toContain("既定(verbose未指定/false)は要約表示。2.6節は根拠位置を絞り込んで表示する。全件が必要な場合は `verbose: true` を指定すること。");
+  });
+
+  it("shows a per-prefix count summary table in 2.6", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    expect(section26).toContain("| プレフィックス | 根拠位置数 |");
+    expect(section26).toContain("| W- |");
+  });
+
+  it("by default lists only flagged (duplicate) IDs' source references in 2.6, excluding unflagged IDs", () => {
+    const markdown = renderRequirementsAnalysis(baseInput);
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    expect(section26).toContain("W-001");
+    const tableSection = section26.split("| 要件ID | 文書 | 行範囲 | 章節 | 引用ラベル |")[1] ?? "";
+    expect(tableSection).not.toContain("W-002");
+    expect(tableSection).not.toContain("W-003");
+  });
+
+  it("lists source references for every requirement id when verbose is true", () => {
+    const markdown = renderRequirementsAnalysis({ ...baseInput, verbose: true });
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    const tableSection = section26.split("| 要件ID | 文書 | 行範囲 | 章節 | 引用ラベル |")[1] ?? "";
+    expect(tableSection).toContain("W-001");
+    expect(tableSection).toContain("W-002");
+    expect(tableSection).toContain("W-003");
+  });
+});
+
 describe("renderRequirementsAnalysis 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderRequirementsAnalysis(baseInput));

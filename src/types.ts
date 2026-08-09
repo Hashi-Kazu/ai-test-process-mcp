@@ -548,6 +548,7 @@ export interface AnalyzeRequirementsInput {
   stakeholders?: RequirementsStakeholderInput[];
   changeItems?: RequirementsChangeItem[];
   qualityCharacteristicIds?: string[]; // 指定時は該当特性のみをマッピング指示に出す
+  verbose?: boolean; // true=2.6節を全件列挙、false/省略=サマリ+フラグ付きIDのみ
 }
 
 // --- テスト観点カタログ ---
@@ -1979,6 +1980,7 @@ export interface AuditIdPopulationInput {
   expectedDocumentNames?: string[];
   idPatterns?: string[];
   includeCoverageTargetIds?: boolean;
+  verbose?: boolean; // true=2.1節を全件列挙、false/省略=サマリ+判定フラグ(never-declared/excluded)付きIDのみ
 }
 
 export interface DefinedIdEntry {
