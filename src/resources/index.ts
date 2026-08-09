@@ -15,6 +15,7 @@ import { testTechniqueCatalog } from "./testTechniqueCatalog.js";
 import { testSizeClassificationCriteria } from "./testSizeClassificationCriteria.js";
 import { exploratoryCharterCatalog } from "./exploratoryCharterCatalog.js";
 import { idPopulationAuditCriteria } from "./idPopulationAuditCriteria.js";
+import { inputQualityCriteria } from "./inputQualityCriteria.js";
 import { personaJourneyFrame } from "./personaJourneyFrame.js";
 import { thresholdChangeImpactCriteria } from "./thresholdChangeImpactCriteria.js";
 import { thresholdExtractionCriteria } from "./thresholdExtractionCriteria.js";
@@ -362,6 +363,28 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify(idPopulationAuditCriteria, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "input-quality-criteria",
+    "testbasis://input/quality-criteria",
+    {
+      title: "Input Quality (Conversion Fidelity) Criteria",
+      description:
+        "Judgment categories IQC-01..IQC-04 for detecting text-conversion damage in submitted test-basis documents " +
+        "(isolated numeric cells from shifted shared-string references, furigana contamination, zero headings, " +
+        "wrapped table cells), with thresholds measured against real Word/Excel/PDF conversions.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(inputQualityCriteria, null, 2),
         },
       ],
     })
