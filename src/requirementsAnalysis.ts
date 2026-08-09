@@ -439,15 +439,20 @@ export function buildDeterministicFindings(
   // 1. ID重複
   for (const dup of duplicates) {
     const first = dup.places[0];
+    const isMedium = dup.severity === "medium";
     findings.push({
       id: nextId(),
       kind: "ID重複",
-      severity: "high",
+      severity: dup.severity,
       place: `${first.document}:${first.lineIndex + 1} ${first.heading}`,
       snippet: truncateSnippet(first.lineText),
-      problem: `${dup.id} が ${dup.count} 箇所で定義されている。`,
-      question: `${dup.id} が複数箇所で定義されている。どちらが正か、採番の是正方針を確認したい`,
-      assumption: "先に定義されたIDを正とみなす",
+      problem: isMedium
+        ? `${dup.id} が一覧と本文の両方に出現している（${dup.count}箇所）。`
+        : `${dup.id} が ${dup.count} 箇所で定義されている。`,
+      question: isMedium
+        ? `${dup.id} が一覧と本文の両方に出現している（同一IDの再利用か、一覧＋詳細の正常な構造かを確認すること）`
+        : `${dup.id} が複数箇所で定義されている。どちらが正か、採番の是正方針を確認したい`,
+      assumption: isMedium ? "一覧＋詳細の正常な構造とみなす" : "先に定義されたIDを正とみなす",
     });
   }
 

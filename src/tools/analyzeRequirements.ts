@@ -143,7 +143,7 @@ export function renderRequirementsAnalysis(
       const placesText = dup.places
         .map((p) => `${p.document}:${p.lineIndex + 1} ${p.heading}`)
         .join(" / ");
-      lines.push(`  - ${dup.id}(${dup.count}件): ${placesText}`);
+      lines.push(`  - [${dup.severity}] ${dup.id}(${dup.count}件): ${placesText}`);
     }
   }
   if (unresolved.length === 0) {

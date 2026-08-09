@@ -193,6 +193,68 @@ describe("findDuplicateIds", () => {
     const occurrences = extractIdOccurrences(documents);
     expect(findDuplicateIds(occurrences)).toEqual([]);
   });
+
+  it("severity=medium when one occurrence is a heading line and the other is not (list+detail)", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: ["- E-016 一覧行の説明", "## E-016 本文見出しの説明"].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].id).toBe("E-016");
+    expect(duplicates[0].count).toBe(2);
+    expect(duplicates[0].severity).toBe("medium");
+  });
+
+  it("severity=high when both occurrences are heading lines", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: ["## E-016 最初の見出し", "## E-016 別の見出し"].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].id).toBe("E-016");
+    expect(duplicates[0].severity).toBe("high");
+  });
+
+  it("severity=high when both occurrences are non-heading lines", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: ["- E-016 最初の説明", "- E-016 別の説明（矛盾）"].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].id).toBe("E-016");
+    expect(duplicates[0].severity).toBe("high");
+  });
+
+  it("severity=high when there are 3 or more definitions even with a heading line mixed in", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: [
+          "- E-016 一覧行の説明",
+          "## E-016 本文見出しの説明",
+          "E-016 さらに別の説明",
+        ].join("\n"),
+      },
+    ];
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].id).toBe("E-016");
+    expect(duplicates[0].count).toBe(3);
+    expect(duplicates[0].severity).toBe("high");
+  });
 });
 
 describe("findUnresolvedReferences", () => {
@@ -315,6 +377,7 @@ describe("目次行のID出現 (toc ロール)", () => {
     expect(duplicates[0].id).toBe("EH-100");
     expect(duplicates[0].count).toBe(2);
     expect(duplicates[0].sameText).toBe(false);
+    expect(duplicates[0].severity).toBe("high");
   });
 
   it("8. regression: EH-241 unresolved reference is preserved, unaffected by an added toc line", () => {

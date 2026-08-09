@@ -622,6 +622,7 @@ export function buildCrossRefIdIndex(
   for (const d of deliverables) {
     const lines = d.content.split("\n");
     const headingPerLine = headingsPerLine(d.content);
+    const headingLineIndexSet = new Set(parseHeadings(d.content).map((h) => h.lineIndex));
     lines.forEach((line, lineIndex) => {
       const expanded = expandIdRanges(line);
       if (expanded.length === 0) return;
@@ -641,6 +642,7 @@ export function buildCrossRefIdIndex(
           lineText: line.trim(),
           role: "reference",
           kind: "requirement",
+          isHeadingLine: headingLineIndexSet.has(lineIndex),
         });
       }
     });
