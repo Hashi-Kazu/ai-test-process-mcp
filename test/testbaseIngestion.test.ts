@@ -97,4 +97,28 @@ describe("parseWordDocument", () => {
     const stylesXml = `<w:styles><w:style w:type="paragraph" w:styleId="23"><w:name w:val="toc 2"/></w:style></w:styles>`;
     expect(parseWordDocument(xml, stylesXml)).toBe("目次見出し");
   });
+
+  it("drops a TOC compound field whose begin/separate/end (and nested PAGEREF fields) span multiple paragraphs", () => {
+    const xml = `<w:document><w:body>` +
+      `<w:p><w:r><w:t>前の本文</w:t></w:r></w:p>` +
+      `<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>` +
+      `<w:p><w:hyperlink><w:r><w:t>1.1.見出し</w:t></w:r>` +
+      `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> PAGEREF _Toc1 \\h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>` +
+      `<w:r><w:t>1</w:t></w:r>` +
+      `<w:r><w:fldChar w:fldCharType="end"/></w:r></w:hyperlink></w:p>` +
+      `<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>` +
+      `<w:p><w:r><w:t>後の本文</w:t></w:r></w:p>` +
+      `</w:body></w:document>`;
+    expect(parseWordDocument(xml)).toBe("前の本文\n\n後の本文");
+  });
+
+  it("does not remove a non-TOC compound field (e.g. a PAGEREF field outside of any TOC field)", () => {
+    const xml = `<w:document><w:body><w:p>` +
+      `<w:r><w:t>ページ: </w:t></w:r>` +
+      `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> PAGEREF _Toc1 \\h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>` +
+      `<w:r><w:t>5</w:t></w:r>` +
+      `<w:r><w:fldChar w:fldCharType="end"/></w:r>` +
+      `</w:p></w:body></w:document>`;
+    expect(parseWordDocument(xml)).toBe("ページ: 5");
+  });
 });

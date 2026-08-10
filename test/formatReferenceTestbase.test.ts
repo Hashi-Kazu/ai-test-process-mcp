@@ -75,18 +75,18 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
       const pipeLines = lines.filter((l: string) => l.startsWith("| ")).length;
       const tocLikeLines = lines.filter((l: string) => /^\d+(\.\d+)*\..+\d+$/.test(l)).length;
 
-      expect(chars).toBe(33871);
-      expect(lineCount).toBe(1251);
+      expect(chars).toBe(32676);
+      expect(lineCount).toBe(1155);
       expect(headingLines).toBe(49);
       expect(pipeLines).toBe(92);
-      expect(tocLikeLines).toBe(48);
+      expect(tocLikeLines).toBe(0);
 
       const readme = readReadme();
-      expect(readme).toContain("文字数: 33,871字");
-      expect(readme).toContain("行数: 1,251行");
+      expect(readme).toContain("文字数: 32,676字");
+      expect(readme).toContain("行数: 1,155行");
       expect(readme).toContain("`#`始まり行数: 49");
       expect(readme).toContain("パイプ表行数: 92");
-      expect(readme).toContain("目次由来行数（`^\\d+(\\.\\d+)*\\..+\\d+$`）: 48");
+      expect(readme).toContain("目次由来行数（`^\\d+(\\.\\d+)*\\..+\\d+$`）: 0");
     });
 
     it("shinkyu-taishohyo docx: no heading styles, 1 w:tbl, no w:ins/w:del, matches README", () => {
