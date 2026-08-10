@@ -98,9 +98,29 @@ JSTQB（ISTQB準拠）の Generic Test Process 全7工程を対象に、各工�
   - 意味的チェック: 要件IDが明示されていない・表記が揺れているテストベースについても、呼び出し側 LLM がチェックリストに沿って要件と仕様書を突き合わせ、カバレッジ漏れ・期待結果の不整合を指摘できる形式で返す。
 - チェックリスト resource: テストベースに対するテスト条件の網羅性、トレーサビリティ、期待結果の明確さと整合、テスト技法の適切さ、事前条件・手順の実行可能性など。
 
+### Phase 5: 実務適用（Practitioner Readiness）
+
+Phase 1〜3 で実装済みのツール群を、コンテスト用テストベースではない**現場の実務文書**に対して使用に耐える水準へ引き上げる。横方向（工程の広さ）ではなく縦方向（実務での信用）を扱う。工程拡張（Phase 4）より先に着手する。
+
+追跡: GitHub Issue #176 の M5（条件V）。実測の根拠は `docs/ai/regression-baseline.md` と `sample/non_contest_testbase/`。
+
+| マイルストーン | 内容 | 状態 |
+| --- | --- | --- |
+| M5-1 検査可能性の可視化 | 定義ID0件・母集団0件で決定的層が空振りしたことを「検査不能(要確認)」として必ず出力する。ID体系を持たない実務文書向けの代替アンカー（見出しパス）で章節を解決する | 未着手 |
+| M5-2 出力量 | 1ツールの既定出力を呼び出し元 context に載る規模へ。要約表示が重複ID件数に比例して破綻する構造を解消する | 未着手 |
+| M5-3 優先順位付け | 決定的指摘へ対処優先度を機械的に付与する。曖昧語等の定型表現による偽陽性を、除外件数と規則IDを明示したうえで抑制する | 未着手 |
+| M5-4 入力コスト | 上流出力→下流payloadの引き渡しJSONを標準化し、interview prompt と原文入力口を拡張する | 未着手 |
+| M5-5 導線と実証 | 起点からの工程導線を resource で提供し、実務テストベースで全ツールを実証する | 未着手 |
+
+Phase 5 の設計規約（`AGENTS.md` の必須ルールの具体化）:
+
+- 検査が実行できなかったことは「合格」ではなく「**検査不能（要確認）**」として出力する。`audit_coverage_balance` / `audit_deliverable_consistency` が既に実装している方式を、ID系検査へも適用する。
+- 出力量を削るときは、削った件数と全件取得手段（`verbose: true`）を必ず併記する。黙って縮退させない。
+- 偽陽性を抑制するときは、除外した件数と除外規則IDを出力する。フィルタが効きすぎたことを回帰で検出できる形にする。
+
 ### Phase 4: Generic Test Process 全体への拡張
 
-残る4工程（Monitoring and Control / Implementation / Execution / Completion）へ拡張する。着手時に再計画。
+残る4工程（Monitoring and Control / Implementation / Execution / Completion）へ拡張する。**Phase 5（実務適用）の完了後に着手し、着手時に再計画する。**
 
 ## 将来構想: Tool 一覧
 
@@ -142,8 +162,9 @@ Generic Test Process の各工程で最終的に提供したい tool 群。Phase
 | Phase 3 着手 | Test Design（`generate_test_cases` + テスト技法カタログ・技法選定決定表 resource `testdesign://techniques/catalog`、`test_design_interview` prompt、共有純関数 `src/testCaseAnalysis.ts`） | 完了 |
 | Phase 3 残り | Test Design（`review_test_specification` + テスト仕様書レビューチェックリスト resource `testspec://review/checklist`、共有純関数 `src/testSpecificationAnalysis.ts`） | 完了 |
 | Phase 3 追加 | 経験ベース技法（`generate_exploratory_charters` + `testdesign://exploratory/charters`、`exploratory_charter_interview` prompt、共有純関数 `src/exploratoryCharterAnalysis.ts`、技法カタログ `TTK-11`〜`13` / `TTS-09`〜`10`） | 完了 |
-| Phase 4 | 全工程への拡張 | 未計画 |
+| Phase 4 | 全工程への拡張 | 未計画（Phase 5 の後） |
 | Phase 2 追加 | ID母集団監査 `audit_id_population`（テストベース定義済みID全量×宣言母集団の突き合わせで未宣言IDを決定的に検出、判定区分カタログ `testbasis://population/audit-criteria`、共有純関数 `src/idPopulationAnalysis.ts`。GitHub Issue #45 / Jira `HSKZ-99`） | 完了 |
 | Phase 2 追加 | 上流の利用状況モデリング（ペルソナの4象限化 = 属性/発言・思考/目標/不満点、`generate_user_story_map` + フレーム resource `testcondition://persona/journey-frame` + `persona_journey_interview` prompt、共有純関数 `src/userStoryMapAnalysis.ts`。ドメイン分析→ペルソナ立案→ユーザーストーリーマップ5階層→テスト要求(Before/After)導出を支援し、テスト要求を `extract_test_conditions` の `source="stakeholder"` 条件へ引き渡す。GitHub Issue #50 / #57 / Jira `HSKZ-104` / `HSKZ-111`） | 完了 |
 | Phase 3 追加 | 閾値変更の影響再展開 reexpand_threshold_changes（閾値パラメータ表の変更前後2スナップショットを突き合わせ、境界値/同値分割をパラメータ名束縛で新旧再展開し、旧値の直値残存・失効した網羅対象ID参照・名前参照経由の再確認要否を判定区分カタログ `testdesign://threshold/change-impact-criteria` 8区分で決定的に検出、共有純関数 `src/thresholdChangeAnalysis.ts`。GitHub Issue #55） | 完了 |
 | Phase 3 追加 | ASTER参加要項が例示するFV表/NGT/ゆもつよマトリクスの3記法対応（`audit_test_design_notations` + 記法カタログ・判定区分カタログ `testdesign://notation/catalog`（`TDN-01`〜`25`）、共有純関数 `src/testDesignNotationAnalysis.ts`。宣言（網羅率・記法間の対応）と実体（行・ノード・セル・テスト条件母集団）を双方向照合し、記法をまたいだ不整合まで検出） | 完了（GitHub Issue #95 / Jira `HSKZ-139`） |
+| Phase 5 | 実務適用（M5-1 検査可能性の可視化 / M5-2 出力量 / M5-3 優先順位付け / M5-4 入力コスト / M5-5 導線と実証。GitHub Issue #176 の M5・条件V） | 未着手 |
