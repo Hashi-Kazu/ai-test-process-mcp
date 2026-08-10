@@ -95,6 +95,7 @@ Excel は OOXML（ZIP + XML）形式であり、素朴な文字列抽出では�
 - **表**: `w:tbl` を `w:tr`→1行、`w:tc`→1セルとしてパイプ表へ変換する。セル内改行・タブは半角空白へ
   畳む（畳まないと `src/documentDigest.ts` のパイプ表解析が崩れ IQC-04 の表崩れを招く）。セル内の
   `|` は `\|` にエスケープする。
+- **本規約を実原本へ適用した実測記録**: `sample/non_contest_testbase/format_reference/README.md`。
 
 ## 5. PDF
 
@@ -117,6 +118,8 @@ Excel は OOXML（ZIP + XML）形式であり、素朴な文字列抽出では�
 
 変換不要。原文をそのまま投入する。
 
+本規約を実原本へ適用した実測記録: `sample/non_contest_testbase/format_reference/README.md`。
+
 ## 7. JSON
 
 - 変換不要。JSON テキストをそのまま投入してよい。
@@ -131,6 +134,7 @@ Excel は OOXML（ZIP + XML）形式であり、素朴な文字列抽出では�
   投入したときの実測では、Excel側の定義ID総数33に対しJSON側は0となった（`docs/ai/regression-baseline.md`
   指標19.3）。この不一致は`[high]`「指定パターンが1件も一致しなかった」とIQC-03として検知されるため、
   黙って縮退することはない。
+- 本規約を実原本へ適用した実測記録: `sample/non_contest_testbase/format_reference/README.md`。
 
 ## 8. 規約項目と判定区分（IQC-nn）の対応表
 
