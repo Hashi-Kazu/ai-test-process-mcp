@@ -71,6 +71,11 @@ Excel は OOXML（ZIP + XML）形式であり、素朴な文字列抽出では�
   宣言（「ここに図形内テキストがあるはずだ」という主張）そのものが存在しないため、宣言と実体の照合を
   構成できない。したがって本規約と参照実装（セクションを必ず出力する）でのみ担保する。将来のIQC候補
   としては記録するが、本Issueでは新規IQC番号を追加しない。
+- **本規約をExcel原本へ実適用した記録**: `sample/non_contest_testbase/00_成果物生成手順.md`。同書は
+  付番API仕様書の原本から `<a:t>` 53件・図形（`<xdr:sp>`）14件を抽出し、`## 図形内テキスト（APIシーケンス）`
+  として12行（うち `<xdr:sp>` 由来の非空図形12件）を出力したうえで、その12行を
+  `analyze_execution_order` / `analyze_data_flow_timing` の入力へ写して成果物
+  `17_実行順序分析結果.md` / `18_データフロー・タイミング分析結果.md` を生成するまでの手順を記録している。
 
 シート単位で `## <シート名>` 見出しを出し、シート順は `xl/workbook.xml` の `<sheet>` 宣言順
 （＝ワークブックのシートタブ表示順）で固定する。`sheetN.xml` のファイル番号はシート表示順と一致しない
@@ -166,7 +171,7 @@ Excel / Word の参照実装は `scripts/lib/ooxml.mjs`（OOXML共通のZIP読�
 ```bash
 bash scripts/extract-testbase-text.sh 2025
 node scripts/extract-testbase-xlsx.mjs sample/non_contest_testbase/2026-08_digital-agency_atenabango-fuban-api_spec.xlsx \
-  --out .work/ingestion/fuban-api.txt
+  --out .work/testbase/atenabango/2026-08_digital-agency_atenabango-fuban-api_spec.txt
 node scripts/extract-testbase-docx.mjs path/to/spec.docx --out .work/ingestion/spec.txt
 ```
 
