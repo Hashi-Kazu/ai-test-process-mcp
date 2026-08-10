@@ -1,0 +1,524 @@
+{
+  "planId": "EXO-ATENABANGO-01",
+  "title": "住登外者宛名番号付番API テスト実行順序計画（根拠: 2026-08_digital-agency_atenabango-fuban-api_spec:53-66 の見出し「## 図形内テキスト（APIシーケンス）」に出力されたシーケンス図の図形内テキスト12行）",
+  "maxParallelism": 3,
+  "resources": [
+    {
+      "id": "RES-01",
+      "nameJa": "アクセス先APIのテスト環境（住登外者宛名番号管理機能）",
+      "kind": "environment",
+      "capacity": 3,
+      "note": "HTTP1.1以上・TLS1.2以上で待ち受ける（2026-08_digital-agency_atenabango-fuban-api_spec:32-35）。テスト環境は3面用意する"
+    },
+    {
+      "id": "RES-02",
+      "nameJa": "アクセス先APIの認可サーバ",
+      "kind": "environment",
+      "capacity": 2,
+      "note": "図形内テキスト（APIシーケンス）の構成要素「アクセス先APIの認可サーバ」（2026-08_digital-agency_atenabango-fuban-api_spec:56）"
+    },
+    {
+      "id": "RES-03",
+      "nameJa": "API要求元（基幹業務システム）役のテストドライバ",
+      "kind": "environment",
+      "capacity": 3,
+      "note": "図形内テキスト（APIシーケンス）の構成要素「API要求元（基幹業務システム）」（2026-08_digital-agency_atenabango-fuban-api_spec:55）"
+    },
+    {
+      "id": "RES-04",
+      "nameJa": "テスト実行担当",
+      "kind": "person",
+      "capacity": 3
+    }
+  ],
+  "nodes": [
+    {
+      "id": "EON-01",
+      "nameJa": "アクセストークン取得の確認（認可サーバ）",
+      "kind": "container",
+      "durationHours": 2,
+      "priorityClass": "must",
+      "dependsOn": [],
+      "requiredResources": [
+        {
+          "resourceId": "RES-02"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-TOKEN"
+      ],
+      "note": "図形内テキスト（APIシーケンス）の「アクセス先APIの認可サーバ」（2026-08_digital-agency_atenabango-fuban-api_spec:56）を対象とする。要求元認証は OAuth2.0 client_secret_jwt（同:37）"
+    },
+    {
+      "id": "EON-02",
+      "nameJa": "APIアクセス w/アクセストークンの疎通確認",
+      "kind": "container",
+      "durationHours": 2,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-01",
+          "basisKind": "artifact",
+          "basisRef": "ART-TOKEN",
+          "reason": "図形内テキストの「1. APIアクセス w/アクセストークン」はアクセストークンを保持していることが前提である（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:61 ## 図形内テキスト（APIシーケンス））"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-03"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-REQUEST"
+      ],
+      "note": "図形内テキスト（APIシーケンス）の「1. APIアクセス w/アクセストークン」および「①住登外者宛名番号付番リクエスト」（2026-08_digital-agency_atenabango-fuban-api_spec:60-61）"
+    },
+    {
+      "id": "EON-03",
+      "nameJa": "アクセストークンの検証の確認（401応答を含む）",
+      "kind": "container",
+      "durationHours": 3,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-02",
+          "basisKind": "other",
+          "basisRef": "2026-08_digital-agency_atenabango-fuban-api_spec:63 ## 図形内テキスト（APIシーケンス）",
+          "reason": "図形内テキストの「アクセストークンの検証を行う」はAPIアクセスの後に位置する（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:63 ## 図形内テキスト（APIシーケンス））"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-02"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-AUTH-RESULT"
+      ],
+      "note": "図形内テキスト（APIシーケンス）の「アクセストークンの検証を行う」（2026-08_digital-agency_atenabango-fuban-api_spec:63）。TCS-035 が対応する"
+    },
+    {
+      "id": "EON-04",
+      "nameJa": "要求電文のパラメータ検査の確認（E0001〜E0004）",
+      "kind": "container",
+      "durationHours": 8,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-03",
+          "basisKind": "other",
+          "basisRef": "2026-08_digital-agency_atenabango-fuban-api_spec:62 ## 図形内テキスト（APIシーケンス）",
+          "reason": "図形内テキストの「②住登外者宛名番号付番等」はアクセストークンの検証を通過した後に実行される（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:62 ## 図形内テキスト（APIシーケンス））"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-03"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-ERROR-CODES"
+      ],
+      "note": "TCS-005 から TCS-008 とデータ項目の桁数境界（TCS-009 から TCS-021）を含む。根拠は 2026-08_digital-agency_atenabango-fuban-api_spec:242-245 のエラーコード一覧"
+    },
+    {
+      "id": "EON-05",
+      "nameJa": "住登外者宛名番号付番等の確認（処理区分 0 / 1 / 2）",
+      "kind": "container",
+      "durationHours": 6,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-04",
+          "basisKind": "data",
+          "basisRef": "DTI-SHORIKUBUN",
+          "reason": "図形内テキストの「「処理区分」により、以下の処理を行う。」の分岐確認は、パラメータ検査を通過した要求電文でのみ実行できる（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:66 ## 図形内テキスト（APIシーケンス））"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-03"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-ATENABANGO"
+      ],
+      "note": "図形内テキスト（APIシーケンス）の「②住登外者宛名番号付番等」と処理区分の説明行（2026-08_digital-agency_atenabango-fuban-api_spec:62、同:66）。TCS-001 から TCS-003 が対応する"
+    },
+    {
+      "id": "EON-06",
+      "nameJa": "API結果返却の確認（200 / 400 / 401 / 503）",
+      "kind": "container",
+      "durationHours": 5,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-05",
+          "basisKind": "artifact",
+          "basisRef": "ART-ATENABANGO",
+          "reason": "図形内テキストの「2. API結果返却」と「[app_submit/v10/jutogaishaatenabangofuban_S01]住登外者宛名番号付番応答電文（レスポンス_API仕様を参照）」は付番処理の後に位置する（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:58-59 ## 図形内テキスト（APIシーケンス））"
+        },
+        {
+          "fromId": "EON-03",
+          "basisKind": "artifact",
+          "basisRef": "ART-AUTH-RESULT",
+          "reason": "401応答の確認にはアクセストークンの検証結果が必要である（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:219-228 ## レスポンス_API仕様）"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-03"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-RESPONSE"
+      ],
+      "note": "図形内テキスト（APIシーケンス）の「2. API結果返却」（2026-08_digital-agency_atenabango-fuban-api_spec:58）。TCS-040 から TCS-041 が対応する"
+    },
+    {
+      "id": "EON-07",
+      "nameJa": "付番失敗時の再依頼の確認",
+      "kind": "container",
+      "durationHours": 4,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-06",
+          "basisKind": "data",
+          "basisRef": "DTI-ATENABANGO",
+          "reason": "図形内テキストの「正常に付番処理が実行されなかった場合は再度付番依頼を実施することにより、新規付番された番号が返却される。」は結果返却の後に成立する（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:64 ## 図形内テキスト（APIシーケンス））"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-03"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-RETRY"
+      ],
+      "note": "TCS-031 と TCS-044 が対応する"
+    },
+    {
+      "id": "EON-08",
+      "nameJa": "タイムアウトとサービスメンテナンス時の応答の確認",
+      "kind": "container",
+      "durationHours": 6,
+      "priorityClass": "conditional",
+      "dependsOn": [
+        {
+          "fromId": "EON-06",
+          "basisKind": "artifact",
+          "basisRef": "ART-RESPONSE",
+          "reason": "JSON形式の応答が返る状態を先に確立しないと、JSONを伴わない500番台の応答と切り分けられない（根拠位置: 2026-08_digital-agency_atenabango-fuban-api_spec:83-84 ## リクエスト_API仕様）"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-TIMEOUT"
+      ],
+      "note": "TCS-033 と TCS-034 が対応する。タイムアウトの確定値は未確定であり観測値を記録する"
+    },
+    {
+      "id": "EON-09",
+      "nameJa": "項目定義書と付番API仕様の対応確認（仕様齟齬の実測）",
+      "kind": "container",
+      "durationHours": 6,
+      "priorityClass": "must",
+      "dependsOn": [
+        {
+          "fromId": "EON-05",
+          "basisKind": "data",
+          "basisRef": "DTI-ITEM-DEFINITION",
+          "reason": "登録された住登外者宛名基本情報を読み出せる状態でなければ、データ項目とパラメータの対応を実測できない（根拠位置: 2026-08_digital-agency_atenabango-kanri_item-definition:12-58 ## 項目定義書（住登外者宛名番号管理）住登外者宛名基本情報）"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-MAPPING"
+      ],
+      "note": "TCS-018 と TCS-013 と TCS-014 が対応する"
+    },
+    {
+      "id": "EON-10",
+      "nameJa": "探索的テストセッションの実施",
+      "kind": "container",
+      "durationHours": 8,
+      "priorityClass": "conditional",
+      "dependsOn": [
+        {
+          "fromId": "EON-07",
+          "basisKind": "other",
+          "basisRef": "sample/non_contest_testbase/15_探索的テストチャーター生成結果.md",
+          "reason": "決定的技法での確認を終えた後に、チャーター EXC-001 から EXC-006 のセッションを実施する（根拠位置: sample/non_contest_testbase/15_探索的テストチャーター生成結果.md）"
+        },
+        {
+          "fromId": "EON-09",
+          "basisKind": "artifact",
+          "basisRef": "ART-MAPPING",
+          "reason": "EXC-003 のミッションは対応表（ART-MAPPING）が揃っていることを前提とする（根拠位置: sample/non_contest_testbase/15_探索的テストチャーター生成結果.md）"
+        }
+      ],
+      "requiredResources": [
+        {
+          "resourceId": "RES-01"
+        },
+        {
+          "resourceId": "RES-04"
+        }
+      ],
+      "producedArtifactIds": [
+        "ART-SESSION-SHEETS"
+      ],
+      "note": "セッション時間予算450分は 15_探索的テストチャーター生成結果.md の宣言に従う"
+    }
+  ],
+  "architectureContainerIds": [
+    "EON-01",
+    "EON-02",
+    "EON-03",
+    "EON-04",
+    "EON-05",
+    "EON-06",
+    "EON-07",
+    "EON-08",
+    "EON-09",
+    "EON-10"
+  ],
+  "slos": [
+    {
+      "id": "SLO-01",
+      "metric": "付番依頼1件あたりの応答時間",
+      "comparator": "<",
+      "threshold": 30,
+      "unit": "秒",
+      "source": "2026-08_digital-agency_atenabango-fuban-api_spec:83（30秒以上でタイムアウト。目安であり確定値ではないため観測値も記録する）"
+    },
+    {
+      "id": "SLO-02",
+      "metric": "正常系付番依頼のHTTPステータスコード200の返却率",
+      "comparator": ">=",
+      "threshold": 100,
+      "unit": "%",
+      "source": "2026-08_digital-agency_atenabango-fuban-api_spec:80"
+    },
+    {
+      "id": "SLO-03",
+      "metric": "エラー条件に対する期待エラーコードの一致率",
+      "comparator": ">=",
+      "threshold": 100,
+      "unit": "%",
+      "source": "2026-08_digital-agency_atenabango-fuban-api_spec:242-245"
+    },
+    {
+      "id": "SLO-04",
+      "metric": "再依頼による付番の回復率",
+      "comparator": ">=",
+      "threshold": 100,
+      "unit": "%",
+      "source": "2026-08_digital-agency_atenabango-fuban-api_spec:64 ## 図形内テキスト（APIシーケンス）"
+    }
+  ],
+  "exitCriteria": [
+    {
+      "id": "EXC-01",
+      "statement": "テストケース TCS-001 から TCS-046 の実行率が100%であり、判定ステータスがNGの項目が0件であること",
+      "sloIds": [
+        "SLO-02",
+        "SLO-03"
+      ]
+    },
+    {
+      "id": "EXC-02",
+      "statement": "付番依頼1件あたりの応答時間の測定結果が記録され、応答形式が切り替わる処理時間が観測値として残っていること",
+      "sloIds": [
+        "SLO-01"
+      ]
+    },
+    {
+      "id": "EXC-03",
+      "statement": "付番失敗後の再依頼で新規付番された番号が返却されることが、10回の試行すべてで確認できていること",
+      "sloIds": [
+        "SLO-04"
+      ]
+    },
+    {
+      "id": "EXC-04",
+      "statement": "データ項目 031-1 から 031-29 とリクエストパラメータの対応表が作成され、不一致件数が根拠位置付きで記録されていること",
+      "sloIds": [
+        "SLO-03"
+      ]
+    },
+    {
+      "id": "EXC-05",
+      "statement": "実行順序 EON-01 から EON-07 が、2026-08_digital-agency_atenabango-fuban-api_spec:55-66 の「## 図形内テキスト（APIシーケンス）」12行に記された順序（1. APIアクセス w/アクセストークン → アクセストークンの検証を行う → ②住登外者宛名番号付番等 → 2. API結果返却 → 再度付番依頼）と一致していることが、実行記録から確認できていること",
+      "sloIds": [
+        "SLO-04"
+      ]
+    }
+  ],
+  "monitoringCheckpoints": [
+    {
+      "id": "MCP-01",
+      "nameJa": "認証経路の確立確認",
+      "atHour": 7,
+      "afterNodeIds": [
+        "EON-01",
+        "EON-02",
+        "EON-03"
+      ],
+      "reviewItems": [
+        "アクセストークンの取得と検証が図形内テキスト（APIシーケンス）の順序どおりに観測できているか",
+        "401応答の detail が「アクセストークンが無効です。」で一致しているか",
+        "2026-08_digital-agency_atenabango-fuban-api_spec:61 と同:63 の図形内テキスト2行の順序が、実行記録上で逆転していないか"
+      ],
+      "sloIds": [
+        "SLO-02"
+      ],
+      "exitCriterionIds": [
+        "EXC-01",
+        "EXC-05"
+      ],
+      "participants": [
+        "テストマネージャー",
+        "テスト環境担当"
+      ]
+    },
+    {
+      "id": "MCP-02",
+      "nameJa": "パラメータ検査と付番処理の中間確認",
+      "atHour": 21,
+      "afterNodeIds": [
+        "EON-04",
+        "EON-05"
+      ],
+      "reviewItems": [
+        "エラーコード E0001 から E0004 の4件それぞれの発生条件が実測できているか",
+        "処理区分 0 / 1 / 2 の3値それぞれの処理内容が記録できているか",
+        "期待結果が一意に決まらずQAとして起票した件数が3件以上に達していないか"
+      ],
+      "sloIds": [
+        "SLO-03"
+      ],
+      "exitCriterionIds": [
+        "EXC-01",
+        "EXC-04"
+      ],
+      "participants": [
+        "テストマネージャー",
+        "テストアーキテクト"
+      ]
+    },
+    {
+      "id": "MCP-03",
+      "nameJa": "応答仕様と回復性の確認",
+      "atHour": 30,
+      "afterNodeIds": [
+        "EON-06",
+        "EON-07",
+        "EON-08"
+      ],
+      "reviewItems": [
+        "HTTPステータスコード 200 / 400 / 401 / 503 の4系統の応答構造が記録できているか",
+        "応答形式が切り替わる処理時間の観測値が記録できているか",
+        "再依頼による回復が10回の試行で確認できているか"
+      ],
+      "sloIds": [
+        "SLO-01",
+        "SLO-04"
+      ],
+      "exitCriterionIds": [
+        "EXC-02",
+        "EXC-03"
+      ],
+      "participants": [
+        "テストマネージャー",
+        "テスト実行担当"
+      ]
+    },
+    {
+      "id": "MCP-04",
+      "nameJa": "仕様齟齬と探索的セッションの総括",
+      "atHour": 38,
+      "afterNodeIds": [
+        "EON-09",
+        "EON-10"
+      ],
+      "reviewItems": [
+        "データ項目とリクエストパラメータの対応表が完成しているか",
+        "チャーター EXC-001 から EXC-006 のセッションシートが記録されているか",
+        "09_テストベース仕様齟齬指摘_住登外者宛名番号テストベース.md への追記が反映されているか"
+      ],
+      "sloIds": [
+        "SLO-03"
+      ],
+      "exitCriterionIds": [
+        "EXC-04"
+      ],
+      "participants": [
+        "テストマネージャー",
+        "テストアーキテクト",
+        "実装ベンダ窓口"
+      ]
+    }
+  ],
+  "dataItemIds": [
+    "DTI-SHORIKUBUN",
+    "DTI-ATENABANGO",
+    "DTI-GYOMUID",
+    "DTI-ITEM-DEFINITION"
+  ]
+}

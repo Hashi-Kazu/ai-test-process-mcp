@@ -1,0 +1,59 @@
+{
+  "variables": [
+    {
+      "name": "宛名番号（atenabango）の桁数（半角文字数）",
+      "min": 1,
+      "max": 15
+    },
+    {
+      "name": "個人番号（kojinbango）の桁数（半角文字数）",
+      "min": 1,
+      "max": 12
+    },
+    {
+      "name": "氏名（shimei）の文字数（全角文字数）",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "name": "氏_日本人（uji_nihonjin）の文字数（全角文字数）",
+      "min": 1,
+      "max": 50
+    },
+    {
+      "name": "住所_市区町村コード（jusho_shikuchosonkodo）の桁数（半角文字数）",
+      "min": 1,
+      "max": 6
+    },
+    {
+      "name": "操作者ID（sosashaid）の桁数（半角文字数）",
+      "min": 1,
+      "max": 10
+    },
+    {
+      "name": "操作時刻（sosajikoku）の桁数（HH:MM:SS の半角文字数）",
+      "min": 1,
+      "max": 8
+    },
+    {
+      "name": "住所_町字（jusho_choaza）の文字数（項目定義書 Ｎ18 基準）",
+      "min": 1,
+      "max": 18
+    },
+    {
+      "name": "住所_町字（jusho_choaza）の文字数（付番API仕様 Ｎ120 基準）",
+      "min": 1,
+      "max": 120
+    },
+    {
+      "name": "処理区分（shorikubun）のコード値",
+      "min": 0,
+      "max": 2
+    },
+    {
+      "name": "性別（seibetsu）のコード値",
+      "min": 0,
+      "max": 2
+    }
+  ]
+}

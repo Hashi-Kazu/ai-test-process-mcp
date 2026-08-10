@@ -1,0 +1,761 @@
+{
+  "idPrefix": "TCS-",
+  "idPatterns": [
+    "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+    "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"
+  ],
+  "requirementIds": [
+    "031-1",
+    "031-2",
+    "031-3",
+    "031-4",
+    "031-5",
+    "031-6",
+    "031-7",
+    "031-8",
+    "031-9",
+    "031-10",
+    "031-11",
+    "031-12",
+    "031-13",
+    "031-14",
+    "031-15",
+    "031-16",
+    "031-17",
+    "031-18",
+    "031-19",
+    "031-20",
+    "031-21",
+    "031-22",
+    "031-23",
+    "031-24",
+    "031-26",
+    "031-27",
+    "031-28",
+    "031-29",
+    "E0001",
+    "E0002",
+    "E0003",
+    "E0004"
+  ],
+  "testConditions": [
+    {
+      "id": "TC-001",
+      "target": "処理区分0 新規付番（031-1 宛名番号）",
+      "statement": "処理区分（shorikubun）に \"0\" を設定した付番依頼で、新規の住登外者宛名番号が付番され、200応答の result 配列に atenabango が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "高"
+    },
+    {
+      "id": "TC-002",
+      "target": "処理区分1 既存宛名番号利用（031-1 宛名番号）",
+      "statement": "処理区分に \"1\" を設定し既存の宛名番号を送信した場合に、受信した宛名番号がそのまま住登外者宛名番号として登録されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "高"
+    },
+    {
+      "id": "TC-003",
+      "target": "処理区分2 業務ID更新（031-23 業務ID）",
+      "statement": "処理区分に \"2\" を設定した場合に、受信した住登外者宛名番号の住登外者宛名基本情報の業務IDだけが更新され、他の項目が変化しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-004",
+      "target": "独自施策システム等IDによる登録（031-24）",
+      "statement": "独自施策システム等ID（031-24）が設定された付番依頼で、業務IDを持たないシステムからの登録が受け付けられることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-24"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-005",
+      "target": "必須エラー（E0001）",
+      "statement": "必須（◎）のパラメータをそれぞれ1件ずつ欠落させた要求電文で、HTTPステータスコード400と errors[].code = E0001 が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "priority": "高"
+    },
+    {
+      "id": "TC-006",
+      "target": "指定文字エラー（E0002）",
+      "statement": "データ型 X の項目に全角文字を、データ型 Ｎ の項目に規定外の文字を設定した要求電文で、errors[].code = E0002 が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0002"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-007",
+      "target": "桁数エラー（E0003）",
+      "statement": "固定桁項目の桁数を規定より1桁多く／少なく設定した要求電文で、errors[].code = E0003 が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0003"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-008",
+      "target": "相関チェックエラー（E0004）",
+      "statement": "処理区分 \"1\" / \"2\" で atenabango を未設定にした要求電文で、errors[].code = E0004 が返ることを確認する。返却されるコードが E0001 であった場合はQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0004"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-03"
+        }
+      ],
+      "priority": "高"
+    },
+    {
+      "id": "TC-009",
+      "target": "宛名番号の桁数境界（031-1）",
+      "statement": "宛名番号（atenabango）を14桁・15桁・16桁で送信し、15桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "高"
+    },
+    {
+      "id": "TC-010",
+      "target": "個人番号の桁数境界（031-2）",
+      "statement": "個人番号（kojinbango）を11桁・12桁・13桁で送信し、12桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-011",
+      "target": "氏名の桁数境界（031-3）",
+      "statement": "氏名（shimei）を99文字・100文字・101文字で送信し、100文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-012",
+      "target": "氏・名の桁数境界（031-4 / 031-5）",
+      "statement": "氏_日本人（uji_nihonjin）と名_日本人（na_nihonjin）を49文字・50文字・51文字で送信し、50文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-4"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-5"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-013",
+      "target": "外国人氏名の桁数境界（031-6 / 031-7）",
+      "statement": "外国人氏名のアルファベット表記（031-6）と漢字表記（031-7）を99文字・100文字・101文字で送信し、100文字でのみ受理されることを確認する。API側のパラメータ名は shimei_gaikokujinromaji / shimei_gaikokujinkanji である。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-6"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-7"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-014",
+      "target": "読み仮名の桁数境界（031-8 / 031-9 / 031-10）",
+      "statement": "氏名_読み仮名（031-8、Ｎ100）・氏_日本人_読み仮名（031-9、Ｎ50）・名_日本人_読み仮名（031-10、Ｎ50）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。API側は shimei_furigana / uji_nihonjin_furigana / na_nihonjin_furigana である。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-8"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-9"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-10"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-015",
+      "target": "生年月日_不詳表記の桁数境界（031-13）",
+      "statement": "生年月日_不詳表記（seinengappi_fushohyoki）を71文字・72文字・73文字で送信し、72文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-13"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-016",
+      "target": "住所コードの桁数境界（031-14 / 031-15）",
+      "statement": "住所_市区町村コード（031-14、X6）と住所_町字コード（031-15、X7）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。町字コードは 0000000 と 9999999 の特殊値も送信する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-14"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-15"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-017",
+      "target": "都道府県・市区郡町村名の桁数境界（031-16 / 031-17）",
+      "statement": "住所_都道府県（031-16、Ｎ4）と住所_市区郡町村名（031-17、Ｎ12）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-16"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-17"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-018",
+      "target": "住所_町字の桁数不一致（031-18）",
+      "statement": "住所_町字（jusho_choaza）を17文字・18文字・19文字・119文字・120文字・121文字で送信し、受理される上限が Ｎ18 と Ｎ120 のどちらであるかを記録する。合否は確定させずQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-18"
+        }
+      ],
+      "priority": "高"
+    },
+    {
+      "id": "TC-019",
+      "target": "番地号表記・郵便番号の桁数境界（031-19 / 031-22）",
+      "statement": "住所_番地号表記（031-19、Ｎ50）と住所_郵便番号（031-22、X7）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-19"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-22"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-020",
+      "target": "方書の桁数境界（031-20 / 031-21）",
+      "statement": "住所_方書（031-20）と住所_方書_フリガナ（031-21）を299文字・300文字・301文字で送信し、300文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-20"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-21"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-021",
+      "target": "操作者IDの桁数境界（031-27）",
+      "statement": "操作者ID（sosashaid、X10）を9桁・10桁・11桁で送信し、10桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-022",
+      "target": "性別コードの同値分割（031-11）",
+      "statement": "性別（seibetsu）に 0（不明（未記入））・1（男）・2（女）と規定外の値を設定し、コード一覧に定義された3値でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-11"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-023",
+      "target": "生年月日の同値分割（031-12）",
+      "statement": "生年月日（seinengappi）に DATE 形式の有効値・不詳日・0000-01-01・9999-12-31・形式不正値を設定し、不詳日を許容する記述どおりに扱われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-12"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-024",
+      "target": "操作年月日・操作時刻の同値分割（031-28 / 031-29）",
+      "statement": "操作年月日（031-28、DATE10）と操作時刻（031-29、TIME8）に、有効値・秒省略値・形式不正値を設定し、GIF コアデータパーツの規定どおりに扱われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-29"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-025",
+      "target": "名寄せ状態の遷移（031-26）",
+      "statement": "名寄せを実施したとき、名寄せ元となった宛名基本情報に名寄せ先宛名番号（031-26）が設定され、名寄せ元フラグが 1 に遷移することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-26"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-026",
+      "target": "同時付番依頼の競合（031-1）",
+      "statement": "同一の住登外者に対する処理区分 \"0\" の付番依頼を同時に2件送信し、宛名番号が二重に付番されないことを確認する。仕様書に並行時の規定が無いため、観測結果を記録してQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-027",
+      "target": "APIシーケンスの実行順序（031-1）",
+      "statement": "APIアクセス w/アクセストークン → アクセストークンの検証 → 住登外者宛名番号付番 → API結果返却 の順序で処理が進み、検証前に付番が行われないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-028",
+      "target": "宛名情報のライフサイクル（031-1 / 031-28）",
+      "statement": "付番→登録→名寄せ→参照の一連の流れで、住登外者宛名基本情報の主キー（031-1 宛名番号）が変わらず、操作年月日・操作時刻が更新ごとに記録されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-029",
+      "target": "認証方式の構成差（031-27）",
+      "statement": "要求元認証を OAuth2.0 client_secret_jwt とした構成と client_secret_basic とした構成の双方で、同一の要求電文が同一の応答を返すことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-030",
+      "target": "付番失敗からの回復（031-1）",
+      "statement": "正常に付番処理が実行されなかった場合に再度付番依頼を実施し、新規付番された番号が返却されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-031",
+      "target": "長時間連続付番（031-29）",
+      "statement": "付番依頼を長時間にわたり連続送信し、履歴番号と操作年月日・操作時刻が欠落なく記録され続けることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-29"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-032",
+      "target": "タイムアウト境界（30秒）",
+      "statement": "処理時間を30秒の直前と直後に制御し、30秒未満ではJSON形式のレスポンス、30秒以上ではJSONを伴わない500番台のエラーへ切り替わる点を測定する。判定値が未確定であるため観測値を記録する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-033",
+      "target": "メンテナンス時の応答",
+      "statement": "サービスメンテナンス中に付番依頼を送信し、原則HTTPステータスコード500番台のエラーが返却され、JSON形式では返却されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-034",
+      "target": "アクセストークン検証（031-27）",
+      "statement": "アクセストークンを未指定、期限切れ、改ざん済みの3通りで送信し、いずれもHTTPステータスコード401と detail「アクセストークンが無効です。」が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-035",
+      "target": "個人番号の秘匿（031-2）",
+      "statement": "個人番号（031-2）を含む要求電文がTLS1.2以上で送信され、応答および誤り時のエラーメッセージに個人番号そのものが含まれないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-07"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-036",
+      "target": "エラーメッセージの理解性（E0001）",
+      "statement": "400応答の errors[].message が「【項目名】が設定されていません。」のように、どの項目をどう直せばよいかを読み取れる文言で返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-037",
+      "target": "文字コードと外国人氏名（031-6 / 031-7）",
+      "statement": "レスポンスの Content-Type が application/json;charset=UTF-8 であり、外国人氏名の漢字表記・アルファベット表記・フリガナが文字化けせずに往復することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-6"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-7"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-038",
+      "target": "業務ID更新後のリグレッション（031-3 / 031-11 / 031-12）",
+      "statement": "処理区分 \"2\" による業務IDの更新後に、更新対象外である氏名・住所・生年月日・性別の各項目が更新前と同一であることを再確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-11"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-12"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-039",
+      "target": "条件付き必須の判定（031-3 / 031-4 / 031-5）",
+      "statement": "条件付き必須の条件（項目説明の ※※）を満たす場合と満たさない場合の双方で登録を試み、条件を満たさない場合に当該項目を空欄のまま受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-4"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-5"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-040",
+      "target": "正常系レスポンスの固定値（031-1）",
+      "statement": "200応答の metadata.title「住登外者宛名番号付番」・metadata.detail「登録が完了しました。」・_links.self.href「/app_submit/v10/jutogaishaatenabangofuban」が固定値で返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-041",
+      "target": "応答項目の範囲（031-28）",
+      "statement": "200応答の result 配列が shikuchosonkodo・atenabango・rirekibango・sosashaid・sosanengappi・sosajikoku の6項目のみを返し、送信した他のデータ項目が応答からは確認できないことを記録する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-06"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-042",
+      "target": "データ出力条件3区分の有無（031-2 / 031-26）",
+      "statement": "データ出力条件が「必須」「任意」「条件付き必須」の3区分それぞれについて代表項目を選び、区分どおりの受理／拒否になることを確認する。代表項目は 031-1（必須）・031-2（任意）・031-26（条件付き必須）とする。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-26"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-043",
+      "target": "繰り返し上限（031-23 / 031-24）",
+      "statement": "業務IDと独自施策システム等IDの繰り返しが999件に達した状態で、さらに同一の住登外者宛名基本情報へ別業務からの登録を行った場合の扱いを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-10"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-24"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-044",
+      "target": "トークン期限切れのタイミング（031-27）",
+      "statement": "アクセストークンの有効期限が付番処理の途中で切れた場合に、処理が完了するか401が返るかを確認する。仕様書に規定が無いため観測結果を記録してQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "低"
+    },
+    {
+      "id": "TC-045",
+      "target": "503後の再送（031-1）",
+      "statement": "503応答（想定外エラー）を受けた後に同一の要求電文を再送し、二重登録が生じないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-05"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中"
+    },
+    {
+      "id": "TC-046",
+      "target": "付番後の業務ID更新遷移（031-23）",
+      "statement": "処理区分 \"0\" で付番した宛名番号に対し、続けて処理区分 \"2\" で業務IDを更新する遷移を行い、履歴番号が増加することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        }
+      ],
+      "priority": "中"
+    }
+  ],
+  "risks": [
+    {
+      "id": "RK-01",
+      "description": "住所_町字の桁数が項目定義書 Ｎ18（item-definition:42）と付番API仕様 Ｎ120（fuban-api_spec:135）で食い違っており、E0003 桁数エラーの期待結果が一意に決まらない"
+    },
+    {
+      "id": "RK-02",
+      "description": "同一データ項目の名称が2文書で異なる（氏名_外国人アルファベット／氏名_外国人ローマ字、読み仮名／フリガナ）ため、項目の対応づけを誤りテスト結果の紐づけが崩れる"
+    },
+    {
+      "id": "RK-03",
+      "description": "処理区分 1 / 2 における atenabango の必須条件が必須列の空白と ※※ 記述に分かれており、未設定時に E0001 と E0004 のどちらが返るか記述から定まらない"
+    },
+    {
+      "id": "RK-04",
+      "description": "タイムアウトの確定値が仕様書に存在せず（fuban-api_spec:83）、30秒を判定値とすると実装が別の値を採用していた場合に合否を確定できない"
+    },
+    {
+      "id": "RK-05",
+      "description": "401 と 503 の応答は errors 配列を持たず、エラーコード一覧にも対応するコードが定義されていないため、原因の切り分けが detail の固定文言に依存する"
+    },
+    {
+      "id": "RK-06",
+      "description": "レスポンスの result 配列が6項目しか返さないため、送信した住登外者宛名基本情報の他の項目が登録されたかを応答だけでは確認できない"
+    },
+    {
+      "id": "RK-07",
+      "description": "個人番号（031-2）は番号法に基づく特定個人情報であり、誤登録・漏洩は法令違反に直結する。付番APIは個人番号を任意パラメータとして受け取る"
+    },
+    {
+      "id": "RK-08",
+      "description": "同一の住登外者に対する付番依頼が並行して届いた場合の扱いが仕様書に規定されておらず、二重付番または名寄せ不整合が生じ得る"
+    }
+  ]
+}
