@@ -1,0 +1,299 @@
+{
+  "title": "住登外者宛名番号付番API データフロー・タイミング分析（根拠: 2026-08_digital-agency_atenabango-fuban-api_spec:53-66 の見出し「## 図形内テキスト（APIシーケンス）」に出力されたシーケンス図の図形内テキスト12行）",
+  "components": [
+    {
+      "id": "CMP-01",
+      "nameJa": "API要求元（基幹業務システム）",
+      "kind": "service",
+      "note": "図形内テキスト（APIシーケンス）1行目。2026-08_digital-agency_atenabango-fuban-api_spec:55"
+    },
+    {
+      "id": "CMP-02",
+      "nameJa": "アクセス先APIの認可サーバ",
+      "kind": "service",
+      "note": "図形内テキスト（APIシーケンス）2行目。2026-08_digital-agency_atenabango-fuban-api_spec:56"
+    },
+    {
+      "id": "CMP-03",
+      "nameJa": "アクセス先API（住登外者宛名番号管理機能）",
+      "kind": "service",
+      "note": "図形内テキスト（APIシーケンス）3行目。2026-08_digital-agency_atenabango-fuban-api_spec:57"
+    },
+    {
+      "id": "CMP-04",
+      "nameJa": "住登外者宛名基本情報の格納先",
+      "kind": "store",
+      "note": "項目定義書（住登外者宛名番号管理）住登外者宛名基本情報のデータ項目29件の永続化先。2026-08_digital-agency_atenabango-kanri_item-definition:12-58"
+    }
+  ],
+  "dataItems": [
+    {
+      "id": "DAT-01",
+      "nameJa": "アクセストークン（OAuth2.0 Bearerタイプ）",
+      "note": "要求元認証で用いる。2026-08_digital-agency_atenabango-fuban-api_spec:37"
+    },
+    {
+      "id": "DAT-02",
+      "nameJa": "住登外者宛名番号付番要求電文（app_submit/v10/jutogaishaatenabangofuban_R01）",
+      "note": "図形内テキスト（APIシーケンス）11行目。2026-08_digital-agency_atenabango-fuban-api_spec:65"
+    },
+    {
+      "id": "DAT-03",
+      "nameJa": "住登外者宛名番号付番応答電文（app_submit/v10/jutogaishaatenabangofuban_S01）",
+      "note": "図形内テキスト（APIシーケンス）5行目。2026-08_digital-agency_atenabango-fuban-api_spec:59"
+    },
+    {
+      "id": "DAT-04",
+      "nameJa": "住登外者宛名基本情報（031-1〜031-29）",
+      "note": "2026-08_digital-agency_atenabango-kanri_item-definition:12-58"
+    }
+  ],
+  "communications": [
+    {
+      "id": "COM-01",
+      "fromId": "CMP-01",
+      "toId": "CMP-02",
+      "dataItemIds": [
+        "DAT-01"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "付番依頼を行う直前にアクセストークンを取得する（要求元認証は OAuth2.0 アクセストークン：Bearerタイプ、認証方式：client_secret_jwt）"
+      },
+      "transmissionLatencySeconds": 1,
+      "ackKind": "application-ack",
+      "timeoutSeconds": 30,
+      "retry": {
+        "maxCount": 0
+      },
+      "sourceRef": {
+        "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "startLine": 56,
+        "heading": "## 図形内テキスト（APIシーケンス）",
+        "label": "アクセス先APIの認可サーバ"
+      },
+      "note": "認可サーバの内部処理は本仕様書の規定外であるため、伝送時間は測定用の暫定値として1秒を置き、実測値で更新する"
+    },
+    {
+      "id": "COM-02",
+      "fromId": "CMP-01",
+      "toId": "CMP-03",
+      "dataItemIds": [
+        "DAT-02"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "1. APIアクセス w/アクセストークン。①住登外者宛名番号付番リクエストを契機に送信する"
+      },
+      "transmissionLatencySeconds": 1,
+      "ackKind": "application-ack",
+      "timeoutSeconds": 30,
+      "retry": {
+        "maxCount": 1,
+        "intervalSeconds": 5
+      },
+      "requirementIds": [
+        "031-1",
+        "031-23",
+        "E0001"
+      ],
+      "sourceRef": {
+        "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "startLine": 61,
+        "heading": "## 図形内テキスト（APIシーケンス）",
+        "label": "1. APIアクセス w/アクセストークン ／ ①住登外者宛名番号付番リクエスト（同:60）"
+      },
+      "note": "要求電文の識別子は [app_submit/v10/jutogaishaatenabangofuban_R01]（2026-08_digital-agency_atenabango-fuban-api_spec:65）。再送1回は同:64 の「正常に付番処理が実行されなかった場合は再度付番依頼を実施する」に対応する"
+    },
+    {
+      "id": "COM-03",
+      "fromId": "CMP-03",
+      "toId": "CMP-02",
+      "dataItemIds": [
+        "DAT-01"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "アクセストークンの検証を行う。要求電文の受信を契機に実行する"
+      },
+      "transmissionLatencySeconds": 1,
+      "ackKind": "application-ack",
+      "timeoutSeconds": 30,
+      "retry": {
+        "maxCount": 0
+      },
+      "sourceRef": {
+        "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "startLine": 63,
+        "heading": "## 図形内テキスト（APIシーケンス）",
+        "label": "アクセストークンの検証を行う"
+      },
+      "note": "認可サーバ側の検証応答時間は本仕様書に規定が無いため、伝送時間は測定用の暫定値として1秒を置く"
+    },
+    {
+      "id": "COM-04",
+      "fromId": "CMP-03",
+      "toId": "CMP-04",
+      "dataItemIds": [
+        "DAT-04"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "②住登外者宛名番号付番等。処理区分により、0：付番依頼／1：既存宛名番号利用／2：住登外者宛名番号選択情報送信の処理を行う"
+      },
+      "transmissionLatencySeconds": 2,
+      "ackKind": "application-ack",
+      "timeoutSeconds": 30,
+      "retry": {
+        "maxCount": 0
+      },
+      "requirementIds": [
+        "031-1",
+        "031-23",
+        "031-27",
+        "031-28",
+        "031-29"
+      ],
+      "sourceRef": {
+        "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "startLine": 62,
+        "heading": "## 図形内テキスト（APIシーケンス）",
+        "label": "②住登外者宛名番号付番等（処理区分の説明は同:66）"
+      },
+      "note": "登録されるデータ項目は 2026-08_digital-agency_atenabango-kanri_item-definition:12-58 の29件。永続化の所要時間は両文書に規定が無いため測定用の暫定値として2秒を置く"
+    },
+    {
+      "id": "COM-05",
+      "fromId": "CMP-03",
+      "toId": "CMP-01",
+      "dataItemIds": [
+        "DAT-03"
+      ],
+      "timing": {
+        "kind": "event",
+        "trigger": "2. API結果返却。付番処理の完了を契機に送信する"
+      },
+      "transmissionLatencySeconds": 1,
+      "ackKind": "transport-ack",
+      "timeoutSeconds": 30,
+      "retry": {
+        "maxCount": 0
+      },
+      "requirementIds": [
+        "031-1",
+        "031-27",
+        "031-28",
+        "031-29"
+      ],
+      "sourceRef": {
+        "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "startLine": 58,
+        "heading": "## 図形内テキスト（APIシーケンス）",
+        "label": "2. API結果返却 ／ [app_submit/v10/jutogaishaatenabangofuban_S01]住登外者宛名番号付番応答電文（同:59）"
+      },
+      "note": "タイムアウトは 2026-08_digital-agency_atenabango-fuban-api_spec:83 の「処理が30秒以上※経過した場合」に基づく。同行の注記により確定値ではないためQAとして起票する"
+    }
+  ],
+  "propagationTargets": [
+    {
+      "id": "PRP-01",
+      "dataItemId": "DAT-02",
+      "originComponentId": "CMP-01",
+      "terminalComponentIds": [
+        "CMP-03"
+      ],
+      "claimedMaxLatencySeconds": 31
+    },
+    {
+      "id": "PRP-02",
+      "dataItemId": "DAT-04",
+      "originComponentId": "CMP-03",
+      "terminalComponentIds": [
+        "CMP-04"
+      ],
+      "claimedMaxLatencySeconds": 2
+    },
+    {
+      "id": "PRP-03",
+      "dataItemId": "DAT-03",
+      "originComponentId": "CMP-03",
+      "terminalComponentIds": [
+        "CMP-01"
+      ],
+      "claimedMaxLatencySeconds": 1
+    },
+    {
+      "id": "PRP-04",
+      "dataItemId": "DAT-01",
+      "originComponentId": "CMP-01",
+      "terminalComponentIds": [
+        "CMP-02"
+      ],
+      "claimedMaxLatencySeconds": 1
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-028",
+      "statement": "APIアクセス w/アクセストークン → アクセストークンの検証 → 住登外者宛名番号付番 → API結果返却 の順序で処理が進み、検証前に付番が行われないことを確認する。",
+      "communicationIds": [
+        "COM-01",
+        "COM-02",
+        "COM-03",
+        "COM-04",
+        "COM-05"
+      ],
+      "dataItemIds": [
+        "DAT-01",
+        "DAT-02",
+        "DAT-03",
+        "DAT-04"
+      ],
+      "coveredDelayWindowIds": [
+        "DFW:DAT-01:CMP-01:CMP-02",
+        "DFW:DAT-01:CMP-03:CMP-02",
+        "DFW:DAT-02:CMP-01:CMP-03"
+      ]
+    },
+    {
+      "id": "TC-033",
+      "statement": "処理時間を30秒の直前と直後に制御し、JSON形式のレスポンスとJSONを伴わない500番台のエラーへ切り替わる点を測定する。",
+      "communicationIds": [
+        "COM-05"
+      ],
+      "dataItemIds": [
+        "DAT-03"
+      ],
+      "coveredDelayWindowIds": [
+        "DFW:DAT-03:CMP-03:CMP-01"
+      ]
+    },
+    {
+      "id": "TC-031",
+      "statement": "正常に付番処理が実行されなかった場合に再度付番依頼を実施し、新規付番された番号が返却されることを確認する。",
+      "communicationIds": [
+        "COM-02"
+      ],
+      "dataItemIds": [
+        "DAT-02"
+      ],
+      "coveredDelayWindowIds": [
+        "DFW:DAT-02:CMP-01:CMP-03"
+      ]
+    },
+    {
+      "id": "TC-029",
+      "statement": "付番から名寄せまでの流れで主キーの宛名番号が変わらず、操作年月日と操作時刻が段階ごとに記録されることを確認する。",
+      "communicationIds": [
+        "COM-04"
+      ],
+      "dataItemIds": [
+        "DAT-04"
+      ],
+      "coveredDelayWindowIds": [
+        "DFW:DAT-04:CMP-03:CMP-04"
+      ]
+    }
+  ],
+  "claimedDelayWindowCoveragePercent": 100
+}

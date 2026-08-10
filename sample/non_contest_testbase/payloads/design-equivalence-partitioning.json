@@ -1,0 +1,239 @@
+{
+  "variables": [
+    {
+      "name": "処理区分（shorikubun）",
+      "validClasses": [
+        {
+          "label": "0：付番依頼",
+          "representative": "shorikubun=\"0\"",
+          "description": "通常新規付番する場合の初回付番依頼時に設定する区分。新規住登外者宛名番号を付番する（fuban-api_spec:66 / fuban-api_spec:96-98）"
+        },
+        {
+          "label": "1：既存住登外者宛名番号利用",
+          "representative": "shorikubun=\"1\"",
+          "description": "既存の宛名番号を利用し住登外者を登録する場合に設定する区分。受信した宛名番号を住登外者宛名番号として登録する（fuban-api_spec:66 / fuban-api_spec:97）"
+        },
+        {
+          "label": "2：住登外者宛名番号選択情報送信",
+          "representative": "shorikubun=\"2\"",
+          "description": "候補者から宛名番号を選択し登録する場合に設定する区分。受信した住登外者宛名番号の住登外者宛名基本情報の業務IDを更新する（fuban-api_spec:66 / fuban-api_spec:98）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "規定外のコード値",
+          "representative": "shorikubun=\"3\"",
+          "description": "0 / 1 / 2 のいずれでもない値。仕様書は3値のみを規定しており、それ以外の扱いは記述されていないため、応答を観測して記録する（fuban-api_spec:96）"
+        },
+        {
+          "label": "未設定",
+          "representative": "shorikubun をパラメータごと送信しない",
+          "description": "必須（◎）指定のパラメータが未設定である状態。E0001 必須エラーの発生条件に該当する（fuban-api_spec:96 / fuban-api_spec:242）"
+        }
+      ]
+    },
+    {
+      "name": "性別（seibetsu）のコード値",
+      "validClasses": [
+        {
+          "label": "0：不明（未記入）",
+          "representative": "seibetsu=\"0\"",
+          "description": "コード一覧（個別）のコードID 1 に定義されたコード値（item-definition:67）"
+        },
+        {
+          "label": "1：男",
+          "representative": "seibetsu=\"1\"",
+          "description": "コードID 1 に定義されたコード値（item-definition:68）"
+        },
+        {
+          "label": "2：女",
+          "representative": "seibetsu=\"2\"",
+          "description": "コードID 1 に定義されたコード値（item-definition:69）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "コード一覧に無いコード値",
+          "representative": "seibetsu=\"9\"",
+          "description": "コードID 1 に定義されていない値。データ型は X 1桁であるため桁数は満たすが、コード値としては未定義である（item-definition:28 / item-definition:67-69）"
+        }
+      ]
+    },
+    {
+      "name": "データ出力条件（データ項目ごとの出力の要否）",
+      "validClasses": [
+        {
+          "label": "必須",
+          "representative": "031-1 宛名番号（値を必ず設定する）",
+          "description": "データ出力時に値のセットが必須である区分。住登外者宛名基本情報では 031-1 / 031-25 / 031-27 / 031-28 / 031-29 が該当する（item-definition:12 / item-definition:96）"
+        },
+        {
+          "label": "任意",
+          "representative": "031-2 個人番号（値を設定しない）",
+          "description": "データ出力時に値のセットが任意である区分（item-definition:14 / item-definition:96）"
+        },
+        {
+          "label": "条件付き必須（条件成立時）",
+          "representative": "031-26 名寄せ先宛名番号（名寄せ元となった宛名基本情報の場合に値を設定する）",
+          "description": "項目説明に ※※ で記載された条件が成立し、出力が必須となる区分（item-definition:54-55 / item-definition:96）"
+        },
+        {
+          "label": "条件付き必須（条件不成立時）",
+          "representative": "031-26 名寄せ先宛名番号（名寄せ元でない場合に値を設定しない）",
+          "description": "※※ の条件が成立せず、値を設定しなくてよい区分（item-definition:54-55 / item-definition:96）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "必須項目を未設定",
+          "representative": "031-27 操作者ID を送信しない",
+          "description": "データ出力条件が必須の項目に値を設定しない状態。E0001 必須エラーの発生条件に該当する（item-definition:56 / fuban-api_spec:242）"
+        }
+      ]
+    },
+    {
+      "name": "データ型（住登外者宛名基本情報で使用される型）",
+      "validClasses": [
+        {
+          "label": "X：半角文字列",
+          "representative": "atenabango=\"123456789123456\"",
+          "description": "凡例）データ型の項番1。住登外者宛名基本情報では宛名番号・個人番号・性別・住所コード類・業務ID・操作者IDに使用される（item-definition:111）"
+        },
+        {
+          "label": "Ｎ：全角文字列",
+          "representative": "shimei=\"佐藤　一郎\"",
+          "description": "凡例）データ型の項番2。氏名系・住所の名称系に使用される（item-definition:112）"
+        },
+        {
+          "label": "9：整数",
+          "representative": "代表宛名フラグ=1",
+          "description": "凡例）データ型の項番3。住登外者宛名基本情報では 031-25 代表宛名フラグにのみ使用される（item-definition:53 / item-definition:113）"
+        },
+        {
+          "label": "DATE：YYYY-MM-DD",
+          "representative": "sosanengappi=\"2021-11-01\"",
+          "description": "凡例）データ型の項番8。生年月日と操作年月日に使用される（item-definition:123-132）"
+        },
+        {
+          "label": "TIME：HH:MM:SS（秒は省略可能）",
+          "representative": "sosajikoku=\"09:00:00\"",
+          "description": "凡例）データ型の項番9。操作時刻に使用される（item-definition:133-136）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "データ型に合致しない文字種",
+          "representative": "atenabango=\"１２３４５６７８９１２３４５６\"（全角数字）",
+          "description": "データ型 X の項目に全角文字を設定した状態。E0002 指定文字エラーの発生条件に該当する（item-definition:111 / fuban-api_spec:243）"
+        },
+        {
+          "label": "DATE の形式不正",
+          "representative": "sosanengappi=\"2021/11/01\"",
+          "description": "YYYY-MM-DD 以外の区切りを用いた状態（item-definition:123-126）"
+        }
+      ]
+    },
+    {
+      "name": "HTTPステータスコード（付番APIの応答）",
+      "validClasses": [
+        {
+          "label": "200：正常終了",
+          "representative": "本APIが正常に終了した場合",
+          "description": "JSON形式のレスポンスオブジェクト（metadata / _links / result）が返却される（fuban-api_spec:80 / fuban-api_spec:166-199）"
+        },
+        {
+          "label": "400：パラメータチェックエラー",
+          "representative": "送信したパラメータのチェックにてエラーとなった場合",
+          "description": "JSON形式で title / detail / _links / errors が返却される（fuban-api_spec:81 / fuban-api_spec:200-218）"
+        },
+        {
+          "label": "401：認証エラー",
+          "representative": "認証情報が取得できない、またはアクセストークンが未指定の場合",
+          "description": "JSON形式で title / detail「アクセストークンが無効です。」/ _links が返却される。errors 配列は含まれない（fuban-api_spec:82 / fuban-api_spec:219-228）"
+        },
+        {
+          "label": "503：想定外エラー",
+          "representative": "上記以外の想定外エラーが発生した場合",
+          "description": "JSON形式で title / detail「想定外のエラーが発生しました。」/ _links が返却される（fuban-api_spec:85 / fuban-api_spec:229-238）"
+        },
+        {
+          "label": "500番台：タイムアウト・メンテナンス",
+          "representative": "処理が30秒以上経過した場合、またはサービスメンテナンス時",
+          "description": "原則HTTPステータスコード500番台のエラーが返却され、JSON形式では返却されない（fuban-api_spec:83-84）"
+        }
+      ]
+    },
+    {
+      "name": "エラーコード（400応答の errors[].code）",
+      "validClasses": [
+        {
+          "label": "E0001 必須エラー",
+          "representative": "必須のパラメータを設定しない",
+          "description": "必須のパラメータが設定されていない状態。メッセージは「【項目名】が設定されていません。」（fuban-api_spec:242）"
+        },
+        {
+          "label": "E0002 指定文字エラー",
+          "representative": "データ型 X の項目に全角文字を設定する",
+          "description": "パラメータの文字種に指定できない文字が使われている状態。メッセージは「【項目名】は【指定文字】で設定してください。」（fuban-api_spec:243）"
+        },
+        {
+          "label": "E0003 桁数エラー（固定項目）",
+          "representative": "atenabango を16桁で設定する",
+          "description": "パラメータの固定桁項目の桁数が誤っている状態。メッセージは「【項目名】はX桁で設定してください。」（fuban-api_spec:244）"
+        },
+        {
+          "label": "E0004 相関チェックエラー",
+          "representative": "shorikubun=\"1\" で atenabango を設定しない",
+          "description": "パラメータの項目設定が誤っている状態。メッセージは「【項目名】が設定されている場合、【項目名】は設定必須です。」（fuban-api_spec:245）"
+        }
+      ]
+    },
+    {
+      "name": "要求元認証の方式",
+      "validClasses": [
+        {
+          "label": "OAuth2.0 client_secret_jwt",
+          "representative": "アクセストークン Bearerタイプ、認証方式 client_secret_jwt",
+          "description": "本APIの要求元認証として規定された方式（fuban-api_spec:37）"
+        },
+        {
+          "label": "OAuth2.0 client_secret_basic（暫定措置）",
+          "representative": "アクセストークン Bearer client_secret_basic",
+          "description": "統一ID基盤の整備が検討されていることによる暫定措置として実装が可能とされた方式（fuban-api_spec:38-39）"
+        }
+      ],
+      "invalidClasses": [
+        {
+          "label": "アクセストークン未指定",
+          "representative": "Authorization ヘッダを送信しない",
+          "description": "認証情報が取得できない、またはアクセストークンが未指定の状態。HTTPステータスコード401の発生条件に該当する（fuban-api_spec:82）"
+        },
+        {
+          "label": "API Key（ガバメントクラウドでは原則不可）",
+          "representative": "API Key による認証",
+          "description": "ガバメントクラウドでは原則認められず、オンプレミス環境等でも時限的な措置とされる方式（fuban-api_spec:40）"
+        }
+      ]
+    },
+    {
+      "name": "住所_町字コード（jusho_choazakodo）の値の区分",
+      "validClasses": [
+        {
+          "label": "町字マスターデータセットに規定のあるコード",
+          "representative": "jusho_choazakodo=\"0011001\"",
+          "description": "アドレス・ベース・レジストリ「町字マスターデータセット」で規定された町字IDのコード値（item-definition:35 / fuban-api_spec:123）"
+        },
+        {
+          "label": "住所に町字がない場合",
+          "representative": "jusho_choazakodo=\"0000000\"",
+          "description": "住所に町字がない場合に設定する値（item-definition:36 / fuban-api_spec:124）"
+        },
+        {
+          "label": "マスターデータセットに規定がない町字の場合",
+          "representative": "jusho_choazakodo=\"9999999\"",
+          "description": "付番API仕様側にのみ規定がある値。項目定義書には対応する記述が無い（fuban-api_spec:125）"
+        }
+      ]
+    }
+  ]
+}

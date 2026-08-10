@@ -1,0 +1,1563 @@
+{
+  "idPrefix": "TCS-",
+  "idPatterns": [
+    "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+    "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"
+  ],
+  "requirementIds": [
+    "031-1",
+    "031-2",
+    "031-3",
+    "031-4",
+    "031-5",
+    "031-6",
+    "031-7",
+    "031-8",
+    "031-9",
+    "031-10",
+    "031-11",
+    "031-12",
+    "031-13",
+    "031-14",
+    "031-15",
+    "031-16",
+    "031-17",
+    "031-18",
+    "031-19",
+    "031-20",
+    "031-21",
+    "031-22",
+    "031-23",
+    "031-24",
+    "031-26",
+    "031-27",
+    "031-28",
+    "031-29",
+    "E0001",
+    "E0002",
+    "E0003",
+    "E0004"
+  ],
+  "riskIds": [
+    "RK-01",
+    "RK-02",
+    "RK-03",
+    "RK-04",
+    "RK-05",
+    "RK-06",
+    "RK-07",
+    "RK-08"
+  ],
+  "personaIds": [
+    "P-01",
+    "P-02",
+    "P-03",
+    "P-04"
+  ],
+  "requirementSources": [
+    {
+      "requirementId": "E0001",
+      "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+      "startLine": 242,
+      "endLine": 242
+    },
+    {
+      "requirementId": "E0002",
+      "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+      "startLine": 243,
+      "endLine": 243
+    },
+    {
+      "requirementId": "E0003",
+      "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+      "startLine": 244,
+      "endLine": 244
+    },
+    {
+      "requirementId": "E0004",
+      "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+      "startLine": 245,
+      "endLine": 284
+    },
+    {
+      "requirementId": "031-1",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 12,
+      "endLine": 13
+    },
+    {
+      "requirementId": "031-2",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 14,
+      "endLine": 14
+    },
+    {
+      "requirementId": "031-3",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 15,
+      "endLine": 16
+    },
+    {
+      "requirementId": "031-4",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 17,
+      "endLine": 17
+    },
+    {
+      "requirementId": "031-5",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 18,
+      "endLine": 18
+    },
+    {
+      "requirementId": "031-6",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 19,
+      "endLine": 21
+    },
+    {
+      "requirementId": "031-7",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 22,
+      "endLine": 24
+    },
+    {
+      "requirementId": "031-8",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 25,
+      "endLine": 25
+    },
+    {
+      "requirementId": "031-9",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 26,
+      "endLine": 26
+    },
+    {
+      "requirementId": "031-10",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 27,
+      "endLine": 27
+    },
+    {
+      "requirementId": "031-11",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 28,
+      "endLine": 28
+    },
+    {
+      "requirementId": "031-12",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 29,
+      "endLine": 30
+    },
+    {
+      "requirementId": "031-13",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 31,
+      "endLine": 32
+    },
+    {
+      "requirementId": "031-14",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 33,
+      "endLine": 33
+    },
+    {
+      "requirementId": "031-15",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 34,
+      "endLine": 36
+    },
+    {
+      "requirementId": "031-16",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 37,
+      "endLine": 37
+    },
+    {
+      "requirementId": "031-17",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 38,
+      "endLine": 41
+    },
+    {
+      "requirementId": "031-18",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 42,
+      "endLine": 42
+    },
+    {
+      "requirementId": "031-19",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 43,
+      "endLine": 44
+    },
+    {
+      "requirementId": "031-20",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 45,
+      "endLine": 46
+    },
+    {
+      "requirementId": "031-21",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 47,
+      "endLine": 47
+    },
+    {
+      "requirementId": "031-22",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 48,
+      "endLine": 48
+    },
+    {
+      "requirementId": "031-23",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 49,
+      "endLine": 50
+    },
+    {
+      "requirementId": "031-24",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 51,
+      "endLine": 52
+    },
+    {
+      "requirementId": "031-26",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 54,
+      "endLine": 55
+    },
+    {
+      "requirementId": "031-27",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 56,
+      "endLine": 56
+    },
+    {
+      "requirementId": "031-28",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 57,
+      "endLine": 57
+    },
+    {
+      "requirementId": "031-29",
+      "document": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "startLine": 58,
+      "endLine": 136
+    }
+  ],
+  "parameters": [
+    {
+      "name": "宛名番号の桁数",
+      "value": "15",
+      "unit": "桁",
+      "source": "item-definition:12 / fuban-api_spec:101",
+      "note": "データ型 X の固定桁"
+    },
+    {
+      "name": "個人番号の桁数",
+      "value": "12",
+      "unit": "桁",
+      "source": "item-definition:14 / fuban-api_spec:102",
+      "note": "データ型 X の固定桁"
+    },
+    {
+      "name": "市区町村コードの桁数",
+      "value": "6",
+      "unit": "桁",
+      "source": "item-definition:33 / fuban-api_spec:99",
+      "note": "総務省 全国地方公共団体コード"
+    },
+    {
+      "name": "操作者IDの桁数",
+      "value": "10",
+      "unit": "桁",
+      "source": "item-definition:56 / fuban-api_spec:153",
+      "note": "データ型 X の固定桁"
+    },
+    {
+      "name": "氏名の文字数上限",
+      "value": "100",
+      "unit": "文字",
+      "source": "item-definition:15 / fuban-api_spec:103",
+      "note": "データ型 Ｎ"
+    },
+    {
+      "name": "氏名構成要素の文字数上限",
+      "value": "50",
+      "unit": "文字",
+      "source": "item-definition:17 / fuban-api_spec:105",
+      "note": "氏・名それぞれの上限"
+    },
+    {
+      "name": "住所_町字の文字数上限_項目定義書",
+      "value": "18",
+      "unit": "文字",
+      "source": "item-definition:42",
+      "note": "付番API仕様の値と食い違う（RK-01）"
+    },
+    {
+      "name": "住所_町字の文字数上限_付番API仕様",
+      "value": "120",
+      "unit": "文字",
+      "source": "fuban-api_spec:135",
+      "note": "項目定義書の値と食い違う（RK-01）"
+    },
+    {
+      "name": "タイムアウト時間",
+      "value": "30",
+      "unit": "秒",
+      "source": "fuban-api_spec:83",
+      "note": "目安であり確定値ではない"
+    },
+    {
+      "name": "繰り返し上限",
+      "value": "999",
+      "unit": "回",
+      "source": "item-definition:49-52",
+      "note": "業務ID・独自施策システム等IDの繰り返し"
+    }
+  ],
+  "coverageCriteriaDeclaration": [
+    "テスト条件46件それぞれに、テストケースを1件以上割り当てる",
+    "工程Aで確定した母集団のテスト対象32件それぞれが、いずれかのテストケースの derivedFrom に現れる",
+    "エラーコード E0001 / E0002 / E0003 / E0004 の4件それぞれに、発生条件を実行するテストケースを割り当てる",
+    "HTTPステータスコード 200 / 400 / 401 / 503 と500番台の5系統それぞれに、応答を観測するテストケースを割り当てる",
+    "処理区分 0 / 1 / 2 の3値それぞれに、処理結果を観測するテストケースを割り当てる",
+    "期待結果に用いる閾値は 1.4 の閾値パラメータ表の名称で参照し、直値を本文へ埋め込まない",
+    "境界値の網羅は 12_境界値分析結果.md、同値クラスの網羅は 13_同値分割結果.md を正本とし、本書では条件単位の網羅対象のみを宣言する",
+    "優先度の判定基準は 11_テスト条件抽出結果.md 4章のリスクレベル算出式（riskScore = impact × likelihood × changeWeight、30以上を高、15以上29以下を中、14以下を低）に従い、テスト条件の優先度をそのままテストケースへ引き継ぐ"
+  ],
+  "additionalCoverageTargets": [
+    {
+      "id": "AC-TC-001-01",
+      "techniqueId": "scenario-based",
+      "description": "処理区分0 新規付番（031-1 宛名番号）: 処理区分0による新規住登外者宛名番号の付番",
+      "origin": "TC-001"
+    },
+    {
+      "id": "AC-TC-002-01",
+      "techniqueId": "scenario-based",
+      "description": "処理区分1 既存宛名番号利用（031-1 宛名番号）: 処理区分1による既存宛名番号の住登外者宛名番号としての登録",
+      "origin": "TC-002"
+    },
+    {
+      "id": "AC-TC-003-01",
+      "techniqueId": "scenario-based",
+      "description": "処理区分2 業務ID更新（031-23 業務ID）: 処理区分2による業務IDの更新",
+      "origin": "TC-003"
+    },
+    {
+      "id": "AC-TC-004-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "独自施策システム等IDによる登録（031-24）: 独自施策システム等IDによる登録の受理",
+      "origin": "TC-004"
+    },
+    {
+      "id": "AC-TC-005-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "必須エラー（E0001）: 必須パラメータ欠落時の必須エラー返却",
+      "origin": "TC-005"
+    },
+    {
+      "id": "AC-TC-006-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "指定文字エラー（E0002）: データ型に合致しない文字種を設定した場合の指定文字エラー返却",
+      "origin": "TC-006"
+    },
+    {
+      "id": "AC-TC-007-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "桁数エラー（E0003）: 固定桁項目の桁数誤りによる桁数エラー返却",
+      "origin": "TC-007"
+    },
+    {
+      "id": "AC-TC-008-01",
+      "techniqueId": "decision-table",
+      "description": "相関チェックエラー（E0004）: 処理区分1で宛名番号を未設定にした場合の相関チェックエラー返却",
+      "origin": "TC-008"
+    },
+    {
+      "id": "AC-TC-009-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "宛名番号の桁数境界（031-1）: 宛名番号の桁数境界の確認",
+      "origin": "TC-009"
+    },
+    {
+      "id": "AC-TC-010-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "個人番号の桁数境界（031-2）: 個人番号の桁数境界の確認",
+      "origin": "TC-010"
+    },
+    {
+      "id": "AC-TC-011-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "氏名の桁数境界（031-3）: 氏名の文字数境界の確認",
+      "origin": "TC-011"
+    },
+    {
+      "id": "AC-TC-012-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "氏・名の桁数境界（031-4 / 031-5）: 氏および名の文字数境界の確認",
+      "origin": "TC-012"
+    },
+    {
+      "id": "AC-TC-013-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "外国人氏名の桁数境界（031-6 / 031-7）: 外国人氏名のローマ字表記と漢字表記の文字数境界の確認",
+      "origin": "TC-013"
+    },
+    {
+      "id": "AC-TC-014-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "読み仮名の桁数境界（031-8 / 031-9 / 031-10）: 読み仮名3項目の文字数境界の確認",
+      "origin": "TC-014"
+    },
+    {
+      "id": "AC-TC-015-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "生年月日_不詳表記の桁数境界（031-13）: 生年月日_不詳表記の文字数境界の確認",
+      "origin": "TC-015"
+    },
+    {
+      "id": "AC-TC-016-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "住所コードの桁数境界（031-14 / 031-15）: 住所コード2項目の桁数境界と特殊値の確認",
+      "origin": "TC-016"
+    },
+    {
+      "id": "AC-TC-017-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "都道府県・市区郡町村名の桁数境界（031-16 / 031-17）: 都道府県と市区郡町村名の文字数境界の確認",
+      "origin": "TC-017"
+    },
+    {
+      "id": "AC-TC-018-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "住所_町字の桁数不一致（031-18）: 住所_町字の文字数上限が2文書で食い違う箇所の実測",
+      "origin": "TC-018"
+    },
+    {
+      "id": "AC-TC-019-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "番地号表記・郵便番号の桁数境界（031-19 / 031-22）: 番地号表記と郵便番号の桁数境界の確認",
+      "origin": "TC-019"
+    },
+    {
+      "id": "AC-TC-020-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "方書の桁数境界（031-20 / 031-21）: 方書と方書フリガナの文字数境界の確認",
+      "origin": "TC-020"
+    },
+    {
+      "id": "AC-TC-021-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "操作者IDの桁数境界（031-27）: 操作者IDの桁数境界の確認",
+      "origin": "TC-021"
+    },
+    {
+      "id": "AC-TC-022-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "性別コードの同値分割（031-11）: 性別コードの同値クラスの確認",
+      "origin": "TC-022"
+    },
+    {
+      "id": "AC-TC-023-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "生年月日の同値分割（031-12）: 生年月日の同値クラスと不詳日の扱いの確認",
+      "origin": "TC-023"
+    },
+    {
+      "id": "AC-TC-024-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "操作年月日・操作時刻の同値分割（031-28 / 031-29）: 操作年月日と操作時刻の書式クラスの確認",
+      "origin": "TC-024"
+    },
+    {
+      "id": "AC-TC-025-01",
+      "techniqueId": "state-transition",
+      "description": "名寄せ状態の遷移（031-26）: 名寄せ実施時の名寄せ先宛名番号と名寄せ元フラグの遷移",
+      "origin": "TC-025"
+    },
+    {
+      "id": "AC-TC-026-01",
+      "techniqueId": "scenario-based",
+      "description": "同時付番依頼の競合（031-1）: 同一住登外者への同時付番依頼における二重付番の有無の確認",
+      "origin": "TC-026"
+    },
+    {
+      "id": "AC-TC-027-01",
+      "techniqueId": "scenario-based",
+      "description": "APIシーケンスの実行順序（031-1）: APIシーケンスの実行順序の確認",
+      "origin": "TC-027"
+    },
+    {
+      "id": "AC-TC-028-01",
+      "techniqueId": "scenario-based",
+      "description": "宛名情報のライフサイクル（031-1 / 031-28）: 付番から名寄せまでの宛名情報ライフサイクルの確認",
+      "origin": "TC-028"
+    },
+    {
+      "id": "AC-TC-029-01",
+      "techniqueId": "pairwise",
+      "description": "認証方式の構成差（031-27）: 要求元認証の2方式による応答の同一性の確認",
+      "origin": "TC-029"
+    },
+    {
+      "id": "AC-TC-030-01",
+      "techniqueId": "scenario-based",
+      "description": "付番失敗からの回復（031-1）: 付番失敗後の再依頼による回復の確認",
+      "origin": "TC-030"
+    },
+    {
+      "id": "AC-TC-031-01",
+      "techniqueId": "scenario-based",
+      "description": "長時間連続付番（031-29）: 連続付番依頼における操作時刻の記録欠落の有無の確認",
+      "origin": "TC-031"
+    },
+    {
+      "id": "AC-TC-032-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "タイムアウト境界（30秒）: タイムアウト境界における応答形式の切り替わりの実測",
+      "origin": "TC-032"
+    },
+    {
+      "id": "AC-TC-033-01",
+      "techniqueId": "checklist-based",
+      "description": "メンテナンス時の応答: サービスメンテナンス中の応答の確認",
+      "origin": "TC-033"
+    },
+    {
+      "id": "AC-TC-034-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "アクセストークン検証（031-27）: アクセストークンの3状態に対する認証エラー応答の確認",
+      "origin": "TC-034"
+    },
+    {
+      "id": "AC-TC-035-01",
+      "techniqueId": "checklist-based",
+      "description": "個人番号の秘匿（031-2）: 個人番号の秘匿性の確認",
+      "origin": "TC-035"
+    },
+    {
+      "id": "AC-TC-036-01",
+      "techniqueId": "checklist-based",
+      "description": "エラーメッセージの理解性（E0001）: 必須エラーのメッセージから対処が読み取れることの確認",
+      "origin": "TC-036"
+    },
+    {
+      "id": "AC-TC-037-01",
+      "techniqueId": "checklist-based",
+      "description": "文字コードと外国人氏名（031-6 / 031-7）: 文字コードと外国人氏名の往復の確認",
+      "origin": "TC-037"
+    },
+    {
+      "id": "AC-TC-038-01",
+      "techniqueId": "scenario-based",
+      "description": "業務ID更新後のリグレッション（031-3 / 031-11 / 031-12）: 業務ID更新後の他項目のリグレッション確認",
+      "origin": "TC-038"
+    },
+    {
+      "id": "AC-TC-039-01",
+      "techniqueId": "decision-table",
+      "description": "条件付き必須の判定（031-3 / 031-4 / 031-5）: 条件付き必須項目の条件成立時と不成立時の登録可否の確認",
+      "origin": "TC-039"
+    },
+    {
+      "id": "AC-TC-040-01",
+      "techniqueId": "checklist-based",
+      "description": "正常系レスポンスの固定値（031-1）: 正常系レスポンスの固定値の確認",
+      "origin": "TC-040"
+    },
+    {
+      "id": "AC-TC-041-01",
+      "techniqueId": "checklist-based",
+      "description": "応答項目の範囲（031-28）: 正常系レスポンスの result 配列が返す項目範囲の記録",
+      "origin": "TC-041"
+    },
+    {
+      "id": "AC-TC-042-01",
+      "techniqueId": "equivalence-partitioning",
+      "description": "データ出力条件3区分の有無（031-2 / 031-26）: データ出力条件3区分に対する値の有無の扱いの確認",
+      "origin": "TC-042"
+    },
+    {
+      "id": "AC-TC-043-01",
+      "techniqueId": "boundary-value-analysis",
+      "description": "繰り返し上限（031-23 / 031-24）: 業務IDと独自施策システム等IDの繰り返し上限到達時の扱いの確認",
+      "origin": "TC-043"
+    },
+    {
+      "id": "AC-TC-044-01",
+      "techniqueId": "exploratory",
+      "description": "トークン期限切れのタイミング（031-27）: アクセストークンの有効期限が処理途中で切れた場合の扱いの確認",
+      "origin": "TC-044"
+    },
+    {
+      "id": "AC-TC-045-01",
+      "techniqueId": "scenario-based",
+      "description": "503後の再送（031-1）: 503応答後の同一要求電文の再送における二重登録の有無の確認",
+      "origin": "TC-045"
+    },
+    {
+      "id": "AC-TC-046-01",
+      "techniqueId": "state-transition",
+      "description": "付番後の業務ID更新遷移（031-23）: 付番後の業務ID更新における履歴番号の増加の確認",
+      "origin": "TC-046"
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-001",
+      "target": "処理区分0 新規付番（031-1 宛名番号）",
+      "statement": "処理区分（shorikubun）に \"0\" を設定した付番依頼で、新規の住登外者宛名番号が付番され、200応答の result 配列に atenabango が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "recommendedTechniques": [
+        "scenario-based",
+        "checklist-based"
+      ]
+    },
+    {
+      "id": "TC-002",
+      "target": "処理区分1 既存宛名番号利用（031-1 宛名番号）",
+      "statement": "処理区分に \"1\" を設定し既存の宛名番号を送信した場合に、受信した宛名番号がそのまま住登外者宛名番号として登録されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-01",
+      "recommendedTechniques": [
+        "scenario-based",
+        "decision-table"
+      ]
+    },
+    {
+      "id": "TC-003",
+      "target": "処理区分2 業務ID更新（031-23 業務ID）",
+      "statement": "処理区分に \"2\" を設定した場合に、受信した住登外者宛名番号の住登外者宛名基本情報の業務IDだけが更新され、他の項目が変化しないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-01",
+      "recommendedTechniques": [
+        "scenario-based",
+        "decision-table"
+      ]
+    },
+    {
+      "id": "TC-004",
+      "target": "独自施策システム等IDによる登録（031-24）",
+      "statement": "独自施策システム等ID（031-24）が設定された付番依頼で、業務IDを持たないシステムからの登録が受け付けられることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-24"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-01",
+      "recommendedTechniques": [
+        "equivalence-partitioning",
+        "checklist-based"
+      ]
+    },
+    {
+      "id": "TC-005",
+      "target": "必須エラー（E0001）",
+      "statement": "必須（◎）のパラメータをそれぞれ1件ずつ欠落させた要求電文で、HTTPステータスコード400と errors[].code = E0001 が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-02",
+      "recommendedTechniques": [
+        "equivalence-partitioning",
+        "checklist-based"
+      ]
+    },
+    {
+      "id": "TC-006",
+      "target": "指定文字エラー（E0002）",
+      "statement": "データ型 X の項目に全角文字を、データ型 Ｎ の項目に規定外の文字を設定した要求電文で、errors[].code = E0002 が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0002"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-02",
+      "recommendedTechniques": [
+        "equivalence-partitioning",
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-007",
+      "target": "桁数エラー（E0003）",
+      "statement": "固定桁項目の桁数を規定より1桁多く／少なく設定した要求電文で、errors[].code = E0003 が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0003"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-02",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-008",
+      "target": "相関チェックエラー（E0004）",
+      "statement": "処理区分 \"1\" / \"2\" で atenabango を未設定にした要求電文で、errors[].code = E0004 が返ることを確認する。返却されるコードが E0001 であった場合はQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0004"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-03"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-02",
+      "recommendedTechniques": [
+        "decision-table"
+      ]
+    },
+    {
+      "id": "TC-009",
+      "target": "宛名番号の桁数境界（031-1）",
+      "statement": "宛名番号（atenabango）を14桁・15桁・16桁で送信し、15桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-010",
+      "target": "個人番号の桁数境界（031-2）",
+      "statement": "個人番号（kojinbango）を11桁・12桁・13桁で送信し、12桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-011",
+      "target": "氏名の桁数境界（031-3）",
+      "statement": "氏名（shimei）を99文字・100文字・101文字で送信し、100文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-012",
+      "target": "氏・名の桁数境界（031-4 / 031-5）",
+      "statement": "氏_日本人（uji_nihonjin）と名_日本人（na_nihonjin）を49文字・50文字・51文字で送信し、50文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-4"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-5"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-013",
+      "target": "外国人氏名の桁数境界（031-6 / 031-7）",
+      "statement": "外国人氏名のアルファベット表記（031-6）と漢字表記（031-7）を99文字・100文字・101文字で送信し、100文字でのみ受理されることを確認する。API側のパラメータ名は shimei_gaikokujinromaji / shimei_gaikokujinkanji である。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-6"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-7"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-014",
+      "target": "読み仮名の桁数境界（031-8 / 031-9 / 031-10）",
+      "statement": "氏名_読み仮名（031-8、Ｎ100）・氏_日本人_読み仮名（031-9、Ｎ50）・名_日本人_読み仮名（031-10、Ｎ50）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。API側は shimei_furigana / uji_nihonjin_furigana / na_nihonjin_furigana である。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-8"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-9"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-10"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-015",
+      "target": "生年月日_不詳表記の桁数境界（031-13）",
+      "statement": "生年月日_不詳表記（seinengappi_fushohyoki）を71文字・72文字・73文字で送信し、72文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-13"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-016",
+      "target": "住所コードの桁数境界（031-14 / 031-15）",
+      "statement": "住所_市区町村コード（031-14、X6）と住所_町字コード（031-15、X7）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。町字コードは 0000000 と 9999999 の特殊値も送信する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-14"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-15"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis",
+        "equivalence-partitioning"
+      ]
+    },
+    {
+      "id": "TC-017",
+      "target": "都道府県・市区郡町村名の桁数境界（031-16 / 031-17）",
+      "statement": "住所_都道府県（031-16、Ｎ4）と住所_市区郡町村名（031-17、Ｎ12）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-16"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-17"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-018",
+      "target": "住所_町字の桁数不一致（031-18）",
+      "statement": "住所_町字（jusho_choaza）を17文字・18文字・19文字・119文字・120文字・121文字で送信し、受理される上限が Ｎ18 と Ｎ120 のどちらであるかを記録する。合否は確定させずQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-18"
+        }
+      ],
+      "priority": "高",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-019",
+      "target": "番地号表記・郵便番号の桁数境界（031-19 / 031-22）",
+      "statement": "住所_番地号表記（031-19、Ｎ50）と住所_郵便番号（031-22、X7）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-19"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-22"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-020",
+      "target": "方書の桁数境界（031-20 / 031-21）",
+      "statement": "住所_方書（031-20）と住所_方書_フリガナ（031-21）を299文字・300文字・301文字で送信し、300文字でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-20"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-21"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-021",
+      "target": "操作者IDの桁数境界（031-27）",
+      "statement": "操作者ID（sosashaid、X10）を9桁・10桁・11桁で送信し、10桁でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-03",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-022",
+      "target": "性別コードの同値分割（031-11）",
+      "statement": "性別（seibetsu）に 0（不明（未記入））・1（男）・2（女）と規定外の値を設定し、コード一覧に定義された3値でのみ受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-11"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-04",
+      "recommendedTechniques": [
+        "equivalence-partitioning"
+      ]
+    },
+    {
+      "id": "TC-023",
+      "target": "生年月日の同値分割（031-12）",
+      "statement": "生年月日（seinengappi）に DATE 形式の有効値・不詳日・0000-01-01・9999-12-31・形式不正値を設定し、不詳日を許容する記述どおりに扱われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-12"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-04",
+      "recommendedTechniques": [
+        "equivalence-partitioning",
+        "boundary-value-analysis"
+      ]
+    },
+    {
+      "id": "TC-024",
+      "target": "操作年月日・操作時刻の同値分割（031-28 / 031-29）",
+      "statement": "操作年月日（031-28、DATE10）と操作時刻（031-29、TIME8）に、有効値・秒省略値・形式不正値を設定し、GIF コアデータパーツの規定どおりに扱われることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-29"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-04",
+      "recommendedTechniques": [
+        "equivalence-partitioning"
+      ]
+    },
+    {
+      "id": "TC-025",
+      "target": "名寄せ状態の遷移（031-26）",
+      "statement": "名寄せを実施したとき、名寄せ元となった宛名基本情報に名寄せ先宛名番号（031-26）が設定され、名寄せ元フラグが 1 に遷移することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-26"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-05",
+      "recommendedTechniques": [
+        "state-transition"
+      ]
+    },
+    {
+      "id": "TC-026",
+      "target": "同時付番依頼の競合（031-1）",
+      "statement": "同一の住登外者に対する処理区分 \"0\" の付番依頼を同時に2件送信し、宛名番号が二重に付番されないことを確認する。仕様書に並行時の規定が無いため、観測結果を記録してQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-07",
+      "recommendedTechniques": [
+        "scenario-based",
+        "exploratory"
+      ]
+    },
+    {
+      "id": "TC-027",
+      "target": "APIシーケンスの実行順序（031-1）",
+      "statement": "APIアクセス w/アクセストークン → アクセストークンの検証 → 住登外者宛名番号付番 → API結果返却 の順序で処理が進み、検証前に付番が行われないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-08",
+      "recommendedTechniques": [
+        "state-transition",
+        "scenario-based"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 55,
+          "endLine": 66,
+          "heading": "図形内テキスト（APIシーケンス）",
+          "label": "APIシーケンス図の図形内テキスト12行"
+        }
+      ]
+    },
+    {
+      "id": "TC-028",
+      "target": "宛名情報のライフサイクル（031-1 / 031-28）",
+      "statement": "付番→登録→名寄せ→参照の一連の流れで、住登外者宛名基本情報の主キー（031-1 宛名番号）が変わらず、操作年月日・操作時刻が更新ごとに記録されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-09",
+      "recommendedTechniques": [
+        "scenario-based",
+        "state-transition"
+      ]
+    },
+    {
+      "id": "TC-029",
+      "target": "認証方式の構成差（031-27）",
+      "statement": "要求元認証を OAuth2.0 client_secret_jwt とした構成と client_secret_basic とした構成の双方で、同一の要求電文が同一の応答を返すことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-10",
+      "recommendedTechniques": [
+        "pairwise",
+        "checklist-based"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 32,
+          "endLine": 41,
+          "heading": "API概要",
+          "label": "APIコールにおける補足事項"
+        }
+      ]
+    },
+    {
+      "id": "TC-030",
+      "target": "付番失敗からの回復（031-1）",
+      "statement": "正常に付番処理が実行されなかった場合に再度付番依頼を実施し、新規付番された番号が返却されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-11",
+      "recommendedTechniques": [
+        "scenario-based",
+        "state-transition"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 64,
+          "heading": "図形内テキスト（APIシーケンス）",
+          "label": "再度付番依頼による新規付番"
+        }
+      ]
+    },
+    {
+      "id": "TC-031",
+      "target": "長時間連続付番（031-29）",
+      "statement": "付番依頼を長時間にわたり連続送信し、履歴番号と操作年月日・操作時刻が欠落なく記録され続けることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-29"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-12",
+      "recommendedTechniques": [
+        "scenario-based"
+      ]
+    },
+    {
+      "id": "TC-032",
+      "target": "タイムアウト境界（30秒）",
+      "statement": "処理時間を30秒の直前と直後に制御し、30秒未満ではJSON形式のレスポンス、30秒以上ではJSONを伴わない500番台のエラーへ切り替わる点を測定する。判定値が未確定であるため観測値を記録する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-13",
+      "recommendedTechniques": [
+        "boundary-value-analysis"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 83,
+          "heading": "リクエスト_API仕様",
+          "label": "処理が30秒以上経過した場合のタイムアウト"
+        }
+      ]
+    },
+    {
+      "id": "TC-033",
+      "target": "メンテナンス時の応答",
+      "statement": "サービスメンテナンス中に付番依頼を送信し、原則HTTPステータスコード500番台のエラーが返却され、JSON形式では返却されないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-14",
+      "recommendedTechniques": [
+        "checklist-based"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 84,
+          "heading": "リクエスト_API仕様",
+          "label": "サービスメンテナンス時の500番台応答"
+        }
+      ]
+    },
+    {
+      "id": "TC-034",
+      "target": "アクセストークン検証（031-27）",
+      "statement": "アクセストークンを未指定、期限切れ、改ざん済みの3通りで送信し、いずれもHTTPステータスコード401と detail「アクセストークンが無効です。」が返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-15",
+      "recommendedTechniques": [
+        "equivalence-partitioning",
+        "checklist-based"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 219,
+          "endLine": 228,
+          "heading": "レスポンス_API仕様",
+          "label": "HTTPステータスコード401のレスポンス"
+        }
+      ]
+    },
+    {
+      "id": "TC-035",
+      "target": "個人番号の秘匿（031-2）",
+      "statement": "個人番号（031-2）を含む要求電文がTLS1.2以上で送信され、応答および誤り時のエラーメッセージに個人番号そのものが含まれないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-07"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-15",
+      "recommendedTechniques": [
+        "checklist-based",
+        "exploratory"
+      ]
+    },
+    {
+      "id": "TC-036",
+      "target": "エラーメッセージの理解性（E0001）",
+      "statement": "400応答の errors[].message が「【項目名】が設定されていません。」のように、どの項目をどう直せばよいかを読み取れる文言で返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-16",
+      "recommendedTechniques": [
+        "checklist-based",
+        "exploratory"
+      ]
+    },
+    {
+      "id": "TC-037",
+      "target": "文字コードと外国人氏名（031-6 / 031-7）",
+      "statement": "レスポンスの Content-Type が application/json;charset=UTF-8 であり、外国人氏名の漢字表記・アルファベット表記・フリガナが文字化けせずに往復することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-6"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-7"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-17",
+      "recommendedTechniques": [
+        "checklist-based",
+        "equivalence-partitioning"
+      ],
+      "sourceRefs": [
+        {
+          "document": "2026-08_digital-agency_atenabango-fuban-api_spec",
+          "startLine": 163,
+          "heading": "レスポンス_API仕様",
+          "label": "Content-Type application/json;charset=UTF-8"
+        }
+      ]
+    },
+    {
+      "id": "TC-038",
+      "target": "業務ID更新後のリグレッション（031-3 / 031-11 / 031-12）",
+      "statement": "処理区分 \"2\" による業務IDの更新後に、更新対象外である氏名・住所・生年月日・性別の各項目が更新前と同一であることを再確認する。",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-11"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-12"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-18",
+      "recommendedTechniques": [
+        "scenario-based",
+        "checklist-based"
+      ]
+    },
+    {
+      "id": "TC-039",
+      "target": "条件付き必須の判定（031-3 / 031-4 / 031-5）",
+      "statement": "条件付き必須の条件（項目説明の ※※）を満たす場合と満たさない場合の双方で登録を試み、条件を満たさない場合に当該項目を空欄のまま受理されることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-4"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-5"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-02",
+      "recommendedTechniques": [
+        "decision-table",
+        "equivalence-partitioning"
+      ]
+    },
+    {
+      "id": "TC-040",
+      "target": "正常系レスポンスの固定値（031-1）",
+      "statement": "200応答の metadata.title「住登外者宛名番号付番」・metadata.detail「登録が完了しました。」・_links.self.href「/app_submit/v10/jutogaishaatenabangofuban」が固定値で返ることを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-01",
+      "recommendedTechniques": [
+        "checklist-based"
+      ]
+    },
+    {
+      "id": "TC-041",
+      "target": "応答項目の範囲（031-28）",
+      "statement": "200応答の result 配列が shikuchosonkodo・atenabango・rirekibango・sosashaid・sosanengappi・sosajikoku の6項目のみを返し、送信した他のデータ項目が応答からは確認できないことを記録する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-06"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-09",
+      "recommendedTechniques": [
+        "checklist-based"
+      ]
+    },
+    {
+      "id": "TC-042",
+      "target": "データ出力条件3区分の有無（031-2 / 031-26）",
+      "statement": "データ出力条件が「必須」「任意」「条件付き必須」の3区分それぞれについて代表項目を選び、区分どおりの受理／拒否になることを確認する。代表項目は 031-1（必須）・031-2（任意）・031-26（条件付き必須）とする。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-26"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-04",
+      "recommendedTechniques": [
+        "equivalence-partitioning",
+        "decision-table"
+      ]
+    },
+    {
+      "id": "TC-043",
+      "target": "繰り返し上限（031-23 / 031-24）",
+      "statement": "業務IDと独自施策システム等IDの繰り返しが999件に達した状態で、さらに同一の住登外者宛名基本情報へ別業務からの登録を行った場合の扱いを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-10"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-24"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-07",
+      "recommendedTechniques": [
+        "boundary-value-analysis",
+        "exploratory"
+      ]
+    },
+    {
+      "id": "TC-044",
+      "target": "トークン期限切れのタイミング（031-27）",
+      "statement": "アクセストークンの有効期限が付番処理の途中で切れた場合に、処理が完了するか401が返るかを確認する。仕様書に規定が無いため観測結果を記録してQAとして起票する。",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "priority": "低",
+      "perspectiveCategoryId": "TPC-08",
+      "recommendedTechniques": [
+        "exploratory",
+        "state-transition"
+      ]
+    },
+    {
+      "id": "TC-045",
+      "target": "503後の再送（031-1）",
+      "statement": "503応答（想定外エラー）を受けた後に同一の要求電文を再送し、二重登録が生じないことを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-05"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-11",
+      "recommendedTechniques": [
+        "scenario-based",
+        "exploratory"
+      ]
+    },
+    {
+      "id": "TC-046",
+      "target": "付番後の業務ID更新遷移（031-23）",
+      "statement": "処理区分 \"0\" で付番した宛名番号に対し、続けて処理区分 \"2\" で業務IDを更新する遷移を行い、履歴番号が増加することを確認する。",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        }
+      ],
+      "priority": "中",
+      "perspectiveCategoryId": "TPC-05",
+      "recommendedTechniques": [
+        "state-transition"
+      ]
+    }
+  ]
+}

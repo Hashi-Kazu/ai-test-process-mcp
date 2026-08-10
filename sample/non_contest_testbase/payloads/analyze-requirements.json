@@ -1,0 +1,105 @@
+{
+  "idPatterns": [
+    "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+    "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"
+  ],
+  "background": "地方公共団体情報システムの統一・標準化に伴い、デジタル庁は共通機能標準仕様書を整備している。住登外者宛名番号管理機能はその一部であり、基幹業務システムからの付番依頼を受けて住登外者宛名番号を付番し、住登外者宛名基本情報として登録する。本テストベースは同仕様書の別紙2点である。1点目は住登外者宛名番号付番API仕様（第2.0版、令和5年3月）で、API概要・APIシーケンス・リクエスト_API仕様・レスポンス_API仕様・凡例）データ型を収録する。2点目は項目定義書（住登外者宛名番号管理）で、住登外者宛名基本情報のデータ項目29件、コード一覧（個別）、凡例）列項目説明、凡例）データ型を収録する。両文書はいずれもxlsx形式であり、投入時に scripts/extract-testbase-xlsx.mjs でテキスト化した。付番API仕様のAPIシーケンスは図形（xdr:sp）で描かれており、抽出テキストでは「## 図形内テキスト（APIシーケンス）」見出しに12行として出力される。データ項目IDは項目定義書で「031」と連番の2セルに分割されて記録されているため、既定のID抽出パターンだけでは定義IDが検出できず、idPatterns を明示して投入している。",
+  "focusAreas": [
+    "住登外者宛名番号付番APIの要求電文（app_submit/v10/jutogaishaatenabangofuban_R01）のパラメータ仕様と、項目定義書のデータ項目定義の整合",
+    "処理区分（shorikubun）0 / 1 / 2 の3値による処理分岐",
+    "HTTPステータスコード 200 / 400 / 401 / 503 の4系統の応答仕様",
+    "エラーコード E0001 必須エラー / E0002 指定文字エラー / E0003 桁数エラー（固定項目）/ E0004 相関チェックエラー",
+    "データ型（X / Ｎ / DATE / TIME / 9）と桁数、およびデータ出力条件（必須 / 任意 / 条件付き必須）",
+    "APIシーケンスの実行順序（APIアクセス→アクセストークン検証→付番処理→結果返却）とタイムアウト30秒の扱い"
+  ],
+  "outOfScope": [
+    "認可サーバによるアクセストークンの発行処理そのもの。本仕様書は認可サーバの内部処理を規定していない",
+    "統一ID基盤の整備を前提とする将来の認証方式。検討中であり実装対象の仕様が確定していない",
+    "ガバメントクラウドで原則認められない API Key 認証。オンプレミス環境での時限的な措置と位置づけられている",
+    "コードID 999 自治体固有コードの個々のコード値。地方公共団体が任意に規定する",
+    "データ項目 031-25 代表宛名フラグ。付番APIのリクエストにもレスポンスにも対応項目が存在しない"
+  ],
+  "alreadyAssured": [
+    "パラメータの単項目チェック（必須・データ型・桁数）は実装ベンダのコンポーネントテストで実施済みであることを前提とする",
+    "「地方公共団体情報システムデータ要件・連携要件標準仕様書」の「文字要件」で定めた標準仕様は、当該仕様書側で保証されているものとして扱う"
+  ],
+  "stakeholders": [
+    {
+      "role": "仕様所管",
+      "name": "デジタル庁",
+      "concerns": "共通機能標準仕様書の別紙間で、同一データ項目の名称・データ型・桁数の記述が食い違わないこと"
+    },
+    {
+      "role": "API要求元の実装",
+      "name": "基幹業務システムの実装ベンダ",
+      "concerns": "リクエストパラメータの必須条件と相関条件を、仕様書の記述だけから一意に決定できること"
+    },
+    {
+      "role": "住登外者宛名番号管理機能の実装",
+      "name": "実装ベンダ",
+      "concerns": "エラーコードの返却条件とタイムアウト時間の確定値が、実装判断に委ねられずに定まっていること"
+    },
+    {
+      "role": "運用主体",
+      "name": "地方公共団体",
+      "concerns": "業務IDおよび独自施策システム等IDの採番方針と、自治体固有コードの適用範囲が明確であること"
+    }
+  ],
+  "changeItems": [
+    {
+      "description": "住登外者宛名番号付番API仕様が第2.0版として発行され、提供するAPIコールを app_submit/v10/jutogaishaatenabangofuban の1件と定めた",
+      "category": "new",
+      "note": "fuban-api_spec:10、同:27-29"
+    },
+    {
+      "description": "要求元認証を OAuth2.0 アクセストークン Bearerタイプ・認証方式 client_secret_jwt と定め、暫定措置として client_secret_basic の実装も可能とした",
+      "category": "new",
+      "note": "fuban-api_spec:37-39"
+    },
+    {
+      "description": "リクエストパラメータに shiteitoshi_gyoseikutokodo（指定都市_行政区等コード）・tsusho（通称）・tsusho_furigana・tsusho_furiganakakuninjokyo・seinengappi_fushofuragu・jusho_kokumeikodo・jusho_kokumeito・jusho_kokugaijusho・nayosemotofuragu・tagyomusanshofukafuragu を持つが、項目定義書の住登外者宛名基本情報29項目には対応するデータ項目が無い",
+      "category": "existing-impacted",
+      "note": "fuban-api_spec:115-152 と item-definition:12-58 の差分"
+    },
+    {
+      "description": "住所_町字の桁数が、項目定義書は Ｎ18、付番API仕様は Ｎ120 と記述されている",
+      "category": "existing-impacted",
+      "note": "item-definition:42 と fuban-api_spec:135"
+    },
+    {
+      "description": "外国人氏名の呼称が、項目定義書は「氏名_外国人アルファベット」、付番API仕様は「氏名_外国人ローマ字」と記述されている",
+      "category": "existing-impacted",
+      "note": "item-definition:19 と fuban-api_spec:107"
+    },
+    {
+      "description": "読み仮名の呼称が、項目定義書は「読み仮名」、付番API仕様は「フリガナ」と記述されている",
+      "category": "existing-impacted",
+      "note": "item-definition:25-27 と fuban-api_spec:112-114"
+    },
+    {
+      "description": "項目定義書は 031-25 代表宛名フラグ（コードID 2、0：代表宛名／1：非代表宛名）を必須項目として持つが、付番API仕様は名寄せ元フラグ（0：該当なし／1：名寄せ元宛名）を持ち、代表宛名フラグに対応するパラメータが無い",
+      "category": "existing-impacted",
+      "note": "item-definition:53、同:70-71 と fuban-api_spec:149"
+    },
+    {
+      "description": "レスポンスの result 配列に rirekibango（履歴番号、データ型 9、3桁）が現れるが、項目定義書の住登外者宛名基本情報には対応するデータ項目が無い",
+      "category": "existing-impacted",
+      "note": "fuban-api_spec:187-189"
+    },
+    {
+      "description": "エラーコード一覧は E0001〜E0004 の4件のみを定義しており、HTTPステータスコード 401 および 503 の応答に対応するエラーコードを定義していない",
+      "category": "existing-unaffected",
+      "note": "fuban-api_spec:219-245。401 / 503 の応答は errors 配列を持たない構造である"
+    },
+    {
+      "description": "住所_町字コードの未規定時の設定値について、項目定義書は 0000000（町字がない場合）のみを規定し、付番API仕様は 0000000 に加えて 9999999（マスターデータセットに規定がない町字の場合）を規定している",
+      "category": "existing-impacted",
+      "note": "item-definition:34-36 と fuban-api_spec:123-125"
+    },
+    {
+      "description": "タイムアウトは処理が30秒以上経過した場合とされるが、注記で目安である旨と性能テストを踏まえた設定を求める旨が併記されており、判定に用いる確定値が定まっていない",
+      "category": "existing-impacted",
+      "note": "fuban-api_spec:83"
+    }
+  ]
+}
