@@ -286,6 +286,77 @@ function parseStyleIdToName(stylesXml) {
 }
 
 /**
+ * 本文XML（<w:body>...</w:body> の中身）に含まれる TOC の複合フィールド
+ * （<w:fldChar w:fldCharType="begin|separate|end"/> のスタック構造）を、段落をまたぐ範囲も含めて
+ * 丸ごと除去する。
+ *
+ * 実データでは TOC の begin が段落Aに、対応する end が数十段落先の段落Bにあるため、段落単位の
+ * 走査では除去できない（見出し番号+タイトル+ページ番号の目次エントリが本文へ混入する）。そこで
+ * begin/separate/end を出現順にスタックで深さ管理し、begin〜separate間（separateが無い単純フィールド
+ * の場合は begin〜end間）に <w:instrText> で `TOC` を含むものがあれば、対応する begin タグ開始位置〜
+ * end タグ終了位置までを除去対象レンジとして記録する。記録したレンジのうち他のレンジに内包される
+ * ものは除外し、最も外側のレンジのみを実際に文字列除去する（除去は単純な区間削除であり、XMLとして
+ * 厳密に妥当な文字列を再構成する必要はない。後段の走査は <w:tbl>/<w:p> のみを対象にした正規表現走査
+ * のため、タグの残骸が非妥当でも影響しない）。end に対応する begin が無い（壊れたXML）場合は無視する。
+ */
+function removeTocFieldSpans(bodyXml) {
+  const fldCharPattern = /<w:fldChar\b[^>]*w:fldCharType="(begin|separate|end)"[^>]*\/>/g;
+  const stack = [];
+  const ranges = [];
+  let match;
+  while ((match = fldCharPattern.exec(bodyXml)) !== null) {
+    const type = match[1];
+    const tagStart = match.index;
+    const tagEnd = match.index + match[0].length;
+
+    if (type === "begin") {
+      stack.push({ beginStart: tagStart, beginEnd: tagEnd, hasToc: false, instrChecked: false });
+      continue;
+    }
+
+    if (type === "separate") {
+      if (stack.length === 0) continue;
+      const frame = stack[stack.length - 1];
+      const segment = bodyXml.slice(frame.beginEnd, tagStart);
+      frame.hasToc = /<w:instrText\b[^>]*>[^<]*\bTOC\b/.test(segment);
+      frame.instrChecked = true;
+      continue;
+    }
+
+    // type === "end"
+    if (stack.length === 0) continue;
+    const frame = stack.pop();
+    if (!frame.instrChecked) {
+      const segment = bodyXml.slice(frame.beginEnd, tagStart);
+      frame.hasToc = /<w:instrText\b[^>]*>[^<]*\bTOC\b/.test(segment);
+    }
+    if (frame.hasToc) {
+      ranges.push({ start: frame.beginStart, end: tagEnd });
+    }
+  }
+
+  if (ranges.length === 0) return bodyXml;
+
+  // 内包されるレンジを除外し、最も外側のレンジのみを残す（start昇順、同startならend降順）。
+  ranges.sort((a, b) => a.start - b.start || b.end - a.end);
+  const outerRanges = [];
+  for (const range of ranges) {
+    const last = outerRanges[outerRanges.length - 1];
+    if (last && range.start >= last.start && range.end <= last.end) continue;
+    outerRanges.push(range);
+  }
+
+  let result = "";
+  let cursor = 0;
+  for (const range of outerRanges) {
+    result += bodyXml.slice(cursor, range.start);
+    cursor = range.end;
+  }
+  result += bodyXml.slice(cursor);
+  return result;
+}
+
+/**
  * 段落本体（<w:p>...</w:p> の中身）から、TOC フィールドの結果テキストを除去し、
  * 変更履歴（<w:del>/<w:delText> 除去、<w:ins> 採用）を適用したうえで、本文テキストを返す。
  */
@@ -296,13 +367,6 @@ function extractParagraphText(paragraphBody) {
   body = body.replace(
     /<w:fldSimple\b[^>]*w:instr="[^"]*\bTOC\b[^"]*"[^>]*>([\s\S]*?)<\/w:fldSimple>/g,
     "",
-  );
-
-  // TOC フィールド: fldChar begin ... instrText(TOC) ... fldChar separate ... 結果 ... fldChar end
-  // を fldChar begin〜end の範囲ごと除去する（複合フィールドのbegin/separate/end構造）。
-  body = body.replace(
-    /<w:fldChar\b[^>]*w:fldCharType="begin"[^>]*\/>[\s\S]*?<w:fldChar\b[^>]*w:fldCharType="end"[^>]*\/>/g,
-    (segment) => (/<w:instrText\b[^>]*>[^<]*\bTOC\b/.test(segment) ? "" : segment),
   );
 
   // <w:del>...</w:del>（削除）と <w:delText>...</w:delText> を除去する。
@@ -326,6 +390,11 @@ function normalizeTableCellText(text) {
  * 見出し（w:pStyle の Heading<n>/見出し<n>）は `#`×n、表（<w:tbl>）はパイプ表へ変換する。
  * TOCフィールドの結果、削除履歴（<w:del>/<w:delText>）は除去し、挿入履歴（<w:ins>）は残す。
  *
+ * TOCフィールドの除去は2系統ある: (1) 本文XML全体を対象に removeTocFieldSpans() が行う、
+ * 段落をまたぐ複合フィールド（<w:fldChar> begin/separate/end）の除去（begin〜endが別の
+ * <w:p> にまたがる場合に対応するため、<w:tbl>/<w:p> 走査の前に適用する）。(2) 段落単位の
+ * extractParagraphText() が行う、単一段落内の <w:fldSimple> の除去。
+ *
  * stylesXml（word/styles.xml、省略可）を渡すと、w:pStyle の w:val が数値/短縮スタイルIDで
  * 直接には見出し名判定できない場合に、styles.xml の w:styleId -> w:name 解決を経て
  * 同じ判定を試みる（2段階判定）。省略時は既存動作（直接名判定のみ）を維持する。
@@ -333,7 +402,7 @@ function normalizeTableCellText(text) {
 export function parseWordDocument(xml, stylesXml) {
   const styleIdToName = parseStyleIdToName(stylesXml);
   const bodyMatch = /<w:body\b[^>]*>([\s\S]*?)<\/w:body>/.exec(xml);
-  const body = bodyMatch ? bodyMatch[1] : xml;
+  const body = removeTocFieldSpans(bodyMatch ? bodyMatch[1] : xml);
 
   const blocks = [];
   // <w:tbl> と <w:p> をXML中の出現順に走査する。

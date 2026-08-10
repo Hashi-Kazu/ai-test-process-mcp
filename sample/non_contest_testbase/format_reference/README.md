@@ -73,16 +73,21 @@ GIF-2.3.zip は `.work/` 配下へ一時展開し、ZIP本体はコミットせ�
   （2段階判定、`GitHub Issue #194` で実装）。本原本のような「styleId が数値の Word 文書」でも
   見出しが正しく出力され、`parseWordDocument()` 出力の `#` 始まり行数を実測すると **49件**
   （heading1=3 / heading2=14 / heading3=32）であり、原本の見出しパラグラフ数と一致する。
-- **目次の除去: 未達。** 原本には TOC の複合フィールド（`w:fldChar` begin/separate/end、
+- **目次の除去: 達成。** 原本には TOC の複合フィールド（`w:fldChar` begin/separate/end、
   `w:instrText` に `TOC \o "1-3" \h \z \u` を含む）が1件あり、begin/end の `w:fldChar` は104個ずつ
   ある（TOC全体を1つの複合フィールドで囲んでいるのではなく、目次内の各項目行が独自の
-  ハイパーリンク/PAGEREF フィールドを持つ構造）。`extractParagraphText()` の
-  「`w:fldChar` begin〜end をひとかたまりとして除去し、区間内に `TOC` を含む `w:instrText` があれば
-  丸ごと除去する」実装では、TOC の各行に対応する begin〜end 区間には `TOC` という `w:instrText` が
-  含まれないため対象外となり、目次由来のテキストが除去されない。実測: `parseWordDocument()` 出力を
-  `^\d+(\.\d+)*\..+\d+$`（見出し番号＋タイトル＋末尾ページ番号）で数えると **48行**が目次由来として
-  残存する（例: `1.1.標準化法における位置づけ1`）。規約・参照実装の修正は本Issueでは行わない
-  （GitHub Issue #168 へ）。
+  ハイパーリンク/PAGEREF フィールドを持つ構造）。実データでは、この outer な TOC 複合フィールドの
+  `begin` は段落Aに、対応する `end` は49段落先の段落Bにあり（段落をまたぐ複合フィールド）、104個
+  ある begin/end のうち他の103組は目次内の各項目行が持つ独自の HYPERLINK/PAGEREF フィールド（instrText
+  に `TOC` を含まない）である。`scripts/lib/ooxml.mjs` の `removeTocFieldSpans()` が、本文XML全体
+  （段落の境界をまたいで）を対象に `w:fldChar` の begin/separate/end をスタックで深さ管理し、instrText
+  に `TOC` を含む begin〜separate（または begin〜end）を持つ最も外側のレンジ（この outer な TOC
+  フィールド1件）のみを丸ごと除去することで対応した（`GitHub Issue #195` で実装。段落単位の
+  `extractParagraphText()` では段落をまたぐ範囲を除去できないため、`parseWordDocument()` が
+  `<w:tbl>`/`<w:p>` 走査を始める前に本文XML全体へ適用する）。実測: `parseWordDocument()` 出力を
+  `^\d+(\.\d+)*\..+\d+$`（見出し番号＋タイトル＋末尾ページ番号）で数えると **0行**（修正前は48行、
+  例: `1.1.標準化法における位置づけ1`）であり、目次由来行数のみを除去できている
+  （見出し行数49・パイプ表行数92は変化なし）。
 - **変更履歴の反映: 該当なし。** 原本に `w:ins`/`w:del` は1件も無い（実測: いずれも0件）。
 - **表構造の保持: 達成。** `w:tbl` は6件あり、`parseWordDocument()` 出力のパイプ表行数は92行。
   行方向・列方向のセル欠落は目視確認で見られない。
@@ -90,11 +95,11 @@ GIF-2.3.zip は `.work/` 配下へ一時展開し、ZIP本体はコミットせ�
 `parseWordDocument()` の出力実測値（見出し行の直前に script が付ける `# <basename>` の1行は除く、
 本文 `body` のみ）:
 
-- 文字数: 33,871字
-- 行数: 1,251行
+- 文字数: 32,676字
+- 行数: 1,155行
 - `#`始まり行数: 49
 - パイプ表行数: 92
-- 目次由来行数（`^\d+(\.\d+)*\..+\d+$`）: 48
+- 目次由来行数（`^\d+(\.\d+)*\..+\d+$`）: 0
 
 **`2026-08_digital-agency_common-feature-spec_v2.1_shinkyu-taishohyo.docx`（新旧対照表）**
 
@@ -154,6 +159,10 @@ GIF-2.3.zip は `.work/` 配下へ一時展開し、ZIP本体はコミットせ�
 ## 未達項目の扱い
 
 Word の「見出しの`#`対応」は GitHub Issue #194（`word/styles.xml` の `w:styleId`→`w:name` 解決）で
-解決済み。「目次の除去」は本原本に対して依然未達であることを実測で確認しているが、
-`extractParagraphText()` の TOC フィールド除去ロジックの修正は本Issueのスコープ外であり、
-本Issueでは行わない（GitHub Issue #168 の担当）。
+解決済み。「目次の除去」も GitHub Issue #195（`removeTocFieldSpans()` による、段落をまたぐ TOC
+複合フィールドの除去）で解決済み。GitHub Issue #168 は `src/testBasisAnalysis.ts` の
+`isTableOfContentsLine()`（抽出後テキストに対するドットリーダー＋末尾ページ番号のヒューリスティック
+による ID ロール分類）であり、本原本の docx TOC は `<w:t>` 実体テキストにドット文字を含まないため
+このヒューリスティックには一致しない。したがって #195 は #168 の判定方式を流用せず、Word 固有の
+抽出時（XML構造ベース）の除去ロジックとして別実装した。両者は対象・レイヤーが異なる別々の対応であり、
+今後 #168 側の判定精度を見直す場合も #195 の実装（本文XML走査によるTOCフィールド除去）には影響しない。
