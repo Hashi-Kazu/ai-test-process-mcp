@@ -85,4 +85,16 @@ describe("parseWordDocument", () => {
     const xml = `<w:document><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>a</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>b</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>`;
     expect(parseWordDocument(xml)).toBe("| a | b |");
   });
+
+  it("resolves numeric styleId via styles.xml (w:styleId=\"21\" -> heading 2)", () => {
+    const xml = `<w:document><w:body><w:p><w:pPr><w:pStyle w:val="21"/></w:pPr><w:r><w:t>見出し</w:t></w:r></w:p></w:body></w:document>`;
+    const stylesXml = `<w:styles><w:style w:type="paragraph" w:styleId="21"><w:name w:val="heading 2"/></w:style></w:styles>`;
+    expect(parseWordDocument(xml, stylesXml)).toBe("## 見出し");
+  });
+
+  it("does not treat a numeric styleId resolving to a non-heading style name as a heading", () => {
+    const xml = `<w:document><w:body><w:p><w:pPr><w:pStyle w:val="23"/></w:pPr><w:r><w:t>目次見出し</w:t></w:r></w:p></w:body></w:document>`;
+    const stylesXml = `<w:styles><w:style w:type="paragraph" w:styleId="23"><w:name w:val="toc 2"/></w:style></w:styles>`;
+    expect(parseWordDocument(xml, stylesXml)).toBe("目次見出し");
+  });
 });

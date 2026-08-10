@@ -59,8 +59,10 @@ async function main() {
     process.exit(2);
   }
 
+  const stylesXml = entries.get("word/styles.xml");
+
   const baseName = path.basename(input, path.extname(input));
-  const body = parseWordDocument(documentXml);
+  const body = parseWordDocument(documentXml, stylesXml);
   const content = `# ${baseName}\n\n${body}\n`;
 
   if (out) {
