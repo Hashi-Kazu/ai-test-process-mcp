@@ -263,6 +263,29 @@ function extractParagraphStyleVal(paragraphBody) {
 }
 
 /**
+ * word/styles.xml から <w:style w:type="paragraph"> の w:styleId -> w:name（w:val）の対応表を作る。
+ * styles.xml が空/未指定でも空Mapを返す（w:basedOn の継承チェーンは辿らない）。
+ */
+function parseStyleIdToName(stylesXml) {
+  const map = new Map();
+  if (!stylesXml) return map;
+  const stylePattern = /<w:style\b([^>]*)>([\s\S]*?)<\/w:style>/g;
+  let match;
+  while ((match = stylePattern.exec(stylesXml)) !== null) {
+    const attrs = match[1];
+    const body = match[2];
+    const typeMatch = /w:type="([^"]*)"/.exec(attrs);
+    if (!typeMatch || typeMatch[1] !== "paragraph") continue;
+    const idMatch = /w:styleId="([^"]*)"/.exec(attrs);
+    if (!idMatch) continue;
+    const nameMatch = /<w:name\b[^>]*w:val="([^"]*)"/.exec(body);
+    if (!nameMatch) continue;
+    map.set(idMatch[1], nameMatch[1]);
+  }
+  return map;
+}
+
+/**
  * 段落本体（<w:p>...</w:p> の中身）から、TOC フィールドの結果テキストを除去し、
  * 変更履歴（<w:del>/<w:delText> 除去、<w:ins> 採用）を適用したうえで、本文テキストを返す。
  */
@@ -302,8 +325,13 @@ function normalizeTableCellText(text) {
  * word/document.xml をパースし、Markdownテキストを返す。
  * 見出し（w:pStyle の Heading<n>/見出し<n>）は `#`×n、表（<w:tbl>）はパイプ表へ変換する。
  * TOCフィールドの結果、削除履歴（<w:del>/<w:delText>）は除去し、挿入履歴（<w:ins>）は残す。
+ *
+ * stylesXml（word/styles.xml、省略可）を渡すと、w:pStyle の w:val が数値/短縮スタイルIDで
+ * 直接には見出し名判定できない場合に、styles.xml の w:styleId -> w:name 解決を経て
+ * 同じ判定を試みる（2段階判定）。省略時は既存動作（直接名判定のみ）を維持する。
  */
-export function parseWordDocument(xml) {
+export function parseWordDocument(xml, stylesXml) {
+  const styleIdToName = parseStyleIdToName(stylesXml);
   const bodyMatch = /<w:body\b[^>]*>([\s\S]*?)<\/w:body>/.exec(xml);
   const body = bodyMatch ? bodyMatch[1] : xml;
 
@@ -332,7 +360,10 @@ export function parseWordDocument(xml) {
       }
     } else {
       const styleVal = extractParagraphStyleVal(raw);
-      const level = headingLevelFromStyleVal(styleVal);
+      let level = headingLevelFromStyleVal(styleVal);
+      if (!level && styleVal && styleIdToName.has(styleVal)) {
+        level = headingLevelFromStyleVal(styleIdToName.get(styleVal));
+      }
       const text = extractParagraphText(raw);
       if (level) {
         blocks.push(`${"#".repeat(level)} ${text}`);

@@ -65,7 +65,8 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
       const buffer = readFileSync(path.join(wordDir, MAIN));
       const entries = readOoxmlEntries(buffer);
       const documentXml = entries.get("word/document.xml")!;
-      const body = parseWordDocument(documentXml);
+      const stylesXml = entries.get("word/styles.xml")!;
+      const body = parseWordDocument(documentXml, stylesXml);
       const lines = body.split("\n");
 
       const chars = body.length;
@@ -74,16 +75,16 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
       const pipeLines = lines.filter((l: string) => l.startsWith("| ")).length;
       const tocLikeLines = lines.filter((l: string) => /^\d+(\.\d+)*\..+\d+$/.test(l)).length;
 
-      expect(chars).toBe(33695);
+      expect(chars).toBe(33871);
       expect(lineCount).toBe(1251);
-      expect(headingLines).toBe(0);
+      expect(headingLines).toBe(49);
       expect(pipeLines).toBe(92);
       expect(tocLikeLines).toBe(48);
 
       const readme = readReadme();
-      expect(readme).toContain("文字数: 33,695字");
+      expect(readme).toContain("文字数: 33,871字");
       expect(readme).toContain("行数: 1,251行");
-      expect(readme).toContain("`#`始まり行数: 0");
+      expect(readme).toContain("`#`始まり行数: 49");
       expect(readme).toContain("パイプ表行数: 92");
       expect(readme).toContain("目次由来行数（`^\\d+(\\.\\d+)*\\..+\\d+$`）: 48");
     });
@@ -92,7 +93,8 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
       const buffer = readFileSync(path.join(wordDir, SHINKYU));
       const entries = readOoxmlEntries(buffer);
       const documentXml = entries.get("word/document.xml")!;
-      const body = parseWordDocument(documentXml);
+      const stylesXml = entries.get("word/styles.xml")!;
+      const body = parseWordDocument(documentXml, stylesXml);
       const lines = body.split("\n");
 
       const tblCount = (documentXml.match(/<w:tbl\b/g) ?? []).length;

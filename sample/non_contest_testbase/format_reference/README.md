@@ -67,12 +67,12 @@ GIF-2.3.zip は `.work/` 配下へ一時展開し、ZIP本体はコミットせ�
   `31`→`heading 3`、`11`→`toc 1`、`23`→`toc 2`、`33`→`toc 3`、`af5`→`TOC Heading`、`afff9`→`caption`、
   `ad`→`List Paragraph` である。つまり原本には Heading 1〜3 の見出しパラグラフが **3+14+32=49件**
   実在する。
-- **見出しの`#`対応: 未達。** `scripts/lib/ooxml.mjs` の `headingLevelFromStyleVal()` は `w:pStyle` の
-  `w:val` 文字列そのもの（例 `1`, `21`, `31`）に対して `Heading<n>` / `heading <n>` / `見出し<n>` の
-  正規表現を当てており、`styles.xml` の `w:name` 解決を行っていない。このため本原本のような
-  「styleId が数値の Word 文書」では見出しが**0件**しか出力されない
-  （`parseWordDocument()` 出力の `#` 始まり行数を実測すると 0）。原本には49件の見出しパラグラフが
-  実在するにもかかわらず、である。規約・参照実装の修正は本Issueでは行わない（別Issueへ）。
+- **見出しの`#`対応: 達成。** `scripts/lib/ooxml.mjs` の `parseWordDocument()` は、`w:pStyle` の
+  `w:val` 文字列自体（例 `Heading2`）で見出し判定できない場合、`word/styles.xml` の
+  `w:styleId` → `w:name`（例 `21`→`heading 2`）を解決したうえで同じ判定を再試行する
+  （2段階判定、`GitHub Issue #194` で実装）。本原本のような「styleId が数値の Word 文書」でも
+  見出しが正しく出力され、`parseWordDocument()` 出力の `#` 始まり行数を実測すると **49件**
+  （heading1=3 / heading2=14 / heading3=32）であり、原本の見出しパラグラフ数と一致する。
 - **目次の除去: 未達。** 原本には TOC の複合フィールド（`w:fldChar` begin/separate/end、
   `w:instrText` に `TOC \o "1-3" \h \z \u` を含む）が1件あり、begin/end の `w:fldChar` は104個ずつ
   ある（TOC全体を1つの複合フィールドで囲んでいるのではなく、目次内の各項目行が独自の
@@ -90,9 +90,9 @@ GIF-2.3.zip は `.work/` 配下へ一時展開し、ZIP本体はコミットせ�
 `parseWordDocument()` の出力実測値（見出し行の直前に script が付ける `# <basename>` の1行は除く、
 本文 `body` のみ）:
 
-- 文字数: 33,695字
+- 文字数: 33,871字
 - 行数: 1,251行
-- `#`始まり行数: 0
+- `#`始まり行数: 49
 - パイプ表行数: 92
 - 目次由来行数（`^\d+(\.\d+)*\..+\d+$`）: 48
 
@@ -153,6 +153,7 @@ GIF-2.3.zip は `.work/` 配下へ一時展開し、ZIP本体はコミットせ�
 
 ## 未達項目の扱い
 
-Word の「見出しの`#`対応」「目次の除去」は本原本に対して未達であることを実測で確認したが、
-`scripts/lib/ooxml.mjs` / `scripts/extract-testbase-docx.mjs` の修正は本Issueのスコープ外であり、
-本Issueでは行わない。前者は styleId→`w:name` 解決（別Issue）、後者は GitHub Issue #168 の担当。
+Word の「見出しの`#`対応」は GitHub Issue #194（`word/styles.xml` の `w:styleId`→`w:name` 解決）で
+解決済み。「目次の除去」は本原本に対して依然未達であることを実測で確認しているが、
+`extractParagraphText()` の TOC フィールド除去ロジックの修正は本Issueのスコープ外であり、
+本Issueでは行わない（GitHub Issue #168 の担当）。
