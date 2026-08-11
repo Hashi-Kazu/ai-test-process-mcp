@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { idPopulationAuditCriteria } from "../resources/idPopulationAuditCriteria.js";
 import {
@@ -243,6 +244,34 @@ export function renderIdPopulationAudit(
   lines.push("- 2.6 で未投入文書が検出された場合、該当文書の全文を投入して再監査すること。");
   lines.push(
     "- 2.7 で欠落IDがある場合、どの工程（ツール呼び出し）でIDが失われたかを特定し、意図的な絞り込みか見落としかを確認すること。"
+  );
+  lines.push("");
+
+  const declaredIdTotal = declaredPopulations.reduce((sum, p) => sum + p.ids.length, 0);
+  lines.push(
+    ...renderInspectabilitySection("audit_id_population", [
+      ...buildDigestSignals(digestRows),
+      {
+        id: "population-declared",
+        satisfied: declaredIdTotal >= 1,
+        measured: `宣言母集団${declaredPopulations.length}件・宣言ID${declaredIdTotal}件`,
+      },
+      {
+        id: "exclusions-declared",
+        satisfied: (exclusions ?? []).length >= 1,
+        measured: `除外宣言${(exclusions ?? []).length}件`,
+      },
+      {
+        id: "expected-documents",
+        satisfied: (expectedDocumentNames ?? []).length >= 1,
+        measured: `期待文書名${(expectedDocumentNames ?? []).length}件`,
+      },
+      {
+        id: "multiple-populations",
+        satisfied: declaredPopulations.length >= 2,
+        measured: `宣言母集団${declaredPopulations.length}件`,
+      },
+    ]).split("\n")
   );
   lines.push("");
 

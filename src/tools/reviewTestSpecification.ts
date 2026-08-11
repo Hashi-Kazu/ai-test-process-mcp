@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testSpecificationReviewChecklist } from "../resources/testSpecificationReviewChecklist.js";
 import { testCaseSpecShape } from "./generateTestCases.js";
@@ -453,6 +454,33 @@ export function renderTestSpecificationReview(
     }
     lines.push("");
   }
+
+  lines.push(
+    ...renderInspectabilitySection("review_test_specification", [
+      ...buildDigestSignals(digestRows),
+      {
+        id: "requirement-id-population",
+        satisfied: requirementIds.length >= 1,
+        measured: `要件ID母集団${requirementIds.length}件`,
+      },
+      {
+        id: "test-condition-population",
+        satisfied: (testConditions ?? []).length >= 1,
+        measured: `テスト条件ID母集団${(testConditions ?? []).length}件`,
+      },
+      {
+        id: "risk-population",
+        satisfied: (risks ?? []).length >= 1,
+        measured: `リスク${(risks ?? []).length}件`,
+      },
+      {
+        id: "test-cases-supplied",
+        satisfied: testCases.length >= 1,
+        measured: `テストケース${testCases.length}件`,
+      },
+    ]).split("\n")
+  );
+  lines.push("");
 
   lines.push(
     ...renderNextToolsSection(

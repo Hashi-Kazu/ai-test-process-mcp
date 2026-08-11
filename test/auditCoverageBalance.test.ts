@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderCoverageBalanceAudit } from "../src/tools/auditCoverageBalance.js";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable, parseInspectabilityRows } from "./inspectabilitySectionHelper.js";
 import type { AuditCoverageBalanceInput } from "../src/types.js";
 
 const baseInput: AuditCoverageBalanceInput = {
@@ -137,5 +138,38 @@ describe("renderCoverageBalanceAudit 検査不能の表示", () => {
     });
     expect(md).toContain("CBC-05");
     expect(md).toContain("TCS-900");
+  });
+});
+
+describe("renderCoverageBalanceAudit 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(renderCoverageBalanceAudit(baseInput), "audit_coverage_balance");
+  });
+
+  it("用語集セクションと分布宣言がある入力では該当区分が実行になる", () => {
+    const md = renderCoverageBalanceAudit(baseInput);
+    expectExecuted(md, "CBC-04");
+    expectExecuted(md, "CBC-05");
+    expectExecuted(md, "CBC-06");
+    expectExecuted(md, "CBC-11");
+    expectExecuted(md, "CBC-12");
+  });
+
+  it("deliverables / declaredDistributions 未指定なら該当区分が検査不能になる", () => {
+    const md = renderCoverageBalanceAudit({ testCases: baseInput.testCases });
+    for (const id of ["CBC-04", "CBC-05", "CBC-06", "CBC-09", "CBC-10", "CBC-11", "CBC-12", "CBC-13"]) {
+      expectUninspectable(md, id);
+    }
+    const row = parseInspectabilityRows(md).find((r) => r.catalogId === "CBC-06")!;
+    expect(row.measured).toBe("原文文書 0件");
+  });
+
+  it("用語集セクションが無い成果物では CBC-11 / CBC-12 が検査不能になる", () => {
+    const md = renderCoverageBalanceAudit({
+      testCases: baseInput.testCases,
+      deliverables: [{ name: "テスト設計書", content: "# 1. テストケース\n\n- TCS-001 上限値での入場" }],
+    });
+    expectUninspectable(md, "CBC-11");
+    expectUninspectable(md, "CBC-12");
   });
 });

@@ -39,6 +39,11 @@ import { testPurposeDerivationFrame } from "./testPurposeDerivationFrame.js";
 import { testDesignNotationCatalog } from "./testDesignNotationCatalog.js";
 import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
 import { toolOutputSignatures } from "./toolOutputSignatures.js";
+import {
+  inspectabilityCatalog,
+  inspectabilityDigestChecks,
+  inspectabilityPreconditions,
+} from "./inspectabilityCatalog.js";
 
 export function registerResources(server: McpServer): void {
   server.registerResource(
@@ -961,6 +966,35 @@ export function registerResources(server: McpServer): void {
           uri: uri.href,
           mimeType: "application/json",
           text: JSON.stringify({ registeredToolNames, nextToolCatalog, toolOutputSignatures }, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "inspectability-coverage",
+    "testbasis://coverage/inspectability",
+    {
+      title: "Inspectability Coverage Catalog",
+      description:
+        "Static catalog behind the '検査実行状況(実行された検査 / 検査不能な検査)' section rendered by every tool " +
+        "that accepts raw document text: the input preconditions a deterministic check needs in order to run " +
+        "(with how each precondition is measured, which input it is measured from, and the input-side remedy), " +
+        "the shared input-digest checks (IQC-01..IQC-05), and, per tool, the deterministic checks that depend on " +
+        "raw text with their existing judgement-category id and the output section label they are reported in. " +
+        "Used to tell 'zero findings because the input passed' apart from 'zero findings because the check never ran'.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(
+            { inspectabilityPreconditions, inspectabilityDigestChecks, inspectabilityCatalog },
+            null,
+            2
+          ),
         },
       ],
     })

@@ -4616,3 +4616,54 @@ export interface CoverageBalanceSummary {
   highFindings: number;
   byCheckId: Record<string, number>;
 }
+
+// --- 検査実行状況（実行された決定的検査 / 検査不能だった決定的検査）の対照表 ---
+
+/** 決定的検査が成立するための入力上の前提。measurement / source は実測方法の記述であり、判定には使わない。 */
+export interface InspectabilityPrecondition {
+  id: string;            // 例: "defined-id"
+  nameJa: string;        // 例: "定義IDあり"
+  measurement: string;   // 何をどう数えるか
+  source: string;        // どの入力から算出するか
+  remedy: string;        // 不成立を解消する入力上の手当て
+}
+
+/**
+ * 1つの決定的検査のカタログ行。
+ * `catalogId` は既存の判定区分ID（PAC-01 / BC-01 / CMX-08 等）。持たない検査は undefined。
+ * `sectionLabel` は該当ツール出力に実在する節見出しラベル（部分文字列）。
+ */
+export interface InspectabilityCheckEntry {
+  checkKey: string;
+  catalogId?: string;
+  sectionLabel: string;
+  requires: readonly string[];
+}
+
+/**
+ * 1ツール分の検査エントリ表。
+ * `includesDigestChecks` が true のとき、入力ダイジェスト由来の共通検査（IQC-01〜IQC-05）を先頭に連結する。
+ * `digestSectionLabel` はそのツール出力でダイジェストが載る節見出しラベル（既定は「入力ダイジェスト」）。
+ */
+export interface InspectabilityToolEntry {
+  toolName: string;
+  includesDigestChecks: boolean;
+  digestSectionLabel?: string;
+  checks: readonly InspectabilityCheckEntry[];
+  outOfScopeNote: string;
+}
+
+/** 前提1件の実測結果。`measured` は入力から算出した文字列であり、固定文言を入れてはならない。 */
+export interface InspectabilitySignalValue {
+  id: string;
+  satisfied: boolean;
+  measured: string;
+}
+
+export interface InspectabilityRow {
+  status: "実行" | "検査不能";
+  checkLabel: string;
+  catalogId: string;
+  condition: string;
+  measured: string;
+}

@@ -3,6 +3,7 @@ import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAna
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { deliverableConsistencyCriteria } from "../resources/deliverableConsistencyCriteria.js";
 import { analyzeDeliverableConsistency } from "../deliverableConsistencyAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import {
   buildDocumentDigests,
   findDocumentDigestFindings,
@@ -299,6 +300,53 @@ export function renderDeliverableConsistencyAudit(
     signals.push("has-referenced-document-conflicts");
   }
   if (summary.highFindings > 0) signals.push("has-consistency-findings");
+
+  const inspectabilityDigestDocuments = deliverables.map((d) => ({ name: d.name, content: d.content }));
+  const readStateCellCount = referencedRows.reduce(
+    (sum, row) => sum + row.states.filter((s) => s.state === "read" || s.state === "unread").length,
+    0
+  );
+  const namedSectionReferenceCount = result.sectionReferences.filter(
+    (ref) => ref.aliasRaw !== undefined
+  ).length;
+  lines.push(
+    ...renderInspectabilitySection("audit_deliverable_consistency", [
+      ...buildDigestSignals(
+        buildDocumentDigests(inspectabilityDigestDocuments, { idPatterns: input.idPatterns })
+      ),
+      {
+        id: "multiple-deliverables",
+        satisfied: deliverables.length >= 2,
+        measured: `投入成果物${deliverables.length}件`,
+      },
+      {
+        id: "referenced-documents-declared",
+        satisfied: (input.declaredReferencedDocuments ?? []).length >= 1,
+        measured: `参照文書リスト宣言${(input.declaredReferencedDocuments ?? []).length}件`,
+      },
+      {
+        id: "read-state-declared",
+        satisfied: readStateCellCount >= 1,
+        measured: `読了・未読が判明した参照文書セル${readStateCellCount}件 / 参照文書${referencedRows.length}件`,
+      },
+      {
+        id: "section-reference",
+        satisfied: summary.sectionReferenceCount >= 1,
+        measured: `章節参照${summary.sectionReferenceCount}件`,
+      },
+      {
+        id: "numeric-claim",
+        satisfied: result.countClaims.length >= 1,
+        measured: `件数・網羅率宣言${result.countClaims.length}件`,
+      },
+      {
+        id: "referenced-deliverable-supplied",
+        satisfied: namedSectionReferenceCount >= 1,
+        measured: `他成果物名を伴う章節参照${namedSectionReferenceCount}件 / 章節参照${summary.sectionReferenceCount}件`,
+      },
+    ]).split("\n")
+  );
+  lines.push("");
 
   lines.push(
     ...renderNextToolsSection(

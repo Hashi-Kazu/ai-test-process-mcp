@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { renderIdPopulationAudit } from "../src/tools/auditIdPopulation.js";
 import { buildDefinedIdIndex } from "../src/idPopulationAnalysis.js";
 import type { AuditIdPopulationInput, TestBasisDocument } from "../src/types.js";
@@ -279,5 +280,45 @@ describe("buildDefinedIdIndex - 目次行のIDが定義ID母集団に入らな�
     ];
     const index = buildDefinedIdIndex(tocOnlyDocuments);
     expect(index.some((e) => e.id === "W-001")).toBe(false);
+  });
+});
+
+describe("renderIdPopulationAudit 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(markdown, "audit_id_population");
+  });
+
+  it("exclusions 未指定なら PAC-02 が検査不能になる", () => {
+    expectUninspectable(markdown, "PAC-02");
+    expectExecuted(markdown, "PAC-01");
+    expectExecuted(markdown, "PAC-03");
+    expectExecuted(markdown, "PAC-06");
+  });
+
+  it("expectedDocumentNames 未指定なら PAC-04、母集団1件なら PAC-05 が検査不能になる", () => {
+    expectUninspectable(markdown, "PAC-04");
+    expectUninspectable(markdown, "PAC-05");
+  });
+
+  it("母集団未宣言なら PAC-01 / PAC-03 / PAC-06 も検査不能になる", () => {
+    const md = renderIdPopulationAudit({ documents, declaredPopulations: [] });
+    expectUninspectable(md, "PAC-01");
+    expectUninspectable(md, "PAC-03");
+    expectUninspectable(md, "PAC-06");
+  });
+
+  it("除外宣言・期待文書名・母集団2件を渡すと該当区分が実行になる", () => {
+    const md = renderIdPopulationAudit({
+      documents,
+      declaredPopulations: [
+        { toolName: "extract_test_conditions", ids: ["EH-100", "EH-101"] },
+        { toolName: "generate_test_cases", ids: ["EH-100"] },
+      ],
+      exclusions: [{ id: "W-001", reason: "スコープ外" }],
+      expectedDocumentNames: ["doc-A", "doc-B"],
+    });
+    expectExecuted(md, "PAC-02");
+    expectExecuted(md, "PAC-04");
+    expectExecuted(md, "PAC-05");
   });
 });

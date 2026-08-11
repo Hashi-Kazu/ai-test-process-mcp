@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderDeliverableConsistencyAudit } from "../src/tools/auditDeliverableConsistency.js";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import type { AuditDeliverableConsistencyInput, ConsistencyDeliverable } from "../src/types.js";
 
 const FIXED_HEADINGS = [
@@ -328,5 +329,41 @@ describe("renderDeliverableConsistencyAudit", () => {
     expect(renderDeliverableConsistencyAudit(CONFLICTING_INPUT)).toBe(
       renderDeliverableConsistencyAudit(CONFLICTING_INPUT)
     );
+  });
+});
+
+describe("renderDeliverableConsistencyAudit 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(
+      renderDeliverableConsistencyAudit(CONFLICTING_INPUT),
+      "audit_deliverable_consistency"
+    );
+    expectInspectabilitySection(
+      renderDeliverableConsistencyAudit(CONSISTENT_INPUT),
+      "audit_deliverable_consistency"
+    );
+  });
+
+  it("declaredReferencedDocuments 未指定なら DCC-04 が検査不能になる", () => {
+    const md = renderDeliverableConsistencyAudit(CONFLICTING_INPUT);
+    expectUninspectable(md, "DCC-04");
+    expectExecuted(md, "DCC-12");
+    expectExecuted(md, "DCC-13");
+  });
+
+  it("成果物1件なら成果物間の突き合わせ区分が検査不能になる", () => {
+    const md = renderDeliverableConsistencyAudit({ deliverables: [PLAN] });
+    expectUninspectable(md, "DCC-01");
+    expectUninspectable(md, "DCC-08");
+    expectUninspectable(md, "DCC-12");
+    expectUninspectable(md, "DCC-13");
+  });
+
+  it("declaredReferencedDocuments を渡すと DCC-04 が実行になる", () => {
+    const md = renderDeliverableConsistencyAudit({
+      ...CONFLICTING_INPUT,
+      declaredReferencedDocuments: [{ deliverable: PLAN.name, readDocuments: ["要求仕様書"] }],
+    });
+    expectExecuted(md, "DCC-04");
   });
 });

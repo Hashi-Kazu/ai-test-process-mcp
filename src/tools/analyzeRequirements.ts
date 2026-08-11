@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { qualityCharacteristicModel } from "../resources/qualityCharacteristics.js";
 import { qualityInUseCharacteristicModel } from "../resources/qualityInUseCharacteristics.js";
@@ -439,6 +440,11 @@ export function renderRequirementsAnalysis(
   );
   lines.push(
     "- 2.3 の境界値候補は design_boundary_values に、同値クラスが必要な項目は design_equivalence_partitioning に引き継ぐこと。"
+  );
+  lines.push("");
+
+  lines.push(
+    ...renderInspectabilitySection("analyze_requirements", buildDigestSignals(digestRows)).split("\n")
   );
   lines.push("");
 

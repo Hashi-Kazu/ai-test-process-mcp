@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable, parseInspectabilityRows } from "./inspectabilitySectionHelper.js";
 import { renderCrossMatrixAudit } from "../src/tools/auditCrossMatrix.js";
 import type {
   AuditCrossMatrixInput,
@@ -265,5 +266,39 @@ describe("renderCrossMatrixAudit", () => {
 describe("renderCrossMatrixAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderCrossMatrixAudit(baseInput()));
+  });
+});
+
+describe("renderCrossMatrixAudit 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(markdown, "audit_cross_matrix");
+    expectInspectabilitySection(
+      renderCrossMatrixAudit({
+        ...baseInput(),
+        documents: [{ name: "req.md", content: "R-01 決済失敗\n自動E2E で確認する" }],
+      }),
+      "audit_cross_matrix"
+    );
+  });
+
+  it("documents / 宣言充填率 / 軸母集団が未指定なら該当区分が検査不能になる", () => {
+    expectUninspectable(markdown, "CMX-08");
+    expectUninspectable(markdown, "CMX-09");
+    expectUninspectable(markdown, "CMX-10");
+    expectUninspectable(markdown, "CMX-11");
+    expectUninspectable(markdown, "CMX-17");
+    // 原文未投入は「未計測」ではなく 0件 の実測値として出す
+    const row = parseInspectabilityRows(markdown).find((r) => r.catalogId === "CMX-10")!;
+    expect(row.measured).toBe("原文文書 0件");
+  });
+
+  it("宣言充填率・軸母集団を渡すと該当区分が実行になる", () => {
+    const md = renderCrossMatrixAudit({
+      ...baseInput(),
+      declaredCoverage: [{ axisA: "RISK", axisB: "METHOD", claimedFillRatePercent: 50 }],
+      expectedAxisPopulations: [{ axisId: "RISK", ids: ["R-01", "R-02", "R-03"] }],
+    });
+    expectExecuted(md, "CMX-08");
+    expectExecuted(md, "CMX-09");
   });
 });

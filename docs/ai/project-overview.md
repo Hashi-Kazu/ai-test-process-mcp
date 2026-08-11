@@ -51,6 +51,7 @@ src/
     deliverableConsistencyCriteria.ts # 成果物間整合性監査の判定区分カタログ17区分 DCC-01〜DCC-17（分母の母集団照合・裸の達成度%検出を含む）＋ 共通項目種別カタログ6種 DSI-01〜DSI-06 ＋ 読了状態語彙 ＋ 網羅率宣言の既定主語カタログ・達成度語彙（testdesign://deliverable/consistency-criteria）
     testDesignNotationCatalog.ts # ASTER参加要項が例示するFV表/NGT/ゆもつよマトリクスの3記法の仕様（何を表現するか・必須要素・既存resource/toolとの対応・出典）＋判定区分カタログ25区分 TDN-01〜TDN-25（testdesign://notation/catalog）
     coverageBalanceCriteria.ts  # audit_coverage_balance の判定区分カタログ13区分 CBC-01〜CBC-13＋用語集見出しキーワード・汎用語ストップリスト・独自用語候補の抽出規則 CBT-01〜CBT-04（testdesign://balance/coverage-balance-criteria。望ましい分布の基準値・目標比率は保持しない）
+    inspectabilityCatalog.ts    # 検査実行状況（実行された検査／検査不能な検査）の静的カタログ。決定的検査が成立するための入力上の前提（実測方法・算出元・解消策）と、原文入力口を持つ11ツール分の検査エントリ表（既存判定区分ID・出力節ラベル・必要な前提ID）（testbasis://coverage/inspectability。新規の判定区分ID体系は作らない）
   tools/
     index.ts             # 全toolを登録
     generateTestPlan.ts   # create_test_plan ツール（zodスキーマ + renderTestPlan純関数、日本語15章構成で出力）
@@ -83,6 +84,7 @@ src/
   testConditionAnalysis.ts # テスト条件の決定的検査の共有純関数群（カバレッジマトリクス・観点未使用・ID重複/欠番・derivedFrom未解決参照・リスクスコア算出）
   testCaseAnalysis.ts    # テストケースの決定的検査の共有純関数群（網羅対象ユニバース構築・網羅率カウント・網羅対象宣言のケース本文からの裏付け検査・引用文言/IDのテストベース実在照合・トレーサビリティ・ID重複/欠番・未解決参照・主観語/空欄/手順粒度/直値埋め込み検査・技法推奨）
   documentDigest.ts      # documents / testBasisDocuments を受け取るツール共通の入力ダイジェスト純関数群（文字数・行数・見出し数・検出ID数・数値トークン数の集計と、検出ID0件/プレフィックス過少による抜粋投入の検出）
+  inspectabilityAnalysis.ts # 「本入力で実際に実行された決定的検査／検査不能だった決定的検査」の対照表の純関数群（入力ダイジェストからの共通8シグナル算出・前提の成立判定と実測値の連結・節描画）。前提が未供給の検査は `(未計測)`＋[high]警告として出し、検査可能率などの百分率は出さない
   testSpecificationAnalysis.ts # テスト仕様書の決定的検査の共有純関数群（要件ID母集合抽出・derivedFrom双方向カバレッジ・未知リスク/条件参照・ID表記ゆれ・優先度分布・前提条件プレースホルダー・手順と期待結果のバランス・宣言キーワード検査）
   derivedFromRefs.ts     # derivedFrom（要件/リスク/ステークホルダー/ガイドワードの参照種別付き構造化参照）の正規化・照合・表示整形の共有純関数群とzodスキーマ
   idPopulationAnalysis.ts # ID母集団監査の決定的検査の共有純関数群（定義済みID抽出・母集団突き合わせ・未宣言/除外/母集団未定義ID・文書別反映率・母集団間差分）

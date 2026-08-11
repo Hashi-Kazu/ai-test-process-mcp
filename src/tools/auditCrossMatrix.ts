@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { crossMatrixAuditCriteria } from "../resources/crossMatrixAuditCriteria.js";
 import { analyzeCrossMatrix, itemLabel } from "../crossMatrixAnalysis.js";
@@ -428,6 +429,46 @@ export function renderCrossMatrixAudit(
   );
   lines.push(
     "- 2.6 の根拠裏付け充填率が宣言充填率より大きく低い場合、充填は links の宣言だけで成立しており実体の裏付けが無い。CMX-16 / CMX-17 の指摘を解消してから充填率を成果物へ転記すること。"
+  );
+  lines.push("");
+
+  const inspectabilityDocuments = input.documents ?? [];
+  const linksWithEvidence = summary.linkDeclarationTotal - summary.linksWithoutEvidenceTotal;
+  lines.push(
+    ...renderInspectabilitySection("audit_cross_matrix", [
+      ...buildDigestSignals(
+        inspectabilityDocuments.length > 0
+          ? buildDocumentDigests(inspectabilityDocuments, { idPatterns: input.idPatterns })
+          : []
+      ),
+      // 原文が未投入のときも「未計測」にせず、0件であることを明示的な実測値として供給する。
+      {
+        id: "documents-supplied",
+        satisfied: inspectabilityDocuments.length > 0,
+        measured:
+          inspectabilityDocuments.length > 0
+            ? `原文文書${inspectabilityDocuments.length}件・${inspectabilityDocuments.reduce(
+                (sum, d) => sum + d.content.length,
+                0
+              )}字`
+            : "原文文書 0件",
+      },
+      {
+        id: "axis-population-declared",
+        satisfied: (input.expectedAxisPopulations ?? []).length >= 1,
+        measured: `軸母集団宣言${(input.expectedAxisPopulations ?? []).length}件`,
+      },
+      {
+        id: "declared-fill-rate",
+        satisfied: (input.declaredCoverage ?? []).length >= 1,
+        measured: `充填率宣言${(input.declaredCoverage ?? []).length}件`,
+      },
+      {
+        id: "link-basis-declared",
+        satisfied: linksWithEvidence >= 1,
+        measured: `根拠記入済みリンク${linksWithEvidence}件 / リンク宣言${summary.linkDeclarationTotal}件`,
+      },
+    ]).split("\n")
   );
   lines.push("");
 

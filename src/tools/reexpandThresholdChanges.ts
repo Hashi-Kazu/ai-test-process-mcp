@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { thresholdChangeImpactCriteria } from "../resources/thresholdChangeImpactCriteria.js";
 import { thresholdExtractionCriteria } from "../resources/thresholdExtractionCriteria.js";
@@ -425,6 +426,49 @@ export function renderThresholdChangeReexpansion(
     );
     lines.push("");
   }
+
+  const extractionDocuments = [...(documentsBefore ?? []), ...(documentsAfter ?? [])];
+  const declaredParameterCount =
+    (input.parametersBefore ?? []).length + (input.parametersAfter ?? []).length;
+  lines.push(
+    ...renderInspectabilitySection("reexpand_threshold_changes", [
+      ...buildDigestSignals(
+        extractionDocuments.length > 0 ? buildDocumentDigests(extractionDocuments) : []
+      ),
+      // 原文が未投入のときも「未計測」にせず、0件であることを明示的な実測値として供給する。
+      {
+        id: "documents-supplied",
+        satisfied: extractionDocuments.length > 0,
+        measured:
+          extractionDocuments.length > 0
+            ? `原文文書${extractionDocuments.length}件・${extractionDocuments.reduce(
+                (sum, d) => sum + d.content.length,
+                0
+              )}字`
+            : "原文文書 0件",
+      },
+      {
+        id: "before-after-documents",
+        satisfied: extractionDocuments.length > 0,
+        measured: `変更前文書${(documentsBefore ?? []).length}件 / 変更後文書${
+          (documentsAfter ?? []).length
+        }件`,
+      },
+      {
+        id: "declared-parameters",
+        satisfied: declaredParameterCount >= 1,
+        measured: `宣言パラメータ 変更前${(input.parametersBefore ?? []).length}件 / 変更後${
+          (input.parametersAfter ?? []).length
+        }件`,
+      },
+      {
+        id: "approval-declared",
+        satisfied: (input.approvedExtractions ?? []).length >= 1,
+        measured: `承認宣言${(input.approvedExtractions ?? []).length}件`,
+      },
+    ]).split("\n")
+  );
+  lines.push("");
 
   lines.push(
     ...renderNextToolsSection(

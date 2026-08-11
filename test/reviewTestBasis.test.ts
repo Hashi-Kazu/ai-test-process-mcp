@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { renderTestBasisReview } from "../src/tools/reviewTestBasis.js";
 import { testBasisReviewChecklist } from "../src/resources/testBasisReviewChecklist.js";
 import { questionPriorityDefinitions } from "../src/resources/testPlanTemplate.js";
@@ -185,5 +186,27 @@ describe("renderTestBasisReview - 双方向制御文字の除去（生＝除去�
 describe("renderTestBasisReview 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestBasisReview(cleanDocuments));
+  });
+});
+
+describe("renderTestBasisReview 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(renderTestBasisReview(flawedDocuments), "review_test_basis");
+    expectInspectabilitySection(renderTestBasisReview(cleanDocuments), "review_test_basis");
+  });
+
+  it("定義IDが0件の文書ではID重複・プレフィックス逸脱が検査不能になる", () => {
+    const md = renderTestBasisReview([
+      { name: "note.md", content: ["# メモ", "入場は上限10件とする。", "処理は適切に行う。"].join("\n") },
+    ]);
+    expectUninspectable(md, "ID重複");
+    expectUninspectable(md, "プレフィックス体系の逸脱");
+    expectUninspectable(md, "未解決参照");
+    expectExecuted(md, "曖昧語・弱い語");
+    expectExecuted(md, "数量表現");
+  });
+
+  it("定義IDがある文書ではID重複が実行になる", () => {
+    expectExecuted(renderTestBasisReview(flawedDocuments), "ID重複");
   });
 });

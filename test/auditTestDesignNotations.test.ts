@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable, parseInspectabilityRows } from "./inspectabilitySectionHelper.js";
 import { renderTestDesignNotationAudit } from "../src/tools/auditTestDesignNotations.js";
 import { analyzeTestDesignNotations } from "../src/testDesignNotationAnalysis.js";
 import { testPerspectiveCatalog } from "../src/resources/testPerspectiveCatalog.js";
@@ -436,5 +437,33 @@ describe("renderTestDesignNotationAudit / analyzeTestDesignNotations", () => {
       "記法間照合の対象となる組合せが成立していない。"
     );
     expectNextToolsSection(markdown);
+  });
+});
+
+describe("renderTestDesignNotationAudit 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(renderTestDesignNotationAudit(cleanInput()), "audit_test_design_notations");
+  });
+
+  it("完全入力では原文依存の5区分がすべて実行になる", () => {
+    const md = renderTestDesignNotationAudit(cleanInput());
+    for (const id of ["TDN-05", "TDN-06", "TDN-07", "TDN-21", "TDN-22"]) {
+      expectExecuted(md, id);
+    }
+  });
+
+  it("記法のみ・原文/母集団/宣言値なしでは5区分すべてが検査不能になる", () => {
+    const input = cleanInput();
+    delete input.documents;
+    delete input.testConditionIds;
+    delete input.fvTable!.expectedFunctionIds;
+    delete input.fvTable!.claimedFunctionCoveragePercent;
+    delete input.yumotsuyoMatrix!.claimedFillRatePercent;
+    const md = renderTestDesignNotationAudit(input);
+    for (const id of ["TDN-05", "TDN-06", "TDN-07", "TDN-21", "TDN-22"]) {
+      expectUninspectable(md, id);
+    }
+    const row = parseInspectabilityRows(md).find((r) => r.catalogId === "TDN-06")!;
+    expect(row.measured).toBe("原文文書 0件");
   });
 });
