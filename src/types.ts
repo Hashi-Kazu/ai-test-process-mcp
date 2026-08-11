@@ -421,7 +421,7 @@ export interface DocumentDigestRow {
 
 export interface DocumentDigestFinding {
   document: string;
-  kind: "no-id" | "sparse-prefix" | "no-id-system"
+  kind: "no-id" | "sparse-prefix" | "no-id-system" | "no-defined-id"
     | "isolated-numeric-cells" | "furigana-contamination" | "no-heading" | "broken-table-cells"
     | "bidi-control-chars";
   severity: "high" | "medium" | "info";
