@@ -165,6 +165,45 @@ describe("findDocumentDigestFindings", () => {
     ]);
     expect(findDocumentDigestFindings(rows)).toEqual([]);
   });
+
+  it("flags no-defined-id when ids are detected but none are definitions (deterministic layer misses)", () => {
+    const rows = buildDocumentDigests([
+      {
+        name: "参照のみ文書",
+        content: ["# 概要", "詳細は EH-100 を参照する。", "同様に EH-101 についても参照する。"].join("\n"),
+      },
+    ]);
+    expect(rows[0].idCount).toBeGreaterThan(0);
+    expect(rows[0].definedIdCount).toBe(0);
+    const referenceCount = rows[0].idCount - rows[0].definedIdCount - rows[0].tocIdCount;
+    const findings = findDocumentDigestFindings(rows);
+    const finding = findings.find((f) => f.kind === "no-defined-id");
+    expect(finding).toBeDefined();
+    expect(finding?.document).toBe("参照のみ文書");
+    expect(finding?.severity).toBe("medium");
+    expect(finding?.detail).toContain("検査不能（要確認）");
+    expect(finding?.detail).toContain("指摘が0件であることは合格を意味しない");
+    expect(finding?.detail).toContain("idPatterns");
+    expect(finding?.detail).toContain(String(referenceCount));
+  });
+
+  it("does not flag no-defined-id when a document already has at least one defined id", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "11_要求仕様書",
+        content: [
+          "# 発券機",
+          "EH-100 発券機起動",
+          "入場制限人数は 60人以下とする。",
+          "詳細は EH-100 を参照する。",
+        ].join("\n"),
+      },
+    ];
+    const rows = buildDocumentDigests(documents);
+    expect(rows[0].definedIdCount).toBeGreaterThanOrEqual(1);
+    const findings = findDocumentDigestFindings(rows);
+    expect(findings.some((f) => f.kind === "no-defined-id")).toBe(false);
+  });
 });
 
 describe("renderDocumentDigestLines", () => {

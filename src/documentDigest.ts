@@ -271,6 +271,15 @@ export function findDocumentDigestFindings(rows: DocumentDigestRow[]): DocumentD
             "検出IDが0件で、他文書が持つIDプレフィックスへの参照も無い。この文書はID体系を持たない文書であり、抜粋の指摘ではない。",
         });
       }
+    } else if (row.definedIdCount === 0) {
+      const referenceCount = row.idCount - row.definedIdCount - row.tocIdCount;
+      findings.push({
+        document: row.document,
+        kind: "no-defined-id",
+        severity: "medium",
+        detail:
+          `検出IDが${row.idCount}件（参照${referenceCount}件・目次${row.tocIdCount}件）あるが、定義IDが0件のため決定的層が空振りしている。idPatterns がこの文書のID書式に一致していない可能性があり、検査不能（要確認）。指摘が0件であることは合格を意味しない。idPatterns を見直すか、この文書のID書式を確認して再実行すること。`,
+      });
     }
   }
 
