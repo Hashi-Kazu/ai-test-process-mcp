@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { renderTestCases } from "../src/tools/generateTestCases.js";
 import type { GenerateTestCasesInput } from "../src/types.js";
 
@@ -574,5 +575,34 @@ describe("renderTestCases 次に実行すべきツール節の内容", () => {
       })
     );
     expect(withCases).toContain("| 未実施 | analyze_execution_order |");
+  });
+});
+
+describe("renderTestCases 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(renderTestCases(baseInput), "generate_test_cases");
+    expectInspectabilitySection(
+      renderTestCases({
+        ...baseInput,
+        testBasisDocuments: [{ name: "req.md", content: "EH-100 チケットを購入できる" }],
+      }),
+      "generate_test_cases"
+    );
+  });
+
+  it("testBasisDocuments 未指定なら事実照合・網羅対象の裏付けが検査不能になる", () => {
+    const md = renderTestCases(baseInput);
+    expectUninspectable(md, "テストベースとの事実照合");
+    expectUninspectable(md, "網羅対象の裏付け検査");
+    expectExecuted(md, "閾値の直値埋め込み検査");
+  });
+
+  it("parameters 未指定なら閾値の直値埋め込み検査が検査不能になる", () => {
+    const md = renderTestCases({ ...baseInput, parameters: [] });
+    expectUninspectable(md, "閾値の直値埋め込み検査");
+  });
+
+  it("配分の判定入力が無いケースだけならテストレベル配分が検査不能になる", () => {
+    expectUninspectable(renderTestCases(baseInput), "テストレベル配分の妥当性");
   });
 });

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import { testDesignNotationCatalog } from "../resources/testDesignNotationCatalog.js";
 import { analyzeTestDesignNotations, DEFAULT_MAX_CELL_COUNT } from "../testDesignNotationAnalysis.js";
 import {
@@ -378,6 +379,57 @@ export function renderTestDesignNotationAudit(
   );
   lines.push(
     "- TDN-15 で未参照となった観点カテゴリは、検討した上で対象外としたのか検討していないのかを区別し、対象外であればその判断を成果物へ記録すること。"
+  );
+  lines.push("");
+
+  const notationDocuments = input.documents ?? [];
+  const expectedFunctionIds = input.fvTable?.expectedFunctionIds ?? [];
+  lines.push(
+    ...renderInspectabilitySection("audit_test_design_notations", [
+      ...buildDigestSignals(
+        notationDocuments.length > 0
+          ? buildDocumentDigests(notationDocuments, { idPatterns: input.idPatterns })
+          : []
+      ),
+      // 原文が未投入のときも「未計測」にせず、0件であることを明示的な実測値として供給する。
+      {
+        id: "documents-supplied",
+        satisfied: notationDocuments.length > 0,
+        measured:
+          notationDocuments.length > 0
+            ? `原文文書${notationDocuments.length}件・${notationDocuments.reduce(
+                (sum, d) => sum + d.content.length,
+                0
+              )}字`
+            : "原文文書 0件",
+      },
+      {
+        id: "feature-population",
+        satisfied: expectedFunctionIds.length >= 1,
+        measured: `機能ID母集団宣言${expectedFunctionIds.length}件`,
+      },
+      {
+        id: "test-condition-population",
+        satisfied: summary.testConditionPopulationCount >= 1,
+        measured: `テスト条件ID母集団${summary.testConditionPopulationCount}件`,
+      },
+      {
+        id: "declared-coverage-rate",
+        satisfied: fvTable.coverage.claimed !== undefined,
+        measured:
+          fvTable.coverage.claimed === undefined
+            ? "機能被覆率宣言 0件"
+            : `機能被覆率宣言 1件(宣言値 ${fvTable.coverage.claimed})`,
+      },
+      {
+        id: "declared-fill-rate",
+        satisfied: yumotsuyoMatrix.fillRate.claimed !== undefined,
+        measured:
+          yumotsuyoMatrix.fillRate.claimed === undefined
+            ? "充填率宣言 0件"
+            : `充填率宣言 1件(宣言値 ${yumotsuyoMatrix.fillRate.claimed})`,
+      },
+    ]).split("\n")
   );
   lines.push("");
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { renderBasisContradictionAudit } from "../src/tools/auditBasisContradictions.js";
 import type { AuditBasisContradictionsInput } from "../src/types.js";
 
@@ -183,5 +184,28 @@ describe("renderBasisContradictionAudit 検査不能区分の明示", () => {
 describe("renderBasisContradictionAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderBasisContradictionAudit(baseInput));
+  });
+});
+
+describe("renderBasisContradictionAudit 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(renderBasisContradictionAudit(baseInput), "audit_basis_contradictions");
+  });
+
+  it("改訂宣言0件なら BC-09、数量パラメータ0件なら BC-08 が検査不能になる", () => {
+    const md = renderBasisContradictionAudit(baseInput);
+    expectUninspectable(md, "BC-09");
+    expectUninspectable(md, "BC-08");
+    expectExecuted(md, "BC-01");
+    expectExecuted(md, "BC-02");
+  });
+
+  it("ID出現・UI要素・遷移がすべて0件なら全区分が検査不能になる", () => {
+    const md = renderBasisContradictionAudit({
+      documents: [{ name: "memo", content: "自由記述のみの文書。" }],
+    });
+    for (const id of ["BC-01", "BC-02", "BC-03", "BC-04", "BC-05", "BC-06", "BC-07", "BC-08", "BC-09", "BC-10"]) {
+      expectUninspectable(md, id);
+    }
   });
 });

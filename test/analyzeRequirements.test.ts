@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { z } from "zod";
 import { renderRequirementsAnalysis } from "../src/tools/analyzeRequirements.js";
 import { designBoundaryValuesInputShape } from "../src/tools/designBoundaryValues.js";
@@ -226,5 +227,28 @@ describe("renderRequirementsAnalysis - verbose", () => {
 describe("renderRequirementsAnalysis 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderRequirementsAnalysis(baseInput));
+  });
+});
+
+describe("renderRequirementsAnalysis 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(renderRequirementsAnalysis(baseInput), "analyze_requirements");
+  });
+
+  it("定義IDが0件なら要件ID体系と根拠位置照合が検査不能になる", () => {
+    const md = renderRequirementsAnalysis({
+      documents: [{ name: "note.md", content: ["# メモ", "上限は10件とする。"].join("\n") }],
+    });
+    expectUninspectable(md, "要件ID体系");
+    expectUninspectable(md, "要件ID → テストベース根拠位置");
+    expectExecuted(md, "数量表現の全文書横断集約");
+    expectExecuted(md, "境界値候補");
+  });
+
+  it("数量表現が0件なら境界値候補が検査不能になる", () => {
+    const md = renderRequirementsAnalysis({
+      documents: [{ name: "note.md", content: ["# メモ", "処理は適切に行う。"].join("\n") }],
+    });
+    expectUninspectable(md, "境界値候補");
   });
 });

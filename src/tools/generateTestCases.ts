@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testTechniqueCatalog } from "../resources/testTechniqueCatalog.js";
 import {
@@ -687,6 +688,41 @@ export function renderTestCases(
     lines.push("- 追加の修正指示なし。");
     lines.push("");
   }
+
+  // 入力ダイジェストを持たないツールのため、原文入力の実測値は testBasisDocuments から直接算出する。
+  const basisDocumentCount = (testBasisDocuments ?? []).length;
+  const basisCharTotal = (testBasisDocuments ?? []).reduce((sum, d) => sum + d.content.length, 0);
+  const allocationInputCount = testCases.filter(
+    (c) =>
+      c.testLevel !== undefined ||
+      c.externalDependencyIds !== undefined ||
+      c.estimatedDurationSeconds !== undefined
+  ).length;
+  lines.push(
+    ...renderInspectabilitySection("generate_test_cases", [
+      {
+        id: "documents-supplied",
+        satisfied: basisDocumentCount >= 1,
+        measured: `投入文書${basisDocumentCount}件・${basisCharTotal}字`,
+      },
+      {
+        id: "coverage-target-declared",
+        satisfied: universe.length >= 1,
+        measured: `網羅対象${universe.length}件`,
+      },
+      {
+        id: "threshold-parameters",
+        satisfied: parameters.length >= 1,
+        measured: `閾値パラメータ${parameters.length}件`,
+      },
+      {
+        id: "test-size-input",
+        satisfied: hasAllocationInput,
+        measured: `判定入力を持つケース${allocationInputCount}件 / 全${testCases.length}件`,
+      },
+    ]).split("\n")
+  );
+  lines.push("");
 
   lines.push(
     ...renderNextToolsSection(

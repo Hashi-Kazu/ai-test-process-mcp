@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { renderTestSpecificationReview } from "../src/tools/reviewTestSpecification.js";
 import { testSpecificationReviewChecklist } from "../src/resources/testSpecificationReviewChecklist.js";
 import type {
@@ -118,8 +119,10 @@ describe("renderTestSpecificationReview - testCases 未指定の簡易モード"
   });
 
   it("does not render the condition or risk axes", () => {
-    expect(markdown).not.toContain("テスト条件IDカバレッジ");
-    expect(markdown).not.toContain("リスクIDカバレッジ");
+    // 「検査実行状況」節は未投入の軸を検査不能として列挙するため、決定的検査本文だけを対象に確認する。
+    const body = markdown.split("## 検査実行状況")[0];
+    expect(body).not.toContain("テスト条件IDカバレッジ");
+    expect(body).not.toContain("リスクIDカバレッジ");
   });
 });
 
@@ -261,7 +264,7 @@ describe("renderTestSpecificationReview - リスクIDカバレッジ(双方向)"
       })
     );
     expect(md).toContain("### 1.3 リスクIDカバレッジ(双方向)");
-    expect(md).not.toContain("テスト条件IDカバレッジ");
+    expect(md.split("## 検査実行状況")[0]).not.toContain("テスト条件IDカバレッジ");
   });
 });
 
@@ -431,5 +434,27 @@ describe("renderTestSpecificationReview - 入力ダイジェストと事実照�
 describe("renderTestSpecificationReview 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestSpecificationReview(baseInput()));
+  });
+});
+
+describe("renderTestSpecificationReview 検査実行状況節", () => {
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(
+      renderTestSpecificationReview(baseInput({ testCases: [makeCase({ caseId: "TCS-001" })] })),
+      "review_test_specification"
+    );
+  });
+
+  it("testCases 未指定ならケースID検査と事実照合が検査不能になる", () => {
+    const md = renderTestSpecificationReview(baseInput());
+    expectUninspectable(md, "ケースIDの重複・期待結果の空欄");
+    expectUninspectable(md, "テストベースとの事実照合");
+    expectExecuted(md, "要件IDカバレッジ(双方向)");
+  });
+
+  it("testConditions / risks 未指定なら該当カバレッジが検査不能になる", () => {
+    const md = renderTestSpecificationReview(baseInput({ testCases: [makeCase({ caseId: "TCS-001" })] }));
+    expectUninspectable(md, "テスト条件IDカバレッジ(双方向)");
+    expectUninspectable(md, "リスクIDカバレッジ(双方向)");
   });
 });

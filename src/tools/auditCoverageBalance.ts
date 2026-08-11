@@ -2,7 +2,8 @@ import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { coverageBalanceCriteria } from "../resources/coverageBalanceCriteria.js";
-import { analyzeCoverageBalance } from "../coverageBalanceAnalysis.js";
+import { analyzeCoverageBalance, hasGlossarySection } from "../coverageBalanceAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import {
   buildDocumentDigests,
   findDocumentDigestFindings,
@@ -319,6 +320,51 @@ export function renderCoverageBalanceAudit(
     signals.push("has-undefined-custom-terms");
   }
   if (findings.some((f) => f.checkId === "CBC-07")) signals.push("has-zero-count-buckets");
+
+  const glossarySection = hasGlossarySection(deliverables, criteria);
+  lines.push(
+    ...renderInspectabilitySection("audit_coverage_balance", [
+      ...buildDigestSignals(
+        hasDeliverables
+          ? buildDocumentDigests(deliverables.map((d) => ({ name: d.name, content: d.content })))
+          : []
+      ),
+      // 原文が未投入のときも「未計測」にせず、0件であることを明示的な実測値として供給する。
+      {
+        id: "documents-supplied",
+        satisfied: hasDeliverables,
+        measured: hasDeliverables
+          ? `原文文書${deliverables.length}件・${deliverables.reduce(
+              (sum, d) => sum + d.content.length,
+              0
+            )}字`
+          : "原文文書 0件",
+      },
+      {
+        id: "declared-distribution",
+        satisfied: hasDeclared,
+        measured: `分布件数宣言${input.declaredDistributions?.length ?? 0}件`,
+      },
+      {
+        id: "tabulated-cases",
+        satisfied: summary.caseCount >= 1,
+        measured: `集計対象テストケース${summary.caseCount}件`,
+      },
+      {
+        id: "glossary-section",
+        satisfied: glossarySection,
+        measured: `用語集セクション${glossarySection ? "あり" : "なし"}・抽出できた用語定義${
+          summary.termDefinitionCount
+        }件`,
+      },
+      {
+        id: "custom-term-candidate",
+        satisfied: summary.termCandidateCount >= 1,
+        measured: `独自用語候補${summary.termCandidateCount}件`,
+      },
+    ]).split("\n")
+  );
+  lines.push("");
 
   lines.push(
     ...renderNextToolsSection("audit_coverage_balance", signals, input.completedTools).split("\n")

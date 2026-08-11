@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { buildDigestSignals, renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testBasisReviewChecklist } from "../resources/testBasisReviewChecklist.js";
 import { questionPriorityDefinitions } from "../resources/testPlanTemplate.js";
@@ -252,6 +253,11 @@ export function renderTestBasisReview(
     }
     lines.push("");
   }
+
+  lines.push(
+    ...renderInspectabilitySection("review_test_basis", buildDigestSignals(digestRows)).split("\n")
+  );
+  lines.push("");
 
   lines.push(
     ...renderNextToolsSection(

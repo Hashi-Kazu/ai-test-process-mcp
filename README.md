@@ -291,6 +291,12 @@ ASTER参加要項が例示するFV表・NGT・ゆもつよマトリクスの3記
 
 全ツールの出力末尾に付く「次に実行すべきツール」節が参照する静的カタログを構造化データ（JSON）として公開する。実行元ツール名ごとの後続ツール候補（後続ツール名・提示理由・提示条件となるシグナルキー。`always` は常に提示）と、本MCPが登録する全ツール名の一覧（`registeredToolNames`）、各ツールの出力見出し署名テーブル（`toolOutputSignatures`）を含む。各ツールは自身の後続表と生成物の内容から機械的に導いたシグナルを突き合わせ、未実施の後続ツールを列挙する。呼び出し側は `completedTools`（`toolName` と証跡 `evidence`、実出力の抜粋 `outputExcerpt`）で実施済みを申告できるが、証跡が参照形式（ファイルパスまたは `#` から始まる見出し）でない申告・`registeredToolNames` に無いツール名の申告は実施済みと認めず、警告付きで未実施のまま残す。証跡が参照形式であっても、`outputExcerpt` に当該ツール自身の出力見出し（`toolOutputSignatures`）が実在しない申告は「実施済み(証跡未照合)」として未実施件数に含める。
 
+### Resource: `testbasis://coverage/inspectability`
+
+原文入力口を持つ11ツール（`review_test_basis` / `analyze_requirements` / `review_test_specification` / `generate_test_cases` / `audit_id_population` / `audit_basis_contradictions` / `audit_cross_matrix` / `audit_test_design_notations` / `audit_coverage_balance` / `audit_deliverable_consistency` / `reexpand_threshold_changes`）の出力末尾に付く「検査実行状況(実行された検査 / 検査不能な検査)」節が参照する静的カタログを構造化データ（JSON）として公開する。決定的検査が成立するための入力上の前提（前提ID・日本語名・実測方法・算出元の入力・不成立を解消する入力上の手当て）、入力ダイジェスト由来の共通検査（`IQC-01`〜`IQC-05`）、ツールごとの原文依存な決定的検査（既存判定区分ID・出力節ラベル・必要な前提ID）を含む。新規の判定区分ID体系は作らず、既存カタログの区分ID（`PAC-*` / `BC-*` / `CMX-*` / `TDN-*` / `CBC-*` / `DCC-*` / `TCE-*` / `IQC-*`）をそのまま参照する。
+
+各ツールはこのカタログと、投入された原文から算出した前提の実測値（定義ID件数・表セル件数・章節アンカー解決可否など）を突き合わせ、各検査を「実行」か「検査不能」かに分けて実測値付きで列挙する。指摘0件が「入力が合格した」のか「検査そのものが成立していない」のかを呼び出し側が判別できるようにするための節であり、検査可能率などの百分率は出さない（達成度の主張ではないため）。
+
 ## テストベースの投入（バイナリ形式のテキスト化）
 
 MCPツールはフォーマット不問の自由テキストを受け取るため、Word / Excel / PDF は呼び出し側でテキスト化して投入する。

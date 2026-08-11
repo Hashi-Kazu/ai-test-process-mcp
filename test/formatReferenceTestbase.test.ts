@@ -5,6 +5,10 @@ import { describe, expect, it } from "vitest";
 import { parseWordDocument, readOoxmlEntries } from "../scripts/lib/ooxml.mjs";
 import { buildDocumentDigests, findDocumentDigestFindings } from "../src/documentDigest.js";
 import { findAmbiguousTerms } from "../src/testBasisAnalysis.js";
+import { renderTestBasisReview } from "../src/tools/reviewTestBasis.js";
+import { renderRequirementsAnalysis } from "../src/tools/analyzeRequirements.js";
+import { renderIdPopulationAudit } from "../src/tools/auditIdPopulation.js";
+import { renderBasisContradictionAudit } from "../src/tools/auditBasisContradictions.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const formatRefDir = path.join(repoRoot, "sample", "non_contest_testbase", "format_reference");
@@ -182,6 +186,66 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
       expect(alt[0].document).toBe(SHINKYU);
       expect(alt[0].detail).toContain("5,797字");
       expect(alt[0].detail).toContain("対象行2行・表1件");
+    });
+
+    // 「検査実行状況」対照表の受け入れ本体（実務Word2件を原文投入口を持つ4ツールへ投入した実測）。
+    // 期待値は docs/ai/regression-baseline.md 19.8 の実測値と対応する。
+    it("counts 10+ distinct uninspectable checks across 4 tools for the two practical docx", () => {
+      const documents = [MAIN, SHINKYU].map((name) => {
+        const entries = readOoxmlEntries(readFileSync(path.join(wordDir, name)));
+        const documentXml = entries.get("word/document.xml")!;
+        const stylesXml = entries.get("word/styles.xml")!;
+        return { name, content: parseWordDocument(documentXml, stylesXml) as string };
+      });
+
+      const outputs: Record<string, string> = {
+        review_test_basis: renderTestBasisReview(documents),
+        analyze_requirements: renderRequirementsAnalysis({ documents }),
+        audit_id_population: renderIdPopulationAudit({ documents, declaredPopulations: [] }),
+        audit_basis_contradictions: renderBasisContradictionAudit({ documents }),
+      };
+
+      // 「ツール名 + 検査」の組の異なり件数。区分IDを持たない検査は節ラベルでキーを作る。
+      const distinct = new Set<string>();
+      const perTool = new Map<string, number>();
+      for (const [toolName, markdown] of Object.entries(outputs)) {
+        const section = markdown.split("## 検査実行状況")[1];
+        expect(section, toolName).toBeDefined();
+        const rows = section.split("\n").filter((l) => l.startsWith("| 検査不能 |"));
+        perTool.set(toolName, rows.length);
+        for (const row of rows) {
+          const cells = row.split("|").map((c) => c.trim());
+          const checkKey = cells[3] === "-" ? cells[2] : cells[3];
+          distinct.add(`${toolName}::${checkKey}`);
+        }
+      }
+
+      // 実測: 2 + 2 + 6 + 7 = 17 区分（異なり）。閾値は10区分以上。
+      expect(distinct.size).toBe(17);
+      expect(distinct.size).toBeGreaterThanOrEqual(10);
+      expect(Object.fromEntries(perTool)).toEqual({
+        review_test_basis: 2,
+        analyze_requirements: 2,
+        audit_id_population: 6,
+        audit_basis_contradictions: 7,
+      });
+
+      // 定義IDが両文書0件であることが検査不能の主因である（実測の裏付け）。
+      const digestRows = buildDocumentDigests(documents);
+      expect(digestRows.map((r) => r.definedIdCount)).toEqual([0, 0]);
+
+      // audit_basis_contradictions は既存サマリ行が列挙する6区分と一致する
+      // （BC-08 は数量パラメータが実在するため実行、BC-09 は改訂宣言0件で対照表のみに現れる）。
+      const bcSection = outputs.audit_basis_contradictions.split("## 検査実行状況")[1];
+      const bcUninspectable = bcSection
+        .split("\n")
+        .filter((l) => l.startsWith("| 検査不能 |"))
+        .map((l) => l.split("|")[3].trim())
+        .filter((id) => id !== "BC-08" && id !== "BC-09");
+      expect(bcUninspectable).toEqual(["BC-02", "BC-03", "BC-04", "BC-05", "BC-06", "BC-10"]);
+      expect(outputs.audit_basis_contradictions).toContain(
+        "- 検査不能(要確認)の区分: BC-02, BC-03, BC-04, BC-05, BC-06, BC-10（UI要素・遷移が0件のため。未指摘は合格を意味しない）"
+      );
     });
   });
 

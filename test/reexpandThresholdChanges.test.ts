@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
+import { expectInspectabilitySection, expectExecuted, expectUninspectable, parseInspectabilityRows } from "./inspectabilitySectionHelper.js";
 import { renderThresholdChangeReexpansion } from "../src/tools/reexpandThresholdChanges.js";
 import type { ReexpandThresholdChangesInput } from "../src/types.js";
 
@@ -233,7 +234,9 @@ describe("renderThresholdChangeReexpansion", () => {
     };
     const md = renderThresholdChangeReexpansion(input);
     expect(md).not.toContain("## 0.");
-    expect(md).not.toContain("TCE-");
+    // TCE-xx は「検査実行状況」節では検査不能として列挙されるが、0章（自前抽出）の本文には現れない。
+    const beforeInspectability = md.split("## 検査実行状況")[0];
+    expect(beforeInspectability).not.toContain("TCE-");
   });
 
   it("21. keeps the existing output shape unchanged when documents are omitted", () => {
@@ -351,5 +354,51 @@ describe("renderThresholdChangeReexpansion 次に実行すべきツール節", (
       parametersBefore: [{ name: "MAX_TICKETS", value: "10", unit: "枚" }],
       parametersAfter: [{ name: "MAX_TICKETS", value: "20", unit: "枚" }],
     }));
+  });
+});
+
+describe("renderThresholdChangeReexpansion 検査実行状況節", () => {
+  const withDocuments: ReexpandThresholdChangesInput = {
+    parametersBefore: [{ name: "上限枚数", value: "10", unit: "枚" }],
+    parametersAfter: [{ name: "上限枚数", value: "20", unit: "枚" }],
+    documentsBefore: [{ name: "spec-before.md", content: "| 上限枚数 | 10枚 |" }],
+    documentsAfter: [{ name: "spec-after.md", content: "| 上限枚数 | 20枚 |" }],
+  };
+
+  it("対照表が出て、実行された検査の節ラベルが同一出力の見出しに現れる", () => {
+    expectInspectabilitySection(
+      renderThresholdChangeReexpansion(withDocuments),
+      "reexpand_threshold_changes"
+    );
+  });
+
+  it("documents 未投入なら TCE-01〜TCE-07 がすべて検査不能になる", () => {
+    const md = renderThresholdChangeReexpansion({
+      parametersBefore: [{ name: "MAX_TICKETS", value: "10", unit: "枚" }],
+      parametersAfter: [{ name: "MAX_TICKETS", value: "20", unit: "枚" }],
+    });
+    for (const id of ["TCE-01", "TCE-02", "TCE-03", "TCE-04", "TCE-05", "TCE-06", "TCE-07"]) {
+      expectUninspectable(md, id);
+    }
+    const row = parseInspectabilityRows(md).find((r) => r.catalogId === "TCE-01")!;
+    expect(row.measured).toBe("変更前文書0件 / 変更後文書0件");
+  });
+
+  it("原文と宣言パラメータがあれば TCE-01〜TCE-05 が実行になり、承認未宣言の TCE-06 / TCE-07 は検査不能になる", () => {
+    const md = renderThresholdChangeReexpansion(withDocuments);
+    for (const id of ["TCE-01", "TCE-02", "TCE-03", "TCE-04", "TCE-05"]) {
+      expectExecuted(md, id);
+    }
+    expectUninspectable(md, "TCE-06");
+    expectUninspectable(md, "TCE-07");
+  });
+
+  it("承認を宣言すると TCE-06 / TCE-07 が実行になる", () => {
+    const md = renderThresholdChangeReexpansion({
+      ...withDocuments,
+      approvedExtractions: [{ name: "上限枚数" }],
+    });
+    expectExecuted(md, "TCE-06");
+    expectExecuted(md, "TCE-07");
   });
 });
