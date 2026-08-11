@@ -6,6 +6,7 @@ import {
   extractTableCells,
   findDocumentDigestFindings,
   findUnmatchedIdPatterns,
+  formatCount,
   formatPercent,
   renderDocumentDigestLines,
   sanitizeTestBasisDocuments,
@@ -673,5 +674,143 @@ describe("formatPercent", () => {
 
   it("returns '0' when total is 0", () => {
     expect(formatPercent(5, 0)).toBe("0");
+  });
+});
+
+// --- 代替アンカー（見出し退化時のパイプ表 行/列アンカー）の明示 ---
+
+/** 見出し0件・パイプ表ありで chars 文字の文書。 */
+function degeneratedTableDoc(chars: number): string {
+  const base = [
+    "| 改定後 | 現行 |",
+    "| --- | --- |",
+    "| 適切な運用とする。 | 適宜運用する。 |",
+  ].join("\n");
+  return `${base}\n${"あ".repeat(chars - base.length - 1)}`;
+}
+
+/** 見出し0件・パイプ表0件の大きな文書（pdftotext -layout 出力の模擬）。 */
+function noStructureDoc(): string {
+  const lines: string[] = ["項番   区分   内容"];
+  for (let i = 0; i < 60; i++) {
+    lines.push(`本文${i}の説明として必要な記述をここに続ける。適切な運用を前提とする。`);
+  }
+  return lines.join("\n");
+}
+
+describe("buildDocumentDigests (sectionAnchor)", () => {
+  it("reports mode alternative with the number of anchored lines and tables for a degenerated document", () => {
+    const content = degeneratedTableDoc(IQC_NO_HEADING_MIN_CHARS);
+    const rows = buildDocumentDigests([{ name: "新旧対照表", content }]);
+    expect(rows[0].sectionAnchor).toEqual({
+      mode: "alternative",
+      distinctHeadingAnchors: 1,
+      alternativeAnchorLineCount: 2,
+      alternativeTableCount: 1,
+    });
+  });
+
+  it("reports mode heading for a document whose headings are discriminative", () => {
+    const content = ["# 第1章", "本文である。", "# 第2章", "| A | B |", "| 1 | 2 |"].join("\n");
+    const rows = buildDocumentDigests([{ name: "仕様書", content }]);
+    expect(rows[0].sectionAnchor.mode).toBe("heading");
+    expect(rows[0].sectionAnchor.alternativeAnchorLineCount).toBe(0);
+    expect(rows[0].sectionAnchor.distinctHeadingAnchors).toBeGreaterThanOrEqual(2);
+  });
+
+  it("reports mode none for a heading-less, pipe-table-less document", () => {
+    const rows = buildDocumentDigests([{ name: "pdf.txt", content: noStructureDoc() }]);
+    expect(rows[0].sectionAnchor.mode).toBe("none");
+    expect(rows[0].sectionAnchor.alternativeAnchorLineCount).toBe(0);
+    expect(rows[0].sectionAnchor.alternativeTableCount).toBe(0);
+  });
+
+  it("does not switch to alternative anchors just below the char threshold", () => {
+    const rows = buildDocumentDigests([
+      { name: "小さい対照表", content: degeneratedTableDoc(IQC_NO_HEADING_MIN_CHARS - 1) },
+    ]);
+    expect(rows[0].sectionAnchor.mode).toBe("none");
+  });
+
+  it("is deterministic across two calls", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "新旧対照表", content: degeneratedTableDoc(IQC_NO_HEADING_MIN_CHARS) },
+      { name: "pdf.txt", content: noStructureDoc() },
+    ];
+    const snapshot = JSON.stringify(documents);
+    const first = buildDocumentDigests(documents);
+    const second = buildDocumentDigests(documents);
+    expect(second).toEqual(first);
+    expect(JSON.stringify(documents)).toBe(snapshot);
+  });
+});
+
+describe("findDocumentDigestFindings (alternative-section-anchor)", () => {
+  it("emits one info finding stating the fact, the resolution method and the counts", () => {
+    const content = degeneratedTableDoc(IQC_NO_HEADING_MIN_CHARS);
+    const rows = buildDocumentDigests([{ name: "新旧対照表", content }]);
+    const findings = findDocumentDigestFindings(rows);
+    const alt = findings.filter((f) => f.kind === "alternative-section-anchor");
+    expect(alt).toHaveLength(1);
+    expect(alt[0].document).toBe("新旧対照表");
+    expect(alt[0].severity).toBe("info");
+    expect(alt[0].detail).toContain("代替アンカー");
+    expect(alt[0].detail).toContain("パイプ表の行アンカー");
+    expect(alt[0].detail).toContain("章節ラベルが1種類");
+    expect(alt[0].detail).toContain(formatCount(rows[0].charCount) + "字");
+    expect(alt[0].detail).toContain("対象行2行");
+    expect(alt[0].detail).toContain("表1件");
+    expect(alt[0].detail).toContain("「(見出しなし)」のまま残す");
+  });
+
+  it("does not emit the finding for a heading-less, pipe-table-less document (PDF invariance)", () => {
+    const rows = buildDocumentDigests([{ name: "pdf.txt", content: noStructureDoc() }]);
+    const findings = findDocumentDigestFindings(rows);
+    expect(findings.some((f) => f.kind === "alternative-section-anchor")).toBe(false);
+  });
+
+  it("does not emit the finding for a document with discriminative headings and a pipe table", () => {
+    const content = ["# 第1章", "| A | B |", "| 1 | 2 |", "# 第2章", "本文。"].join("\n");
+    const rows = buildDocumentDigests([{ name: "仕様書", content }]);
+    const findings = findDocumentDigestFindings(rows);
+    expect(findings.some((f) => f.kind === "alternative-section-anchor")).toBe(false);
+  });
+
+  it("appends the finding after the existing findings without changing their order", () => {
+    const content = degeneratedTableDoc(IQC_NO_HEADING_MIN_CHARS * 2);
+    const rows = buildDocumentDigests([{ name: "新旧対照表", content }]);
+    const findings = findDocumentDigestFindings(rows);
+    expect(findings.length).toBeGreaterThanOrEqual(2);
+    expect(findings[findings.length - 1].kind).toBe("alternative-section-anchor");
+    expect(findings.slice(0, -1).some((f) => f.kind === "alternative-section-anchor")).toBe(false);
+  });
+});
+
+describe("renderDocumentDigestLines (代替アンカー注記)", () => {
+  it("inserts the alternative-anchor note before the fixed DIGEST_NOTE", () => {
+    const content = degeneratedTableDoc(IQC_NO_HEADING_MIN_CHARS);
+    const rows = buildDocumentDigests([{ name: "新旧対照表", content }]);
+    const findings = findDocumentDigestFindings(rows);
+    const lines = renderDocumentDigestLines(rows, findings);
+    const noteIndex = lines.findIndex((l) => l.startsWith("- [代替アンカー]"));
+    expect(noteIndex).toBeGreaterThan(0);
+    expect(lines[noteIndex]).toBe(
+      "- [代替アンカー] 章節が「[代替アンカー:表行] …」形式のラベルになっている指摘は、見出しではなくパイプ表の行位置で解決したものである。原文へはラベル末尾の行番号と表の行・列で逆引きすること。"
+    );
+    expect(noteIndex).toBe(lines.length - 2);
+    const iqcIndex = lines.findIndex((l) => l.startsWith("- [IQC]"));
+    if (iqcIndex >= 0) expect(iqcIndex).toBeLessThan(noteIndex);
+    expect(lines[lines.length - 1]).toBe(
+      "- ダイジェストは投入されたテキストのみを対象とする。抜粋を投入した場合、以降の集計・検査はすべて抜粋の範囲に限定される。"
+    );
+    // ダイジェスト表の列は増やさない
+    expect(lines[0]).toBe("| 文書 | 文字数 | 行数 | 見出し数 | 検出ID(定義/参照/目次) | 数値トークン |");
+  });
+
+  it("does not emit the note when no document used an alternative anchor", () => {
+    const rows = buildDocumentDigests([{ name: "pdf.txt", content: noStructureDoc() }]);
+    const findings = findDocumentDigestFindings(rows);
+    const lines = renderDocumentDigestLines(rows, findings);
+    expect(lines.some((l) => l.startsWith("- [代替アンカー]"))).toBe(false);
   });
 });
