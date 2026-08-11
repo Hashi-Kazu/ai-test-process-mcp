@@ -417,13 +417,20 @@ export interface DocumentDigestRow {
   prefixCounts: { prefix: string; definitionCount: number }[]; // 出現順
   otherPrefixReferenceCount: number; // idCount===0 の文書のみ算出。他文書が定義したIDプレフィックスへの緩い単語一致件数
   inputQuality: DocumentInputQualityMetrics;
+  /** 章節アンカーの解決方式。alternative は見出しが退化しパイプ表の行アンカーで解決した文書。 */
+  sectionAnchor: {
+    mode: "heading" | "alternative" | "none";
+    distinctHeadingAnchors: number;     // 行ごとの見出しラベルの異なり数
+    alternativeAnchorLineCount: number; // kind==="table-row" の行数
+    alternativeTableCount: number;      // 代替アンカーを与えたパイプ表ブロック数
+  };
 }
 
 export interface DocumentDigestFinding {
   document: string;
   kind: "no-id" | "sparse-prefix" | "no-id-system" | "no-defined-id"
     | "isolated-numeric-cells" | "furigana-contamination" | "no-heading" | "broken-table-cells"
-    | "bidi-control-chars";
+    | "bidi-control-chars" | "alternative-section-anchor";
   severity: "high" | "medium" | "info";
   detail: string;
 }

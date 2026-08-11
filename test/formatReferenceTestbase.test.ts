@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseWordDocument, readOoxmlEntries } from "../scripts/lib/ooxml.mjs";
+import { buildDocumentDigests, findDocumentDigestFindings } from "../src/documentDigest.js";
+import { findAmbiguousTerms } from "../src/testBasisAnalysis.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const formatRefDir = path.join(repoRoot, "sample", "non_contest_testbase", "format_reference");
@@ -111,6 +113,75 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
 
       const readme = readReadme();
       expect(readme).toContain("文字数 5,797字、行数4行、`#`始まり行数0、パイプ表行数2");
+    });
+
+    // 代替アンカー（見出しが退化した実務Wordに対するパイプ表の行/列アンカー）の受け入れ本体。
+    // 期待値は docs/ai/regression-baseline.md 19.7 の実測値と対応する。
+    it("resolves 95%+ of ambiguous-term findings to a section anchor across both docx (169 findings total)", () => {
+      const documents = [MAIN, SHINKYU].map((name) => {
+        const entries = readOoxmlEntries(readFileSync(path.join(wordDir, name)));
+        const documentXml = entries.get("word/document.xml")!;
+        const stylesXml = entries.get("word/styles.xml")!;
+        return { name, content: parseWordDocument(documentXml, stylesXml) as string };
+      });
+
+      const findings = findAmbiguousTerms(documents);
+      let total = 0;
+      let resolved = 0;
+      const perDoc = new Map<string, { total: number; resolved: number; alternative: number }>();
+      for (const name of [MAIN, SHINKYU]) {
+        perDoc.set(name, { total: 0, resolved: 0, alternative: 0 });
+      }
+      for (const finding of findings) {
+        for (const group of finding.byHeading) {
+          const entry = perDoc.get(group.document)!;
+          total += group.count;
+          entry.total += group.count;
+          if (group.heading !== "(見出しなし)") {
+            resolved += group.count;
+            entry.resolved += group.count;
+          }
+          if (group.heading.startsWith("[代替アンカー")) {
+            entry.alternative += group.count;
+          }
+        }
+      }
+
+      expect(total).toBe(169);
+      // 解決率95%以上（実測: 169/169 = 100%）
+      expect(resolved * 100).toBeGreaterThanOrEqual(total * 95);
+
+      // 本編（見出し49件）は従来どおり見出しラベルで解決し、代替アンカーを一切使わない。
+      expect(perDoc.get(MAIN)).toEqual({ total: 146, resolved: 146, alternative: 0 });
+      // 新旧対照表（見出し0件・5,797字が1セル）は全件が代替アンカーで解決される。
+      expect(perDoc.get(SHINKYU)).toEqual({ total: 23, resolved: 23, alternative: 23 });
+
+      const shinkyuHeadings = findings
+        .flatMap((f) => f.byHeading)
+        .filter((g) => g.document === SHINKYU)
+        .map((g) => g.heading);
+      expect(new Set(shinkyuHeadings)).toEqual(
+        new Set([
+          "[代替アンカー:表行] 表「改定後 / 現行」第1行 第1列「改定後」(行4)",
+          "[代替アンカー:表行] 表「改定後 / 現行」第1行 第2列「現行」(行4)",
+        ])
+      );
+
+      // ダイジェスト側は代替アンカーを使った文書だけを info で明示する。
+      const rows = buildDocumentDigests(documents);
+      expect(rows.find((r) => r.document === MAIN)!.sectionAnchor.mode).toBe("heading");
+      expect(rows.find((r) => r.document === SHINKYU)!.sectionAnchor).toEqual({
+        mode: "alternative",
+        distinctHeadingAnchors: 1,
+        alternativeAnchorLineCount: 2,
+        alternativeTableCount: 1,
+      });
+      const digestFindings = findDocumentDigestFindings(rows);
+      const alt = digestFindings.filter((f) => f.kind === "alternative-section-anchor");
+      expect(alt).toHaveLength(1);
+      expect(alt[0].document).toBe(SHINKYU);
+      expect(alt[0].detail).toContain("5,797字");
+      expect(alt[0].detail).toContain("対象行2行・表1件");
     });
   });
 

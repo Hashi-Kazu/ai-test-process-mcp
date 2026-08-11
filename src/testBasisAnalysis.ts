@@ -87,21 +87,249 @@ export function isTableOfContentsLine(line: string): boolean {
   return TOC_DOT_LEADER_REGEX.test(line);
 }
 
-function headingsPerLine(content: string): string[] {
+// --- 章節アンカー解決器 ---
+//
+// Markdown 見出し（`#`）が識別力を持つ文書は従来どおり見出しラベルで章節を示す。
+// 見出しラベルが文書全体で1種類しか無く（識別力ゼロ）、かつ一定規模以上の文書に限り、
+// パイプ表（`| a | b |`）の行アンカー（表見出し要約＋データ行番号＋列＋行番号）を代替アンカーとして使う。
+// 見出しもパイプ表も無い箇所は "(見出しなし)" のまま残す（pdftotext 出力等の現状維持）。
+
+/** 代替アンカーへ切り替える最小文字数（IQC-03 の見出し0件判定と同じ閾値）。 */
+export const ALT_ANCHOR_MIN_CHARS = 2000;
+
+const NO_HEADING_LABEL = "(見出しなし)";
+
+/** パイプ表の区切り行（`| --- | --- |` 等）。documentDigest 側と同一のパターン。 */
+const PIPE_TABLE_SEPARATOR_REGEX = /^\|[\s:|-]+\|$/;
+
+/** ラベル用セル要約の1セルあたり最大文字数。 */
+const ANCHOR_CELL_MAX_CHARS = 10;
+/** ラベル用の表見出し要約全体の最大文字数。 */
+const ANCHOR_SUMMARY_MAX_CHARS = 40;
+/** 表見出し要約に使う先頭セル数。 */
+const ANCHOR_SUMMARY_CELL_COUNT = 3;
+
+export type SectionAnchorKind = "heading" | "table-row" | "none";
+
+export interface SectionAnchor {
+  /** 章節ラベル。kind==="heading" は見出しの生テキスト、"none" は "(見出しなし)" */
+  label: string;
+  kind: SectionAnchorKind;
+  /** 逆引き用の1-based行番号。"heading" は見出し行、"table-row" は当該行、"none" は undefined */
+  anchorLine?: number;
+  /** kind==="table-row" のみ: 文書内のパイプ表ブロック番号（1-based） */
+  tableIndex?: number;
+  /** kind==="table-row" のみ: データ行番号（1-based。表見出し行は 0） */
+  rowNumber?: number;
+  /** kind==="table-row" のみ: 表見出し要約（ラベル用に正規化済み） */
+  tableSummary?: string;
+  /** kind==="table-row" のみ: 列解決用のセル境界（行内オフセット）とヘッダ文字列 */
+  cells?: { start: number; end: number; header: string }[];
+}
+
+export interface SectionAnchorResolution {
+  /** 行(0-based index)ごとの章節アンカー。要素数は content.split("\n").length と一致する。 */
+  anchors: SectionAnchor[];
+  /** 行ごとの見出しラベルの異なり数（1以下なら見出しに識別力が無い） */
+  distinctHeadingAnchors: number;
+  /** kind==="table-row" の行数 */
+  alternativeAnchorLineCount: number;
+  /** 代替アンカーを与えたパイプ表ブロック数 */
+  alternativeTableCount: number;
+}
+
+/**
+ * パイプ表行なら各セル（行内オフセット付き。raw行基準）を返す。
+ * 区切り行と、先頭末尾を除いた要素が2件未満の行は null。
+ * 判定・分割規約は documentDigest.extractTableCells のパイプ分岐と同一。
+ */
+export function parsePipeTableRow(
+  line: string
+): { text: string; start: number; end: number }[] | null {
+  const trimmed = line.trim();
+  if (trimmed === "") return null;
+  if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) return null;
+  if (PIPE_TABLE_SEPARATOR_REGEX.test(trimmed)) return null;
+
+  // trim で落ちた先頭空白ぶんを足して raw 行基準のオフセットにする。
+  const offset = line.length - line.trimStart().length;
+  const parts: { text: string; start: number; end: number }[] = [];
+  let current = "";
+  let start = 0;
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    // 直前が \\ でない | を区切りとする（documentDigest.escapeCell と対称）
+    if (ch === "|" && trimmed[i - 1] !== "\\") {
+      parts.push({ text: current, start: offset + start, end: offset + i });
+      current = "";
+      start = i + 1;
+    } else {
+      current += ch;
+    }
+  }
+  parts.push({ text: current, start: offset + start, end: offset + trimmed.length });
+
+  const inner = parts.slice(1, -1);
+  if (inner.length < 2) return null;
+  return inner;
+}
+
+/** ラベルに `|` と改行を持ち込まないようセルを正規化し、長すぎる場合は切り詰める。 */
+function normalizeCellForLabel(text: string): string {
+  const normalized = text
+    .replace(/\\\|/g, "/")
+    .replace(/\|/g, "/")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (normalized.length > ANCHOR_CELL_MAX_CHARS) {
+    return `${normalized.slice(0, ANCHOR_CELL_MAX_CHARS)}…`;
+  }
+  return normalized;
+}
+
+/** 表見出し行の非空セル先頭3件から表の要約ラベルを作る。 */
+function buildTableSummary(cells: { text: string }[]): string {
+  const labels: string[] = [];
+  for (const cell of cells) {
+    const normalized = normalizeCellForLabel(cell.text);
+    if (normalized === "") continue;
+    labels.push(normalized);
+    if (labels.length >= ANCHOR_SUMMARY_CELL_COUNT) break;
+  }
+  if (labels.length === 0) return "(無題)";
+  const joined = labels.join(" / ");
+  if (joined.length > ANCHOR_SUMMARY_MAX_CHARS) {
+    return `${joined.slice(0, ANCHOR_SUMMARY_MAX_CHARS)}…`;
+  }
+  return joined;
+}
+
+/** 表行アンカーのラベルを組み立てる唯一の関数（label と anchorLabelAt の両方がここを通る）。 */
+function formatTableRowLabel(anchor: SectionAnchor, columnIndex: number | null): string {
+  const rowPart = anchor.rowNumber === 0 ? "見出し行" : `第${anchor.rowNumber}行`;
+  let columnPart = "";
+  if (columnIndex !== null) {
+    const header = anchor.cells?.[columnIndex]?.header ?? "";
+    columnPart = ` 第${columnIndex + 1}列${header === "" ? "" : `「${header}」`}`;
+  }
+  return `[代替アンカー:表行] 表「${anchor.tableSummary}」${rowPart}${columnPart}(行${anchor.anchorLine})`;
+}
+
+/**
+ * 行(0-based index)ごとの章節アンカーと、代替アンカーの利用実体を返す。
+ * 純関数・決定的。要素数は content.split("\n").length と一致する。
+ */
+export function resolveSectionAnchorsDetailed(content: string): SectionAnchorResolution {
   const lines = content.split("\n");
   const headings = parseHeadings(content);
-  const result: string[] = new Array(lines.length);
-  let current = "(見出しなし)";
+
+  const headingLabels: string[] = new Array(lines.length);
+  const headingLines: (number | undefined)[] = new Array(lines.length);
+  let currentLabel = NO_HEADING_LABEL;
+  let currentLine: number | undefined = undefined;
   let idx = 0;
   for (let i = 0; i < lines.length; i++) {
     while (idx < headings.length && headings[idx].lineIndex === i) {
-      current = headings[idx].raw.trim() || "(見出しなし)";
+      const raw = headings[idx].raw.trim();
+      if (raw === "") {
+        currentLabel = NO_HEADING_LABEL;
+        currentLine = undefined;
+      } else {
+        currentLabel = raw;
+        currentLine = i + 1;
+      }
       idx++;
     }
-    result[i] = current;
+    headingLabels[i] = currentLabel;
+    headingLines[i] = currentLine;
   }
-  return result;
+
+  const distinctHeadingAnchors = new Set(headingLabels).size;
+  const anchors: SectionAnchor[] = lines.map((_line, i) =>
+    headingLabels[i] === NO_HEADING_LABEL
+      ? { label: NO_HEADING_LABEL, kind: "none" }
+      : { label: headingLabels[i], kind: "heading", anchorLine: headingLines[i] }
+  );
+
+  let alternativeAnchorLineCount = 0;
+  let alternativeTableCount = 0;
+
+  // 見出しラベルが1種類しか無く（識別力ゼロ）、かつ十分に大きい文書だけ代替アンカーへ切り替える。
+  const degenerated =
+    distinctHeadingAnchors <= 1 && content.length >= ALT_ANCHOR_MIN_CHARS;
+  if (degenerated) {
+    let tableIndex = 0;
+    let blockActive = false;
+    let blockHasHeader = false;
+    let rowNumber = 0;
+    let headerCells: { text: string; start: number; end: number }[] = [];
+    let tableSummary = "";
+    for (let i = 0; i < lines.length; i++) {
+      const cells = parsePipeTableRow(lines[i]);
+      const isSeparator = cells === null && PIPE_TABLE_SEPARATOR_REGEX.test(lines[i].trim());
+      if (cells === null && !isSeparator) {
+        // パイプ表ブロックの終端
+        blockActive = false;
+        blockHasHeader = false;
+        continue;
+      }
+      if (!blockActive) {
+        blockActive = true;
+        blockHasHeader = false;
+      }
+      // 区切り行はデータ行番号を消費しない
+      if (cells === null) continue;
+      if (!blockHasHeader) {
+        blockHasHeader = true;
+        tableIndex += 1;
+        alternativeTableCount += 1;
+        headerCells = cells;
+        tableSummary = buildTableSummary(cells);
+        rowNumber = 0;
+      } else {
+        rowNumber += 1;
+      }
+      const anchor: SectionAnchor = {
+        label: "",
+        kind: "table-row",
+        anchorLine: i + 1,
+        tableIndex,
+        rowNumber,
+        tableSummary,
+        cells: cells.map((cell, ci) => ({
+          start: cell.start,
+          end: cell.end,
+          header: normalizeCellForLabel(headerCells[ci]?.text ?? ""),
+        })),
+      };
+      anchor.label = formatTableRowLabel(anchor, null);
+      anchors[i] = anchor;
+      alternativeAnchorLineCount += 1;
+    }
+  }
+
+  return { anchors, distinctHeadingAnchors, alternativeAnchorLineCount, alternativeTableCount };
 }
+
+/** 行(0-based index)ごとの章節アンカーを返す。要素数は content.split("\n").length と一致する。 */
+export function resolveSectionAnchors(content: string): SectionAnchor[] {
+  return resolveSectionAnchorsDetailed(content).anchors;
+}
+
+/**
+ * 行内オフセットから列位置まで解決したラベルを返す。
+ * table-row 以外・オフセットがセル外なら anchor.label をそのまま返す。
+ */
+export function anchorLabelAt(anchor: SectionAnchor, offsetInLine: number): string {
+  if (anchor.kind !== "table-row" || anchor.cells === undefined) return anchor.label;
+  const index = anchor.cells.findIndex(
+    (cell) => offsetInLine >= cell.start && offsetInLine < cell.end
+  );
+  if (index < 0) return anchor.label;
+  return formatTableRowLabel(anchor, index);
+}
+
+const FALLBACK_ANCHOR: SectionAnchor = { label: NO_HEADING_LABEL, kind: "none" };
 
 interface RawIdMatch {
   id: string;
@@ -207,14 +435,14 @@ export function extractIdOccurrences(
 
   for (const doc of documents) {
     const lines = doc.content.split("\n");
-    const headingPerLine = headingsPerLine(doc.content);
+    const anchors = resolveSectionAnchors(doc.content);
     const headingLineIndexSet = new Set(parseHeadings(doc.content).map((h) => h.lineIndex));
     lines.forEach((line, lineIndex) => {
       const matches = findRawIdMatches(line, patterns, options);
       if (matches.length === 0) return;
       const leadMatch = LEADING_MARKER_REGEX.exec(line);
       const leadPos = leadMatch ? leadMatch[0].length : 0;
-      const heading = headingPerLine[lineIndex] ?? "(見出しなし)";
+      const anchor = anchors[lineIndex] ?? FALLBACK_ANCHOR;
       const lineText = line.trim();
       const isToc = isTableOfContentsLine(line);
       const isHeadingLine = headingLineIndexSet.has(lineIndex);
@@ -232,7 +460,7 @@ export function extractIdOccurrences(
           numberPart: match.numberPart,
           document: doc.name,
           lineIndex,
-          heading,
+          heading: anchorLabelAt(anchor, match.start),
           lineText,
           role,
           kind: match.kind,
@@ -545,13 +773,16 @@ export function findAmbiguousTerms(
     const byHeading: { document: string; heading: string; count: number }[] = [];
     for (const doc of documents) {
       const lines = doc.content.split("\n");
-      const headingPerLine = headingsPerLine(doc.content);
+      const anchors = resolveSectionAnchors(doc.content);
       const localOccurrences: { heading: string }[] = [];
       lines.forEach((line, lineIndex) => {
-        const matches = line.match(regex);
-        if (!matches) return;
-        for (let i = 0; i < matches.length; i++) {
-          localOccurrences.push({ heading: headingPerLine[lineIndex] ?? "(見出しなし)" });
+        const anchor = anchors[lineIndex] ?? FALLBACK_ANCHOR;
+        // regex は用語ごとに1個を使い回すため、行単位で lastIndex を明示リセットする。
+        regex.lastIndex = 0;
+        let m: RegExpExecArray | null;
+        while ((m = regex.exec(line)) !== null) {
+          localOccurrences.push({ heading: anchorLabelAt(anchor, m.index) });
+          if (m[0].length === 0) regex.lastIndex++;
         }
       });
       const grouped = groupByHeading(localOccurrences);
@@ -611,8 +842,9 @@ export function extractQuantityExpressions(
 
   for (const doc of documents) {
     const lines = doc.content.split("\n");
-    const headingPerLine = headingsPerLine(doc.content);
+    const anchors = resolveSectionAnchors(doc.content);
     lines.forEach((line, lineIndex) => {
+      const anchor = anchors[lineIndex] ?? FALLBACK_ANCHOR;
       const occupied: [number, number][] = [];
       for (const { kind, regex } of QUANTITY_KIND_PATTERNS) {
         regex.lastIndex = 0;
@@ -631,7 +863,7 @@ export function extractQuantityExpressions(
             kind,
             document: doc.name,
             lineIndex,
-            heading: headingPerLine[lineIndex] ?? "(見出しなし)",
+            heading: anchorLabelAt(anchor, start),
             hasBoundaryWord: BOUNDARY_WORD_REGEX.test(m[0]),
           });
         }

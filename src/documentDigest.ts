@@ -2,6 +2,8 @@ import { escapeRegExp, parseHeadings } from "./tools/reviewTestPlan.js";
 import {
   extractIdOccurrences,
   extractQuantityExpressions,
+  parsePipeTableRow,
+  resolveSectionAnchorsDetailed,
   type TestBasisAnalysisOptions,
 } from "./testBasisAnalysis.js";
 import { countBidiControls, stripBidiControls } from "./groundingNormalization.js";
@@ -52,31 +54,14 @@ export function formatPercent(count: number, total: number): string {
   return String(Math.round((count * 1000) / total) / 10);
 }
 
-const TABLE_ROW_SEPARATOR_PATTERN = /^\|[\s:|-]+\|$/;
 const ISOLATED_NUMERIC_CELL_PATTERN = /^[0-9０-９]{2,}$/;
 const BROKEN_TABLE_CELL_SUFFIX_PATTERN = /(、|[をにはがのでとへも]|して|され|および)$/;
-
-/** 直前が \\ でない | を区切りとして分割する（escapeCell と対称）。 */
-function splitByUnescapedPipe(line: string): string[] {
-  const parts: string[] = [];
-  let current = "";
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === "|" && line[i - 1] !== "\\") {
-      parts.push(current);
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  parts.push(current);
-  return parts;
-}
 
 /**
  * 表行のセルを抽出する。行単位で判定し、入力を破壊しない。
  * 1) trim 済みの行がパイプ表行（"|"で始まり"|"で終わり、区切り行でない）なら、
  *    直前が \\ でない | で分割し、先頭・末尾の空要素を除いた分割結果を採用（要素2件以上のときのみ）。
+ *    判定・分割は testBasisAnalysis.parsePipeTableRow() に集約している（章節の代替アンカーと同一規約）。
  * 2) そうでない行は、2個以上の連続空白（全角空白含む）で分割したセグメントが3件以上のとき
  *    レイアウト抽出表行として採用。
  * 3) 各セルを trim し、空文字セルを除いて返す。
@@ -89,12 +74,9 @@ export function extractTableCells(content: string): string[] {
     if (line === "") continue;
 
     let rowCells: string[] | null = null;
-    if (line.startsWith("|") && line.endsWith("|") && !TABLE_ROW_SEPARATOR_PATTERN.test(line)) {
-      const parts = splitByUnescapedPipe(line);
-      const inner = parts.slice(1, -1);
-      if (inner.length >= 2) {
-        rowCells = inner;
-      }
+    const pipeCells = parsePipeTableRow(line);
+    if (pipeCells !== null) {
+      rowCells = pipeCells.map((cell) => cell.text);
     }
     if (rowCells === null) {
       const segments = line.split(/\s{2,}|　+/).filter((s) => s !== "");
@@ -209,11 +191,19 @@ export function buildDocumentDigests(
         if (matches) otherPrefixReferenceCount += matches.length;
       }
     }
+    const headingCount = parseHeadings(doc.content).length;
+    const anchorResolution = resolveSectionAnchorsDetailed(doc.content);
+    const anchorMode: "heading" | "alternative" | "none" =
+      anchorResolution.alternativeAnchorLineCount > 0
+        ? "alternative"
+        : headingCount > 0
+          ? "heading"
+          : "none";
     return {
       document: doc.name,
       charCount: doc.content.length,
       lineCount: doc.content.split("\n").length,
-      headingCount: parseHeadings(doc.content).length,
+      headingCount,
       idCount: occurrences.length,
       definedIdCount: definitions.length,
       tocIdCount,
@@ -224,6 +214,12 @@ export function buildDocumentDigests(
       })),
       otherPrefixReferenceCount,
       inputQuality: computeInputQualityMetrics(rawContent),
+      sectionAnchor: {
+        mode: anchorMode,
+        distinctHeadingAnchors: anchorResolution.distinctHeadingAnchors,
+        alternativeAnchorLineCount: anchorResolution.alternativeAnchorLineCount,
+        alternativeTableCount: anchorResolution.alternativeTableCount,
+      },
     };
   });
 }
@@ -412,6 +408,26 @@ export function findDocumentDigestFindings(rows: DocumentDigestRow[]): DocumentD
     }
   }
 
+  // 代替アンカー（パイプ表の行アンカー）を実際に使った文書だけ、その事実と解決方式を明示する。
+  // 既存指摘の順序を変えないため、専用ループを末尾に置く。
+  for (const row of rows) {
+    const anchor = row.sectionAnchor;
+    if (anchor.mode !== "alternative") continue;
+    findings.push({
+      document: row.document,
+      kind: "alternative-section-anchor",
+      severity: "info",
+      detail:
+        `見出しによる章節解決が退化している（文書全体で章節ラベルが${formatCount(
+          anchor.distinctHeadingAnchors
+        )}種類・${formatCount(row.charCount)}字）ため、` +
+        `代替アンカー（パイプ表の行アンカー: 表見出し行の要約＋データ行番号＋列＋行番号）で章節を解決した。` +
+        `対象行${formatCount(anchor.alternativeAnchorLineCount)}行・表${formatCount(
+          anchor.alternativeTableCount
+        )}件。見出しもパイプ表も無い箇所は「(見出しなし)」のまま残す。`,
+    });
+  }
+
   return findings;
 }
 
@@ -427,6 +443,9 @@ const IQC_FINDING_KINDS: DocumentDigestFinding["kind"][] = [
 
 const IQC_NOTE =
   "- [IQC] 入力品質の指摘は投入テキストの変換品質に関する指標であり、テストベース仕様そのものの欠陥ではない。原本から再変換したテキストで再実行すること。";
+
+const ALT_ANCHOR_NOTE =
+  "- [代替アンカー] 章節が「[代替アンカー:表行] …」形式のラベルになっている指摘は、見出しではなくパイプ表の行位置で解決したものである。原文へはラベル末尾の行番号と表の行・列で逆引きすること。";
 
 export function renderDocumentDigestLines(
   rows: DocumentDigestRow[],
@@ -457,6 +476,9 @@ export function renderDocumentDigestLines(
   }
   if (findings.some((f) => IQC_FINDING_KINDS.includes(f.kind))) {
     lines.push(IQC_NOTE);
+  }
+  if (findings.some((f) => f.kind === "alternative-section-anchor")) {
+    lines.push(ALT_ANCHOR_NOTE);
   }
   lines.push(DIGEST_NOTE);
   return lines;

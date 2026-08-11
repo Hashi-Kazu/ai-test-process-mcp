@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  ALT_ANCHOR_MIN_CHARS,
   DEFAULT_ID_PATTERN_SOURCE,
   analyzePrefixes,
+  anchorLabelAt,
+  parsePipeTableRow,
+  resolveSectionAnchors,
+  resolveSectionAnchorsDetailed,
   buildRequirementSourceRefs,
   extractIdOccurrences,
   extractQuantityExpressions,
@@ -650,5 +655,297 @@ describe("formatSourceCitation", () => {
 
   it("formats a single-line citation and falls back to document when label is missing", () => {
     expect(formatSourceCitation({ document: "doc.md", startLine: 10 })).toBe("(doc.md, line 10)");
+  });
+});
+
+// --- 章節アンカー解決器（見出し退化時の代替アンカー） ---
+
+/** 見出し0件・パイプ表0件の大きな本文（pdftotext -layout 出力の模擬。連続空白区切りの行を含む）。 */
+function noStructureBody(): string {
+  const lines: string[] = ["項番   区分   内容"];
+  for (let i = 0; i < 60; i++) {
+    lines.push(`本文${i}の説明として必要な記述をここに続ける。適切な運用を前提とする。`);
+  }
+  return lines.join("\n");
+}
+
+/** content を target 文字にそろえる（末尾へ独立した本文行を足すのでパイプ表・見出しの構造は変えない）。 */
+function padTo(content: string, target: number): string {
+  return `${content}\n${"あ".repeat(target - content.length - 1)}`;
+}
+
+const PIPE_TABLE_LINES = [
+  "| 改定後 | 現行 |",
+  "| --- | --- |",
+  "| 変更後の記述である。 | 変更前の記述である。 |",
+];
+
+describe("parsePipeTableRow", () => {
+  it("returns inner cells with raw-line offsets (leading whitespace included)", () => {
+    const line = "  | A | B |";
+    const cells = parsePipeTableRow(line);
+    expect(cells).not.toBeNull();
+    expect(cells!.map((c) => c.text)).toEqual([" A ", " B "]);
+    for (const cell of cells!) {
+      expect(line.slice(cell.start, cell.end)).toBe(cell.text);
+    }
+  });
+
+  it("returns null for a separator row, a single-cell row and a non-pipe row", () => {
+    expect(parsePipeTableRow("| --- | --- |")).toBeNull();
+    expect(parsePipeTableRow("|:---|---:|")).toBeNull();
+    expect(parsePipeTableRow("| 単独セル |")).toBeNull();
+    expect(parsePipeTableRow("項番   区分   内容")).toBeNull();
+    expect(parsePipeTableRow("")).toBeNull();
+  });
+
+  it("does not split on an escaped pipe", () => {
+    const cells = parsePipeTableRow("| A\\|B | C |");
+    expect(cells!.map((c) => c.text)).toEqual([" A\\|B ", " C "]);
+  });
+});
+
+describe("resolveSectionAnchors (見出し0件・パイプ表0件の文書は現状維持)", () => {
+  it("keeps every line as (見出しなし) for a 2000+ char document without headings and pipe tables", () => {
+    const content = noStructureBody();
+    expect(content.length).toBeGreaterThanOrEqual(ALT_ANCHOR_MIN_CHARS);
+    const anchors = resolveSectionAnchors(content);
+    expect(anchors).toHaveLength(content.split("\n").length);
+    for (const anchor of anchors) {
+      expect(anchor).toEqual({ label: "(見出しなし)", kind: "none" });
+    }
+  });
+
+  it("does not use layout-extracted (whitespace separated) rows as anchors", () => {
+    const detailed = resolveSectionAnchorsDetailed(noStructureBody());
+    expect(detailed.alternativeAnchorLineCount).toBe(0);
+    expect(detailed.alternativeTableCount).toBe(0);
+    expect(detailed.distinctHeadingAnchors).toBe(1);
+  });
+
+  it("keeps all findings of findAmbiguousTerms under (見出しなし) for such a document", () => {
+    const findings = findAmbiguousTerms([{ name: "pdf.txt", content: noStructureBody() }]);
+    expect(findings.length).toBeGreaterThan(0);
+    for (const finding of findings) {
+      for (const group of finding.byHeading) {
+        expect(group.heading).toBe("(見出しなし)");
+      }
+    }
+  });
+});
+
+describe("resolveSectionAnchors (退化判定の境界条件)", () => {
+  it("does not switch to alternative anchors below ALT_ANCHOR_MIN_CHARS (1999 chars)", () => {
+    const content = padTo(PIPE_TABLE_LINES.join("\n"), ALT_ANCHOR_MIN_CHARS - 1);
+    expect(content.length).toBe(ALT_ANCHOR_MIN_CHARS - 1);
+    const anchors = resolveSectionAnchors(content);
+    for (const anchor of anchors) {
+      expect(anchor).toEqual({ label: "(見出しなし)", kind: "none" });
+    }
+  });
+
+  it("switches pipe table rows to table-row anchors at exactly ALT_ANCHOR_MIN_CHARS (2000 chars)", () => {
+    const content = padTo(PIPE_TABLE_LINES.join("\n"), ALT_ANCHOR_MIN_CHARS);
+    expect(content.length).toBe(ALT_ANCHOR_MIN_CHARS);
+    const anchors = resolveSectionAnchors(content);
+    expect(anchors[0].kind).toBe("table-row");
+    expect(anchors[0].label).toBe("[代替アンカー:表行] 表「改定後 / 現行」見出し行(行1)");
+    expect(anchors[1].kind).toBe("none"); // 区切り行はアンカーを持たない
+    expect(anchors[2].kind).toBe("table-row");
+    expect(anchors[2].label).toBe("[代替アンカー:表行] 表「改定後 / 現行」第1行(行3)");
+  });
+
+  it("switches to alternative anchors when the only heading label is a real heading", () => {
+    const content = padTo(["# 新旧対照表", ...PIPE_TABLE_LINES].join("\n"), ALT_ANCHOR_MIN_CHARS);
+    const detailed = resolveSectionAnchorsDetailed(content);
+    expect(detailed.distinctHeadingAnchors).toBe(1);
+    expect(detailed.alternativeAnchorLineCount).toBe(2);
+    expect(detailed.alternativeTableCount).toBe(1);
+    // 見出し行そのものは従来どおり見出しラベルのまま
+    expect(detailed.anchors[0]).toEqual({ label: "新旧対照表", kind: "heading", anchorLine: 1 });
+    expect(detailed.anchors[1].kind).toBe("table-row");
+  });
+
+  it("never emits alternative anchors when heading labels are discriminative (2+ distinct)", () => {
+    const content = padTo(
+      ["# 第1章", ...PIPE_TABLE_LINES, "# 第2章", "本文である。"].join("\n"),
+      ALT_ANCHOR_MIN_CHARS + 500
+    );
+    const detailed = resolveSectionAnchorsDetailed(content);
+    expect(detailed.distinctHeadingAnchors).toBeGreaterThanOrEqual(2);
+    expect(detailed.alternativeAnchorLineCount).toBe(0);
+    expect(detailed.anchors.every((a) => !a.label.startsWith("[代替アンカー"))).toBe(true);
+    expect(detailed.anchors[1]).toEqual({ label: "第1章", kind: "heading", anchorLine: 1 });
+  });
+});
+
+describe("resolveSectionAnchors (アンカー構造)", () => {
+  const twoTables = [
+    "| 改定後 | 現行 |",
+    "| --- | --- |",
+    "| 変更後1 | 変更前1 |",
+    "| 変更後2 | 変更前2 |",
+    "本文の区切り。",
+    "| 項目 | 値 |",
+    "| 追加項目 | 100件以上 |",
+  ];
+
+  it("numbers tables from 1 and restarts row numbers per table without consuming separator rows", () => {
+    const content = padTo(twoTables.join("\n"), ALT_ANCHOR_MIN_CHARS);
+    const anchors = resolveSectionAnchors(content);
+    // 末尾は padTo が足した本文行
+    expect(anchors.map((a) => a.tableIndex)).toEqual([1, undefined, 1, 1, undefined, 2, 2, undefined]);
+    expect(anchors.map((a) => a.rowNumber)).toEqual([0, undefined, 1, 2, undefined, 0, 1, undefined]);
+    expect(anchors.map((a) => a.anchorLine)).toEqual([1, undefined, 3, 4, undefined, 6, 7, undefined]);
+    expect(anchors[5].tableSummary).toBe("項目 / 値");
+    expect(anchors[6].label).toBe("[代替アンカー:表行] 表「項目 / 値」第1行(行7)");
+    const detailed = resolveSectionAnchorsDetailed(content);
+    expect(detailed.alternativeTableCount).toBe(2);
+    expect(detailed.alternativeAnchorLineCount).toBe(5);
+  });
+
+  it("summarizes at most the first 3 header cells and skips empty ones", () => {
+    const content = padTo(
+      ["| A | B | C | D |", "| 1 | 2 | 3 | 4 |", "本文。", "|  |  |  | 値 |", "| x | y | z | w |"].join(
+        "\n"
+      ),
+      ALT_ANCHOR_MIN_CHARS
+    );
+    const anchors = resolveSectionAnchors(content);
+    expect(anchors[0].tableSummary).toBe("A / B / C");
+    expect(anchors[3].tableSummary).toBe("値");
+    expect(anchors[4].label).toBe("[代替アンカー:表行] 表「値」第1行(行5)");
+    // 空セルのヘッダは列ラベルから「」を落とす
+    const cells = anchors[4].cells as { start: number; header: string }[];
+    expect(anchorLabelAt(anchors[4], cells[0].start + 1)).toBe(
+      "[代替アンカー:表行] 表「値」第1行 第1列(行5)"
+    );
+  });
+
+  it("truncates each header cell at 10 chars and keeps the summary within 40 chars", () => {
+    const long = "あいうえおかきくけこさしすせそ";
+    const content = padTo(
+      [`| ${long}1 | ${long}2 | ${long}3 | ${long}4 |`, "| a | b | c | d |"].join("\n"),
+      ALT_ANCHOR_MIN_CHARS
+    );
+    const anchors = resolveSectionAnchors(content);
+    const summary = anchors[0].tableSummary as string;
+    expect(summary).toBe("あいうえおかきくけこ… / あいうえおかきくけこ… / あいうえおかきくけこ…");
+    expect(summary.length).toBeLessThanOrEqual(40);
+  });
+
+  it("collapses consecutive whitespace inside header cells", () => {
+    const content = padTo(
+      ["| 改定  後　　版 | 現行 |", "| a | b |"].join("\n"),
+      ALT_ANCHOR_MIN_CHARS
+    );
+    const anchors = resolveSectionAnchors(content);
+    expect(anchors[0].tableSummary).toBe("改定 後 版 / 現行");
+  });
+
+  it("never puts a pipe or a newline into the label (escaped pipes become /)", () => {
+    const content = padTo(
+      ["| 改定\\|後 | 現行 |", "| 変更後 | 変更前 |"].join("\n"),
+      ALT_ANCHOR_MIN_CHARS
+    );
+    const anchors = resolveSectionAnchors(content);
+    expect(anchors[0].tableSummary).toBe("改定/後 / 現行");
+    for (const anchor of anchors) {
+      expect(anchor.label).not.toContain("|");
+      expect(anchor.label).not.toContain("\n");
+    }
+    expect(anchorLabelAt(anchors[1], (anchors[1].cells as { start: number }[])[0].start + 1)).toBe(
+      "[代替アンカー:表行] 表「改定/後 / 現行」第1行 第1列「改定/後」(行2)"
+    );
+  });
+});
+
+describe("anchorLabelAt", () => {
+  const content = padTo(
+    ["| 改定後 |  | 現行 |", "| --- | --- | --- |", "| 変更後 | 補足 | 変更前 |"].join("\n"),
+    ALT_ANCHOR_MIN_CHARS
+  );
+  const anchors = resolveSectionAnchors(content);
+  const dataAnchor = anchors[2];
+
+  it("inserts the column number and header for an offset inside a cell", () => {
+    const cells = dataAnchor.cells as { start: number; end: number; header: string }[];
+    expect(anchorLabelAt(dataAnchor, cells[0].start + 1)).toBe(
+      "[代替アンカー:表行] 表「改定後 / 現行」第1行 第1列「改定後」(行3)"
+    );
+    expect(anchorLabelAt(dataAnchor, cells[2].start + 1)).toBe(
+      "[代替アンカー:表行] 表「改定後 / 現行」第1行 第3列「現行」(行3)"
+    );
+  });
+
+  it("omits the header quotes when the header cell is empty", () => {
+    const cells = dataAnchor.cells as { start: number; end: number; header: string }[];
+    expect(anchorLabelAt(dataAnchor, cells[1].start + 1)).toBe(
+      "[代替アンカー:表行] 表「改定後 / 現行」第1行 第2列(行3)"
+    );
+  });
+
+  it("returns the plain label for an offset outside every cell and for non table-row anchors", () => {
+    expect(anchorLabelAt(dataAnchor, 0)).toBe(dataAnchor.label);
+    expect(anchorLabelAt(dataAnchor, 10_000)).toBe(dataAnchor.label);
+    expect(anchorLabelAt({ label: "3.1 概要", kind: "heading", anchorLine: 5 }, 3)).toBe("3.1 概要");
+    expect(anchorLabelAt({ label: "(見出しなし)", kind: "none" }, 0)).toBe("(見出しなし)");
+  });
+});
+
+describe("章節解決の一本化（ID・数値・曖昧語）", () => {
+  const content = padTo(
+    ["| 改定後 | 現行 |", "| --- | --- |", "| EH-100 は 60人以下 とする。 | EH-099 は 50人以下 とする。 |"].join(
+      "\n"
+    ),
+    ALT_ANCHOR_MIN_CHARS
+  );
+  const documents: TestBasisDocument[] = [{ name: "新旧対照表", content }];
+
+  it("resolves the heading of each id occurrence per match position", () => {
+    const occurrences = extractIdOccurrences(documents);
+    const eh100 = occurrences.find((o) => o.id === "EH-100");
+    const eh099 = occurrences.find((o) => o.id === "EH-099");
+    expect(eh100?.heading).toBe("[代替アンカー:表行] 表「改定後 / 現行」第1行 第1列「改定後」(行3)");
+    expect(eh099?.heading).toBe("[代替アンカー:表行] 表「改定後 / 現行」第1行 第2列「現行」(行3)");
+  });
+
+  it("resolves the heading of quantity expressions per match position", () => {
+    const quantities = extractQuantityExpressions(documents);
+    const headings = quantities.map((q) => q.heading);
+    expect(headings).toContain("[代替アンカー:表行] 表「改定後 / 現行」第1行 第1列「改定後」(行3)");
+    expect(headings).toContain("[代替アンカー:表行] 表「改定後 / 現行」第1行 第2列「現行」(行3)");
+  });
+
+  it("keeps ambiguous term counts identical when several matches share one line", () => {
+    const line = "適切な対応を行い、適切な記録を残し、不適切な処理は行わない。";
+    const findings = findAmbiguousTerms([{ name: "doc.md", content: `# 概要\n${line}` }]);
+    const finding = findings.find((f) => f.term === "適切な");
+    expect(finding?.total).toBe(2); // 不適切な は lookbehind で除外
+    expect(finding?.byHeading).toEqual([{ document: "doc.md", heading: "概要", count: 2 }]);
+  });
+
+  it("groups ambiguous terms per resolved column when the alternative anchor is used", () => {
+    const table = padTo(
+      ["| 改定後 | 現行 |", "| 適切な運用とする。 | 適宜運用する。 |"].join("\n"),
+      ALT_ANCHOR_MIN_CHARS
+    );
+    const findings = findAmbiguousTerms([{ name: "新旧対照表", content: table }]);
+    const teki = findings.find((f) => f.term === "適切な");
+    expect(teki?.byHeading).toEqual([
+      {
+        document: "新旧対照表",
+        heading: "[代替アンカー:表行] 表「改定後 / 現行」第1行 第1列「改定後」(行2)",
+        count: 1,
+      },
+    ]);
+    const tekigi = findings.find((f) => f.term === "適宜");
+    expect(tekigi?.byHeading).toEqual([
+      {
+        document: "新旧対照表",
+        heading: "[代替アンカー:表行] 表「改定後 / 現行」第1行 第2列「現行」(行2)",
+        count: 1,
+      },
+    ]);
   });
 });
