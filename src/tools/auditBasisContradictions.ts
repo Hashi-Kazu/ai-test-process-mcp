@@ -202,6 +202,46 @@ export function renderBasisContradictionAudit(
       excluded.length
     }件(NF-01:${excludedByRule["NF-01"]} / NF-02:${excludedByRule["NF-02"]} / NF-03:${excludedByRule["NF-03"]} / NF-04:${excludedByRule["NF-04"]})`
   );
+
+  const ID_DEPENDENT_CHECKS: ContradictionCheckId[] = ["BC-01", "BC-07"];
+  const UI_DEPENDENT_CHECKS: ContradictionCheckId[] = ["BC-02", "BC-03", "BC-06"];
+  const TRANSITION_DEPENDENT_CHECKS: ContradictionCheckId[] = ["BC-04", "BC-05", "BC-10"];
+
+  const idCount = occurrences.length;
+  const uiCount = uiElements.length;
+  const transitionCount = transitions.length;
+
+  if (idCount === 0 && uiCount === 0 && transitionCount === 0) {
+    lineOut.push(
+      `- 検査不能(要確認)の区分: ${CHECK_IDS.join(
+        ", "
+      )}（ID出現・UI要素・遷移がいずれも0件のため。未指摘は合格を意味しない）`
+    );
+  } else {
+    const unavailable: ContradictionCheckId[] = [];
+    const reasons: string[] = [];
+    if (idCount === 0) {
+      unavailable.push(...ID_DEPENDENT_CHECKS);
+      reasons.push("ID出現");
+    }
+    if (uiCount === 0) {
+      unavailable.push(...UI_DEPENDENT_CHECKS);
+      reasons.push("UI要素");
+    }
+    if (transitionCount === 0) {
+      unavailable.push(...TRANSITION_DEPENDENT_CHECKS);
+      reasons.push("遷移");
+    }
+    if (unavailable.length > 0) {
+      const unavailableSet = new Set(unavailable);
+      const orderedUnavailable = CHECK_IDS.filter((id) => unavailableSet.has(id));
+      lineOut.push(
+        `- 検査不能(要確認)の区分: ${orderedUnavailable.join(", ")}（${reasons.join(
+          "・"
+        )}が0件のため。未指摘は合格を意味しない）`
+      );
+    }
+  }
   lineOut.push("");
 
   lineOut.push("## 3. 判定区分と対処指針");

@@ -144,6 +144,42 @@ describe("renderBasisContradictionAudit 抽出品質フィルタの自己申告"
   });
 });
 
+describe("renderBasisContradictionAudit 検査不能区分の明示", () => {
+  it("ID出現・UI要素・遷移がいずれも0件のとき、BC-01〜BC-10すべてが検査不能と明示される", () => {
+    const markdown = renderBasisContradictionAudit({
+      documents: [
+        { name: "実務文書A", content: "特に矛盾のない普通の文章です。" },
+        { name: "実務文書B", content: "こちらも普通の文章です。" },
+      ],
+    });
+    const summarySection = markdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    expect(summarySection).toContain(
+      "検査不能(要確認)の区分: BC-01, BC-02, BC-03, BC-04, BC-05, BC-06, BC-07, BC-08, BC-09, BC-10"
+    );
+    expect(summarySection).toContain("ID出現・UI要素・遷移がいずれも0件のため");
+    expect(summarySection).toContain("未指摘は合格を意味しない");
+  });
+
+  it("UI要素と遷移が0件で ID出現のみある場合、該当区分のみが列挙される", () => {
+    const markdown = renderBasisContradictionAudit({
+      documents: [{ name: "doc", content: "W-008-04 予約詳細画面" }],
+    });
+    const summarySection = markdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    const unavailableLine = summarySection.split("\n").find((l) => l.startsWith("- 検査不能"));
+    expect(unavailableLine).toContain("検査不能(要確認)の区分: BC-02, BC-03, BC-04, BC-05, BC-06, BC-10");
+    expect(unavailableLine).not.toContain("BC-01");
+    expect(unavailableLine).not.toContain("BC-07");
+    expect(unavailableLine).not.toContain("BC-08");
+    expect(unavailableLine).not.toContain("BC-09");
+  });
+
+  it("ID出現・UI要素・遷移がいずれも非ゼロなら検査不能行は出ない", () => {
+    const markdown = renderBasisContradictionAudit(baseInput);
+    const summarySection = markdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    expect(summarySection).not.toContain("検査不能(要確認)の区分");
+  });
+});
+
 describe("renderBasisContradictionAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderBasisContradictionAudit(baseInput));
