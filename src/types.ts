@@ -3248,6 +3248,7 @@ export interface AuditBasisContradictionsInput {
   idPatterns?: string[];
   relativeTargetTerms?: string[];
   minConfidence?: ContradictionConfidence;
+  verbose?: boolean; // true=1.3/1.4の表と2章各検査節を全件列挙、false/省略=件数上限+省略件数の注記付き
 }
 
 export interface BasisContradictionCriteriaCategory {

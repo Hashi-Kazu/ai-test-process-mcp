@@ -25,6 +25,15 @@ import type {
   ContradictionPlace,
 } from "../types.js";
 
+/** 既定表示（verbose=false）で2.1〜2.10各節に列挙する候補行の上限。 */
+export const MAX_CANDIDATE_LINES_PER_CHECK = 15;
+/** 既定表示（verbose=false）で1候補あたりに表示する根拠位置の上限。 */
+export const MAX_PLACES_PER_CANDIDATE = 5;
+/** 既定表示（verbose=false）で1.3宣言カタログ突合表に表示する行数の上限。 */
+export const MAX_RECONCILIATION_ROWS = 20;
+/** 既定表示（verbose=false）で1.4改訂宣言反映状況表に表示する行数の上限。 */
+export const MAX_REVISION_ROWS = 20;
+
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
 }
@@ -33,14 +42,17 @@ function confidenceRank(c: ContradictionConfidence): number {
   return c === "high" ? 3 : c === "medium" ? 2 : 1;
 }
 
-function formatPlaces(places: ContradictionPlace[]): string {
-  return places.map((p) => `${p.document}:${p.lineIndex + 1}`).join(" / ");
+function formatPlaces(places: ContradictionPlace[], maxPlaces: number): string {
+  const shown = places.slice(0, maxPlaces);
+  const rest = places.length - shown.length;
+  const base = shown.map((p) => `${p.document}:${p.lineIndex + 1}`).join(" / ");
+  return rest > 0 ? `${base} / ほか${rest}箇所` : base;
 }
 
-function formatCandidateLine(c: BasisContradictionCandidate): string {
-  return `- [${c.confidence}] ${c.no} ${escapeCell(c.subject)}(${escapeCell(formatPlaces(c.places))}): ${escapeCell(
-    c.summary
-  )}`;
+function formatCandidateLine(c: BasisContradictionCandidate, maxPlaces: number): string {
+  return `- [${c.confidence}] ${c.no} ${escapeCell(c.subject)}(${escapeCell(
+    formatPlaces(c.places, maxPlaces)
+  )}): ${escapeCell(c.summary)}`;
 }
 
 const CHECK_IDS: ContradictionCheckId[] = [
@@ -74,6 +86,7 @@ export function renderBasisContradictionAudit(
   criteria: BasisContradictionCriteria = basisContradictionCriteria
 ): string {
   const { declaredEntities, knownResolved, idPatterns, relativeTargetTerms, minConfidence } = input;
+  const verbose = input.verbose ?? false;
   const documents = sanitizeTestBasisDocuments(input.documents);
   const options = { idPatterns, relativeTargetTerms };
 
@@ -101,6 +114,12 @@ export function renderBasisContradictionAudit(
   const lineOut: string[] = [];
   lineOut.push("# テストベース仕様矛盾監査結果");
   lineOut.push("");
+  if (!verbose) {
+    lineOut.push(
+      "既定(verbose未指定/false)は要約表示。1.3/1.4の表と2章の各検査節に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
+    );
+    lineOut.push("");
+  }
 
   lineOut.push("## 1. 監査対象");
   lineOut.push("");
@@ -132,13 +151,31 @@ export function renderBasisContradictionAudit(
   if (reconciliationRows.length === 0) {
     lineOut.push("- declaredEntities が未指定のため、宣言カタログとの突合は本文の一覧表行からの自前抽出のみに基づく(照合対象なし)。");
   } else {
+    const RECONCILIATION_STATUSES = ["matched", "declared-only", "actual-only", "name-mismatch"] as const;
+    const reconciliationStatusCounts = RECONCILIATION_STATUSES.map(
+      (s) => [s, reconciliationRows.filter((r) => r.status === s).length] as const
+    );
+    lineOut.push(
+      `- 突合結果: 全${reconciliationRows.length}件（${reconciliationStatusCounts
+        .map(([s, n]) => `${s}:${n}`)
+        .join(" / ")}）`
+    );
+    const reconciliationRowsToShow = verbose
+      ? reconciliationRows
+      : reconciliationRows.slice(0, MAX_RECONCILIATION_ROWS);
     lineOut.push("| ID | 宣言名 | 実体名 | 状態 | 確信度 |");
     lineOut.push("| --- | --- | --- | --- | --- |");
-    for (const row of reconciliationRows) {
+    for (const row of reconciliationRowsToShow) {
       lineOut.push(
         `| ${escapeCell(row.id)} | ${escapeCell(row.declaredName ?? "-")} | ${escapeCell(
           row.actualName ?? "-"
         )} | ${row.status} | ${row.confidence} |`
+      );
+    }
+    const reconciliationOmitted = reconciliationRows.length - reconciliationRowsToShow.length;
+    if (reconciliationOmitted > 0) {
+      lineOut.push(
+        `- 宣言カタログとの突合: 全${reconciliationRows.length}件中 ${reconciliationRowsToShow.length}件を表示（${reconciliationOmitted}件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }
@@ -158,13 +195,29 @@ export function renderBasisContradictionAudit(
   if (revisionRows.length === 0) {
     lineOut.push("- 改訂宣言(旧値→新値の変更宣言)は検出されなかった。");
   } else {
+    const REVISION_STATUSES = ["residual", "resolved"] as const;
+    const revisionStatusCounts = REVISION_STATUSES.map(
+      (s) => [s, revisionRows.filter((r) => r.status === s).length] as const
+    );
+    lineOut.push(
+      `- 改訂反映状況: 全${revisionRows.length}件（${revisionStatusCounts
+        .map(([s, n]) => `${s}:${n}`)
+        .join(" / ")}）`
+    );
+    const revisionRowsToShow = verbose ? revisionRows : revisionRows.slice(0, MAX_REVISION_ROWS);
     lineOut.push("| 文書 | 行 | 版 | 日付 | 旧値 | 新値 | 状態 |");
     lineOut.push("| --- | --- | --- | --- | --- | --- | --- |");
-    for (const row of revisionRows) {
+    for (const row of revisionRowsToShow) {
       lineOut.push(
         `| ${escapeCell(row.document)} | ${row.lineIndex + 1} | ${escapeCell(row.version)} | ${escapeCell(
           row.date
         )} | ${escapeCell(row.beforeValue)} | ${escapeCell(row.afterValue)} | ${row.status} |`
+      );
+    }
+    const revisionOmitted = revisionRows.length - revisionRowsToShow.length;
+    if (revisionOmitted > 0) {
+      lineOut.push(
+        `- 改訂宣言の反映状況: 全${revisionRows.length}件中 ${revisionRowsToShow.length}件を表示（${revisionOmitted}件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }
@@ -184,7 +237,31 @@ export function renderBasisContradictionAudit(
     if (list.length === 0) {
       lineOut.push("- なし");
     } else {
-      for (const c of list) lineOut.push(formatCandidateLine(c));
+      const h = list.filter((c) => c.confidence === "high").length;
+      const m = list.filter((c) => c.confidence === "medium").length;
+      const l = list.filter((c) => c.confidence === "low").length;
+      lineOut.push(`- 該当 ${list.length}件（high:${h} / medium:${m} / low:${l}）`);
+
+      let shown: BasisContradictionCandidate[];
+      if (verbose || list.length <= MAX_CANDIDATE_LINES_PER_CHECK) {
+        shown = list;
+      } else {
+        const byConfidenceDesc = list
+          .map((c, idx) => ({ c, idx }))
+          .sort((a, b) => confidenceRank(b.c.confidence) - confidenceRank(a.c.confidence) || a.idx - b.idx)
+          .slice(0, MAX_CANDIDATE_LINES_PER_CHECK)
+          .sort((a, b) => a.idx - b.idx);
+        shown = byConfidenceDesc.map((e) => e.c);
+      }
+      const maxPlaces = verbose ? Infinity : MAX_PLACES_PER_CANDIDATE;
+      for (const c of shown) lineOut.push(formatCandidateLine(c, maxPlaces));
+      if (shown.length < list.length) {
+        lineOut.push(
+          `- ${CHECK_TITLES[id]}: 全${list.length}件中 ${shown.length}件を表示（${
+            list.length - shown.length
+          }件を省略）。全件は verbose: true で取得できる。`
+        );
+      }
     }
     lineOut.push("");
   });
@@ -387,6 +464,12 @@ export const auditBasisContradictionsInputShape = {
     .enum(["high", "medium", "low"])
     .optional()
     .describe("Minimum confidence of candidates to include in the output (default: low, i.e. all candidates)"),
+  verbose: z
+    .boolean()
+    .optional()
+    .describe(
+      "If false/omitted (default), sections 1.3/1.4 and each check section in chapter 2 are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
+    ),
 } as const;
 
 export function registerAuditBasisContradictionsTool(server: McpServer): void {

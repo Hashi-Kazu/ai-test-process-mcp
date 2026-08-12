@@ -181,6 +181,80 @@ describe("renderBasisContradictionAudit 検査不能区分の明示", () => {
   });
 });
 
+function buildLargeAuditInput(n: number): AuditBasisContradictionsInput {
+  const doc1Lines: string[] = [];
+  const doc2Lines: string[] = [];
+  const declaredEntities: NonNullable<AuditBasisContradictionsInput["declaredEntities"]> = [];
+  const revisionLines: string[] = [];
+  for (let i = 1; i <= n; i++) {
+    const id = `W-${String(i).padStart(4, "0")}-01`;
+    doc1Lines.push(`${id} 画面名称A${i}`);
+    doc2Lines.push(`${id} 画面名称B${i}`);
+    declaredEntities.push({ id, name: `宣言名称${i}` });
+    revisionLines.push(`2026/1/${(i % 28) + 1}V1.0.${i} 旧値${i}から新値${i}へ変更された`);
+  }
+  return {
+    documents: [
+      { name: "doc1", content: doc1Lines.join("\n") },
+      { name: "doc2", content: [...doc2Lines, ...revisionLines].join("\n") },
+    ],
+    declaredEntities,
+  };
+}
+
+describe("renderBasisContradictionAudit 件数上限つき既定出力(verbose)", () => {
+  const largeInput = buildLargeAuditInput(250);
+  const defaultMarkdown = renderBasisContradictionAudit(largeInput);
+  const verboseMarkdown = renderBasisContradictionAudit({ ...largeInput, verbose: true });
+
+  it("truncates default output below 40,000 chars while keeping every check section and summary counts", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+
+    for (const heading of [
+      "### 2.1 ",
+      "### 2.2 ",
+      "### 2.3 ",
+      "### 2.4 ",
+      "### 2.5 ",
+      "### 2.6 ",
+      "### 2.7 ",
+      "### 2.8 ",
+      "### 2.9 ",
+      "### 2.10 ",
+    ]) {
+      expect(defaultMarkdown).toContain(heading);
+    }
+
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(defaultMarkdown).toMatch(truncationLine);
+
+    const defaultSummary = defaultMarkdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    const verboseSummary = verboseMarkdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    expect(defaultSummary).toBe(verboseSummary);
+    for (const id of ["BC-01", "BC-02", "BC-03", "BC-04", "BC-05", "BC-06", "BC-07", "BC-08", "BC-09", "BC-10"]) {
+      expect(defaultSummary).toContain(`${id}:`);
+    }
+  });
+
+  it("verbose: true では打ち切り注記が出ず、候補行数が全件と一致する", () => {
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(verboseMarkdown).not.toMatch(truncationLine);
+    const section21 = verboseMarkdown.split("### 2.1 ")[1].split("### 2.2")[0];
+    expect((section21.match(/^- \[/gm) ?? []).length).toBe(250);
+  });
+
+  it("is deterministic across repeated calls", () => {
+    const first = renderBasisContradictionAudit(largeInput);
+    const second = renderBasisContradictionAudit(largeInput);
+    expect(first).toBe(second);
+  });
+
+  it("verbose未指定時のみ冒頭の要約表示に関する1行が出る", () => {
+    expect(defaultMarkdown).toContain("既定(verbose未指定/false)は要約表示。");
+    expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
+  });
+});
+
 describe("renderBasisContradictionAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderBasisContradictionAudit(baseInput));
