@@ -8,6 +8,7 @@ import {
   findUnresolvedReferences,
   type TestBasisAnalysisOptions,
 } from "./testBasisAnalysis.js";
+import { distinctInOrder, isSectionResolved } from "./findingPriority.js";
 import type {
   BoundaryValueMode,
   BoundaryVariableSpec,
@@ -453,6 +454,9 @@ export function buildDeterministicFindings(
         ? `${dup.id} が一覧と本文の両方に出現している（同一IDの再利用か、一覧＋詳細の正常な構造かを確認すること）`
         : `${dup.id} が複数箇所で定義されている。どちらが正か、採番の是正方針を確認したい`,
       assumption: isMedium ? "一覧＋詳細の正常な構造とみなす" : "先に定義されたIDを正とみなす",
+      impactedIds: [dup.id],
+      documents: distinctInOrder(dup.places.map((p) => p.document)),
+      sectionResolved: isSectionResolved(dup.places.map((p) => p.heading)),
     });
   }
 
@@ -467,6 +471,9 @@ export function buildDeterministicFindings(
       problem: `参照されている ${ref.id} の定義が見つからない。`,
       question: `参照されている ${ref.id} の定義が見つからない。定義文書の提供または参照の訂正を依頼したい`,
       assumption: "参照は誤記とみなし、該当箇所を無視する",
+      impactedIds: [ref.id],
+      documents: [ref.document],
+      sectionResolved: isSectionResolved([ref.heading]),
     });
   }
 
@@ -485,6 +492,9 @@ export function buildDeterministicFindings(
       )}）が検出された。`,
       question: `単位「${agg.unit}」の値が文書間で異なる（${agg.numbers.join(", ")}）。正しい値を確認したい`,
       assumption: "より新しい・より詳細な文書側の値を正とみなす",
+      impactedIds: [],
+      documents: agg.documents,
+      sectionResolved: isSectionResolved(agg.occurrences.map((o) => o.heading)),
     });
   }
 
@@ -501,6 +511,9 @@ export function buildDeterministicFindings(
       problem: `用語「${t.term}」が複数箇所で定義されている。`,
       question: `用語「${t.term}」の定義が複数存在する。どちらが正式な定義か確認したい`,
       assumption: "最初に定義された内容を正とみなす",
+      impactedIds: [],
+      documents: distinctInOrder([...t.definitions.map((d) => d.document), ...t.usageDocuments]),
+      sectionResolved: isSectionResolved(t.definitions.map((d) => d.heading)),
     });
   }
   for (const t of termFindings) {
@@ -515,6 +528,9 @@ export function buildDeterministicFindings(
       problem: `用語「${t.term}」の定義はあるが、本文では表記ゆれと思われる形で使用されている。`,
       question: `本文中の類似表記は「${t.term}」と同一の用語か確認したい`,
       assumption: "同一の用語として扱う",
+      impactedIds: [],
+      documents: distinctInOrder([...t.definitions.map((d) => d.document), ...t.usageDocuments]),
+      sectionResolved: isSectionResolved(t.definitions.map((d) => d.heading)),
     });
   }
   for (const t of termFindings) {
@@ -529,6 +545,9 @@ export function buildDeterministicFindings(
       problem: `用語「${t.term}」が定義されているが本文で使用されていない。`,
       question: `用語「${t.term}」は本文中で使用されているか確認したい`,
       assumption: "定義のみで実質不要な用語とみなす",
+      impactedIds: [],
+      documents: distinctInOrder(t.definitions.map((d) => d.document)),
+      sectionResolved: isSectionResolved(t.definitions.map((d) => d.heading)),
     });
   }
 
@@ -545,6 +564,9 @@ export function buildDeterministicFindings(
         problem: `「${f.term}」という未完成の注記がある（${h.count}件）。`,
         question: `「${f.term}」の箇所は今後補完される予定か、現時点の暫定内容を確認したい`,
         assumption: "現状の記載のみで確定とみなす",
+        impactedIds: [],
+        documents: [h.document],
+        sectionResolved: isSectionResolved([h.heading]),
       });
     }
   }
@@ -568,6 +590,9 @@ export function buildDeterministicFindings(
       problem: `「${entry.term}」の具体的な判定条件が本文から読み取れない。`,
       question: `「${entry.term}」の具体的な判定条件・数値を確認したい`,
       assumption: "文書中の一般的な用法どおりの意味とみなす",
+      impactedIds: [],
+      documents: [entry.document],
+      sectionResolved: isSectionResolved([entry.heading]),
     });
   }
 
@@ -584,6 +609,10 @@ export function buildDeterministicFindings(
       problem: issue.detail,
       question: `プレフィックス「${issue.prefixes.join(", ")}」について、ID付与規則の意図を確認したい`,
       assumption: "既存の付与規則を意図通りとみなし、指摘のみ記録する",
+      impactedIds: [],
+      documents: stat?.documents ?? [],
+      // 該当箇所が「(複数箇所)」で章節を特定できないため、章節解決は false。
+      sectionResolved: false,
     });
   }
 
@@ -598,6 +627,9 @@ export function buildDeterministicFindings(
       problem: `「${q.raw}」に境界の扱い（以上/以下/未満/超）が明記されていない。`,
       question: `「${q.raw}」について、境界の扱い(以上/以下/未満/超)を確認したい`,
       assumption: "以上（境界を含む）として扱う",
+      impactedIds: [],
+      documents: [q.document],
+      sectionResolved: isSectionResolved([q.heading]),
     });
   }
 

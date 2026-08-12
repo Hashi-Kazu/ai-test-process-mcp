@@ -16,6 +16,13 @@ import {
   summarizeContradictions,
 } from "../basisContradictionAnalysis.js";
 import { sanitizeTestBasisDocuments } from "../documentDigest.js";
+import {
+  distinctInOrder,
+  isSectionResolved,
+  renderFindingPrioritySection,
+  type FindingPriorityInput,
+  type FindingPrioritySeverity,
+} from "../findingPriority.js";
 import type {
   AuditBasisContradictionsInput,
   BasisContradictionCandidate,
@@ -116,7 +123,7 @@ export function renderBasisContradictionAudit(
   lineOut.push("");
   if (!verbose) {
     lineOut.push(
-      "既定(verbose未指定/false)は要約表示。1.3/1.4の表と2章の各検査節に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
+      "既定(verbose未指定/false)は要約表示。1.3/1.4の表と2章の各検査節・2.12の優先度一覧に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
     );
     lineOut.push("");
   }
@@ -333,6 +340,41 @@ export function renderBasisContradictionAudit(
   }
   lineOut.push("");
 
+  // --- 2.12 対処優先度順の候補一覧 ---
+  // 章節は places[].heading ではなく buildBasisLines の実体行から引く。
+  // BC-02/03/05/06/09/10 は候補構築時に heading="" を渡しており、実体を表さないため。
+  const headingByLineKey = new Map<string, string>();
+  for (const l of lines) headingByLineKey.set(`${l.document}\n${l.lineIndex}`, l.heading);
+
+  const severityByCheckId = new Map<string, FindingPrioritySeverity>(
+    criteria.categories.map((c) => [c.id, c.severity as FindingPrioritySeverity])
+  );
+  const priorityInputs: FindingPriorityInput[] = visible.map((c) => ({
+    id: c.no,
+    categoryId: c.checkId,
+    place: c.places[0]
+      ? `${c.places[0].document}:${c.places[0].lineIndex + 1} ${
+          headingByLineKey.get(`${c.places[0].document}\n${c.places[0].lineIndex}`) ?? ""
+        }`.trimEnd()
+      : "-",
+    severity: severityByCheckId.get(c.checkId) ?? "medium",
+    impactedIds: c.impactedIds ?? [],
+    documents: distinctInOrder(c.places.map((p) => p.document)),
+    sectionResolved: isSectionResolved(
+      c.places.map((p) => headingByLineKey.get(`${p.document}\n${p.lineIndex}`))
+    ),
+  }));
+
+  const prioritySection = renderFindingPrioritySection(
+    "2.12 対処優先度順の候補一覧",
+    "対処優先度順の候補一覧",
+    priorityInputs,
+    verbose
+  );
+  // 表の前に断定でないことの明示を1行入れる（見出し + 空行の直後）。
+  prioritySection.splice(2, 0, "- 本表は矛盾の断定ではなく、確認着手順の提示である。");
+  lineOut.push(...prioritySection);
+
   lineOut.push("## 3. 判定区分と対処指針");
   lineOut.push("");
   lineOut.push("| 区分ID | 区分 | 重大度 | 定義 | 対処 |");
@@ -468,7 +510,7 @@ export const auditBasisContradictionsInputShape = {
     .boolean()
     .optional()
     .describe(
-      "If false/omitted (default), sections 1.3/1.4 and each check section in chapter 2 are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
+      "If false/omitted (default), sections 1.3/1.4, each check section in chapter 2 and the 2.12 priority list are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
     ),
 } as const;
 

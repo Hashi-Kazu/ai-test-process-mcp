@@ -28,7 +28,17 @@ import {
   renderDocumentDigestLines,
   sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
-import type { AnalyzeRequirementsInput, QualityCharacteristicModel, ReviewSeverity } from "../types.js";
+import {
+  MAX_PRIORITIZED_FINDING_ROWS,
+  formatFindingPriorityBasis,
+  rankFindingPriorities,
+  renderFindingPriorityLegendLine,
+  renderFindingPriorityTruncationNote,
+  renderSeverityDivergenceLine,
+  type FindingPriorityInput,
+  type FindingPriorityResult,
+} from "../findingPriority.js";
+import type { AnalyzeRequirementsInput, QualityCharacteristicModel } from "../types.js";
 
 /** 既定表示（verbose=false）で 2.1節に列挙する ID重複行の上限。 */
 export const MAX_DUPLICATE_ID_LINES = 20;
@@ -36,10 +46,6 @@ export const MAX_DUPLICATE_ID_LINES = 20;
 export const MAX_UNRESOLVED_REFERENCE_LINES = 20;
 /** 既定表示（verbose=false）で 2.6節の表・JSONブロックに載せる根拠位置の上限。 */
 export const MAX_REQUIREMENT_SOURCE_REFS = 20;
-/** 既定表示（verbose=false）で 3章の指摘表に載せる行数の上限。 */
-export const MAX_FINDING_ROWS = 30;
-
-const SEVERITY_RANK: Record<ReviewSeverity, number> = { high: 0, medium: 1, low: 2 };
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
@@ -101,7 +107,7 @@ export function renderRequirementsAnalysis(
   );
   if (!verbose) {
     lines.push(
-      "既定では 2.1節のID重複・未解決参照、2.6節の根拠位置、3章の指摘表に件数上限を適用する。打ち切った箇所には全件数と省略件数を併記する。"
+      "既定では 2.1節のID重複・未解決参照、2.6節の根拠位置、3章の指摘表に件数上限を適用する。3章は対処優先度スコア降順に並べ替えたうえで打ち切り、打ち切った箇所には全件数と省略件数を併記する。"
     );
   }
   lines.push("");
@@ -344,33 +350,57 @@ export function renderRequirementsAnalysis(
     lines.push(`| ${escapeCell(def.level)} | ${escapeCell(def.description)} |`);
   }
   lines.push("");
-  const sortedFindings = verbose
+  // 対処優先度スコア（severity は判定区分の固定値のまま。実体因子から独立に算出する）
+  const priorityInputs: FindingPriorityInput[] = findings.map((f) => ({
+    id: f.id,
+    categoryId: f.kind,
+    place: f.place,
+    severity: f.severity,
+    impactedIds: f.impactedIds ?? [],
+    documents: f.documents ?? [],
+    sectionResolved: f.sectionResolved ?? false,
+  }));
+  const priorityResults = rankFindingPriorities(priorityInputs);
+  const priorityById = new Map<string, FindingPriorityResult>(priorityResults.map((r) => [r.id, r]));
+
+  const rankedToShow = priorityResults.slice(0, MAX_PRIORITIZED_FINDING_ROWS);
+  const findingsToShow = verbose
     ? findings
-    : [...findings].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
-  const findingsToShow = verbose ? sortedFindings : sortedFindings.slice(0, MAX_FINDING_ROWS);
+    : rankedToShow.map((r) => findings.find((f) => f.id === r.id)!);
   if (!verbose) {
     const highCount = findings.filter((f) => f.severity === "high").length;
     const mediumCount = findings.filter((f) => f.severity === "medium").length;
     const lowCount = findings.filter((f) => f.severity === "low").length;
     lines.push(
-      `- 指摘件数: 全${findings.length}件（severity内訳 high: ${highCount} / medium: ${mediumCount} / low: ${lowCount}）。severity降順で上位${findingsToShow.length}件を表示。`
+      `- 指摘件数: 全${findings.length}件（severity内訳 high: ${highCount} / medium: ${mediumCount} / low: ${lowCount}）。対処優先度スコア降順で上位${
+        findingsToShow.length
+      }件を表示（残り${findings.length - findingsToShow.length}件）。`
     );
+    lines.push(renderFindingPriorityLegendLine());
   }
-  lines.push("| 指摘ID | 種別 | 重大度 | 該当箇所 | 何が問題か | 確認質問文 | 暫定前提 |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- |");
+  lines.push(
+    "| 指摘ID | 種別 | 重大度 | 該当箇所 | 何が問題か | 確認質問文 | 暫定前提 | 優先度 | スコア | 算出根拠 |"
+  );
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  const maxNames = verbose ? Infinity : 3;
   for (const f of findingsToShow) {
+    const p = priorityById.get(f.id)!;
     lines.push(
       `| ${f.id} | ${f.kind} | ${f.severity} | ${escapeCell(f.place)} | ${escapeCell(f.problem)} | ${escapeCell(
         f.question
-      )} | ${escapeCell(f.assumption)} |`
+      )} | ${escapeCell(f.assumption)} | ${p.band} | ${p.score} | ${escapeCell(
+        formatFindingPriorityBasis(p, { maxNames })
+      )} |`
     );
   }
   lines.push("");
   if (!verbose && findings.length > findingsToShow.length) {
-    const omitted = findings.length - findingsToShow.length;
-    lines.push(
-      `- 指摘表: 全${findings.length}件中 ${findingsToShow.length}件を表示（${omitted}件を省略）。全件は verbose: true で取得できる。`
-    );
+    lines.push(renderFindingPriorityTruncationNote("指摘表", findings.length, findingsToShow.length));
+    lines.push("");
+  }
+  const divergenceLine = renderSeverityDivergenceLine(priorityResults);
+  if (divergenceLine) {
+    lines.push(divergenceLine);
     lines.push("");
   }
   lines.push(
@@ -571,7 +601,7 @@ export const analyzeRequirementsInputShape = {
     .boolean()
     .optional()
     .describe(
-      "If false/omitted (default), section 2.6 shows a per-prefix count summary and lists source references only for requirement IDs flagged as duplicate or unresolved-reference, capped at a fixed row limit; section 2.1's duplicate-ID and unresolved-reference listings and section 3's findings table are also capped at fixed row limits (findings sorted by severity descending), with every truncated place annotated with the total count, omitted count, and a note that `verbose: true` returns the full data. If true, lists every requirement-source reference in full and every finding in its original generation order, with no caps, no sorting, and no truncation notes (as in previous versions)."
+      "If false/omitted (default), section 2.6 shows a per-prefix count summary and lists source references only for requirement IDs flagged as duplicate or unresolved-reference, capped at a fixed row limit; section 2.1's duplicate-ID and unresolved-reference listings and section 3's findings table are also capped at fixed row limits (findings sorted by remediation-priority score descending), with every truncated place annotated with the total count, omitted count, and a note that `verbose: true` returns the full data. If true, lists every requirement-source reference in full and every finding in its original generation order, with no caps, no sorting, and no truncation notes (as in previous versions)."
     ),
 } as const;
 

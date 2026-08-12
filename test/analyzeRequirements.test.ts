@@ -7,8 +7,8 @@ import {
   MAX_DUPLICATE_ID_LINES,
   MAX_UNRESOLVED_REFERENCE_LINES,
   MAX_REQUIREMENT_SOURCE_REFS,
-  MAX_FINDING_ROWS,
 } from "../src/tools/analyzeRequirements.js";
+import { MAX_PRIORITIZED_FINDING_ROWS } from "../src/findingPriority.js";
 import { designBoundaryValuesInputShape } from "../src/tools/designBoundaryValues.js";
 import { qualityCharacteristicModel } from "../src/resources/qualityCharacteristics.js";
 import { qualityInUseCharacteristicModel } from "../src/resources/qualityInUseCharacteristics.js";
@@ -309,6 +309,99 @@ function buildLargeFixtureDocuments(): TestBasisDocument[] {
 
 const largeFixtureInput: AnalyzeRequirementsInput = { documents: buildLargeFixtureDocuments() };
 
+// --- 算出根拠セルの分解と、テスト内で再宣言した配点表からの再計算 ---
+
+interface ParsedBasis {
+  severity: string;
+  severityPoints: number;
+  impactedIdCount: number;
+  impactedIdNames: string[];
+  impactedIdPoints: number;
+  documentCount: number;
+  documentNames: string[];
+  documentPoints: number;
+  sectionResolved: boolean;
+  sectionPoints: number;
+  band?: string;
+}
+
+function splitNames(text: string): string[] {
+  if (text === "-") return [];
+  return text.split(", ");
+}
+
+function parseBasisCell(cell: string): ParsedBasis {
+  const m =
+    /^severity=(high|medium|low|info)\((\d+)\) \/ 影響ID(\d+)件\((.*)\)=(\d+) \/ 文書(\d+)件\((.*)\)=(\d+) \/ 章節解決=(済|未)\((\d+)\)$/.exec(
+      cell
+    );
+  expect(m, `算出根拠セルの形式不一致: ${cell}`).not.toBeNull();
+  const [
+    ,
+    severity,
+    severityPoints,
+    idCount,
+    idNames,
+    idPoints,
+    docCount,
+    docNames,
+    docPoints,
+    sectionLabel,
+    sectionPoints,
+  ] = m!;
+  return {
+    severity,
+    severityPoints: Number(severityPoints),
+    impactedIdCount: Number(idCount),
+    impactedIdNames: splitNames(idNames),
+    impactedIdPoints: Number(idPoints),
+    documentCount: Number(docCount),
+    documentNames: splitNames(docNames),
+    documentPoints: Number(docPoints),
+    sectionResolved: sectionLabel === "済",
+    sectionPoints: Number(sectionPoints),
+  };
+}
+
+const TEST_SEVERITY_POINTS: Record<string, number> = { high: 30, medium: 15, low: 5, info: 0 };
+
+function testImpactedIdPoints(n: number): number {
+  if (n === 0) return 0;
+  if (n === 1) return 2;
+  if (n === 2) return 4;
+  if (n <= 4) return 6;
+  if (n <= 9) return 8;
+  return 10;
+}
+
+function testCrossDocumentPoints(d: number): number {
+  if (d <= 1) return 0;
+  if (d === 2) return 6;
+  if (d === 3) return 8;
+  return 10;
+}
+
+/** 配点表を src から import せず、根拠セルの因子値から独立に再計算する。 */
+function recomputeScore(p: ParsedBasis): number {
+  expect(p.severityPoints).toBe(TEST_SEVERITY_POINTS[p.severity]);
+  expect(p.impactedIdPoints).toBe(testImpactedIdPoints(p.impactedIdCount));
+  expect(p.documentPoints).toBe(testCrossDocumentPoints(p.documentCount));
+  expect(p.sectionPoints).toBe(p.sectionResolved ? 5 : 0);
+  return (
+    TEST_SEVERITY_POINTS[p.severity] +
+    testImpactedIdPoints(p.impactedIdCount) +
+    testCrossDocumentPoints(p.documentCount) +
+    (p.sectionResolved ? 5 : 0)
+  );
+}
+
+function bandOfScore(score: number): string {
+  if (score >= 40) return "P1";
+  if (score >= 30) return "P2";
+  if (score >= 20) return "P3";
+  return "P4";
+}
+
 describe("renderRequirementsAnalysis - 既定出力の件数上限", () => {
   it("2.1節の重複行が上限以下で、全件数・省略件数・verboseの案内を含む注記行がある", () => {
     const markdown = renderRequirementsAnalysis(largeFixtureInput);
@@ -340,40 +433,112 @@ describe("renderRequirementsAnalysis - 既定出力の件数上限", () => {
     expect(section26).toContain(`表・JSONブロックともに同じ${MAX_REQUIREMENT_SOURCE_REFS}件`);
   });
 
-  it("3章の指摘表が上限以下・severity降順・内訳合計が全件数と一致し、打ち切り注記がある", () => {
+  it("3章の指摘表が上限以下・スコア降順・内訳合計が全件数と一致し、打ち切り注記がある", () => {
     const markdown = renderRequirementsAnalysis(largeFixtureInput);
     const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
     const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
-    expect(findingRows.length).toBeLessThanOrEqual(MAX_FINDING_ROWS);
+    expect(findingRows.length).toBeLessThanOrEqual(MAX_PRIORITIZED_FINDING_ROWS);
 
-    const severities = findingRows.map((row) => row.split("|")[3]?.trim());
-    const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
-    for (let i = 1; i < severities.length; i++) {
-      expect(rank[severities[i]]).toBeGreaterThanOrEqual(rank[severities[i - 1]]);
+    // スコア列（10列表の9列目）が単調非増加であること
+    const scores = findingRows.map((row) => Number(row.split("|")[9]?.trim()));
+    for (const s of scores) expect(Number.isFinite(s)).toBe(true);
+    for (let i = 1; i < scores.length; i++) {
+      expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
+    }
+
+    // 算出根拠セルを分解し、テスト内で再宣言した配点表から再計算した値と一致すること
+    for (const row of findingRows) {
+      const cells = row.split("|");
+      const parsed = parseBasisCell(cells[10]!.trim());
+      expect(parsed.severity).toBe(cells[3]!.trim());
+      expect(recomputeScore(parsed)).toBe(Number(cells[9]!.trim()));
+      expect(parsed.band).toBeUndefined();
+      expect(cells[8]!.trim()).toBe(bandOfScore(Number(cells[9]!.trim())));
     }
 
     const total = buildDeterministicFindings(largeFixtureInput.documents).length;
-    const breakdownMatch = /- 指摘件数: 全(\d+)件（severity内訳 high: (\d+) \/ medium: (\d+) \/ low: (\d+)）。severity降順で上位(\d+)件を表示。/.exec(
+    const breakdownMatch = /- 指摘件数: 全(\d+)件（severity内訳 high: (\d+) \/ medium: (\d+) \/ low: (\d+)）。対処優先度スコア降順で上位(\d+)件を表示（残り(\d+)件）。/.exec(
       section3
     );
     expect(breakdownMatch).not.toBeNull();
-    const [, totalStr, highStr, mediumStr, lowStr] = breakdownMatch!;
+    const [, totalStr, highStr, mediumStr, lowStr, shownStr, omittedStr] = breakdownMatch!;
     expect(Number(totalStr)).toBe(total);
     expect(Number(highStr) + Number(mediumStr) + Number(lowStr)).toBe(total);
+    expect(Number(shownStr)).toBe(findingRows.length);
+    expect(Number(shownStr) + Number(omittedStr)).toBe(total);
 
     expect(section3).toContain(
       `指摘表: 全${total}件中 ${findingRows.length}件を表示（${total - findingRows.length}件を省略）。全件は verbose: true で取得できる。`
     );
+    expect(section3).toContain("- 優先度スコア配点: severity(high 30 / medium 15 / low 5 / info 0)");
   });
 
-  it("同一severity内で元のF-ID順が保たれる（安定ソート）", () => {
+  it("同一スコア内で元のF-ID順が保たれる（安定ソート）", () => {
     const markdown = renderRequirementsAnalysis(largeFixtureInput);
     const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
     const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
-    const highRows = findingRows.filter((row) => row.split("|")[3]?.trim() === "high");
-    const highNumbers = highRows.map((row) => Number(row.split("|")[1].trim().replace("F-", "")));
-    for (let i = 1; i < highNumbers.length; i++) {
-      expect(highNumbers[i]).toBeGreaterThan(highNumbers[i - 1]);
+    const byScore = new Map<number, number[]>();
+    for (const row of findingRows) {
+      const cells = row.split("|");
+      const score = Number(cells[9]!.trim());
+      const no = Number(cells[1]!.trim().replace("F-", ""));
+      if (!byScore.has(score)) byScore.set(score, []);
+      byScore.get(score)!.push(no);
+    }
+    let checkedGroups = 0;
+    for (const [, numbers] of byScore) {
+      if (numbers.length < 2) continue;
+      checkedGroups += 1;
+      for (let i = 1; i < numbers.length; i++) {
+        expect(numbers[i]).toBeGreaterThan(numbers[i - 1]);
+      }
+    }
+    expect(checkedGroups).toBeGreaterThan(0);
+  });
+
+  it("算出根拠セルの影響ID名・文書名がフィクスチャ本文から裏付けられる（verbose 全件）", () => {
+    const markdown = renderRequirementsAnalysis({ ...largeFixtureInput, verbose: true });
+    const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
+    const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
+    let checkedRows = 0;
+    for (const row of findingRows) {
+      const cells = row.split("|");
+      const kind = cells[2]!.trim();
+      const parsed = parseBasisCell(cells[10]!.trim());
+      expect(parsed.impactedIdNames).not.toContain("ほか");
+      expect(parsed.documentNames).not.toContain("ほか");
+
+      // 該当箇所が (見出しなし) のときに限り 章節解決=未(0)
+      const place = cells[4]!.trim();
+      if (place.includes("(見出しなし)")) {
+        expect(parsed.sectionResolved).toBe(false);
+      }
+
+      // ID重複は定義箇所の全文書から documents を導出しているため、本文の実在で突合できる
+      if (kind !== "ID重複") continue;
+      expect(parsed.impactedIdNames.length).toBe(1);
+      const id = parsed.impactedIdNames[0];
+      const expectedDocs = largeFixtureInput.documents
+        .filter((d) => d.content.includes(id))
+        .map((d) => d.name);
+      expect(parsed.documentNames).toEqual(expectedDocs);
+      checkedRows += 1;
+    }
+    expect(checkedRows).toBe(150);
+  });
+
+  it("verbose: true では3章の指摘表が全件・打ち切りなしで、優先度3列が全行に出る", () => {
+    const markdown = renderRequirementsAnalysis({ ...largeFixtureInput, verbose: true });
+    const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
+    const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
+    const total = buildDeterministicFindings(largeFixtureInput.documents).length;
+    expect(findingRows.length).toBe(total);
+    expect(section3).not.toContain("を省略）。全件は verbose: true で取得できる。");
+    for (const row of findingRows) {
+      const cells = row.split("|");
+      expect(cells[8]!.trim()).toMatch(/^P[1-4]$/);
+      const parsed = parseBasisCell(cells[10]!.trim());
+      expect(recomputeScore(parsed)).toBe(Number(cells[9]!.trim()));
     }
   });
 
@@ -419,7 +584,7 @@ describe("renderRequirementsAnalysis - 既定出力の件数上限", () => {
     expect(markdown).not.toContain("を省略）。全件は verbose: true で取得できる。");
     expect(markdown).not.toContain("- 指摘件数: 全");
     expect(markdown).not.toContain(
-      "既定では 2.1節のID重複・未解決参照、2.6節の根拠位置、3章の指摘表に件数上限を適用する。打ち切った箇所には全件数と省略件数を併記する。"
+      "既定では 2.1節のID重複・未解決参照、2.6節の根拠位置、3章の指摘表に件数上限を適用する。3章は対処優先度スコア降順に並べ替えたうえで打ち切り、打ち切った箇所には全件数と省略件数を併記する。"
     );
   });
 
