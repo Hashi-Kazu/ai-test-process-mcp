@@ -532,6 +532,10 @@ export interface RequirementsFinding {
   problem: string;
   question: string;           // 確認質問文
   assumption: string;         // 暫定前提
+  // --- 対処優先度スコアの因子（実体由来。severity は上書きしない） ---
+  impactedIds?: string[];     // 指摘が指している要件ID
+  documents?: string[];       // 根拠位置が跨る文書名
+  sectionResolved?: boolean;  // 章節ラベルが解決できたか
 }
 
 export type RequirementsChangeCategory =
@@ -3186,6 +3190,8 @@ export interface BasisContradictionCandidate {
   places: ContradictionPlace[];
   question: string;
   assumption: string;
+  /** 対処優先度スコアの因子。候補が指している要件ID/機能ID（出現順・重複除去済み） */
+  impactedIds?: string[];
 }
 
 export interface BasisDeclaredEntity {

@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
-import { renderTestBasisReview } from "../src/tools/reviewTestBasis.js";
+import { renderTestBasisReview, buildTestBasisPriorityInputs } from "../src/tools/reviewTestBasis.js";
+import { MAX_PRIORITIZED_FINDING_ROWS } from "../src/findingPriority.js";
+import {
+  expectPrioritySectionInvariants,
+  parsePriorityRows,
+} from "./findingPrioritySectionHelper.js";
+import {
+  analyzePrefixes,
+  extractIdOccurrences,
+  extractQuantityExpressions,
+  findAmbiguousTerms,
+  findDuplicateIds,
+  findUnresolvedReferences,
+} from "../src/testBasisAnalysis.js";
+import { sanitizeTestBasisDocuments } from "../src/documentDigest.js";
 import { testBasisReviewChecklist } from "../src/resources/testBasisReviewChecklist.js";
 import { questionPriorityDefinitions } from "../src/resources/testPlanTemplate.js";
 import type { TestBasisDocument } from "../src/types.js";
@@ -248,6 +262,158 @@ describe("renderTestBasisReview 件数上限つき既定出力(verbose)", () => 
   it("verbose未指定時のみ冒頭の要約表示に関する1行が出る", () => {
     expect(defaultMarkdown).toContain("既定(verbose未指定/false)は要約表示。");
     expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
+  });
+});
+
+describe("renderTestBasisReview 1.9 対処優先度順の指摘一覧", () => {
+  const largeDocuments = buildLargeReviewDocuments(120);
+  const defaultMarkdown = renderTestBasisReview(largeDocuments);
+  const verboseMarkdown = renderTestBasisReview(largeDocuments, {}, undefined, [], true);
+
+  function section19(md: string): string {
+    return md.split("### 1.9 対処優先度順の指摘一覧")[1].split("## 2.")[0];
+  }
+
+  /** 決定的検査5系列の全件から、テスト側で独立に対象件数を求める。 */
+  function expectedTotal(docs: TestBasisDocument[]): number {
+    const documents = sanitizeTestBasisDocuments(docs);
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    const unresolved = findUnresolvedReferences(occurrences);
+    const { issues } = analyzePrefixes(occurrences);
+    const ambiguous = findAmbiguousTerms(documents);
+    const ambiguousFlatCount = ambiguous
+      .filter((f) => f.category === "ambiguous" || f.category === "weak-requirement")
+      .reduce((sum, f) => sum + f.byHeading.length, 0);
+    const noBoundary = extractQuantityExpressions(documents).filter((q) => !q.hasBoundaryWord);
+    return (
+      duplicates.length +
+      unresolved.length +
+      issues.length +
+      ambiguousFlatCount +
+      noBoundary.length
+    );
+  }
+
+  const total = expectedTotal(largeDocuments);
+
+  it("既定は上限20件・スコア降順・算出根拠の再計算一致・帯内訳合計が全件数と一致する", () => {
+    const { rows } = expectPrioritySectionInvariants(section19(defaultMarkdown), {
+      label: "対処優先度順の指摘一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    });
+    expect(rows.length).toBe(MAX_PRIORITIZED_FINDING_ROWS);
+    // 3章質問状の系列別上限(10件)は1.9節に持ち込まない
+    expect(total).toBeGreaterThan(5 * 10);
+  });
+
+  it("verbose: true では全件表示・打ち切り注記なし・帯内訳が既定と同値になる", () => {
+    const defaultSummary = expectPrioritySectionInvariants(section19(defaultMarkdown), {
+      label: "対処優先度順の指摘一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    }).summary;
+    const verboseSummary = expectPrioritySectionInvariants(section19(verboseMarkdown), {
+      label: "対処優先度順の指摘一覧",
+      verbose: true,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    }).summary;
+    for (const band of ["P1", "P2", "P3", "P4"] as const) {
+      expect(verboseSummary[band]).toBe(defaultSummary[band]);
+    }
+    expect(section19(verboseMarkdown)).not.toContain("を省略）。全件は verbose: true で取得できる。");
+  });
+
+  it("算出根拠セルの影響ID名・文書名がフィクスチャ本文から裏付けられる（verbose 全件）", () => {
+    const rows = parsePriorityRows(section19(verboseMarkdown));
+    let checked = 0;
+    for (const row of rows) {
+      for (const id of row.basis.impactedIdNames) {
+        const expectedDocs = largeDocuments
+          .filter((d) => d.content.includes(id))
+          .map((d) => d.name);
+        expect(expectedDocs.length).toBeGreaterThan(0);
+        for (const name of row.basis.documentNames) expect(expectedDocs).toContain(name);
+        checked += 1;
+      }
+      if (row.place.includes("(見出しなし)")) {
+        expect(row.basis.sectionResolved).toBe(false);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("1.8 サマリの集計行が既定/verboseで完全一致する（検出件数不変）", () => {
+    const summaryLineOf = (md: string) =>
+      md.split("### 1.8 サマリ")[1].split("\n").filter((l) => l.trim())[0];
+    expect(summaryLineOf(defaultMarkdown)).toBe(summaryLineOf(verboseMarkdown));
+  });
+
+  it("既定出力が40,000字未満のままである", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+  });
+
+  it("指摘0件の文書では表を出さず「対象指摘なし」を出す", () => {
+    const md = renderTestBasisReview([
+      { name: "clean.md", content: ["## 見出し", "- E-100 説明", "本文では E-100 を参照する。"].join("\n") },
+    ]);
+    const section = section19(md);
+    expect(section).toContain("- 対象指摘なし（決定的検査の指摘が0件）。未指摘は合格を意味しない。");
+    expect(section).not.toContain("| 順位 |");
+  });
+
+  it("buildTestBasisPriorityInputs は5系列全件を TB-xx の連番で返す", () => {
+    const documents = sanitizeTestBasisDocuments(largeDocuments);
+    const occurrences = extractIdOccurrences(documents);
+    const duplicates = findDuplicateIds(occurrences);
+    const unresolved = findUnresolvedReferences(occurrences);
+    const { stats, issues } = analyzePrefixes(occurrences);
+    const ambiguous = findAmbiguousTerms(documents);
+    const ambiguousFlat = ambiguous
+      .filter((f) => f.category === "ambiguous" || f.category === "weak-requirement")
+      .flatMap((f) =>
+        f.byHeading.map((h) => ({
+          term: f.term,
+          document: h.document,
+          heading: h.heading,
+          count: h.count,
+        }))
+      );
+    const noBoundary = extractQuantityExpressions(documents).filter((q) => !q.hasBoundaryWord);
+    const inputs = buildTestBasisPriorityInputs({
+      duplicates,
+      unresolved,
+      issues,
+      stats,
+      ambiguousFlat,
+      noBoundary,
+    });
+    expect(inputs.length).toBe(total);
+    inputs.forEach((input, i) => {
+      expect(input.id).toBe(`TB-${String(i + 1).padStart(2, "0")}`);
+    });
+    const knownCategories = [
+      "ID重複",
+      "未解決参照",
+      "プレフィックス逸脱",
+      "曖昧語・弱い語",
+      "境界語なし数量表現",
+    ];
+    for (const categoryId of new Set(inputs.map((i) => i.categoryId))) {
+      expect(knownCategories).toContain(categoryId);
+    }
+    // 系列ごとの件数が決定的検査の実件数と一致する（打ち切りが無い）
+    expect(inputs.filter((i) => i.categoryId === "ID重複").length).toBe(duplicates.length);
+    expect(inputs.filter((i) => i.categoryId === "未解決参照").length).toBe(unresolved.length);
+    expect(inputs.filter((i) => i.categoryId === "プレフィックス逸脱").length).toBe(issues.length);
+    expect(inputs.filter((i) => i.categoryId === "曖昧語・弱い語").length).toBe(ambiguousFlat.length);
+    expect(inputs.filter((i) => i.categoryId === "境界語なし数量表現").length).toBe(
+      noBoundary.length
+    );
   });
 });
 

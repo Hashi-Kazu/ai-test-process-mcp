@@ -21,6 +21,19 @@ import {
   findUnresolvedReferences,
   type TestBasisAnalysisOptions,
 } from "../testBasisAnalysis.js";
+import {
+  distinctInOrder,
+  isSectionResolved,
+  renderFindingPrioritySection,
+  type FindingPriorityInput,
+} from "../findingPriority.js";
+import type {
+  TestBasisDuplicateId,
+  TestBasisPrefixIssue,
+  TestBasisPrefixStat,
+  TestBasisQuantityExpression,
+  TestBasisUnresolvedReference,
+} from "../types.js";
 
 /** 既定表示（verbose=false）で1.3 ID重複に表示する行数の上限。 */
 export const MAX_DUPLICATE_ID_LINES = 20;
@@ -41,6 +54,85 @@ function escapeCell(value: string): string {
 
 function place(document: string, lineIndex: number, heading: string): string {
   return `${document}:${lineIndex + 1} ${heading}`;
+}
+
+/**
+ * 1.9節（対処優先度順の指摘一覧）の入力を、決定的検査5系列の全件から作る。
+ * severity は3章質問状の重要度と同値の宣言値であり、スコアで上書きしない。
+ * 3章の MAX_QUESTION_ROWS_PER_SOURCE による打ち切りは本節へ持ち込まない。
+ */
+export function buildTestBasisPriorityInputs(args: {
+  duplicates: readonly TestBasisDuplicateId[];
+  unresolved: readonly TestBasisUnresolvedReference[];
+  issues: readonly TestBasisPrefixIssue[];
+  stats: readonly TestBasisPrefixStat[];
+  ambiguousFlat: readonly { term: string; document: string; heading: string; count: number }[];
+  noBoundary: readonly TestBasisQuantityExpression[];
+}): FindingPriorityInput[] {
+  const inputs: FindingPriorityInput[] = [];
+  let no = 1;
+  const nextId = () => `TB-${String(no++).padStart(2, "0")}`;
+
+  for (const dup of args.duplicates) {
+    const first = dup.places[0];
+    inputs.push({
+      id: nextId(),
+      categoryId: "ID重複",
+      place: place(first.document, first.lineIndex, first.heading),
+      // 1.3節・3章が表示している宣言値そのまま（high / medium）。スコアで上書きしない。
+      severity: dup.severity,
+      impactedIds: [dup.id],
+      documents: distinctInOrder(dup.places.map((p) => p.document)),
+      sectionResolved: isSectionResolved(dup.places.map((p) => p.heading)),
+    });
+  }
+  for (const ref of args.unresolved) {
+    inputs.push({
+      id: nextId(),
+      categoryId: "未解決参照",
+      place: place(ref.document, ref.lineIndex, ref.heading),
+      severity: "high",
+      impactedIds: [ref.id],
+      documents: [ref.document],
+      sectionResolved: isSectionResolved([ref.heading]),
+    });
+  }
+  for (const issue of args.issues) {
+    const stat = args.stats.find((s) => s.prefix === issue.prefixes[0]);
+    inputs.push({
+      id: nextId(),
+      categoryId: "プレフィックス逸脱",
+      place: `${issue.prefixes.join(", ")} / (複数箇所)`,
+      severity: "medium",
+      impactedIds: [],
+      documents: stat?.documents ?? [],
+      // 該当箇所が複数箇所にまたがり章節を特定できないため false。
+      sectionResolved: false,
+    });
+  }
+  for (const entry of args.ambiguousFlat) {
+    inputs.push({
+      id: nextId(),
+      categoryId: "曖昧語・弱い語",
+      place: `${entry.document} / ${entry.heading}`,
+      severity: "medium",
+      impactedIds: [],
+      documents: [entry.document],
+      sectionResolved: isSectionResolved([entry.heading]),
+    });
+  }
+  for (const q of args.noBoundary) {
+    inputs.push({
+      id: nextId(),
+      categoryId: "境界語なし数量表現",
+      place: place(q.document, q.lineIndex, q.heading),
+      severity: "low",
+      impactedIds: [],
+      documents: [q.document],
+      sectionResolved: isSectionResolved([q.heading]),
+    });
+  }
+  return inputs;
 }
 
 export function renderTestBasisReview(
@@ -74,7 +166,7 @@ export function renderTestBasisReview(
   lines.push("");
   if (!verbose) {
     lines.push(
-      "既定(verbose未指定/false)は要約表示。1.3/1.4/1.6/1.7 と 3章の質問状に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
+      "既定(verbose未指定/false)は要約表示。1.3/1.4/1.6/1.7/1.9 と 3章の質問状に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
     );
     lines.push("");
   }
@@ -202,6 +294,32 @@ export function renderTestBasisReview(
   );
   lines.push("");
 
+  // 曖昧語・弱い語の平坦化（1.9節と3章質問状で共有。出現数降順）
+  const ambiguousFlat: { term: string; document: string; heading: string; count: number }[] = [];
+  for (const finding of ambiguousTerms) {
+    if (finding.category !== "ambiguous" && finding.category !== "weak-requirement") continue;
+    for (const h of finding.byHeading) {
+      ambiguousFlat.push({ term: finding.term, document: h.document, heading: h.heading, count: h.count });
+    }
+  }
+  ambiguousFlat.sort((a, b) => b.count - a.count);
+
+  lines.push(
+    ...renderFindingPrioritySection(
+      "1.9 対処優先度順の指摘一覧",
+      "対処優先度順の指摘一覧",
+      buildTestBasisPriorityInputs({
+        duplicates,
+        unresolved,
+        issues,
+        stats,
+        ambiguousFlat,
+        noBoundary,
+      }),
+      verbose
+    )
+  );
+
   lines.push("## 2. 意味的レビュー用チェックリスト(呼び出し側 LLM が適用)");
   lines.push("");
   lines.push(
@@ -289,14 +407,6 @@ export function renderTestBasisReview(
     );
   }
 
-  const ambiguousFlat: { term: string; document: string; heading: string; count: number }[] = [];
-  for (const finding of ambiguousTerms) {
-    if (finding.category !== "ambiguous" && finding.category !== "weak-requirement") continue;
-    for (const h of finding.byHeading) {
-      ambiguousFlat.push({ term: finding.term, document: h.document, heading: h.heading, count: h.count });
-    }
-  }
-  ambiguousFlat.sort((a, b) => b.count - a.count);
   const ambiguousFlatToShow = verbose ? ambiguousFlat : ambiguousFlat.slice(0, MAX_QUESTION_ROWS_PER_SOURCE);
   for (const entry of ambiguousFlatToShow) {
     lines.push(
@@ -393,7 +503,7 @@ export const reviewTestBasisInputShape = {
     .boolean()
     .optional()
     .describe(
-      "If false/omitted (default), sections 1.3/1.4/1.6/1.7 and the chapter 3 question table are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
+      "If false/omitted (default), sections 1.3/1.4/1.6/1.7/1.9 and the chapter 3 question table are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
     ),
 } as const;
 

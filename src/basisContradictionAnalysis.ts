@@ -6,6 +6,7 @@ import {
   ENTITY_NAME_SYMBOL_ONLY_PATTERN,
   ENTITY_NAME_TRAILING_REJECT_CHARS,
 } from "./resources/basisContradictionCriteria.js";
+import { distinctInOrder } from "./findingPriority.js";
 import type {
   BasisContradictionCandidate,
   BasisContradictionOptions,
@@ -534,6 +535,7 @@ export function checkNameInconsistency(
         places: relevant.map((o) => placeFromParts(o.document, o.lineIndex, o.heading, `${id} ${o.name}`)),
         question: `${id} の正式名称はどちらか。表記のどちらかが誤りか、意図的な別名か確認してください。`,
         assumption: `暫定的に最初に出現した名称「${occs[0].name}」を正式名称として扱う。`,
+        impactedIds: [id],
       })
     );
   }
@@ -590,6 +592,7 @@ export function checkUiLabelMismatch(uiElements: BasisUiElement[]): BasisContrad
               places: [placeFromParts(elA.document, elA.lineIndex, "", elA.label), placeFromParts(match.document, match.lineIndex, "", match.label)],
               question: `「${elA.label}」と「${match.label}」は同一の構成要素か、表記ゆれか確認してください。`,
               assumption: "暫定的に文字数が長い方のラベルを正表記として扱う。",
+              impactedIds: [id],
             })
           );
         }
@@ -649,6 +652,7 @@ export function checkUiLabelOneSided(uiElements: BasisUiElement[]): BasisContrad
             places: [placeFromParts(el.document, el.lineIndex, "", el.label)],
             question: `「${el.label}」は他文書でも同じ画面に存在するはずか、この文書だけの構成か確認してください。`,
             assumption: "暫定的にこの文書だけに存在する構成要素として扱う。",
+            impactedIds: [id],
           })
         );
       }
@@ -690,6 +694,7 @@ export function checkTransitionInconsistency(transitions: BasisTransition[]): Ba
         places: list.map((t) => placeFromParts(t.document, t.lineIndex, "", `${trigger}→${targetLabel(t)}`)),
         question: `「${trigger}」を押した際の正しい遷移先はどれか確認してください。`,
         assumption: `暫定的に最初に出現した遷移先「${distinctTargets[0]}」を正として扱う。`,
+        impactedIds: list[0].sourceId ? [list[0].sourceId] : [],
       })
     );
   }
@@ -722,6 +727,7 @@ export function checkUnresolvedTransitionTarget(
         places: [placeFromParts(t.document, t.lineIndex, "", `${t.trigger}→${t.targetName}`)],
         question: `「${t.targetName}」はどのIDの画面/ダイアログを指すか確認してください。`,
         assumption: "暫定的に未特定の遷移先として扱う。",
+        impactedIds: t.sourceId ? [t.sourceId] : [],
       })
     );
   }
@@ -764,6 +770,7 @@ export function checkUndescribedOperationElements(
         places: [placeFromParts(el.document, el.lineIndex, "", el.label)],
         question: `「${el.label}」を操作した際の挙動が別文書に記載されていないか確認してください。`,
         assumption: "暫定的に振る舞い未記述として扱う。",
+        impactedIds: el.id ? [el.id] : [],
       })
     );
   }
@@ -849,6 +856,7 @@ export function checkDeclaredVsBodySubjectMismatch(
         places: [place(line)],
         question: `${line.currentId} の本文は本当に ${line.currentId}(${declaredName}) の説明か、それとも ${matchedOtherId} の説明の誤配置か確認してください。`,
         assumption: `暫定的に一覧宣言(${declaredName})が正しい対象を表すとして扱う。`,
+        impactedIds: distinctInOrder([line.currentId, matchedOtherId]),
       })
     );
   }
@@ -886,6 +894,7 @@ export function checkParameterValueInconsistency(parameters: BasisParameterValue
         places: list.map((p) => placeFromParts(p.document, p.lineIndex, p.heading, p.raw)),
         question: `「${parameter}」の正しい値はどれか確認してください。`,
         assumption: `暫定的に最初に出現した値「${list[0].raw}」を正として扱う。`,
+        impactedIds: [],
       })
     );
   }
@@ -906,6 +915,7 @@ export function checkRevisionResidual(rows: BasisRevisionReconciliationRow[]): B
         places: [placeFromParts(row.document, row.lineIndex, "", `${row.beforeValue}→${row.afterValue}`)],
         question: `旧値「${row.beforeValue}」が残っている箇所は改訂反映漏れか、別対象への言及か確認してください。`,
         assumption: "暫定的に改訂反映漏れとして扱う。",
+        impactedIds: [],
       })
     );
   }
@@ -948,6 +958,7 @@ export function checkMinorityTransitionTarget(transitions: BasisTransition[]): B
           places: occs.map((t) => placeFromParts(t.document, t.lineIndex, "", `${trigger}→${label}`)),
           question: `「${trigger}」から「${label}」への遷移は他と異なる正当な分岐か、誤記かを確認してください。`,
           assumption: "暫定的に不揃いの可能性提示にとどめ、矛盾とは断定しない。",
+          impactedIds: distinctInOrder(occs.map((t) => t.sourceId)),
         })
       );
     }
@@ -964,6 +975,7 @@ interface CandidateDraft {
   places: ContradictionPlace[];
   question: string;
   assumption: string;
+  impactedIds: string[];
 }
 
 function makeCandidate(draft: CandidateDraft): BasisContradictionCandidate {

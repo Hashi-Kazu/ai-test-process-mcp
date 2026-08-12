@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
-import { renderIdPopulationAudit } from "../src/tools/auditIdPopulation.js";
+import {
+  renderIdPopulationAudit,
+  buildIdPopulationPriorityInputs,
+} from "../src/tools/auditIdPopulation.js";
 import { buildDefinedIdIndex } from "../src/idPopulationAnalysis.js";
+import { idPopulationAuditCriteria } from "../src/resources/idPopulationAuditCriteria.js";
+import { MAX_PRIORITIZED_FINDING_ROWS } from "../src/findingPriority.js";
+import {
+  expectPrioritySectionInvariants,
+  parsePriorityRows,
+} from "./findingPrioritySectionHelper.js";
 import type { AuditIdPopulationInput, TestBasisDocument } from "../src/types.js";
 
 const documents: AuditIdPopulationInput["documents"] = [
@@ -180,6 +189,211 @@ describe("renderIdPopulationAudit - verbose", () => {
 describe("renderIdPopulationAudit 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderIdPopulationAudit(input));
+  });
+});
+
+// --- 2.9 対処優先度順の指摘一覧（大規模合成フィクスチャ） ---
+
+/**
+ * 見出しの有無・宣言/未宣言/除外・母集団差分・未投入文書を混在させた大規模フィクスチャ。
+ * 各判定区分（PAC-01〜PAC-05）が1件以上発生するように構成する。
+ */
+function buildLargePopulationInput(n: number): AuditIdPopulationInput {
+  const docALines: string[] = ["# doc-A"];
+  const docBLines: string[] = ["## 2.1 予約一覧"];
+  const allIds: string[] = [];
+  for (let i = 1; i <= n; i++) {
+    const id = `REQ-${String(i).padStart(3, "0")}`;
+    allIds.push(id);
+    if (i % 2 === 0) docBLines.push(`- ${id} doc-B の定義行${i}`);
+    else docALines.push(`- ${id} doc-A の定義行${i}`);
+  }
+  return {
+    documents: [
+      { name: "doc-A", content: docALines.join("\n") },
+      { name: "doc-B", content: docBLines.join("\n") },
+    ],
+    // 先頭50件のみ宣言 → 残りは never-declared(PAC-01)
+    declaredPopulations: [
+      { toolName: "extract_test_conditions", ids: allIds.slice(0, 50) },
+      // 縮退した母集団 → PAC-05
+      { toolName: "generate_test_cases", ids: allIds.slice(0, 10) },
+      // テストベースに定義が無いID → PAC-03
+      { toolName: "design_pairwise", ids: ["NOPE-001", "NOPE-002"] },
+    ],
+    // 除外宣言 → PAC-02
+    exclusions: allIds.slice(50, 60).map((id) => ({ id, reason: `スコープ外(${id})` })),
+    // 未投入文書 → PAC-04
+    expectedDocumentNames: ["doc-A", "doc-B", "doc-C", "doc-D"],
+  };
+}
+
+describe("renderIdPopulationAudit 2.9 対処優先度順の指摘一覧", () => {
+  const largeInput = buildLargePopulationInput(150);
+  const defaultMarkdown = renderIdPopulationAudit(largeInput);
+  const verboseMarkdown = renderIdPopulationAudit({ ...largeInput, verbose: true });
+
+  function section29(md: string): string {
+    return md.split("### 2.9 対処優先度順の指摘一覧")[1].split("## 3.")[0];
+  }
+
+  /** 2.2/2.3/2.4/2.6/2.7 の決定的判定行をテスト側で独立に数える。 */
+  function expectedTotal(md: string): number {
+    const count = (heading: string, next: string, pattern: RegExp) =>
+      (md.split(heading)[1].split(next)[0].match(pattern) ?? []).length;
+    const neverDeclared = count("### 2.2 未宣言ID一覧", "### 2.3", /^- \[high\] /gm);
+    const excluded = count("### 2.3 除外宣言されたID", "### 2.4", /^- \[info\] /gm);
+    const undefinedIds = count("### 2.4 テストベースに定義が無い母集団ID", "### 2.5", /^- \[high\] /gm);
+    const missingDocs = count("### 2.6 未投入のテストベース文書", "### 2.7", /^- \[high\] /gm);
+    const diffRows = md
+      .split("### 2.7 母集団間の差分(工程間の縮退)")[1]
+      .split("### 2.8")[0]
+      .split("\n")
+      .filter((l) => l.startsWith("| ") && !l.startsWith("| ---") && !l.startsWith("| 母集団 |"))
+      .filter((l) => l.split("|")[3]?.trim() !== "-").length;
+    return neverDeclared + excluded + undefinedIds + missingDocs + diffRows;
+  }
+
+  const total = expectedTotal(defaultMarkdown);
+
+  it("PAC-01〜PAC-05 のすべてが1件以上発生するフィクスチャである", () => {
+    const rows = parsePriorityRows(section29(verboseMarkdown));
+    for (const id of ["PAC-01", "PAC-02", "PAC-03", "PAC-04", "PAC-05"]) {
+      expect(rows.some((r) => r.categoryId === id), `${id} が0件`).toBe(true);
+    }
+    // PAC-06 は決定的なフラグ判定が無いため優先度一覧に含めない
+    expect(rows.some((r) => r.categoryId === "PAC-06")).toBe(false);
+  });
+
+  it("既定は上限20件・スコア降順・算出根拠の再計算一致・帯内訳合計が全件数と一致する", () => {
+    expect(total).toBeGreaterThan(MAX_PRIORITIZED_FINDING_ROWS);
+    const { rows } = expectPrioritySectionInvariants(section29(defaultMarkdown), {
+      label: "対処優先度順の指摘一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    });
+    expect(rows.length).toBe(MAX_PRIORITIZED_FINDING_ROWS);
+  });
+
+  it("verbose: true では全件表示・打ち切り注記なし・帯内訳が既定と同値になる", () => {
+    const defaultSummary = expectPrioritySectionInvariants(section29(defaultMarkdown), {
+      label: "対処優先度順の指摘一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    }).summary;
+    const verboseSummary = expectPrioritySectionInvariants(section29(verboseMarkdown), {
+      label: "対処優先度順の指摘一覧",
+      verbose: true,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: expectedTotal(verboseMarkdown),
+    }).summary;
+    for (const band of ["P1", "P2", "P3", "P4"] as const) {
+      expect(verboseSummary[band]).toBe(defaultSummary[band]);
+    }
+    expect(section29(verboseMarkdown)).not.toContain("を省略）。全件は verbose: true で取得できる。");
+  });
+
+  it("severity は判定区分カタログの宣言値と一致する（スコアで上書きしない）", () => {
+    for (const row of parsePriorityRows(section29(verboseMarkdown))) {
+      const category = idPopulationAuditCriteria.categories.find((c) => c.id === row.categoryId);
+      expect(category, `未知の区分ID: ${row.categoryId}`).toBeDefined();
+      expect(row.severity).toBe(category!.severity);
+    }
+  });
+
+  it("算出根拠セルの影響ID名・文書名がフィクスチャ本文から裏付けられる（verbose 全件）", () => {
+    const rows = parsePriorityRows(section29(verboseMarkdown));
+    let checked = 0;
+    for (const row of rows) {
+      // 文書名を挙げている行は、その文書に当該IDが実在すること
+      if (row.categoryId === "PAC-01" || row.categoryId === "PAC-02") {
+        expect(row.basis.impactedIdNames.length).toBe(1);
+        const id = row.basis.impactedIdNames[0];
+        const expectedDocs = largeInput.documents
+          .filter((d) => d.content.includes(id))
+          .map((d) => d.name);
+        expect(row.basis.documentNames).toEqual(expectedDocs);
+        checked += 1;
+      }
+      if (row.place.includes("(見出しなし)")) {
+        expect(row.basis.sectionResolved).toBe(false);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("2.8 サマリの集計行が既定/verboseで完全一致する（検出件数不変）", () => {
+    const summaryLineOf = (md: string) =>
+      md.split("### 2.8 サマリ")[1].split("\n").filter((l) => l.trim())[0];
+    expect(summaryLineOf(defaultMarkdown)).toBe(summaryLineOf(verboseMarkdown));
+  });
+
+  it("既定のみ 2.9節の件数上限に関する案内行が出る（既存の無条件案内文は別行として不変）", () => {
+    expect(defaultMarkdown).toContain(
+      "既定(verbose未指定/false)は要約表示。2.1節は判定フラグ(never-declared/excluded)付きの行のみ表示する。全件が必要な場合は `verbose: true` を指定すること。"
+    );
+    expect(verboseMarkdown).toContain(
+      "既定(verbose未指定/false)は要約表示。2.1節は判定フラグ(never-declared/excluded)付きの行のみ表示する。全件が必要な場合は `verbose: true` を指定すること。"
+    );
+    expect(defaultMarkdown).toContain(
+      "既定では 2.9節の対処優先度順の指摘一覧に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。"
+    );
+    expect(verboseMarkdown).not.toContain(
+      "既定では 2.9節の対処優先度順の指摘一覧に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。"
+    );
+  });
+
+  it("指摘0件なら表を出さず「対象指摘なし」を出す", () => {
+    const md = renderIdPopulationAudit({
+      documents,
+      declaredPopulations: [
+        { toolName: "extract_test_conditions", ids: ["EH-100", "EH-101", "W-001", "W-002"] },
+      ],
+    });
+    const section = section29(md);
+    expect(section).toContain("- 対象指摘なし（決定的検査の指摘が0件）。未指摘は合格を意味しない。");
+    expect(section).not.toContain("| 順位 |");
+  });
+
+  it("buildIdPopulationPriorityInputs のIDは区分ID + # + 区分内連番になる", () => {
+    const inputs = buildIdPopulationPriorityInputs({
+      neverDeclared: [
+        { id: "A-001", document: "doc-A", lineIndex: 1, heading: "見出し", declaredIn: [], status: "never-declared" },
+        { id: "A-002", document: "doc-A", lineIndex: 2, heading: "見出し", declaredIn: [], status: "never-declared" },
+      ],
+      excluded: [
+        {
+          id: "A-003",
+          document: "doc-A",
+          lineIndex: 3,
+          heading: "見出し",
+          declaredIn: [],
+          status: "excluded",
+          exclusionReason: "スコープ外",
+        },
+      ],
+      undefinedIds: [{ id: "NOPE-001", populations: ["design_pairwise"] }],
+      missingDocuments: ["doc-C"],
+      populationDiff: [
+        { population: "generate_test_cases", idCount: 1, missingIds: ["A-002"] },
+        { population: "extract_test_conditions", idCount: 2, missingIds: [] },
+      ],
+      criteria: idPopulationAuditCriteria,
+    });
+    expect(inputs.map((i) => i.id)).toEqual([
+      "PAC-01#1",
+      "PAC-01#2",
+      "PAC-02#1",
+      "PAC-03#1",
+      "PAC-04#1",
+      "PAC-05#1",
+    ]);
+    // PAC-03/PAC-05 は母集団由来で文書に紐づかないため documents は空（文書横断0点）
+    expect(inputs.find((i) => i.id === "PAC-03#1")!.documents).toEqual([]);
+    expect(inputs.find((i) => i.id === "PAC-05#1")!.documents).toEqual([]);
+    expect(inputs.find((i) => i.id === "PAC-05#1")!.impactedIds).toEqual(["A-002"]);
   });
 });
 

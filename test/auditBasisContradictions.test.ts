@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { renderBasisContradictionAudit } from "../src/tools/auditBasisContradictions.js";
+import { basisContradictionCriteria } from "../src/resources/basisContradictionCriteria.js";
+import { MAX_PRIORITIZED_FINDING_ROWS } from "../src/findingPriority.js";
+import {
+  expectPrioritySectionInvariants,
+  parsePriorityRows,
+} from "./findingPrioritySectionHelper.js";
 import type { AuditBasisContradictionsInput } from "../src/types.js";
 
 const documents: AuditBasisContradictionsInput["documents"] = [
@@ -87,8 +93,20 @@ describe("renderBasisContradictionAudit", () => {
       ...baseInput,
       knownResolved: [{ subject: "W-008-04", reason: "既に表記統一済みと確認済み" }],
     });
-    const section2 = withKnownResolved.split("## 2. 決定的検査(自動)")[1].split("## 3.")[0];
+    // 2.1〜2.11（候補列挙節）から消えること。2.12は他候補の影響IDとして同IDに言及し得るため、
+    // 「除外対象を主題とする候補行が出ない」ことを別に確認する。
+    const section2 = withKnownResolved
+      .split("## 2. 決定的検査(自動)")[1]
+      .split("### 2.12")[0];
     expect(section2).not.toContain("W-008-04");
+    const section212 = withKnownResolved.split("### 2.12")[1].split("## 3.")[0];
+    const priorityRows = section212.split("\n").filter((l) => /^\| \d+ \| P[1-4] \|/.test(l));
+    const withoutKnownResolvedRows = withoutKnownResolved
+      .split("### 2.12")[1]
+      .split("## 3.")[0]
+      .split("\n")
+      .filter((l) => /^\| \d+ \| P[1-4] \|/.test(l));
+    expect(priorityRows.length).toBeLessThan(withoutKnownResolvedRows.length);
     const section13 = withKnownResolved.split("### 1.3 宣言カタログとの突合")[1].split("### 1.4")[0];
     expect(section13).toContain("W-008-04");
     expect(section13).toContain("既に表記統一済みと確認済み");
@@ -228,8 +246,8 @@ describe("renderBasisContradictionAudit 件数上限つき既定出力(verbose)"
     const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
     expect(defaultMarkdown).toMatch(truncationLine);
 
-    const defaultSummary = defaultMarkdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
-    const verboseSummary = verboseMarkdown.split("### 2.11 サマリ")[1].split("## 3.")[0];
+    const defaultSummary = defaultMarkdown.split("### 2.11 サマリ")[1].split("### 2.12")[0];
+    const verboseSummary = verboseMarkdown.split("### 2.11 サマリ")[1].split("### 2.12")[0];
     expect(defaultSummary).toBe(verboseSummary);
     for (const id of ["BC-01", "BC-02", "BC-03", "BC-04", "BC-05", "BC-06", "BC-07", "BC-08", "BC-09", "BC-10"]) {
       expect(defaultSummary).toContain(`${id}:`);
@@ -252,6 +270,135 @@ describe("renderBasisContradictionAudit 件数上限つき既定出力(verbose)"
   it("verbose未指定時のみ冒頭の要約表示に関する1行が出る", () => {
     expect(defaultMarkdown).toContain("既定(verbose未指定/false)は要約表示。");
     expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
+  });
+});
+
+describe("renderBasisContradictionAudit 2.12 対処優先度順の候補一覧", () => {
+  const largeInput = buildLargeAuditInput(250);
+  const defaultMarkdown = renderBasisContradictionAudit(largeInput);
+  const verboseMarkdown = renderBasisContradictionAudit({ ...largeInput, verbose: true });
+
+  function section212(md: string): string {
+    return md.split("### 2.12 対処優先度順の候補一覧")[1].split("## 3.")[0];
+  }
+
+  /** 2章の各検査節の「該当 N件」を合計して visible 件数をテスト側で独立に求める。 */
+  function visibleCount(md: string): number {
+    const chapter2 = md.split("## 2. 決定的検査(自動)")[1].split("### 2.12")[0];
+    return (chapter2.match(/^- 該当 (\d+)件（/gm) ?? [])
+      .map((l) => Number(/(\d+)/.exec(l)![1]))
+      .reduce((a, b) => a + b, 0);
+  }
+
+  it("既定は上限20件・スコア降順・算出根拠の再計算一致・帯内訳合計が visible 件数と一致する", () => {
+    const total = visibleCount(defaultMarkdown);
+    expect(total).toBeGreaterThan(MAX_PRIORITIZED_FINDING_ROWS);
+    const { rows } = expectPrioritySectionInvariants(section212(defaultMarkdown), {
+      label: "対処優先度順の候補一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    });
+    expect(rows.length).toBe(MAX_PRIORITIZED_FINDING_ROWS);
+    expect(section212(defaultMarkdown)).toContain(
+      "- 本表は矛盾の断定ではなく、確認着手順の提示である。"
+    );
+  });
+
+  it("verbose: true では全件表示・打ち切り注記なし・帯内訳が既定と同値になる", () => {
+    const total = visibleCount(defaultMarkdown);
+    const defaultSummary = expectPrioritySectionInvariants(section212(defaultMarkdown), {
+      label: "対処優先度順の候補一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: total,
+    }).summary;
+    const verboseSummary = expectPrioritySectionInvariants(section212(verboseMarkdown), {
+      label: "対処優先度順の候補一覧",
+      verbose: true,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: visibleCount(verboseMarkdown),
+    }).summary;
+    for (const band of ["P1", "P2", "P3", "P4"] as const) {
+      expect(verboseSummary[band]).toBe(defaultSummary[band]);
+    }
+    expect(section212(verboseMarkdown)).not.toContain("を省略）。全件は verbose: true で取得できる。");
+  });
+
+  it("severity は判定区分カタログの宣言値と一致する（スコアで上書きしない）", () => {
+    const rows = parsePriorityRows(section212(verboseMarkdown));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const category = basisContradictionCriteria.categories.find((c) => c.id === row.categoryId);
+      expect(category, `未知の区分ID: ${row.categoryId}`).toBeDefined();
+      expect(row.severity).toBe(category!.severity);
+    }
+  });
+
+  it("算出根拠セルの影響ID名・文書名がフィクスチャ本文から裏付けられる（verbose 全件）", () => {
+    const rows = parsePriorityRows(section212(verboseMarkdown));
+    let checked = 0;
+    for (const row of rows) {
+      for (const id of row.basis.impactedIdNames) {
+        const expectedDocs = largeInput.documents
+          .filter((d) => d.content.includes(id))
+          .map((d) => d.name);
+        expect(expectedDocs.length).toBeGreaterThan(0);
+        for (const name of row.basis.documentNames) expect(expectedDocs).toContain(name);
+        checked += 1;
+      }
+      if (row.place.includes("(見出しなし)")) {
+        expect(row.basis.sectionResolved).toBe(false);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("minConfidence: high 指定時は 2.12 の対象件数が visible 件数と一致する（抑制済み候補を混入させない）", () => {
+    // baseInput は high/medium/low が混在するため、抑制の有無で件数差が観測できる
+    const all = renderBasisContradictionAudit(baseInput);
+    const highOnly = renderBasisContradictionAudit({ ...baseInput, minConfidence: "high" });
+    const allTotal = visibleCount(all);
+    const highTotal = visibleCount(highOnly);
+    expect(highTotal).toBeGreaterThan(0);
+    expect(highTotal).toBeLessThan(allTotal);
+
+    const { summary, rows } = expectPrioritySectionInvariants(section212(highOnly), {
+      label: "対処優先度順の候補一覧",
+      verbose: false,
+      maxRows: MAX_PRIORITIZED_FINDING_ROWS,
+      expectedTotal: highTotal,
+    });
+    expect(summary.total).toBe(highTotal);
+    // 抑制された候補（medium/low の判定区分）が優先度一覧に混入していないこと
+    const visibleIds = new Set(
+      (highOnly.split("## 2. 決定的検査(自動)")[1].split("### 2.12")[0].match(/^- \[\w+\] (BC-\d+)/gm) ??
+        []).map((l) => /(BC-\d+)/.exec(l)![1])
+    );
+    expect(visibleIds.size).toBe(highTotal);
+    for (const row of rows) {
+      expect(visibleIds.has(row.id)).toBe(true);
+      const category = basisContradictionCriteria.categories.find((c) => c.id === row.categoryId);
+      expect(category).toBeDefined();
+    }
+  });
+
+  it("2.11 サマリの集計行が既定/verboseで完全一致する（検出件数不変）", () => {
+    const summaryOf = (md: string) => md.split("### 2.11 サマリ")[1].split("### 2.12")[0];
+    expect(summaryOf(defaultMarkdown)).toBe(summaryOf(verboseMarkdown));
+  });
+
+  it("既定出力が40,000字未満のままである", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+  });
+
+  it("候補0件では表を出さず「対象指摘なし」を出す", () => {
+    const md = renderBasisContradictionAudit({
+      documents: [{ name: "empty", content: "特に矛盾のない普通の文章です。" }],
+    });
+    const section = section212(md);
+    expect(section).toContain("- 対象指摘なし（決定的検査の指摘が0件）。未指摘は合格を意味しない。");
+    expect(section).not.toContain("| 順位 |");
   });
 });
 

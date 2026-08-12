@@ -22,10 +22,108 @@ import {
   renderDocumentDigestLines,
   sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
-import type { AuditIdPopulationInput, IdPopulationAuditCriteria } from "../types.js";
+import {
+  isSectionResolved,
+  renderFindingPrioritySection,
+  type FindingPriorityInput,
+  type FindingPrioritySeverity,
+} from "../findingPriority.js";
+import type {
+  AuditIdPopulationInput,
+  IdPopulationAuditCriteria,
+  IdPopulationRow,
+  PopulationDiffRow,
+  UndefinedPopulationId,
+} from "../types.js";
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
+}
+
+/**
+ * 2.9節（対処優先度順の指摘一覧）の入力を、2.2/2.3/2.4/2.6/2.7 の決定的判定から作る。
+ * severity は判定区分カタログ（idPopulationAuditCriteria）の宣言値をそのまま使う。
+ * PAC-06（文書単位の反映率低下）はフラグ化された決定的判定が無いため対象外。
+ */
+export function buildIdPopulationPriorityInputs(args: {
+  neverDeclared: readonly IdPopulationRow[];
+  excluded: readonly IdPopulationRow[];
+  undefinedIds: readonly UndefinedPopulationId[];
+  missingDocuments: readonly string[];
+  populationDiff: readonly PopulationDiffRow[];
+  criteria: IdPopulationAuditCriteria;
+}): FindingPriorityInput[] {
+  const severityOf = (categoryId: string): FindingPrioritySeverity =>
+    (args.criteria.categories.find((c) => c.id === categoryId)?.severity as
+      | FindingPrioritySeverity
+      | undefined) ?? "medium";
+
+  const inputs: FindingPriorityInput[] = [];
+  const counters = new Map<string, number>();
+  const nextId = (categoryId: string) => {
+    const n = (counters.get(categoryId) ?? 0) + 1;
+    counters.set(categoryId, n);
+    return `${categoryId}#${n}`;
+  };
+
+  for (const row of args.neverDeclared) {
+    inputs.push({
+      id: nextId("PAC-01"),
+      categoryId: "PAC-01",
+      place: `${row.document}:${row.lineIndex + 1} ${row.heading}`,
+      severity: severityOf("PAC-01"),
+      impactedIds: [row.id],
+      documents: [row.document],
+      sectionResolved: isSectionResolved([row.heading]),
+    });
+  }
+  for (const row of args.excluded) {
+    inputs.push({
+      id: nextId("PAC-02"),
+      categoryId: "PAC-02",
+      place: `${row.document}:${row.lineIndex + 1} ${row.heading}`,
+      severity: severityOf("PAC-02"),
+      impactedIds: [row.id],
+      documents: [row.document],
+      sectionResolved: isSectionResolved([row.heading]),
+    });
+  }
+  for (const u of args.undefinedIds) {
+    inputs.push({
+      id: nextId("PAC-03"),
+      categoryId: "PAC-03",
+      place: `${u.populations.join(", ")} / (テストベース外)`,
+      severity: severityOf("PAC-03"),
+      impactedIds: [u.id],
+      // 母集団は文書ではないため文書横断は0点。
+      documents: [],
+      sectionResolved: false,
+    });
+  }
+  for (const name of args.missingDocuments) {
+    inputs.push({
+      id: nextId("PAC-04"),
+      categoryId: "PAC-04",
+      place: `${name} / (未投入)`,
+      severity: severityOf("PAC-04"),
+      impactedIds: [],
+      documents: [name],
+      sectionResolved: false,
+    });
+  }
+  for (const row of args.populationDiff) {
+    if (row.missingIds.length === 0) continue;
+    inputs.push({
+      id: nextId("PAC-05"),
+      categoryId: "PAC-05",
+      place: `${row.population} / (母集団差分)`,
+      severity: severityOf("PAC-05"),
+      impactedIds: row.missingIds,
+      documents: [],
+      sectionResolved: false,
+    });
+  }
+  return inputs;
 }
 
 export function renderIdPopulationAudit(
@@ -57,6 +155,11 @@ export function renderIdPopulationAudit(
   lines.push(
     "既定(verbose未指定/false)は要約表示。2.1節は判定フラグ(never-declared/excluded)付きの行のみ表示する。全件が必要な場合は `verbose: true` を指定すること。"
   );
+  if (!verbose) {
+    lines.push(
+      "既定では 2.9節の対処優先度順の指摘一覧に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。"
+    );
+  }
   lines.push("");
 
   lines.push("## 1. 監査対象");
@@ -218,6 +321,22 @@ export function renderIdPopulationAudit(
   );
   lines.push("");
 
+  lines.push(
+    ...renderFindingPrioritySection(
+      "2.9 対処優先度順の指摘一覧",
+      "対処優先度順の指摘一覧",
+      buildIdPopulationPriorityInputs({
+        neverDeclared,
+        excluded,
+        undefinedIds,
+        missingDocuments,
+        populationDiff,
+        criteria,
+      }),
+      verbose
+    )
+  );
+
   lines.push("## 3. 判定区分と対処指針");
   lines.push("");
   lines.push("| 区分ID | 区分 | 重大度 | 説明 | 対処 |");
@@ -339,7 +458,7 @@ export const auditIdPopulationInputShape = {
     .boolean()
     .optional()
     .describe(
-      "If false/omitted (default), section 2.1 shows a per-prefix count summary and lists rows only for IDs with status 'never-declared' or 'excluded'. If true, lists every defined-ID row in full (as in previous versions)."
+      "If false/omitted (default), section 2.1 shows a per-prefix count summary and lists rows only for IDs with status 'never-declared' or 'excluded', and section 2.9's remediation-priority list is capped at a fixed row limit with total/omitted counts noted. If true, lists every defined-ID row and every priority row in full (as in previous versions)."
     ),
 } as const;
 
