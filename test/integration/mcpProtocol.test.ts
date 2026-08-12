@@ -73,9 +73,9 @@ describe("MCP protocol: tools/call", () => {
 });
 
 describe("MCP protocol: resources", () => {
-  it("resources/list returns 40 resources, all readable", async () => {
+  it("resources/list returns 41 resources, all readable", async () => {
     const { resources } = await testClient.client.listResources();
-    expect(resources.length).toBe(40);
+    expect(resources.length).toBe(41);
     for (const resource of resources) {
       const result = await testClient.client.readResource({ uri: resource.uri });
       expect(result.contents.length).toBeGreaterThan(0);

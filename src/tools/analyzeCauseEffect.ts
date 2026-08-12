@@ -15,7 +15,11 @@ import {
   summarizeCauseEffect,
 } from "../causeEffectAnalysis.js";
 import { computeDecisionTableRows } from "./designDecisionTable.js";
-import { findAmbiguousTerms } from "../testBasisAnalysis.js";
+import {
+  findAmbiguousTerms,
+  formatAmbiguousExclusionHitsLine,
+  formatAmbiguousExclusionSummary,
+} from "../testBasisAnalysis.js";
 import type {
   AnalyzeCauseEffectInput,
   CauseEffectAnalysisCriteria,
@@ -29,6 +33,9 @@ function escapeCell(value: string): string {
 function findingsByCategory(findings: CauseEffectFinding[], categoryId: string): CauseEffectFinding[] {
   return findings.filter((f) => f.categoryId === categoryId);
 }
+
+/** 3.11節の1語あたりに表示する除外実体(exclusionHits)数の上限。本節はverboseを持たないため常に打ち切る。 */
+const MAX_AMBIGUOUS_EXCLUSION_HITS_PER_TERM = 3;
 
 function pushFindingLines(lines: string[], findings: CauseEffectFinding[], emptyLabel = "- なし"): void {
   if (findings.length === 0) {
@@ -293,7 +300,12 @@ export function renderCauseEffectAnalysis(
     lines.push("- なし");
   } else {
     for (const term of ambiguousTerms) {
-      lines.push(`- [info] CEG-18 ${escapeCell(term.term)}: ${term.category} / 出現 ${term.total} 件`);
+      const exclusionSummary = formatAmbiguousExclusionSummary(term);
+      lines.push(
+        `- [info] CEG-18 ${escapeCell(term.term)}: ${term.category} / 出現 ${term.total} 件${exclusionSummary}`
+      );
+      const exclusionHitsLine = formatAmbiguousExclusionHitsLine(term, MAX_AMBIGUOUS_EXCLUSION_HITS_PER_TERM, false);
+      if (exclusionHitsLine) lines.push(exclusionHitsLine);
     }
   }
   lines.push("");

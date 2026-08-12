@@ -12,6 +12,8 @@ import {
   findAmbiguousTerms,
   findDuplicateIds,
   findUnresolvedReferences,
+  formatAmbiguousExclusionHitsLine,
+  formatAmbiguousExclusionSummary,
   splitIdIntoPrefixAndNumber,
 } from "../testBasisAnalysis.js";
 import {
@@ -46,6 +48,8 @@ export const MAX_DUPLICATE_ID_LINES = 20;
 export const MAX_UNRESOLVED_REFERENCE_LINES = 20;
 /** 既定表示（verbose=false）で 2.6節の表・JSONブロックに載せる根拠位置の上限。 */
 export const MAX_REQUIREMENT_SOURCE_REFS = 20;
+/** 既定表示（verbose=false）で 2.5節の1語あたりに表示する除外実体(exclusionHits)数の上限。 */
+export const MAX_AMBIGUOUS_EXCLUSION_HITS_PER_TERM = 3;
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
@@ -259,7 +263,14 @@ export function renderRequirementsAnalysis(
       const byHeadingText = finding.byHeading
         .map((h) => `${h.document} / ${h.heading}(${h.count}件)`)
         .join(", ");
-      lines.push(`- 「${finding.term}」(${finding.category}) 計${finding.total}件: ${byHeadingText}`);
+      const exclusionSummary = formatAmbiguousExclusionSummary(finding);
+      lines.push(`- 「${finding.term}」(${finding.category}) 計${finding.total}件: ${byHeadingText}${exclusionSummary}`);
+      const exclusionHitsLine = formatAmbiguousExclusionHitsLine(
+        finding,
+        MAX_AMBIGUOUS_EXCLUSION_HITS_PER_TERM,
+        verbose
+      );
+      if (exclusionHitsLine) lines.push(exclusionHitsLine);
     }
   }
   lines.push("");
