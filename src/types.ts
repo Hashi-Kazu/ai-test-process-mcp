@@ -353,6 +353,26 @@ export interface TestBasisAmbiguousTermFinding {
   category: "ambiguous" | "weak-requirement" | "incomplete-note";
   total: number;
   byHeading: { document: string; heading: string; count: number }[];
+  /** 除外規則(ambiguityExclusionRules)により本文出現から除外した総数。total には含まれない。 */
+  excludedTotal: number;
+  /** 除外規則ID別の除外件数(出現順・重複排除)。excludedTotal===0 のときは空配列。 */
+  excludedByRule: { ruleId: string; count: number }[];
+  /** 除外した実際の一致箇所(宣言(件数)と実体(本文中の一致箇所)の突き合わせ用)。 */
+  exclusionHits: { ruleId: string; document: string; heading: string; quote: string }[];
+}
+
+/** 曖昧語検査の文脈依存除外規則の1件。src/resources/ambiguityExclusionRules.ts で定義する。 */
+export interface AmbiguityExclusionRule {
+  id: string; // "AMBX-01" 形式
+  term: string; // DEFAULT_AMBIGUOUS_TERMS の term と一致するものだけ有効
+  contextPatternSource: string; // 正規表現source。lookbehind/lookaheadのみで構成し、マッチ開始位置が term の一致位置と一致する
+  rationale: string;
+  keptCounterExample: string; // 除外しない反例(実装確認用)
+}
+export interface AmbiguityExclusionRuleCatalog {
+  name: string;
+  note: string;
+  rules: AmbiguityExclusionRule[];
 }
 
 export type TestBasisQuantityKind =

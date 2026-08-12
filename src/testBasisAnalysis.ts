@@ -1,5 +1,6 @@
 import { parseHeadings, escapeRegExp, groupByHeading } from "./tools/reviewTestPlan.js";
 import type { ParsedHeading } from "./tools/reviewTestPlan.js";
+import { ambiguityExclusionRules } from "./resources/ambiguityExclusionRules.js";
 import type {
   RequirementSourceRef,
   TestBasisAmbiguousTermFinding,
@@ -766,11 +767,31 @@ export function findAmbiguousTerms(
     })),
   ];
 
+  // 用語ごとの文脈依存除外規則（ambiguityExclusionRules.rules から term 一致分のみ）。
+  const exclusionRulesByTerm = new Map<
+    string,
+    { id: string; regex: RegExp }[]
+  >();
+  for (const rule of ambiguityExclusionRules.rules) {
+    if (!exclusionRulesByTerm.has(rule.term)) exclusionRulesByTerm.set(rule.term, []);
+    exclusionRulesByTerm.get(rule.term)!.push({ id: rule.id, regex: new RegExp(rule.contextPatternSource, "g") });
+  }
+
+  const QUOTE_CONTEXT_CHARS = 18;
+  function buildQuote(line: string, start: number, end: number): string {
+    const before = line.slice(Math.max(0, start - QUOTE_CONTEXT_CHARS), start);
+    const after = line.slice(end, end + QUOTE_CONTEXT_CHARS);
+    return `${before}「${line.slice(start, end)}」${after}`;
+  }
+
   const results: TestBasisAmbiguousTermFinding[] = [];
   for (const { term, category } of terms) {
     const regex = new RegExp(`(?<![不非未無])${escapeRegExp(term)}`, "g");
+    const rulesForTerm = exclusionRulesByTerm.get(term) ?? [];
     let total = 0;
     const byHeading: { document: string; heading: string; count: number }[] = [];
+    const excludedByRuleMap = new Map<string, number>();
+    const exclusionHits: { ruleId: string; document: string; heading: string; quote: string }[] = [];
     for (const doc of documents) {
       const lines = doc.content.split("\n");
       const anchors = resolveSectionAnchors(doc.content);
@@ -781,7 +802,24 @@ export function findAmbiguousTerms(
         regex.lastIndex = 0;
         let m: RegExpExecArray | null;
         while ((m = regex.exec(line)) !== null) {
-          localOccurrences.push({ heading: anchorLabelAt(anchor, m.index) });
+          const start = m.index;
+          const end = start + m[0].length;
+          const matchedRule = rulesForTerm.find((rule) => {
+            rule.regex.lastIndex = start;
+            const rm = rule.regex.exec(line);
+            return rm !== null && rm.index === start;
+          });
+          if (matchedRule) {
+            excludedByRuleMap.set(matchedRule.id, (excludedByRuleMap.get(matchedRule.id) ?? 0) + 1);
+            exclusionHits.push({
+              ruleId: matchedRule.id,
+              document: doc.name,
+              heading: anchorLabelAt(anchor, start),
+              quote: buildQuote(line, start, end),
+            });
+          } else {
+            localOccurrences.push({ heading: anchorLabelAt(anchor, start) });
+          }
           if (m[0].length === 0) regex.lastIndex++;
         }
       });
@@ -791,11 +829,48 @@ export function findAmbiguousTerms(
         total += g.count;
       }
     }
-    if (total > 0) {
-      results.push({ term, category, total, byHeading });
+    const excludedTotal = Array.from(excludedByRuleMap.values()).reduce((sum, n) => sum + n, 0);
+    if (total > 0 || excludedTotal > 0) {
+      results.push({
+        term,
+        category,
+        total,
+        byHeading,
+        excludedTotal,
+        excludedByRule: Array.from(excludedByRuleMap.entries()).map(([ruleId, count]) => ({ ruleId, count })),
+        exclusionHits,
+      });
     }
   }
   return results;
+}
+
+/**
+ * 1行サマリ用の除外件数・規則ID内訳の断片（例:「（除外12件: AMBX-01×10, AMBX-02×2）」）。
+ * excludedTotal===0 なら空文字列。review_test_basis / analyze_requirements / analyze_cause_effect で共有する。
+ */
+export function formatAmbiguousExclusionSummary(finding: TestBasisAmbiguousTermFinding): string {
+  if (finding.excludedTotal === 0) return "";
+  const byRuleText = finding.excludedByRule.map((r) => `${r.ruleId}×${r.count}`).join(", ");
+  return `（除外${finding.excludedTotal}件: ${byRuleText}）`;
+}
+
+/**
+ * 除外規則の宣言(件数)と実体(本文中の一致箇所)を突き合わせるための引用一覧行。
+ * exclusionHits が無ければ null。maxHits 超過分は「ほかN件」に畳む(verbose なら全件)。
+ */
+export function formatAmbiguousExclusionHitsLine(
+  finding: TestBasisAmbiguousTermFinding,
+  maxHits: number,
+  verbose: boolean
+): string | null {
+  if (finding.exclusionHits.length === 0) return null;
+  const hitsToShow = verbose ? finding.exclusionHits : finding.exclusionHits.slice(0, maxHits);
+  const rest = finding.exclusionHits.length - hitsToShow.length;
+  const hitsText =
+    hitsToShow.map((h) => `[${h.ruleId}] ${h.document} / ${h.heading}: ${h.quote}`).join(" / ") +
+    (rest > 0 ? ` ほか${rest}件` : "");
+  return `  - 除外実体: ${hitsText}`;
 }
 
 const BOUNDARY_WORD_REGEX = /以上|以下|未満|超|以内/;

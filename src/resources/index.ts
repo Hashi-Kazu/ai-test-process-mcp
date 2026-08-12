@@ -3,6 +3,7 @@ import { testPlanTemplate } from "./testPlanTemplate.js";
 import { jstqbGlossary } from "./jstqbGlossary.js";
 import { testPlanReviewChecklist } from "./testPlanReviewChecklist.js";
 import { testPlanAmbiguityLexicon } from "./ambiguityLexicon.js";
+import { ambiguityExclusionRules } from "./ambiguityExclusionRules.js";
 import { testBasisReviewChecklist } from "./testBasisReviewChecklist.js";
 import { testSpecificationReviewChecklist } from "./testSpecificationReviewChecklist.js";
 import { qualityCharacteristicModel } from "./qualityCharacteristics.js";
@@ -995,6 +996,29 @@ export function registerResources(server: McpServer): void {
             null,
             2
           ),
+        },
+      ],
+    })
+  );
+
+  server.registerResource(
+    "test-basis-ambiguity-exclusion-rules",
+    "testbasis://review/ambiguity-exclusion-rules",
+    {
+      title: "Test Basis Ambiguity Exclusion Rules",
+      description:
+        "Context-dependent exclusion rules (AMBX-01/AMBX-02) for findAmbiguousTerms, used by review_test_basis / " +
+        "analyze_requirements / analyze_cause_effect to suppress boilerplate false positives (noun-hedge \"等\" endings, " +
+        "definitional \"必要な\" usages) while keeping open-ended enumerations and unbounded qualifiers detected. " +
+        "Independent of testplan://review/ambiguity-lexicon.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(ambiguityExclusionRules, null, 2),
         },
       ],
     })

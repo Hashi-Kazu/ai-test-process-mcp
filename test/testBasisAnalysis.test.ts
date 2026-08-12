@@ -551,6 +551,151 @@ describe("findAmbiguousTerms", () => {
   });
 });
 
+describe("findAmbiguousTerms exclusion rules", () => {
+  it("excludes AMBX-01 (single-noun hedge suffix) occurrences of 「等」", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: [
+          "届出書等を地方公共団体に提出する。",
+          "独自施策システム等を一意に特定し、管理するためにIDを付番する。",
+        ].join("\n"),
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "等");
+
+    expect(finding?.total).toBe(0);
+    expect(finding?.excludedTotal).toBe(2);
+    expect(finding?.excludedByRule).toEqual([{ ruleId: "AMBX-01", count: 2 }]);
+    expect(finding?.exclusionHits).toHaveLength(2);
+    expect(finding?.exclusionHits[0].ruleId).toBe("AMBX-01");
+    expect(finding?.exclusionHits[0].document).toBe("doc1.md");
+  });
+
+  it("does not misclassify the topic-particle comma in 「Xは、Y等」 as an enumeration separator", () => {
+    // 票の実装注意事項: 30文字程度の後方参照窓では「住登外者は、」の読点を誤って列挙区切りと判定してしまう。
+    // 直前が主題助詞「は」の読点は別クローズの区切りとみなし、除外対象に含めなければならない。
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "住登外者は、届出書等を地方公共団体に提出する。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "等");
+
+    expect(finding?.total).toBe(0);
+    expect(finding?.excludedTotal).toBe(1);
+  });
+
+  it("does not exclude 「等」 when the preceding enumeration is joined by 「、」 (open-ended listing)", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "自動デプロイ、コスト最適化支援等の非機能要件を実現するための機能群をいう。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "等");
+
+    expect(finding?.total).toBe(1);
+    expect(finding?.excludedTotal).toBe(0);
+  });
+
+  it("does not exclude 「等」 when the preceding enumeration is joined by 「や」", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "マイナポータルや中間サーバー等の外部システムとのインターフェースについて規定する。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "等");
+
+    expect(finding?.total).toBe(1);
+    expect(finding?.excludedTotal).toBe(0);
+  });
+
+  it("does not exclude 「等」 following a verb clause (open-scoped example listing, not a noun hedge)", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "新たな技術が開発される等デジタル化の進展がみられる場合にも、改定する。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "等");
+
+    expect(finding?.total).toBe(1);
+    expect(finding?.excludedTotal).toBe(0);
+  });
+
+  it("excludes AMBX-02 (definitional 「Xに/がYに必要な」 with Y in {機能,情報,データ})", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: [
+          "標準準拠システムに必要な機能のうち、複数の標準準拠システムに共通する機能を実装する。",
+          "システム運用に必要なデータ項目を対象としておらず、実装は別途検討する。",
+        ].join("\n"),
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "必要な");
+
+    expect(finding?.total).toBe(0);
+    expect(finding?.excludedTotal).toBe(2);
+    expect(finding?.excludedByRule).toEqual([{ ruleId: "AMBX-02", count: 2 }]);
+  });
+
+  it("does not exclude 「必要な」 when the following noun is not 機能/情報/データ (existing behavior unchanged)", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "相応の対応が必要な処置を行う。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "必要な");
+
+    expect(finding?.total).toBe(1);
+    expect(finding?.excludedTotal).toBe(0);
+  });
+
+  it("does not exclude 「必要な」 when the preceding particle is not に/が (implicit subject via a comma)", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "公共団体内で一意に特定できず、必要な情報の連携時に支障が生じる可能性がある。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const finding = findings.find((f) => f.term === "必要な");
+
+    expect(finding?.total).toBe(1);
+    expect(finding?.excludedTotal).toBe(0);
+  });
+
+  it("does not affect other ambiguous terms such as 「速やかに」「適切な」「十分に」", () => {
+    const documents: TestBasisDocument[] = [
+      {
+        name: "doc1.md",
+        content: "速やかに適切な措置を十分に検討すること。",
+      },
+    ];
+    const findings = findAmbiguousTerms(documents);
+    const byTerm = new Map(findings.map((f) => [f.term, f]));
+
+    expect(byTerm.get("速やかに")?.total).toBe(1);
+    expect(byTerm.get("速やかに")?.excludedTotal).toBe(0);
+    expect(byTerm.get("適切な")?.total).toBe(1);
+    expect(byTerm.get("適切な")?.excludedTotal).toBe(0);
+    expect(byTerm.get("十分に")?.total).toBe(1);
+    expect(byTerm.get("十分に")?.excludedTotal).toBe(0);
+  });
+});
+
 describe("extractQuantityExpressions", () => {
   it("extracts quantity expressions with correct kind and boundary flag", () => {
     const documents: TestBasisDocument[] = [

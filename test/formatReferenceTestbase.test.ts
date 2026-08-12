@@ -121,7 +121,9 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
 
     // 代替アンカー（見出しが退化した実務Wordに対するパイプ表の行/列アンカー）の受け入れ本体。
     // 期待値は docs/ai/regression-baseline.md 19.7 の実測値と対応する。
-    it("resolves 95%+ of ambiguous-term findings to a section anchor across both docx (169 findings total)", () => {
+    // Issue #209（HSKZ-213）の除外規則（AMBX-01/AMBX-02、ambiguityExclusionRules）適用後の値
+    // （旧: 169/146/23）。等94件・必要な10件（本編）、等8件（新旧対照表）が除外された。
+    it("resolves 95%+ of ambiguous-term findings to a section anchor across both docx (57 findings total after AMBX-01/AMBX-02 exclusions)", () => {
       const documents = [MAIN, SHINKYU].map((name) => {
         const entries = readOoxmlEntries(readFileSync(path.join(wordDir, name)));
         const documentXml = entries.get("word/document.xml")!;
@@ -151,14 +153,14 @@ describe("format_reference (Word/Markdown/JSON リファレンス原本と READM
         }
       }
 
-      expect(total).toBe(169);
-      // 解決率95%以上（実測: 169/169 = 100%）
+      expect(total).toBe(57);
+      // 解決率95%以上（実測: 57/57 = 100%）
       expect(resolved * 100).toBeGreaterThanOrEqual(total * 95);
 
       // 本編（見出し49件）は従来どおり見出しラベルで解決し、代替アンカーを一切使わない。
-      expect(perDoc.get(MAIN)).toEqual({ total: 146, resolved: 146, alternative: 0 });
+      expect(perDoc.get(MAIN)).toEqual({ total: 42, resolved: 42, alternative: 0 });
       // 新旧対照表（見出し0件・5,797字が1セル）は全件が代替アンカーで解決される。
-      expect(perDoc.get(SHINKYU)).toEqual({ total: 23, resolved: 23, alternative: 23 });
+      expect(perDoc.get(SHINKYU)).toEqual({ total: 15, resolved: 15, alternative: 15 });
 
       const shinkyuHeadings = findings
         .flatMap((f) => f.byHeading)

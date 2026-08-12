@@ -19,6 +19,8 @@ import {
   findAmbiguousTerms,
   findDuplicateIds,
   findUnresolvedReferences,
+  formatAmbiguousExclusionHitsLine,
+  formatAmbiguousExclusionSummary,
   type TestBasisAnalysisOptions,
 } from "../testBasisAnalysis.js";
 import {
@@ -43,6 +45,8 @@ export const MAX_UNRESOLVED_REFERENCE_LINES = 20;
 export const MAX_AMBIGUOUS_TERM_LINES = 20;
 /** 既定表示（verbose=false）で1.6の1語あたりに表示する見出し内訳数の上限。 */
 export const MAX_AMBIGUOUS_HEADINGS_PER_TERM = 5;
+/** 既定表示（verbose=false）で1.6の1語あたりに表示する除外実体(exclusionHits)数の上限。 */
+export const MAX_AMBIGUOUS_EXCLUSION_HITS_PER_TERM = 3;
 /** 既定表示（verbose=false）で1.7 境界語なし数量表現に表示する行数の上限。 */
 export const MAX_QUANTITY_LINES = 30;
 /** 既定表示（verbose=false）で3章質問状の生成元区分ごとに表示する行数の上限。 */
@@ -156,6 +160,16 @@ export function renderTestBasisReview(
   const boundaryCount = quantities.filter((q) => q.hasBoundaryWord).length;
   const noBoundary = quantities.filter((q) => !q.hasBoundaryWord);
   const ambiguousTotal = ambiguousTerms.reduce((sum, t) => sum + t.total, 0);
+  const ambiguousExcludedTotal = ambiguousTerms.reduce((sum, t) => sum + t.excludedTotal, 0);
+  const ambiguousExcludedByRule = new Map<string, number>();
+  for (const t of ambiguousTerms) {
+    for (const r of t.excludedByRule) {
+      ambiguousExcludedByRule.set(r.ruleId, (ambiguousExcludedByRule.get(r.ruleId) ?? 0) + r.count);
+    }
+  }
+  const ambiguousExcludedByRuleText = Array.from(ambiguousExcludedByRule.entries())
+    .map(([ruleId, count]) => `${ruleId}×${count}`)
+    .join(", ");
 
   const digestRows = buildDocumentDigests(documents, options);
   const digestFindings = findDocumentDigestFindings(digestRows);
@@ -260,7 +274,14 @@ export function renderTestBasisReview(
       const byHeadingText =
         byHeadingToShow.map((h) => `${h.document} / ${h.heading}(${h.count}件)`).join(", ") +
         (byHeadingRest > 0 ? ` ほか${byHeadingRest}見出し` : "");
-      lines.push(`- 「${finding.term}」(${finding.category}) 計${finding.total}件: ${byHeadingText}`);
+      const exclusionSummary = formatAmbiguousExclusionSummary(finding);
+      lines.push(`- 「${finding.term}」(${finding.category}) 計${finding.total}件: ${byHeadingText}${exclusionSummary}`);
+      const exclusionHitsLine = formatAmbiguousExclusionHitsLine(
+        finding,
+        MAX_AMBIGUOUS_EXCLUSION_HITS_PER_TERM,
+        verbose
+      );
+      if (exclusionHitsLine) lines.push(exclusionHitsLine);
     }
     const omittedTerms = ambiguousTerms.slice(ambiguousTermsToShow.length);
     if (omittedTerms.length > 0) {
@@ -289,8 +310,10 @@ export function renderTestBasisReview(
 
   lines.push("### 1.8 サマリ");
   lines.push("");
+  const ambiguousExclusionSummary =
+    ambiguousExcludedTotal > 0 ? ` / 曖昧語除外数: ${ambiguousExcludedTotal}(${ambiguousExcludedByRuleText})` : "";
   lines.push(
-    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount} / 目次 ${tocCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / プレフィックス逸脱数: ${issues.length} / 曖昧語出現数: ${ambiguousTotal} / 数量表現数(境界語なし): ${noBoundary.length} / ダイジェスト指摘数: ${digestFindings.length}`
+    `- 対象文書数: ${documents.length} / 抽出ID数(定義 ${definitionCount} / 参照 ${referenceCount} / 目次 ${tocCount}) / 重複ID数: ${duplicates.length} / 未解決参照数: ${unresolved.length} / プレフィックス逸脱数: ${issues.length} / 曖昧語出現数: ${ambiguousTotal} / 数量表現数(境界語なし): ${noBoundary.length} / ダイジェスト指摘数: ${digestFindings.length}${ambiguousExclusionSummary}`
   );
   lines.push("");
 
