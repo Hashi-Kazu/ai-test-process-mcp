@@ -521,3 +521,86 @@ describe("renderThresholdChangeReexpansion 件数上限つき既定出力(verbos
     expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
   });
 });
+
+function buildSection6HeavyInput(): ReexpandThresholdChangesInput {
+  const N = 60;
+  const beforeLines: string[] = [];
+  const afterLines: string[] = [];
+  for (let i = 1; i <= N; i++) {
+    beforeLines.push(`- LABEL${i}: ${i * 10}枚`);
+    afterLines.push(`- LABEL${i}: ${i * 10 + 5}枚`);
+  }
+  return {
+    parametersBefore: [],
+    parametersAfter: [],
+    documentsBefore: [{ name: "spec-before.md", content: beforeLines.join("\n") }],
+    documentsAfter: [{ name: "spec-after.md", content: afterLines.join("\n") }],
+  };
+}
+
+const TCE01_HEADING =
+  "以下の文書中の閾値がパラメータ表に宣言されていない。宣言漏れか対象外かを判断し、対象なら parametersBefore/parametersAfter へ追加して再実行すること:";
+const TCE04_HEADING = "以下は文書差分と宣言差分が一致していない。反映漏れか抽出の取りこぼしかを確認すること:";
+const TCE07_HEADING =
+  "以下の抽出候補は未承認のため再展開に反映していない。新旧対照表を確認し、承認するものを approvedExtractions へ渡して再実行すること:";
+
+describe("renderThresholdChangeReexpansion Section 6 の件数上限つき既定出力(verbose)", () => {
+  const heavyInput = buildSection6HeavyInput();
+  const defaultMarkdown = renderThresholdChangeReexpansion(heavyInput);
+  const verboseMarkdown = renderThresholdChangeReexpansion({ ...heavyInput, verbose: true });
+
+  it("Section 6の各指示ブロックが全件数・省略件数を併記して打ち切られる", () => {
+    const section6 = defaultMarkdown.split("## 6. 再生成指示(意味的層)")[1].split("## 検査実行状況")[0];
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(section6).toMatch(truncationLine);
+    expect(section6).toContain("未宣言閾値の追加指示(TCE-01)");
+    expect(section6).toContain("未承認抽出候補の承認指示(TCE-07)");
+
+    const tce01Block = section6.split(TCE01_HEADING)[1].split(TCE04_HEADING)[0];
+    const tce01Bullets = tce01Block.split("\n").filter((l) => l.startsWith("- LABEL"));
+    expect(tce01Bullets.length).toBeLessThanOrEqual(10);
+  });
+
+  it("verbose: true ではSection 6も全件表示になる", () => {
+    const section6 = verboseMarkdown.split("## 6. 再生成指示(意味的層)")[1].split("## 検査実行状況")[0];
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(section6).not.toMatch(truncationLine);
+
+    const summaryLine = verboseMarkdown
+      .split("### 0.6")[1]
+      .split("\n")
+      .find((l) => l.startsWith("- 抽出候補数")) as string;
+    const undeclaredCount = Number(summaryLine.match(/未宣言: (\d+)/)?.[1]);
+    expect(undeclaredCount).toBeGreaterThanOrEqual(50);
+
+    const tce01Section = section6.split(TCE01_HEADING)[1].split(TCE04_HEADING)[0];
+    const tce01Bullets = tce01Section.split("\n").filter((l) => l.startsWith("- LABEL"));
+    expect(tce01Bullets.length).toBe(undeclaredCount);
+
+    const tce07Section = section6.split(TCE07_HEADING)[1];
+    const tce07Bullets = tce07Section.split("\n").filter((l) => l.startsWith("- LABEL"));
+    const unapprovedCount = Number(summaryLine.match(/未承認候補: (\d+)/)?.[1]);
+    expect(unapprovedCount).toBeGreaterThanOrEqual(50);
+    expect(tce07Bullets.length).toBe(unapprovedCount);
+  });
+
+  it("Section 6の打ち切りはanyInstructionの判定・他セクションの集計に影響しない", () => {
+    const defaultSummary = defaultMarkdown.split("### 4.3 サマリ")[1].split("## 5.")[0];
+    const verboseSummary = verboseMarkdown.split("### 4.3 サマリ")[1].split("## 5.")[0];
+    expect(defaultSummary).toBe(verboseSummary);
+
+    const defaultExtractionSummary = defaultMarkdown.split("### 0.6")[1].split("## 1.")[0];
+    const verboseExtractionSummary = verboseMarkdown.split("### 0.6")[1].split("## 1.")[0];
+    expect(defaultExtractionSummary).toBe(verboseExtractionSummary);
+  });
+
+  it("既定出力全体が40,000字未満になる", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+  });
+
+  it("is deterministic across repeated calls", () => {
+    const first = renderThresholdChangeReexpansion(heavyInput);
+    const second = renderThresholdChangeReexpansion(heavyInput);
+    expect(first).toBe(second);
+  });
+});

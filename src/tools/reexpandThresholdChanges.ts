@@ -37,6 +37,8 @@ export const MAX_REFERENCE_ROWS = 20;
 export const MAX_FINDING_ROWS = 30;
 /** 既定表示（verbose=false）で4.2節の成果物別影響判定に表示する行数の上限。 */
 export const MAX_IMPACTED_ARTIFACT_ROWS = 20;
+/** 既定表示（verbose=false）で6節の各再生成指示ブロックに列挙する行数の上限。 */
+export const MAX_INSTRUCTION_ROWS = 10;
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
@@ -120,7 +122,7 @@ export function renderThresholdChangeReexpansion(
   lines.push("");
   if (!verbose) {
     lines.push(
-      "既定(verbose未指定/false)は要約表示。0.2/0.3/0.4/2.1/4.1/4.2に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
+      "既定(verbose未指定/false)は要約表示。0.2/0.3/0.4/2.1/4.1/4.2/6に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
     );
     lines.push("");
   }
@@ -363,8 +365,16 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下の旧値の直値をパラメータ名参照へ置き換え、期待結果の数値を変更後の値で再計算すること:");
     lines.push("");
-    for (const f of tci01) {
+    const tci01ToShow = verbose ? tci01 : tci01.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci01ToShow) {
       lines.push(`- ${f.ownerId}(${f.places.join(", ")}): ${escapeCell(f.detail)}`);
+    }
+    if (tci01ToShow.length < tci01.length) {
+      lines.push(
+        `- 旧値直値の置換指示(TCI-01): 全${tci01.length}件中 ${tci01ToShow.length}件を表示（${
+          tci01.length - tci01ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
@@ -373,8 +383,16 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下のケースの coverageTargets を再展開後の網羅対象IDへ差し替え、期待結果の境界値を再計算すること:");
     lines.push("");
-    for (const f of tci02) {
+    const tci02ToShow = verbose ? tci02 : tci02.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci02ToShow) {
       lines.push(`- ${f.ownerId}: ${f.suggestion ? escapeCell(f.suggestion) : escapeCell(f.detail)}`);
+    }
+    if (tci02ToShow.length < tci02.length) {
+      lines.push(
+        `- coverageTargets差し替え指示(TCI-02): 全${tci02.length}件中 ${tci02ToShow.length}件を表示（${
+          tci02.length - tci02ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
@@ -383,8 +401,16 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下のケースは名前参照のため本文修正は不要だが、期待結果・前提条件の数値記述が変更後の値と整合するか確認すること:");
     lines.push("");
-    for (const f of tci03) {
+    const tci03ToShow = verbose ? tci03 : tci03.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci03ToShow) {
       lines.push(`- ${f.ownerId}(${f.places.join(", ")}): ${escapeCell(f.detail)}`);
+    }
+    if (tci03ToShow.length < tci03.length) {
+      lines.push(
+        `- 名前参照ケースの確認指示(TCI-03): 全${tci03.length}件中 ${tci03ToShow.length}件を表示（${
+          tci03.length - tci03ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
@@ -393,8 +419,16 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下の単位変更を前提条件・期待結果の記述へ反映し、換算の要否を確認すること:");
     lines.push("");
-    for (const f of tci04) {
+    const tci04ToShow = verbose ? tci04 : tci04.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci04ToShow) {
       lines.push(`- ${f.parameterName}: ${escapeCell(f.detail)}`);
+    }
+    if (tci04ToShow.length < tci04.length) {
+      lines.push(
+        `- 単位変更の反映指示(TCI-04): 全${tci04.length}件中 ${tci04ToShow.length}件を表示（${
+          tci04.length - tci04ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
@@ -403,8 +437,16 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下の削除されたパラメータへの参照を見直し、代替パラメータへの置換または該当箇所の削除を検討すること:");
     lines.push("");
-    for (const f of tci05) {
+    const tci05ToShow = verbose ? tci05 : tci05.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci05ToShow) {
       lines.push(`- ${f.ownerId}(${f.places.join(", ")}): ${escapeCell(f.detail)}`);
+    }
+    if (tci05ToShow.length < tci05.length) {
+      lines.push(
+        `- 削除パラメータ参照の見直し指示(TCI-05): 全${tci05.length}件中 ${tci05ToShow.length}件を表示（${
+          tci05.length - tci05ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
@@ -413,8 +455,16 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下の値を変更したが参照が見つからないパラメータについて、参照元の有無を確認すること:");
     lines.push("");
-    for (const f of tci06) {
+    const tci06ToShow = verbose ? tci06 : tci06.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci06ToShow) {
       lines.push(`- ${f.parameterName}: ${escapeCell(f.detail)}`);
+    }
+    if (tci06ToShow.length < tci06.length) {
+      lines.push(
+        `- 参照未検出パラメータの確認指示(TCI-06): 全${tci06.length}件中 ${tci06ToShow.length}件を表示（${
+          tci06.length - tci06ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
@@ -423,33 +473,45 @@ export function renderThresholdChangeReexpansion(
     anyInstruction = true;
     lines.push("以下の解決できなかった束縛について、束縛先パラメータ名・値の指定を見直すこと:");
     lines.push("");
-    for (const f of tci08) {
+    const tci08ToShow = verbose ? tci08 : tci08.slice(0, MAX_INSTRUCTION_ROWS);
+    for (const f of tci08ToShow) {
       lines.push(`- ${f.parameterName ?? "-"}: ${escapeCell(f.detail)}`);
+    }
+    if (tci08ToShow.length < tci08.length) {
+      lines.push(
+        `- 束縛解決不能の見直し指示(TCI-08): 全${tci08.length}件中 ${tci08ToShow.length}件を表示（${
+          tci08.length - tci08ToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
     lines.push("");
   }
 
   if (extraction.enabled) {
-    const extractionBlocks: { categoryId: string; heading: string }[] = [
+    const extractionBlocks: { categoryId: string; heading: string; label: string }[] = [
       {
         categoryId: "TCE-01",
         heading:
           "以下の文書中の閾値がパラメータ表に宣言されていない。宣言漏れか対象外かを判断し、対象なら parametersBefore/parametersAfter へ追加して再実行すること:",
+        label: "未宣言閾値の追加指示(TCE-01)",
       },
       {
         categoryId: "TCE-02",
         heading:
           "以下は宣言値と仕様書記載値が食い違っている。どちらが正かを確定してから再展開すること:",
+        label: "宣言値と文書値不一致の確認指示(TCE-02)",
       },
       {
         categoryId: "TCE-04",
         heading:
           "以下は文書差分と宣言差分が一致していない。反映漏れか抽出の取りこぼしかを確認すること:",
+        label: "文書差分と宣言差分不整合の確認指示(TCE-04)",
       },
       {
         categoryId: "TCE-07",
         heading:
           "以下の抽出候補は未承認のため再展開に反映していない。新旧対照表を確認し、承認するものを approvedExtractions へ渡して再実行すること:",
+        label: "未承認抽出候補の承認指示(TCE-07)",
       },
     ];
     for (const block of extractionBlocks) {
@@ -458,8 +520,16 @@ export function renderThresholdChangeReexpansion(
       anyInstruction = true;
       lines.push(block.heading);
       lines.push("");
-      for (const f of items) {
+      const itemsToShow = verbose ? items : items.slice(0, MAX_INSTRUCTION_ROWS);
+      for (const f of itemsToShow) {
         lines.push(`- ${escapeCell(f.name)}: ${escapeCell(f.detail)}`);
+      }
+      if (itemsToShow.length < items.length) {
+        lines.push(
+          `- ${block.label}: 全${items.length}件中 ${itemsToShow.length}件を表示（${
+            items.length - itemsToShow.length
+          }件を省略）。全件は verbose: true で取得できる。`
+        );
       }
       lines.push("");
     }

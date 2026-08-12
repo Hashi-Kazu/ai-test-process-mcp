@@ -1086,7 +1086,7 @@ uninspectable checks across 4 tools for the two practical docx」として自動
 | `derive_test_purposes` | `requestDocuments` | 6,819字 | 6,819字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload が期待3件・要求3件・目的3件の最小構成のため、実運用より短い |
 | `generate_test_cases` | `testBasisDocuments` | 188,165字 | 24,964字 | 188,166字 | はい | Issue #225（HSKZ-220）の件数上限導入による削減 |
 | `review_test_specification` | `testBasisDocuments` | 16,327字 | 16,327字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外） |
-| `reexpand_threshold_changes` | `documentsBefore` / `documentsAfter` | 96,152字 | 49,454字 | 96,152字 | いいえ（49,454字） | Issue #225（HSKZ-220）の件数上限導入により96,152字から49,454字へ削減したが、0.4節の指摘一覧に上限を適用しても、同じ指摘配列（`extraction.findings`）を全件そのまま再列挙する6章の再生成指示ブロック（TCE-01「未宣言」81件・TCE-07「未承認候補」53件）が非対象のまま残り、40,000字を超えている |
+| `reexpand_threshold_changes` | `documentsBefore` / `documentsAfter` | 96,152字 | 36,387字 | 96,152字 | はい | Issue #225（HSKZ-220）の件数上限導入による削減。0.2/0.3/0.4/2.1/4.1/4.2への導入だけでは96,152字→49,454字にしか削減できず、6章の再生成指示（TCE-01/TCE-02/TCE-04/TCE-07・TCI-01〜08 の各指示ブロック）が同じ指摘配列を件数上限なしに全件再列挙していたため、追加で6章にも件数上限を導入し36,387字まで削減した |
 
 記入規約:
 
@@ -1101,21 +1101,21 @@ uninspectable checks across 4 tools for the two practical docx」として自動
 | 項目 | 対策前 | 対策後 |
 | --- | --- | --- |
 | 指標20の記録対象 | なし | A群10ツール × 既定/`verbose` |
-| 既定出力が40,000字を超えるツール | 5本（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions` / `generate_test_cases` / `reexpand_threshold_changes`） | 1本（`reexpand_threshold_changes`） |
+| 既定出力が40,000字を超えるツール | 5本（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions` / `generate_test_cases` / `reexpand_threshold_changes`） | 0本 |
 
-**合格条件未達（残1本）。** #207 が想定していた合格条件は「40,000字を超えるツール: 3本 → 0本」であり、#205 / #206 が
+**合格条件達成。** #207 が想定していた合格条件は「40,000字を超えるツール: 3本 → 0本」であり、#205 / #206 が
 対象とした3ツール（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions`）と、Issue #225（HSKZ-220）で
-件数上限を導入した `generate_test_cases`（188,165字→24,964字）はいずれも40,000字未満まで削減された。一方
-`reexpand_threshold_changes` は96,152字→49,454字まで削減したものの、依然として40,000字を超えている。原因は
-0.4節（宣言パラメータ表との突合結果）に導入した件数上限が表示のみを絞る一方、同じ `extraction.findings` 配列を
-6章の再生成指示（TCE-01/TCE-02/TCE-04/TCE-07 の指示ブロック）が全件そのまま再列挙する構造になっており、
-実文書（.work/testbase/2025・2026 の9文書、10万字規模を含む）を投入すると TCE-01（未宣言81件）と TCE-07
-（未承認候補53件）だけで6章が17,538字に達するためである。本Issueの「変更禁止」は6章・1.1・3.1・3.2への
-件数上限追加を明示的に禁じているため、本ブランチでは6章の追加対応を行わず、別Issueの候補として記録する。
+件数上限を導入した `generate_test_cases`（188,165字→24,964字）・`reexpand_threshold_changes`（96,152字→36,387字）の
+いずれも40,000字未満まで削減された。`reexpand_threshold_changes` は当初、0.2/0.3/0.4/2.1/4.1/4.2への件数上限導入だけでは
+96,152字→49,454字にしか削減できず40,000字を超えたままだった。原因は6章（再生成指示）が0.4節等で既に上限を適用した
+指摘配列（`extraction.findings` / `findings`）を、TCE-01/TCE-02/TCE-04/TCE-07・TCI-01〜08 の各指示ブロックで
+件数上限なしに全件そのまま再列挙していたためであり（実文書10万字規模を投入した際にTCE-01「未宣言」81件・TCE-07
+「未承認候補」53件だけで6章が17,538字に達していた）、6章の各指示ブロックにも同じ書式（`MAX_INSTRUCTION_ROWS = 10`）の
+件数上限を追加したことで解消した。
 
 - `generate_test_cases`: 対策後・既定 24,964字（40,000字未満）。
-- `reexpand_threshold_changes`: 対策後・既定 49,454字。超過量 9,454字（40,000字を基準とした場合）。うち6章
-  （再生成指示）が17,538字を占め、その大半（15,440字）が TCE-01/TCE-07 の全件列挙ブロックである。
+- `reexpand_threshold_changes`: 対策後・既定 36,387字（40,000字未満）。verbose:true は96,152字で不変（打ち切りは
+  表示のみで決定的検査・サマリ集計値には影響しない）。
 
 ---
 
