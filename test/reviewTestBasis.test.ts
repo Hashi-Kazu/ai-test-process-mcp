@@ -183,6 +183,74 @@ describe("renderTestBasisReview - 双方向制御文字の除去（生＝除去�
   });
 });
 
+function buildLargeReviewDocuments(n: number): TestBasisDocument[] {
+  const ambiguousWords = [
+    "相応の",
+    "適切な",
+    "適宜",
+    "十分な",
+    "十分に",
+    "速やかに",
+    "若干",
+    "定期的に",
+    "望ましい",
+    "推奨",
+    "考慮する",
+  ];
+  const lines: string[] = [];
+  for (let i = 1; i <= n; i++) {
+    lines.push(`## 見出し${i}`);
+    const id = `E-${String(i).padStart(4, "0")}`;
+    lines.push(`- ${id} 説明${i}`);
+    lines.push(`- ${id} 別の説明${i}（矛盾あり）`);
+    lines.push(`本文では E-${String(9000 + i).padStart(4, "0")} を参照する。`);
+    const word = ambiguousWords[i % ambiguousWords.length];
+    lines.push(`${word}対応${i}を必要な範囲で行う。`);
+    lines.push(`応答は${i}秒以内に返すこと。上限は${i}件。`);
+  }
+  return [{ name: "large-spec.md", content: lines.join("\n") }];
+}
+
+describe("renderTestBasisReview 件数上限つき既定出力(verbose)", () => {
+  const largeDocuments = buildLargeReviewDocuments(120);
+  const defaultMarkdown = renderTestBasisReview(largeDocuments);
+  const verboseMarkdown = renderTestBasisReview(largeDocuments, {}, undefined, [], true);
+
+  it("truncates default output below 40,000 chars while keeping every question source and summary counts", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(defaultMarkdown).toMatch(truncationLine);
+
+    const questionSection = defaultMarkdown.split("## 3. 依頼元への質問状")[1];
+    expect(questionSection).toContain("質問状(ID重複)");
+    expect(questionSection).toContain("質問状(未解決参照)");
+    expect(questionSection).toContain("質問状(曖昧語)");
+    expect(questionSection).toContain("質問状(境界語なし数量表現)");
+
+    const summaryLineOf = (md: string) => md.split("\n").find((l) => l.startsWith("- 対象文書数:"));
+    expect(summaryLineOf(defaultMarkdown)).toBe(summaryLineOf(verboseMarkdown));
+  });
+
+  it("verbose: true では打ち切り注記が出ず、行数が全件と一致する", () => {
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(verboseMarkdown).not.toMatch(truncationLine);
+    const section13 = verboseMarkdown.split("### 1.3 ID重複")[1].split("### 1.4")[0];
+    expect((section13.match(/^- \[/gm) ?? []).length).toBe(120);
+  });
+
+  it("is deterministic across repeated calls", () => {
+    const first = renderTestBasisReview(largeDocuments);
+    const second = renderTestBasisReview(largeDocuments);
+    expect(first).toBe(second);
+  });
+
+  it("verbose未指定時のみ冒頭の要約表示に関する1行が出る", () => {
+    expect(defaultMarkdown).toContain("既定(verbose未指定/false)は要約表示。");
+    expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
+  });
+});
+
 describe("renderTestBasisReview 次に実行すべきツール節", () => {
   it("節が出力中に1回だけ、最後の ## 見出しとして現れる", () => {
     expectNextToolsSection(renderTestBasisReview(cleanDocuments));
