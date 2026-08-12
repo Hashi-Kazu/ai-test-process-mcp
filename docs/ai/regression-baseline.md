@@ -1084,33 +1084,38 @@ uninspectable checks across 4 tools for the two practical docx」として自動
 | `audit_cross_matrix` | `documents` | 19,635字 | 19,635字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload が軸2本×要素4件の最小構成のため、実運用（軸の要素が数十〜百件規模）より短い。数値だけでは実運用時の出力量を保証しない |
 | `audit_test_design_notations` | `documents` | 14,858字 | 14,858字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload がFV表3行・NGT4ノード・ゆもつよマトリクス3×2の最小構成のため、実運用より短い |
 | `derive_test_purposes` | `requestDocuments` | 6,819字 | 6,819字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload が期待3件・要求3件・目的3件の最小構成のため、実運用より短い |
-| `generate_test_cases` | `testBasisDocuments` | 188,165字 | 188,165字 | —（`verbose` 引数なし） | いいえ（188,165字） | 変化なし（#205 / #206 の対象外。件数上限も `verbose` も未導入） |
+| `generate_test_cases` | `testBasisDocuments` | 188,165字 | 24,964字 | 188,166字 | はい | Issue #225（HSKZ-220）の件数上限導入による削減 |
 | `review_test_specification` | `testBasisDocuments` | 16,327字 | 16,327字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外） |
-| `reexpand_threshold_changes` | `documentsBefore` / `documentsAfter` | 96,152字 | 96,152字 | —（`verbose` 引数なし） | いいえ（96,152字） | 変化なし（#205 / #206 の対象外。`documentsBefore` と `documentsAfter` の両方を保持する設計のため元から大きい） |
+| `reexpand_threshold_changes` | `documentsBefore` / `documentsAfter` | 96,152字 | 36,387字 | 96,152字 | はい | Issue #225（HSKZ-220）の件数上限導入による削減。0.2/0.3/0.4/2.1/4.1/4.2への導入だけでは96,152字→49,454字にしか削減できず、6章の再生成指示（TCE-01/TCE-02/TCE-04/TCE-07・TCI-01〜08 の各指示ブロック）が同じ指摘配列を件数上限なしに全件再列挙していたため、追加で6章にも件数上限を導入し36,387字まで削減した |
 
 記入規約:
 
 - 「既定が40,000字未満か」列は「対策後・既定」列を判定対象とし、`はい` / `いいえ（N字）` で書く。
 - `verbose` 引数を持たないツールの「対策後・`verbose: true`」列は `—（verbose 引数なし）` と書き、数値を入れない。
-  `verbose` を受けるツールは `grep -ln "verbose" src/tools/*.ts` で確定した4本（`analyzeRequirements.ts` /
-  `auditBasisContradictions.ts` / `auditIdPopulation.ts` / `reviewTestBasis.ts`）である。
+  `verbose` を受けるツールは `grep -ln "verbose" src/tools/*.ts` で確定した6本（`analyzeRequirements.ts` /
+  `auditBasisContradictions.ts` / `auditIdPopulation.ts` / `reviewTestBasis.ts` / `generateTestCases.ts` /
+  `reexpandThresholdChanges.ts`）である。
 
 合格条件（GitHub Issue #207）の判定:
 
 | 項目 | 対策前 | 対策後 |
 | --- | --- | --- |
 | 指標20の記録対象 | なし | A群10ツール × 既定/`verbose` |
-| 既定出力が40,000字を超えるツール | 5本（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions` / `generate_test_cases` / `reexpand_threshold_changes`） | 2本（`generate_test_cases` / `reexpand_threshold_changes`） |
+| 既定出力が40,000字を超えるツール | 5本（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions` / `generate_test_cases` / `reexpand_threshold_changes`） | 0本 |
 
-**合格条件未達。** #207 が想定していた合格条件は「40,000字を超えるツール: 3本 → 0本」であり、#205 / #206 が
-対象とした3ツール（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions`）はいずれも
-40,000字未満まで削減された。一方、本タスクで新たに実測対象へ加えた `generate_test_cases`（188,165字）と
-`reexpand_threshold_changes`（96,152字）は #205 / #206 の対象外であり、対策前後で出力量が変化しておらず、
-現時点でも40,000字を超えている。この2本への件数上限・`verbose` 導入は本Issueのスコープ外（「変更禁止」参照）
-であるため、本ブランチでは縮小実装を行わず、別Issueの候補として記録する。
+**合格条件達成。** #207 が想定していた合格条件は「40,000字を超えるツール: 3本 → 0本」であり、#205 / #206 が
+対象とした3ツール（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions`）と、Issue #225（HSKZ-220）で
+件数上限を導入した `generate_test_cases`（188,165字→24,964字）・`reexpand_threshold_changes`（96,152字→36,387字）の
+いずれも40,000字未満まで削減された。`reexpand_threshold_changes` は当初、0.2/0.3/0.4/2.1/4.1/4.2への件数上限導入だけでは
+96,152字→49,454字にしか削減できず40,000字を超えたままだった。原因は6章（再生成指示）が0.4節等で既に上限を適用した
+指摘配列（`extraction.findings` / `findings`）を、TCE-01/TCE-02/TCE-04/TCE-07・TCI-01〜08 の各指示ブロックで
+件数上限なしに全件そのまま再列挙していたためであり（実文書10万字規模を投入した際にTCE-01「未宣言」81件・TCE-07
+「未承認候補」53件だけで6章が17,538字に達していた）、6章の各指示ブロックにも同じ書式（`MAX_INSTRUCTION_ROWS = 10`）の
+件数上限を追加したことで解消した。
 
-- `generate_test_cases`: 対策後・既定 188,165字。超過量 148,165字（40,000字を基準とした場合）。
-- `reexpand_threshold_changes`: 対策後・既定 96,152字。超過量 56,152字（40,000字を基準とした場合）。
+- `generate_test_cases`: 対策後・既定 24,964字（40,000字未満）。
+- `reexpand_threshold_changes`: 対策後・既定 36,387字（40,000字未満）。verbose:true は96,152字で不変（打ち切りは
+  表示のみで決定的検査・サマリ集計値には影響しない）。
 
 ---
 

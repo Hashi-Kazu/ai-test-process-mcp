@@ -45,6 +45,15 @@ function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
 }
 
+/** 既定表示（verbose=false）で1.1/1.2/4.4節に表示するテスト条件関連行数の上限。 */
+export const MAX_TEST_CONDITION_ROWS = 10;
+/** 既定表示（verbose=false）で2節の網羅対象一覧に表示する行数の上限。 */
+export const MAX_COVERAGE_TARGET_ROWS = 20;
+/** 既定表示（verbose=false）で3.1節のケース一覧・4.11節のテストレベル配分表に表示する行数の上限。 */
+export const MAX_CASE_ROWS = 20;
+/** 既定表示（verbose=false）で3.2節に表示するケース詳細ブロック数の上限。1ケースにつき前提条件・手順・事後条件・結果記録欄の4表を持つため他節より小さい値にする。 */
+export const MAX_CASE_DETAIL_BLOCKS = 5;
+
 const DEFAULT_COVERAGE_CRITERIA = [
   "対象テスト条件すべてに1件以上のケースがある。",
   "2節の網羅対象すべてがいずれかのケースで充足されている。",
@@ -88,6 +97,7 @@ export function renderTestCases(
   } = input;
   const testCases: TestCaseSpec[] = input.testCases ?? [];
   const idPrefix = input.idPrefix ?? DEFAULT_TEST_CASE_ID_PREFIX;
+  const verbose = input.verbose ?? false;
 
   const universe = buildCoverageUniverse(input);
   const coverageRows = computeCoverageRows(universe, testCases, catalog);
@@ -146,16 +156,24 @@ export function renderTestCases(
   const lines: string[] = [];
   lines.push("# テストケース生成結果");
   lines.push("");
+  if (!verbose) {
+    lines.push(
+      "既定(verbose未指定/false)は要約表示。1.1/1.2/2/3.1/3.2/4.4/4.11に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
+    );
+    lines.push("");
+  }
 
   // --- 1. 前提と宣言 ---
   lines.push("## 1. 前提と宣言");
   lines.push("");
 
+  const conditionsToShow = verbose ? testConditions : testConditions.slice(0, MAX_TEST_CONDITION_ROWS);
+
   lines.push("### 1.1 対象テスト条件");
   lines.push("");
   lines.push("| 条件ID | 対象 | 条件文 | 優先度 | 由来 | 根拠位置 |");
   lines.push("| --- | --- | --- | --- | --- | --- |");
-  for (const c of testConditions) {
+  for (const c of conditionsToShow) {
     const sourceRefs = resolveSourceRefs(c, input.requirementSources ?? []);
     const sourceCitation =
       sourceRefs.length > 0 ? sourceRefs.map((r) => formatSourceCitation(r)).join("; ") : "未特定";
@@ -166,6 +184,14 @@ export function renderTestCases(
     );
   }
   lines.push("");
+  if (testConditions.length > conditionsToShow.length) {
+    lines.push(
+      `- 対象テスト条件: 全${testConditions.length}件中 ${conditionsToShow.length}件を表示（${
+        testConditions.length - conditionsToShow.length
+      }件を省略）。全件は verbose: true で取得できる。`
+    );
+    lines.push("");
+  }
 
   lines.push("### 1.2 適用技法と選定根拠");
   lines.push("");
@@ -173,9 +199,14 @@ export function renderTestCases(
   lines.push("| --- | --- | --- | --- |");
   const noTechniqueConditions: string[] = [];
   for (const c of testConditions) {
-    const { techniqueIds, matchedRowIds } = recommendTechniques(c, catalog);
+    const { techniqueIds } = recommendTechniques(c, catalog);
     if (techniqueIds.length === 0) {
       noTechniqueConditions.push(c.id);
+    }
+  }
+  for (const c of conditionsToShow) {
+    const { techniqueIds, matchedRowIds } = recommendTechniques(c, catalog);
+    if (techniqueIds.length === 0) {
       lines.push(`| ${escapeCell(c.id)} | - | - | - |`);
       continue;
     }
@@ -189,6 +220,14 @@ export function renderTestCases(
     );
   }
   lines.push("");
+  if (testConditions.length > conditionsToShow.length) {
+    lines.push(
+      `- 適用技法と選定根拠: 全${testConditions.length}件中 ${conditionsToShow.length}件を表示（${
+        testConditions.length - conditionsToShow.length
+      }件を省略）。全件は verbose: true で取得できる。`
+    );
+    lines.push("");
+  }
   for (const id of noTechniqueConditions) {
     lines.push(
       `- [medium] ${id}: テストベースの特徴が未記入のため技法を決定的に推奨できない。basisCharacteristics を指定するか5節の決定表から選定根拠を明記すること`
@@ -236,11 +275,20 @@ export function renderTestCases(
       "決定的エンジンへ渡す入力(boundaryVariables / equivalenceVariables / stateTransition / decisionTable / pairwise / configMatrix / scenarioFlows / testData / additionalCoverageTargets)が指定されていない。"
     );
   } else {
+    const universeToShow = verbose ? universe : universe.slice(0, MAX_COVERAGE_TARGET_ROWS);
     lines.push("| 網羅対象ID | 技法 | 内容 | 由来 |");
     lines.push("| --- | --- | --- | --- |");
-    for (const t of universe) {
+    for (const t of universeToShow) {
       lines.push(
         `| ${escapeCell(t.id)} | ${t.techniqueId} | ${escapeCell(t.description)} | ${escapeCell(t.origin)} |`
+      );
+    }
+    lines.push("");
+    if (universe.length > universeToShow.length) {
+      lines.push(
+        `- 網羅対象一覧: 全${universe.length}件中 ${universeToShow.length}件を表示（${
+          universe.length - universeToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }
@@ -250,11 +298,13 @@ export function renderTestCases(
   lines.push("## 3. テストケース仕様");
   lines.push("");
 
+  const casesToShow = verbose ? testCases : testCases.slice(0, MAX_CASE_ROWS);
+
   lines.push("### 3.1 ケース一覧");
   lines.push("");
   lines.push("| ケースID | タイトル | 由来条件ID | 技法 | 優先度 | テストタイプ | 網羅対象 |");
   lines.push("| --- | --- | --- | --- | --- | --- | --- |");
-  for (const c of testCases) {
+  for (const c of casesToShow) {
     lines.push(
       `| ${escapeCell(c.caseId)} | ${escapeCell(c.title)} | ${escapeCell(c.testConditionId)} | ${
         c.techniqueId
@@ -264,13 +314,22 @@ export function renderTestCases(
     );
   }
   lines.push("");
+  if (testCases.length > casesToShow.length) {
+    lines.push(
+      `- ケース一覧: 全${testCases.length}件中 ${casesToShow.length}件を表示（${
+        testCases.length - casesToShow.length
+      }件を省略）。全件は verbose: true で取得できる。`
+    );
+    lines.push("");
+  }
 
   lines.push("### 3.2 ケース詳細");
   lines.push("");
+  const caseDetailsToShow = verbose ? testCases : testCases.slice(0, MAX_CASE_DETAIL_BLOCKS);
   if (testCases.length === 0) {
     lines.push("- ケースが未指定である。");
   } else {
-    for (const c of testCases) {
+    for (const c of caseDetailsToShow) {
       lines.push(`#### ${c.caseId} ${c.title}`);
       lines.push("");
       const caseSourceRefs = resolveCaseSourceRefs(c, testConditions, input.requirementSources ?? []);
@@ -308,6 +367,14 @@ export function renderTestCases(
         `| ${c.result?.executedDate ?? "-"} | ${escapeCell(c.result?.executedBy ?? "-")} | ${
           c.result?.verdict ?? "-"
         } | ${escapeCell(c.result?.defectNo ?? "-")} |`
+      );
+      lines.push("");
+    }
+    if (testCases.length > caseDetailsToShow.length) {
+      lines.push(
+        `- ケース詳細: 全${testCases.length}件中 ${caseDetailsToShow.length}件を表示（${
+          testCases.length - caseDetailsToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
       );
       lines.push("");
     }
@@ -392,7 +459,8 @@ export function renderTestCases(
   lines.push("");
   lines.push("| 条件ID | 紐づくケースID | 件数 | 根拠位置 |");
   lines.push("| --- | --- | --- | --- |");
-  for (const row of traceRows) {
+  const traceRowsToShow = verbose ? traceRows : traceRows.slice(0, MAX_TEST_CONDITION_ROWS);
+  for (const row of traceRowsToShow) {
     const condition = testConditions.find((c) => c.id === row.conditionId);
     const sourceRefs = condition ? resolveSourceRefs(condition, input.requirementSources ?? []) : [];
     const sourceCitation =
@@ -404,6 +472,14 @@ export function renderTestCases(
     );
   }
   lines.push("");
+  if (traceRows.length > traceRowsToShow.length) {
+    lines.push(
+      `- テスト条件×テストケース トレーサビリティ: 全${traceRows.length}件中 ${traceRowsToShow.length}件を表示（${
+        traceRows.length - traceRowsToShow.length
+      }件を省略）。全件は verbose: true で取得できる。`
+    );
+    lines.push("");
+  }
   if (uncoveredConditionIds.length === 0) {
     lines.push("- 未充足なし");
   } else {
@@ -535,7 +611,8 @@ export function renderTestCases(
       "| ケースID | 宣言レベル | 該当判定軸 | 想定実行時間(秒) | 判定サイズ | 決定要因 | 宣言サイズ | 判定 |"
     );
     lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
-    for (const row of sizeRows) {
+    const sizeRowsToShow = verbose ? sizeRows : sizeRows.slice(0, MAX_CASE_ROWS);
+    for (const row of sizeRowsToShow) {
       const declaredJudgement =
         row.declaredSize === undefined
           ? "-"
@@ -557,6 +634,14 @@ export function renderTestCases(
       );
     }
     lines.push("");
+    if (sizeRows.length > sizeRowsToShow.length) {
+      lines.push(
+        `- テストレベル配分表: 全${sizeRows.length}件中 ${sizeRowsToShow.length}件を表示（${
+          sizeRows.length - sizeRowsToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
+      lines.push("");
+    }
     lines.push("| サイズ | 件数 | 構成比 | 推奨範囲 | 判定 |");
     lines.push("| --- | --- | --- | --- | --- |");
     for (const row of sizeDistribution) {
@@ -1166,6 +1251,12 @@ export const generateTestCasesInputShape = {
     .optional()
     .describe(
       "Extra regular expression sources for requirement/feature IDs, added to the default pattern. Capture group count decides how the ID is built: 1 group = group 1 is used as the whole ID as-is (no hyphen joining), 2 groups = reconstructed as `${group1}-${group2}` (default pattern behavior), 0 groups = the whole match is used. Use a 1-group pattern for numeric-only IDs (031), dot-separated IDs (3.1.2) and underscore IDs (REQ_001) so the reported ID matches the notation in the source document. If a given pattern matches nothing, a [high] finding is emitted in the input digest."
+    ),
+  verbose: z
+    .boolean()
+    .optional()
+    .describe(
+      "If false/omitted (default), sections 1.1/1.2/2/3.1/3.2/4.4/4.11 are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
     ),
 } as const;
 

@@ -627,25 +627,44 @@ function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
 }
 
+/** 既定表示（verbose=false）で0.2節の抽出候補表（変更前/変更後それぞれ）に表示する行数の上限。 */
+export const MAX_EXTRACTION_CANDIDATE_ROWS = 20;
+/** 既定表示（verbose=false）で0.3節の自前抽出による新旧対照表に表示する行数の上限。 */
+export const MAX_CANDIDATE_DIFF_ROWS = 30;
+/** 既定表示（verbose=false）で0.4節の宣言パラメータ表との突合結果に表示する行数の上限。 */
+export const MAX_EXTRACTION_FINDING_ROWS = 30;
+
 const APPROVAL_LABEL: Record<ThresholdCandidateDiffRow["approval"], string> = {
   approved: "承認済み",
   unapproved: "未承認",
   "approval-mismatch": "承認不一致",
 };
 
-function renderCandidateTable(candidates: ThresholdParameterCandidate[]): string[] {
+function renderCandidateTable(
+  candidates: ThresholdParameterCandidate[],
+  label: string,
+  verbose: boolean
+): string[] {
   const lines: string[] = [];
   if (candidates.length === 0) {
     lines.push("- 対象なし");
     return lines;
   }
+  const candidatesToShow = verbose ? candidates : candidates.slice(0, MAX_EXTRACTION_CANDIDATE_ROWS);
   lines.push("| 候補名 | 値 | 単位 | 出典 | 章節 | 抽出形式 |");
   lines.push("| --- | --- | --- | --- | --- | --- |");
-  for (const c of candidates) {
+  for (const c of candidatesToShow) {
     lines.push(
       `| ${escapeCell(c.name)} | ${escapeCell(c.value)} | ${escapeCell(c.unit ?? "-")} | ${escapeCell(
         place(c)
       )} | ${escapeCell(c.heading)} | ${c.form} |`
+    );
+  }
+  if (candidates.length > candidatesToShow.length) {
+    lines.push(
+      `- ${label}: 全${candidates.length}件中 ${candidatesToShow.length}件を表示（${
+        candidates.length - candidatesToShow.length
+      }件を省略）。全件は verbose: true で取得できる。`
     );
   }
   return lines;
@@ -654,7 +673,8 @@ function renderCandidateTable(candidates: ThresholdParameterCandidate[]): string
 export function renderThresholdExtractionLines(
   analysis: ThresholdExtractionAnalysis,
   criteria: { categories: { id: string; nameJa: string; severity: string; description: string; action: string }[]; notes: string[] },
-  digestLines: { before: string[]; after: string[] }
+  digestLines: { before: string[]; after: string[] },
+  verbose: boolean = false
 ): string[] {
   const lines: string[] = [];
   lines.push("## 0. 投入文書と閾値の自前抽出");
@@ -677,11 +697,13 @@ export function renderThresholdExtractionLines(
   lines.push("");
   lines.push("変更前:");
   lines.push("");
-  for (const l of renderCandidateTable(analysis.beforeCandidates)) lines.push(l);
+  for (const l of renderCandidateTable(analysis.beforeCandidates, "抽出した閾値パラメータ候補(変更前)", verbose))
+    lines.push(l);
   lines.push("");
   lines.push("変更後:");
   lines.push("");
-  for (const l of renderCandidateTable(analysis.afterCandidates)) lines.push(l);
+  for (const l of renderCandidateTable(analysis.afterCandidates, "抽出した閾値パラメータ候補(変更後)", verbose))
+    lines.push(l);
   lines.push("");
 
   lines.push("### 0.3 自前抽出による新旧対照表(提案・未反映)");
@@ -691,15 +713,25 @@ export function renderThresholdExtractionLines(
   } else if (analysis.candidateDiffRows.length === 0) {
     lines.push("- 対象なし");
   } else {
+    const diffRowsToShow = verbose
+      ? analysis.candidateDiffRows
+      : analysis.candidateDiffRows.slice(0, MAX_CANDIDATE_DIFF_ROWS);
     lines.push("| 候補名 | 変更前 | 変更後 | 変更区分 | 出典(前) | 出典(後) | 承認状態 |");
     lines.push("| --- | --- | --- | --- | --- | --- | --- |");
-    for (const row of analysis.candidateDiffRows) {
+    for (const row of diffRowsToShow) {
       lines.push(
         `| ${escapeCell(row.name)} | ${escapeCell(row.beforeValue ?? "-")}${escapeCell(
           row.beforeUnit ?? ""
         )} | ${escapeCell(row.afterValue ?? "-")}${escapeCell(row.afterUnit ?? "")} | ${row.kind} | ${escapeCell(
           row.beforeSource ?? "-"
         )} | ${escapeCell(row.afterSource ?? "-")} | ${APPROVAL_LABEL[row.approval]} |`
+      );
+    }
+    if (analysis.candidateDiffRows.length > diffRowsToShow.length) {
+      lines.push(
+        `- 自前抽出による新旧対照表: 全${analysis.candidateDiffRows.length}件中 ${diffRowsToShow.length}件を表示（${
+          analysis.candidateDiffRows.length - diffRowsToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }
@@ -710,11 +742,19 @@ export function renderThresholdExtractionLines(
   if (analysis.findings.length === 0) {
     lines.push("- 指摘なし");
   } else {
-    for (const f of analysis.findings) {
+    const findingsToShow = verbose ? analysis.findings : analysis.findings.slice(0, MAX_EXTRACTION_FINDING_ROWS);
+    for (const f of findingsToShow) {
       lines.push(
         `- [${f.severity}] ${f.categoryId} ${escapeCell(f.name)}: ${escapeCell(f.detail)}（${
           f.places.join(", ") || "-"
         }）`
+      );
+    }
+    if (analysis.findings.length > findingsToShow.length) {
+      lines.push(
+        `- 宣言パラメータ表との突合結果: 全${analysis.findings.length}件中 ${findingsToShow.length}件を表示（${
+          analysis.findings.length - findingsToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }

@@ -606,3 +606,86 @@ describe("renderTestCases 検査実行状況節", () => {
     expectUninspectable(renderTestCases(baseInput), "テストレベル配分の妥当性");
   });
 });
+
+function buildLargeGenerateTestCasesInput(n: number): GenerateTestCasesInput {
+  const testConditions: GenerateTestCasesInput["testConditions"] = [];
+  const testCases: NonNullable<GenerateTestCasesInput["testCases"]> = [];
+  for (let i = 1; i <= n; i++) {
+    const id = `TC-${String(i).padStart(3, "0")}`;
+    testConditions.push({
+      id,
+      target: `対象${i}`,
+      statement: `条件文${i}が成立する`,
+      derivedFrom: [`R-${String(i).padStart(3, "0")}`],
+      basisCharacteristics: ["入力が範囲を持つ"],
+    });
+    testCases.push({
+      caseId: `TCS-${String(i).padStart(3, "0")}`,
+      title: `ケース${i}のタイトル`,
+      testConditionId: id,
+      derivedFrom: [`R-${String(i).padStart(3, "0")}`],
+      techniqueId: "boundary-value-analysis",
+      coverageTargets: ["BV:枚数:0"],
+      preconditions: [{ name: "state", value: `初期状態${i}` }],
+      steps: [
+        { no: 1, action: `操作${i}-1を行う`, expected: `結果${i}-1が表示される` },
+        { no: 2, action: `操作${i}-2を行う`, expected: `結果${i}-2が表示される` },
+        { no: 3, action: `操作${i}-3を行う`, expected: `結果${i}-3が表示される` },
+      ],
+    });
+  }
+  return {
+    testConditions,
+    requirementIds: testConditions.map((c) => c.id.replace("TC-", "R-")),
+    parameters: [{ name: "MAX_TICKETS", value: "10", unit: "枚", source: "R-001" }],
+    boundaryVariables: [{ name: "枚数", min: 1, max: 10 }],
+    boundaryMode: "two",
+    testCases,
+  };
+}
+
+describe("renderTestCases 件数上限つき既定出力(verbose)", () => {
+  const largeInput = buildLargeGenerateTestCasesInput(30);
+  const defaultMarkdown = renderTestCases(largeInput);
+  const verboseMarkdown = renderTestCases({ ...largeInput, verbose: true });
+
+  it("既定出力が全ての見出しを保持したまま40,000字未満になる", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+    for (const heading of HEADINGS) {
+      expect(defaultMarkdown).toContain(heading);
+    }
+  });
+
+  it("打ち切り注記が既定出力に出る", () => {
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(defaultMarkdown).toMatch(truncationLine);
+  });
+
+  it("verbose: true では打ち切り注記が出ず全件になる", () => {
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(verboseMarkdown).not.toMatch(truncationLine);
+
+    const section31 = verboseMarkdown.split("### 3.1 ケース一覧")[1].split("### 3.2")[0];
+    expect((section31.match(/^\| TCS-/gm) ?? []).length).toBe(30);
+
+    const section32 = verboseMarkdown.split("### 3.2 ケース詳細")[1].split("## 4.")[0];
+    expect((section32.match(/^#### TCS-/gm) ?? []).length).toBe(30);
+  });
+
+  it("verbose有無でサマリ・集計値が一致する", () => {
+    const defaultSummary = defaultMarkdown.split("### 4.12 サマリ")[1].split("## 5.")[0];
+    const verboseSummary = verboseMarkdown.split("### 4.12 サマリ")[1].split("## 5.")[0];
+    expect(defaultSummary).toBe(verboseSummary);
+  });
+
+  it("is deterministic across repeated calls", () => {
+    const first = renderTestCases(largeInput);
+    const second = renderTestCases(largeInput);
+    expect(first).toBe(second);
+  });
+
+  it("verbose未指定時のみ冒頭の要約表示に関する1行が出る", () => {
+    expect(defaultMarkdown).toContain("既定(verbose未指定/false)は要約表示。");
+    expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
+  });
+});
