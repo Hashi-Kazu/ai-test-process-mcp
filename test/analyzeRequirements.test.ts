@@ -2,11 +2,18 @@ import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import { expectInspectabilitySection, expectExecuted, expectUninspectable } from "./inspectabilitySectionHelper.js";
 import { z } from "zod";
-import { renderRequirementsAnalysis } from "../src/tools/analyzeRequirements.js";
+import {
+  renderRequirementsAnalysis,
+  MAX_DUPLICATE_ID_LINES,
+  MAX_UNRESOLVED_REFERENCE_LINES,
+  MAX_REQUIREMENT_SOURCE_REFS,
+  MAX_FINDING_ROWS,
+} from "../src/tools/analyzeRequirements.js";
 import { designBoundaryValuesInputShape } from "../src/tools/designBoundaryValues.js";
 import { qualityCharacteristicModel } from "../src/resources/qualityCharacteristics.js";
 import { qualityInUseCharacteristicModel } from "../src/resources/qualityInUseCharacteristics.js";
 import { questionPriorityDefinitions } from "../src/resources/testPlanTemplate.js";
+import { buildDeterministicFindings } from "../src/requirementsAnalysis.js";
 import type { AnalyzeRequirementsInput, TestBasisDocument } from "../src/types.js";
 
 const docA: TestBasisDocument = {
@@ -250,5 +257,184 @@ describe("renderRequirementsAnalysis 検査実行状況節", () => {
       documents: [{ name: "note.md", content: ["# メモ", "処理は適切に行う。"].join("\n") }],
     });
     expectUninspectable(md, "境界値候補");
+  });
+});
+
+// --- 既定出力の件数上限（大規模合成フィクスチャ） ---
+
+/**
+ * 9文書・要件ID 150種を doc01/doc02 の2文書にまたがって定義する大規模フィクスチャ。
+ * - REQ-001〜REQ-050: doc01では見出し行・doc02では非見出し行で定義（重複severity=medium）
+ * - REQ-051〜REQ-150: doc01・doc02ともに非見出し行で定義（重複severity=high）
+ * - doc03: 未使用の用語定義を5件追加（低重大度の指摘を発生させる）
+ * - doc04〜doc09: 文書数を9件に揃えるための最小限の文書
+ */
+function buildLargeFixtureDocuments(): TestBasisDocument[] {
+  const pad = (n: number) => String(n).padStart(3, "0");
+
+  const doc01Lines: string[] = ["# 要求仕様書1"];
+  const doc02Lines: string[] = ["# 要求仕様書2"];
+  for (let i = 1; i <= 150; i++) {
+    const id = `REQ-${pad(i)}`;
+    if (i <= 50) {
+      doc01Lines.push(`### ${id} 見出し${pad(i)}`);
+      doc01Lines.push(`本項は${id}の内容を定義する。`);
+    } else {
+      doc01Lines.push(`- ${id} 説明文${pad(i)}。`);
+    }
+    doc02Lines.push(`- ${id} doc02内の説明${pad(i)}。`);
+  }
+
+  const doc01: TestBasisDocument = { name: "doc01.md", content: doc01Lines.join("\n") };
+  const doc02: TestBasisDocument = { name: "doc02.md", content: doc02Lines.join("\n") };
+
+  // 未使用の用語定義を多数追加する。2.4節（用語照合表）は既定でも件数上限を設けないため、
+  // 実測相当のテストベース規模（全体40,000字未満・2.6節比率20%未満）に近づけるための調整に使う。
+  const termLines = ["## 用語定義", "| 用語 | 定義 |", "| --- | --- |"];
+  for (let i = 1; i <= 150; i++) {
+    termLines.push(`| 用語カテゴリ${pad(i)} | これは補足用語${pad(i)}の定義文であり本文中では使用されない想定の用語である |`);
+  }
+  const doc03: TestBasisDocument = { name: "doc03.md", content: termLines.join("\n") };
+
+  const extraDocs: TestBasisDocument[] = [];
+  for (let i = 4; i <= 9; i++) {
+    extraDocs.push({
+      name: `doc0${i}.md`,
+      content: [`## 補足文書${i}`, `補足文書${i}の説明文。`].join("\n"),
+    });
+  }
+
+  return [doc01, doc02, doc03, ...extraDocs];
+}
+
+const largeFixtureInput: AnalyzeRequirementsInput = { documents: buildLargeFixtureDocuments() };
+
+describe("renderRequirementsAnalysis - 既定出力の件数上限", () => {
+  it("2.1節の重複行が上限以下で、全件数・省略件数・verboseの案内を含む注記行がある", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    const section21 = markdown.split("### 2.1 要件ID体系")[1].split("### 2.2")[0];
+    const dupLines = section21.split("\n").filter((l) => l.startsWith("  - [") || false);
+    // 重複ID一覧行（"  - [severity] ..." 形式）のみを数える
+    const listedDupLines = section21
+      .split("\n")
+      .filter((l) => /^  - \[(high|medium|low)\]/.test(l));
+    expect(listedDupLines.length).toBeLessThanOrEqual(MAX_DUPLICATE_ID_LINES);
+    expect(section21).toContain(
+      `ID重複: 全150件中 ${MAX_DUPLICATE_ID_LINES}件を表示（${150 - MAX_DUPLICATE_ID_LINES}件を省略）。全件は verbose: true で取得できる。`
+    );
+    expect(dupLines.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("2.6節の表・JSONが上限件数で一致し、打ち切り注記に「表・JSONブロックともに同じ{shown}件」を含む", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    const tableSection = section26.split("| 要件ID | 文書 | 行範囲 | 章節 | 引用ラベル |")[1] ?? "";
+    const tableRows = tableSection
+      .split("\n")
+      .filter((l) => l.startsWith("| REQ-"));
+    expect(tableRows.length).toBeLessThanOrEqual(MAX_REQUIREMENT_SOURCE_REFS);
+    const match = /```json\n([\s\S]*?)\n```/.exec(section26);
+    expect(match).not.toBeNull();
+    const parsed = JSON.parse(match![1]);
+    expect(parsed.requirementSources.length).toBe(tableRows.length);
+    expect(section26).toContain(`表・JSONブロックともに同じ${MAX_REQUIREMENT_SOURCE_REFS}件`);
+  });
+
+  it("3章の指摘表が上限以下・severity降順・内訳合計が全件数と一致し、打ち切り注記がある", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
+    const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
+    expect(findingRows.length).toBeLessThanOrEqual(MAX_FINDING_ROWS);
+
+    const severities = findingRows.map((row) => row.split("|")[3]?.trim());
+    const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    for (let i = 1; i < severities.length; i++) {
+      expect(rank[severities[i]]).toBeGreaterThanOrEqual(rank[severities[i - 1]]);
+    }
+
+    const total = buildDeterministicFindings(largeFixtureInput.documents).length;
+    const breakdownMatch = /- 指摘件数: 全(\d+)件（severity内訳 high: (\d+) \/ medium: (\d+) \/ low: (\d+)）。severity降順で上位(\d+)件を表示。/.exec(
+      section3
+    );
+    expect(breakdownMatch).not.toBeNull();
+    const [, totalStr, highStr, mediumStr, lowStr] = breakdownMatch!;
+    expect(Number(totalStr)).toBe(total);
+    expect(Number(highStr) + Number(mediumStr) + Number(lowStr)).toBe(total);
+
+    expect(section3).toContain(
+      `指摘表: 全${total}件中 ${findingRows.length}件を表示（${total - findingRows.length}件を省略）。全件は verbose: true で取得できる。`
+    );
+  });
+
+  it("同一severity内で元のF-ID順が保たれる（安定ソート）", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
+    const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
+    const highRows = findingRows.filter((row) => row.split("|")[3]?.trim() === "high");
+    const highNumbers = highRows.map((row) => Number(row.split("|")[1].trim().replace("F-", "")));
+    for (let i = 1; i < highNumbers.length; i++) {
+      expect(highNumbers[i]).toBeGreaterThan(highNumbers[i - 1]);
+    }
+  });
+
+  it("既定出力の全文字数が40,000字未満である", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    expect(markdown.length).toBeLessThan(40000);
+  });
+
+  it("2.6節の文字数 / 全体文字数が0.20未満である", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    const ratio = section26.length / markdown.length;
+    expect(ratio).toBeLessThan(0.2);
+  });
+
+  it("verbose: true では2.6節の表・JSONが根拠位置の全件（打ち切りなし）になる", () => {
+    const markdown = renderRequirementsAnalysis({ ...largeFixtureInput, verbose: true });
+    const section26 = markdown.split("### 2.6 要件ID → テストベース根拠位置")[1].split("### 2.7")[0];
+    const tableSection = section26.split("| 要件ID | 文書 | 行範囲 | 章節 | 引用ラベル |")[1] ?? "";
+    const tableRows = tableSection.split("\n").filter((l) => l.startsWith("| REQ-"));
+    const match = /```json\n([\s\S]*?)\n```/.exec(section26);
+    expect(match).not.toBeNull();
+    const parsed = JSON.parse(match![1]);
+    // 150 IDs each defined twice (doc01 + doc02) = 300 source references
+    expect(tableRows.length).toBe(300);
+    expect(parsed.requirementSources.length).toBe(300);
+  });
+
+  it("verbose: true では3章のF-行がF-01からの生成順(ソートなし)で全件出る", () => {
+    const markdown = renderRequirementsAnalysis({ ...largeFixtureInput, verbose: true });
+    const section3 = markdown.split("## 3. 指摘表")[1].split("## 4.")[0];
+    const findingRows = section3.split("\n").filter((l) => l.startsWith("| F-"));
+    const total = buildDeterministicFindings(largeFixtureInput.documents).length;
+    expect(findingRows.length).toBe(total);
+    const ids = findingRows.map((row) => row.split("|")[1].trim());
+    for (let i = 0; i < ids.length; i++) {
+      expect(ids[i]).toBe(`F-${String(i + 1).padStart(2, "0")}`);
+    }
+  });
+
+  it("verbose: true の出力には打ち切り注記・severity内訳・追加アナウンスのいずれも現れない", () => {
+    const markdown = renderRequirementsAnalysis({ ...largeFixtureInput, verbose: true });
+    expect(markdown).not.toContain("を省略）。全件は verbose: true で取得できる。");
+    expect(markdown).not.toContain("- 指摘件数: 全");
+    expect(markdown).not.toContain(
+      "既定では 2.1節のID重複・未解決参照、2.6節の根拠位置、3章の指摘表に件数上限を適用する。打ち切った箇所には全件数と省略件数を併記する。"
+    );
+  });
+
+  it("### 2.7 サマリ 直後の対象文書数行が既定出力とverbose:trueで完全一致する", () => {
+    const defaultMarkdown = renderRequirementsAnalysis(largeFixtureInput);
+    const verboseMarkdown = renderRequirementsAnalysis({ ...largeFixtureInput, verbose: true });
+    const extractLine = (md: string) => md.split("### 2.7 サマリ")[1].split("\n").filter((l) => l.trim())[0];
+    expect(extractLine(defaultMarkdown)).toBe(extractLine(verboseMarkdown));
+  });
+
+  it("### 2.7 サマリ の指摘件数・根拠位置数が打ち切りの影響を受けない", () => {
+    const markdown = renderRequirementsAnalysis(largeFixtureInput);
+    const summaryLine = markdown.split("### 2.7 サマリ")[1].split("\n").filter((l) => l.trim())[0];
+    const total = buildDeterministicFindings(largeFixtureInput.documents).length;
+    expect(summaryLine).toContain(`指摘件数: ${total}`);
+    expect(summaryLine).toContain("根拠位置数: 300");
   });
 });
