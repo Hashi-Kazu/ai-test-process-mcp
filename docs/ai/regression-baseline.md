@@ -12,16 +12,16 @@
 
 | ツール名 | 群 | テストベース由来入力 | 決定的検査の判定区分 | 本書での指標番号 |
 | --- | --- | --- | --- | --- |
-| `audit_id_population` | A | `documents` | ID母集団反映率検査 | 指標1/2/11/19 |
-| `review_test_basis` | A | `documents` | ID重複・未解決参照・曖昧語等 | 指標3/19 |
-| `analyze_requirements` | A | `documents` | 数量矛盾・境界値候補等 | 指標4/5/19 |
-| `generate_test_cases` | A | `testBasisDocuments` | 事実照合・網羅対象裏付け等 | 指標6/7/8 |
-| `review_test_specification` | A | `testBasisDocuments` | 事実照合・仕様書レビュー | 指標8/9 |
-| `audit_basis_contradictions` | A | `documents` | BC-01〜BC-10 | 指標12/BC-01〜BC-10/19 |
-| `audit_cross_matrix` | A | `documents` | CMX-01〜17 | 指標15/CMX-01〜17 |
-| `audit_test_design_notations` | A | `documents` | TDN-01〜25 | 指標18/TDN-01〜25 |
-| `derive_test_purposes` | A | `requestDocuments` | PDC-01〜17 | 指標13/PDC-01〜17 |
-| `reexpand_threshold_changes` | A | `documentsBefore` / `documentsAfter` | （判定区分カタログなし） | 未着手（別Issueで追加） |
+| `audit_id_population` | A | `documents` | ID母集団反映率検査 | 指標1/2/11/19/20 |
+| `review_test_basis` | A | `documents` | ID重複・未解決参照・曖昧語等 | 指標3/19/20 |
+| `analyze_requirements` | A | `documents` | 数量矛盾・境界値候補等 | 指標4/5/19/20 |
+| `generate_test_cases` | A | `testBasisDocuments` | 事実照合・網羅対象裏付け等 | 指標6/7/8/20 |
+| `review_test_specification` | A | `testBasisDocuments` | 事実照合・仕様書レビュー | 指標8/9/20 |
+| `audit_basis_contradictions` | A | `documents` | BC-01〜BC-10 | 指標12/BC-01〜BC-10/19/20 |
+| `audit_cross_matrix` | A | `documents` | CMX-01〜17 | 指標15/CMX-01〜17/20 |
+| `audit_test_design_notations` | A | `documents` | TDN-01〜25 | 指標18/TDN-01〜25/20 |
+| `derive_test_purposes` | A | `requestDocuments` | PDC-01〜17 | 指標13/PDC-01〜17/20 |
+| `reexpand_threshold_changes` | A | `documentsBefore` / `documentsAfter` | （判定区分カタログなし） | 指標20 |
 | `analyze_data_flow_timing` | B | テスト条件・データフロー定義（テストベース由来の上流成果物） | DFT-01〜 | 指標10 |
 | `design_test_architecture` | B | テスト条件一覧・コンテナ定義（テストベース由来の上流成果物） | TAC-01〜17 | 指標14/TAC-01〜17 |
 | `audit_deliverable_consistency` | B | 成果物本文（テストベース由来の上流成果物） | DCC-01〜17 | 指標16/DCC-01〜17 |
@@ -72,6 +72,8 @@ C群と区別する基準は「入力が年度別テストベースに由来す�
   4. `docs/ai/testbase-ingestion.md` の変換規約を変えたとき。同書2章〜7章の「保つ／落とす」および8章の規約項目とIQCの
      対応が変われば、同一原本から作られる投入テキストそのものが変わるため、指標19（形式間一致度）を含む全指標が
      影響を受ける。項目3が参照実装（スクリプト）の変更を対象とするのに対し、本項目は規約本体の変更を対象とする。
+  5. ツールのレンダリング（出力の組み立て・件数上限・`verbose` の扱い）を変えたとき。決定的検査の判定区分・件数が
+     変わらなくても出力量は変わりうるため、項目1〜4では拾えない。指標20（ツール別出力文字数）を再測定する。
 - **適用範囲外**: テスト計画書系ツール（`create_test_plan` / `review_test_plan` / `revise_test_plan`）はテストベース文書を
   入力に取らないため、構成差の影響を受けない。本書の対比表には含めない。上表のC群がこれに相当する。
 
@@ -130,6 +132,29 @@ C群と区別する基準は「入力が年度別テストベースに由来す�
 | Excel/Markdown形式の投入文書 | `.work/testbase/atenabango/*.txt` 2件（`scripts/extract-testbase-xlsx.mjs`） |
 | JSON形式の投入文書 | 上記2件を19.3の直列化規則で再直列化したもの |
 | `verbose` | 未指定（既定＝要約表示） |
+
+### 2.2 指標20（ツール別出力文字数）の測定条件
+
+| 項目 | 値 |
+| --- | --- |
+| 測定日 | 2026-08-12 |
+| MCPサーバ版（`package.json` の `version`） | 0.35.0 |
+| 「対策後」のベースコミット | `800bd22`（`main`。GitHub Issue #205 / #206 マージ後） |
+| 「対策前」のベースコミット | `d514601`（`main`。GitHub Issue #205 / #206 マージ直前） |
+| `pdftotext` | poppler 24.02.0（`pdftotext version 24.02.0`） |
+| 抽出コマンド | `bash scripts/extract-testbase-text.sh 2025` / `bash scripts/extract-testbase-text.sh 2026`（`pdftotext -layout -enc UTF-8`） |
+| Node.js | v22.22.2 |
+| 投入文書（`documents` / `testBasisDocuments` / `requestDocuments` / `documentsBefore`） | `.work/testbase/2025/*.txt` 9件 |
+| 投入文書（`documentsAfter`。`reexpand_threshold_changes` のみ） | `.work/testbase/2026/*.txt` 9件 |
+| 文字数の定義 | `scripts/call-mcp-tool.mjs` が stderr へ出す `wrote <path> (N chars)` の `N`（返却 text content を連結した JavaScript の `String.length`）。`wc -m` の値とは一致しない |
+| 呼び出し方法 | `node scripts/call-mcp-tool.mjs --tool <name> --payload <payload> [--documents-dir ...] [--json-file ...] [--text-file ...] --out .work/metric20/{before,after}/<name>.md` |
+| 出力の保存先 | `.work/metric20/{before,after}/`（中間ファイルのため未コミット） |
+| プローブ payload（本指標のために新設） | `sample/contest_testbase/2025/payloads/{audit-basis-contradictions,audit-cross-matrix,audit-test-design-notations,derive-test-purposes}.json` |
+| `verbose` | 既定列は未指定、`verbose: true` 列は payload に `"verbose": true` を足した一時 payload（`.work/metric20/`）で測定 |
+
+`reexpand_threshold_changes` は `documentsBefore` / `documentsAfter` の2口を持つため、`.work/metric20/reexpand-payload.json`
+（`testCases` と `documentsBefore` を事前に埋め込んだ合成 payload）を作成し、`--documents-dir .work/testbase/2026
+--documents-key documentsAfter` で `documentsAfter` のみを注入して測定した（`scripts/call-mcp-tool.mjs` は変更していない）。
 
 ---
 
@@ -1034,6 +1059,59 @@ uninspectable checks across 4 tools for the two practical docx」として自動
 提示すると、それ自体が根拠を伴わない達成度主張になるためである（`DCC-17` が禁じている型と同じ）。件数と内訳、
 および各行の実測値のみを提示する。
 
+### 指標20: ツール別出力文字数
+
+追跡: GitHub Issue #207（親 #176 の M5・条件V）/ Jira HSKZ-211。
+
+出典: `scripts/call-mcp-tool.mjs` が stderr へ出す `wrote <path> (N chars)` の `N`。測定成果物の置き場所:
+`.work/metric20/{before,after}/*.md`（中間ファイルのため未コミット）。測定条件は第2章 2.2。
+
+対象は第1章の表で群=A の10ツール（原文入力口を持つツール）である。B群・C群は原文を引数で受けないため
+本指標の対象外とする。
+
+**判定は既定出力（`verbose` 未指定）に対して行う。** `verbose: true` は全件取得のための明示的な選択であり、
+40,000字の判定対象ではない。
+
+**「差の解釈」列は既存指標19の3区分（構成差 / 抽出品質 / 汎化不良）ではなく、出力量変化の原因を書く。**
+指標20は「出力量」という別の軸を測るものであり、3区分の枠組みをそのまま当てはめない。
+
+| ツール | 原文入力キー | 対策前・既定 | 対策後・既定 | 対策後・`verbose: true` | 既定が40,000字未満か | 差の解釈 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `analyze_requirements` | `documents` | 163,297字 | 36,622字 | 169,070字 | はい | #205 の件数上限導入による削減 |
+| `review_test_basis` | `documents` | 44,653字 | 16,722字 | 89,149字 | はい | #206 の件数上限導入による削減 |
+| `audit_id_population` | `documents` | 23,410字 | 23,410字 | 42,783字 | はい | 変化なし（#205 / #206 の対象外。`verbose` は #170（HSKZ-194）で既に導入済み） |
+| `audit_basis_contradictions` | `documents` | 52,072字 | 19,015字 | 52,443字 | はい | #206 の件数上限導入による削減 |
+| `audit_cross_matrix` | `documents` | 19,635字 | 19,635字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload が軸2本×要素4件の最小構成のため、実運用（軸の要素が数十〜百件規模）より短い。数値だけでは実運用時の出力量を保証しない |
+| `audit_test_design_notations` | `documents` | 14,858字 | 14,858字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload がFV表3行・NGT4ノード・ゆもつよマトリクス3×2の最小構成のため、実運用より短い |
+| `derive_test_purposes` | `requestDocuments` | 6,819字 | 6,819字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外）。プローブ payload が期待3件・要求3件・目的3件の最小構成のため、実運用より短い |
+| `generate_test_cases` | `testBasisDocuments` | 188,165字 | 188,165字 | —（`verbose` 引数なし） | いいえ（188,165字） | 変化なし（#205 / #206 の対象外。件数上限も `verbose` も未導入） |
+| `review_test_specification` | `testBasisDocuments` | 16,327字 | 16,327字 | —（`verbose` 引数なし） | はい | 変化なし（#205 / #206 の対象外） |
+| `reexpand_threshold_changes` | `documentsBefore` / `documentsAfter` | 96,152字 | 96,152字 | —（`verbose` 引数なし） | いいえ（96,152字） | 変化なし（#205 / #206 の対象外。`documentsBefore` と `documentsAfter` の両方を保持する設計のため元から大きい） |
+
+記入規約:
+
+- 「既定が40,000字未満か」列は「対策後・既定」列を判定対象とし、`はい` / `いいえ（N字）` で書く。
+- `verbose` 引数を持たないツールの「対策後・`verbose: true`」列は `—（verbose 引数なし）` と書き、数値を入れない。
+  `verbose` を受けるツールは `grep -ln "verbose" src/tools/*.ts` で確定した4本（`analyzeRequirements.ts` /
+  `auditBasisContradictions.ts` / `auditIdPopulation.ts` / `reviewTestBasis.ts`）である。
+
+合格条件（GitHub Issue #207）の判定:
+
+| 項目 | 対策前 | 対策後 |
+| --- | --- | --- |
+| 指標20の記録対象 | なし | A群10ツール × 既定/`verbose` |
+| 既定出力が40,000字を超えるツール | 5本（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions` / `generate_test_cases` / `reexpand_threshold_changes`） | 2本（`generate_test_cases` / `reexpand_threshold_changes`） |
+
+**合格条件未達。** #207 が想定していた合格条件は「40,000字を超えるツール: 3本 → 0本」であり、#205 / #206 が
+対象とした3ツール（`analyze_requirements` / `review_test_basis` / `audit_basis_contradictions`）はいずれも
+40,000字未満まで削減された。一方、本タスクで新たに実測対象へ加えた `generate_test_cases`（188,165字）と
+`reexpand_threshold_changes`（96,152字）は #205 / #206 の対象外であり、対策前後で出力量が変化しておらず、
+現時点でも40,000字を超えている。この2本への件数上限・`verbose` 導入は本Issueのスコープ外（「変更禁止」参照）
+であるため、本ブランチでは縮小実装を行わず、別Issueの候補として記録する。
+
+- `generate_test_cases`: 対策後・既定 188,165字。超過量 148,165字（40,000字を基準とした場合）。
+- `reexpand_threshold_changes`: 対策後・既定 96,152字。超過量 56,152字（40,000字を基準とした場合）。
+
 ---
 
 ## 6. V03固有の前提に依存して破綻した検査の記録
@@ -1081,6 +1159,24 @@ uninspectable checks across 4 tools for the two practical docx」として自動
 9. **指標13〜18の実測に着手する場合。** 年度別プローブ payload が未整備のため、まず
    `sample/contest_testbase/{2025,2024}/payloads/` へ各ツールの payload を追加する必要がある。
    payload の新規作成は本書の更新とは別作業である。
+   Issue #207（HSKZ-211）で `audit_basis_contradictions` / `audit_cross_matrix` / `audit_test_design_notations` /
+   `derive_test_purposes` の2025年版 payload（`sample/contest_testbase/2025/payloads/`）を新設した。ただし
+   これらは指標20（ツール別出力文字数）専用の最小プローブであり、指標13/15/18 が求める実運用相当の投入量
+   （軸の要素・記法の行数・目的の件数が実運用規模）ではないため、**指標13/15/18 の数値表は本タスクでは埋めていない**。
+   指標13/15/18 の実測に着手する場合は、これらのpayloadを実運用相当の規模へ拡張し直す必要がある。
+10. **指標20（ツール別出力文字数）を再測定する場合。** 対象は群=Aの10ツール（第1章の表）。
+    `verbose` を受けるツールは `grep -ln "verbose" src/tools/*.ts` で確定し直す（実装が変わればこの4本の
+    内訳も変わりうる）。既定（`verbose` 未指定）と、`verbose` を持つツールについては payload に
+    `"verbose": true` を足した一時 payload（`.work/metric20/` に作成しコミットしない）で `verbose: true` の
+    2通りを測定する。`reexpand_threshold_changes` は `documentsBefore` / `documentsAfter` の2口を持つため、
+    `.work/metric20/reexpand-payload.json`（`testCases` と `documentsBefore` を事前に埋め込んだ合成 payload）
+    を作り、`--documents-dir .work/testbase/<year> --documents-key documentsAfter` で `documentsAfter` のみを
+    注入する（`scripts/call-mcp-tool.mjs` は変更しない）。出力は `.work/metric20/{before,after}/` へ保存し、
+    stderr の `wrote <path> (N chars)` の `N` を第5章 指標20 の表へ転記する。「対策前」は #205 / #206 マージ
+    直前のコミットを `git worktree add .work/pre-v05v06 <commit>` でビルドして測定し、測定後
+    `git worktree remove .work/pre-v05v06` で片付ける。プローブ payload 4本の所在は
+    `sample/contest_testbase/2025/payloads/{audit-basis-contradictions,audit-cross-matrix,
+    audit-test-design-notations,derive-test-purposes}.json`（手順9参照）。
 
 指標の再測定に使うコマンドの全文は `sample/contest_testbase/2024/00_成果物生成手順_V02汎化検証.md` 第3章・第4章と
 `sample/contest_testbase/2025/00_成果物生成手順.md` 第3章にある。本書ではコマンドを重複して持たない。

@@ -1,0 +1,71 @@
+{
+  "projectName": "だんだん動物園入場システム",
+  "expectations": [
+    {
+      "id": "EXP-01",
+      "statement": "システムが長時間稼働することを保証したい",
+      "requesterRole": "だんだん動物園"
+    },
+    {
+      "id": "EXP-02",
+      "statement": "時間枠の重複販売が発生しないことを保証したい",
+      "requesterRole": "だんだん動物園"
+    },
+    {
+      "id": "EXP-03",
+      "statement": "密回避が達成できた効果を示したい",
+      "requesterRole": "だんだん動物園"
+    }
+  ],
+  "testRequirements": [
+    {
+      "id": "TR-01",
+      "line": "management",
+      "statement": "長時間稼働の保証を確認する",
+      "expectationIds": ["EXP-01"]
+    },
+    {
+      "id": "TR-02",
+      "line": "engineering",
+      "statement": "時間枠別残数の排他制御が崩れないことを確認する",
+      "expectationIds": ["EXP-02"]
+    },
+    {
+      "id": "TR-03",
+      "line": "management",
+      "statement": "密回避効果の提示根拠が退行していないことを確認する",
+      "expectationIds": ["EXP-03"]
+    }
+  ],
+  "purposes": [
+    {
+      "id": "TP-01",
+      "statement": "営業時間中に発券機・入場ゲート・残数表示インジケータが停止しないことを確認する",
+      "testRequirementIds": ["TR-01"],
+      "successCriterion": "開園から閉園まで対象機器が停止せず機能提供を継続する",
+      "priorityRank": 1,
+      "priorityRationale": "01号 テスト重点項目の1番目に挙げられているため"
+    },
+    {
+      "id": "TP-02",
+      "statement": "時間枠別残数の減算・加算が排他制御され重複販売が発生しないことを確認する",
+      "testRequirementIds": ["TR-02"],
+      "successCriterion": "同一時間枠の販売数が上限を超えない",
+      "priorityRank": 2,
+      "priorityRationale": "01号 テスト重点項目の2番目に挙げられているため"
+    },
+    {
+      "id": "TP-03",
+      "statement": "密回避達成の効果提示根拠となる入場記録・時間別集計が退行していないことを確認する",
+      "testRequirementIds": ["TR-03"],
+      "successCriterion": "入場記録と時間別入場者数の集計が既存の仕組みどおりに機能する",
+      "priorityRank": 3,
+      "priorityRationale": "既存の仕組みで既に達成済みと01号が注記しているため退行検知を優先する"
+    }
+  ],
+  "testConditions": [
+    { "id": "TC-016", "purposeIds": ["TP-01"] },
+    { "id": "TC-028", "purposeIds": ["TP-02"] },
+    { "id": "TC-010", "purposeIds": ["TP-03"] }
+  ]
+}

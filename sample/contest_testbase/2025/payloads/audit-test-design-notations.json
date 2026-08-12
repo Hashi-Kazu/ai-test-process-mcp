@@ -1,0 +1,77 @@
+{
+  "fvTable": {
+    "rows": [
+      {
+        "id": "FV-001",
+        "functionId": "EH-102",
+        "functionName": "いますぐ入場券購入",
+        "verification": "購入後すぐに入場できる入場券が出力されること",
+        "requirementIds": ["EH-102"],
+        "ngtNodeId": "NG-02",
+        "testConditionIds": ["TC-004"]
+      },
+      {
+        "id": "FV-002",
+        "functionId": "EK-311",
+        "functionName": "時間枠別残数更新（減算）",
+        "verification": "同時購入時に残数が負の値にならないこと",
+        "requirementIds": ["EK-311"],
+        "ngtNodeId": "NG-03",
+        "testConditionIds": ["TC-028"]
+      },
+      {
+        "id": "FV-003",
+        "functionId": "EH-210",
+        "functionName": "QRコード有効・無効判定",
+        "verification": "入場券情報一覧の状態ごとに有効・無効の結果が切り替わること",
+        "requirementIds": ["EH-210"],
+        "ngtNodeId": "NG-04",
+        "testConditionIds": ["TC-020"]
+      }
+    ],
+    "expectedFunctionIds": ["EH-102", "EK-311", "EH-210"]
+  },
+  "ngt": {
+    "nodes": [
+      { "id": "NG-01", "label": "テスト観点" },
+      {
+        "id": "NG-02",
+        "label": "購入",
+        "parentId": "NG-01",
+        "perspectiveCategoryId": "TPC-01",
+        "testConditionIds": ["TC-004"]
+      },
+      {
+        "id": "NG-03",
+        "label": "残数管理",
+        "parentId": "NG-01",
+        "perspectiveCategoryId": "TPC-07",
+        "testConditionIds": ["TC-028"]
+      },
+      {
+        "id": "NG-04",
+        "label": "入場判定",
+        "parentId": "NG-01",
+        "perspectiveCategoryId": "TPC-05",
+        "testConditionIds": ["TC-020"]
+      }
+    ]
+  },
+  "yumotsuyoMatrix": {
+    "rows": [
+      { "id": "ROW-01", "label": "購入", "ngtNodeId": "NG-02" },
+      { "id": "ROW-02", "label": "残数管理", "ngtNodeId": "NG-03" },
+      { "id": "ROW-03", "label": "入場判定", "ngtNodeId": "NG-04" }
+    ],
+    "columns": [
+      { "id": "COL-01", "label": "機能テスト" },
+      { "id": "COL-02", "label": "境界値テスト" }
+    ],
+    "cells": [
+      { "rowId": "ROW-01", "columnId": "COL-01", "testConditionIds": ["TC-004"] },
+      { "rowId": "ROW-02", "columnId": "COL-02", "testConditionIds": ["TC-028"] },
+      { "rowId": "ROW-03", "columnId": "COL-01", "testConditionIds": ["TC-020"] }
+    ]
+  },
+  "testConditionIds": ["TC-004", "TC-020", "TC-028"]
+}
