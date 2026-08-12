@@ -28,7 +28,18 @@ import {
   renderDocumentDigestLines,
   sanitizeTestBasisDocuments,
 } from "../documentDigest.js";
-import type { AnalyzeRequirementsInput, QualityCharacteristicModel } from "../types.js";
+import type { AnalyzeRequirementsInput, QualityCharacteristicModel, ReviewSeverity } from "../types.js";
+
+/** 既定表示（verbose=false）で 2.1節に列挙する ID重複行の上限。 */
+export const MAX_DUPLICATE_ID_LINES = 20;
+/** 既定表示（verbose=false）で 2.1節に列挙する未解決参照行の上限。 */
+export const MAX_UNRESOLVED_REFERENCE_LINES = 20;
+/** 既定表示（verbose=false）で 2.6節の表・JSONブロックに載せる根拠位置の上限。 */
+export const MAX_REQUIREMENT_SOURCE_REFS = 20;
+/** 既定表示（verbose=false）で 3章の指摘表に載せる行数の上限。 */
+export const MAX_FINDING_ROWS = 30;
+
+const SEVERITY_RANK: Record<ReviewSeverity, number> = { high: 0, medium: 1, low: 2 };
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
@@ -88,6 +99,11 @@ export function renderRequirementsAnalysis(
   lines.push(
     "既定(verbose未指定/false)は要約表示。2.6節は根拠位置を絞り込んで表示する。全件が必要な場合は `verbose: true` を指定すること。"
   );
+  if (!verbose) {
+    lines.push(
+      "既定では 2.1節のID重複・未解決参照、2.6節の根拠位置、3章の指摘表に件数上限を適用する。打ち切った箇所には全件数と省略件数を併記する。"
+    );
+  }
   lines.push("");
 
   // --- 1. 対象文書 ---
@@ -140,19 +156,33 @@ export function renderRequirementsAnalysis(
     lines.push("- ID重複: なし");
   } else {
     lines.push(`- ID重複: ${duplicates.length}件`);
-    for (const dup of duplicates) {
+    const duplicatesToShow = verbose ? duplicates : duplicates.slice(0, MAX_DUPLICATE_ID_LINES);
+    for (const dup of duplicatesToShow) {
       const placesText = dup.places
         .map((p) => `${p.document}:${p.lineIndex + 1} ${p.heading}`)
         .join(" / ");
       lines.push(`  - [${dup.severity}] ${dup.id}(${dup.count}件): ${placesText}`);
+    }
+    if (!verbose && duplicates.length > duplicatesToShow.length) {
+      const omitted = duplicates.length - duplicatesToShow.length;
+      lines.push(
+        `  - ID重複: 全${duplicates.length}件中 ${duplicatesToShow.length}件を表示（${omitted}件を省略）。全件は verbose: true で取得できる。`
+      );
     }
   }
   if (unresolved.length === 0) {
     lines.push("- 未解決参照: なし");
   } else {
     lines.push(`- 未解決参照: ${unresolved.length}件`);
-    for (const ref of unresolved) {
+    const unresolvedToShow = verbose ? unresolved : unresolved.slice(0, MAX_UNRESOLVED_REFERENCE_LINES);
+    for (const ref of unresolvedToShow) {
       lines.push(`  - ${ref.id}(${ref.document}:${ref.lineIndex + 1} ${ref.heading})`);
+    }
+    if (!verbose && unresolved.length > unresolvedToShow.length) {
+      const omitted = unresolved.length - unresolvedToShow.length;
+      lines.push(
+        `  - 未解決参照: 全${unresolved.length}件中 ${unresolvedToShow.length}件を表示（${omitted}件を省略）。全件は verbose: true で取得できる。`
+      );
     }
   }
   lines.push("");
@@ -234,9 +264,10 @@ export function renderRequirementsAnalysis(
     ...duplicates.map((d) => d.id),
     ...unresolved.map((u) => u.id),
   ]);
-  const sourcesToShow = verbose
+  const filteredSources = verbose
     ? requirementSources
     : requirementSources.filter((r) => flaggedIds.has(r.requirementId));
+  const sourcesToShow = verbose ? filteredSources : filteredSources.slice(0, MAX_REQUIREMENT_SOURCE_REFS);
 
   const prefixSourceCounts = new Map<string, number>();
   for (const ref of requirementSources) {
@@ -276,6 +307,12 @@ export function renderRequirementsAnalysis(
         )} | ${escapeCell(ref.label ?? "-")} |`
       );
     }
+    if (!verbose && filteredSources.length > sourcesToShow.length) {
+      const omitted = filteredSources.length - sourcesToShow.length;
+      lines.push(
+        `- 根拠位置: フラグ対象 全${filteredSources.length}件中 ${sourcesToShow.length}件を表示（${omitted}件を省略）。表・JSONブロックともに同じ${sourcesToShow.length}件。全根拠位置数は ${requirementSources.length}件。全件は verbose: true で取得できる。`
+      );
+    }
     lines.push("");
     lines.push("```json");
     lines.push(JSON.stringify({ requirementSources: sourcesToShow }, null, 2));
@@ -307,9 +344,21 @@ export function renderRequirementsAnalysis(
     lines.push(`| ${escapeCell(def.level)} | ${escapeCell(def.description)} |`);
   }
   lines.push("");
+  const sortedFindings = verbose
+    ? findings
+    : [...findings].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+  const findingsToShow = verbose ? sortedFindings : sortedFindings.slice(0, MAX_FINDING_ROWS);
+  if (!verbose) {
+    const highCount = findings.filter((f) => f.severity === "high").length;
+    const mediumCount = findings.filter((f) => f.severity === "medium").length;
+    const lowCount = findings.filter((f) => f.severity === "low").length;
+    lines.push(
+      `- 指摘件数: 全${findings.length}件（severity内訳 high: ${highCount} / medium: ${mediumCount} / low: ${lowCount}）。severity降順で上位${findingsToShow.length}件を表示。`
+    );
+  }
   lines.push("| 指摘ID | 種別 | 重大度 | 該当箇所 | 何が問題か | 確認質問文 | 暫定前提 |");
   lines.push("| --- | --- | --- | --- | --- | --- | --- |");
-  for (const f of findings) {
+  for (const f of findingsToShow) {
     lines.push(
       `| ${f.id} | ${f.kind} | ${f.severity} | ${escapeCell(f.place)} | ${escapeCell(f.problem)} | ${escapeCell(
         f.question
@@ -317,6 +366,13 @@ export function renderRequirementsAnalysis(
     );
   }
   lines.push("");
+  if (!verbose && findings.length > findingsToShow.length) {
+    const omitted = findings.length - findingsToShow.length;
+    lines.push(
+      `- 指摘表: 全${findings.length}件中 ${findingsToShow.length}件を表示（${omitted}件を省略）。全件は verbose: true で取得できる。`
+    );
+    lines.push("");
+  }
   lines.push(
     "以下に続けて意味的分析で見つかった指摘を同形式で F-XX として追記すること。該当箇所は文書名・章・機能ID・引用スニペットを必ず埋めること。"
   );
@@ -515,7 +571,7 @@ export const analyzeRequirementsInputShape = {
     .boolean()
     .optional()
     .describe(
-      "If false/omitted (default), section 2.6 shows a per-prefix count summary and lists source references only for requirement IDs flagged as duplicate or unresolved-reference. If true, lists every requirement-source reference in full (as in previous versions)."
+      "If false/omitted (default), section 2.6 shows a per-prefix count summary and lists source references only for requirement IDs flagged as duplicate or unresolved-reference, capped at a fixed row limit; section 2.1's duplicate-ID and unresolved-reference listings and section 3's findings table are also capped at fixed row limits (findings sorted by severity descending), with every truncated place annotated with the total count, omitted count, and a note that `verbose: true` returns the full data. If true, lists every requirement-source reference in full and every finding in its original generation order, with no caps, no sorting, and no truncation notes (as in previous versions)."
     ),
 } as const;
 
