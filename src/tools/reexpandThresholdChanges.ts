@@ -31,6 +31,13 @@ import type {
   ThresholdExtractionFinding,
 } from "../types.js";
 
+/** 既定表示（verbose=false）で2.1節の参照インデックスに表示する行数の上限。 */
+export const MAX_REFERENCE_ROWS = 20;
+/** 既定表示（verbose=false）で4.1節の指摘一覧に表示する行数の上限。 */
+export const MAX_FINDING_ROWS = 30;
+/** 既定表示（verbose=false）で4.2節の成果物別影響判定に表示する行数の上限。 */
+export const MAX_IMPACTED_ARTIFACT_ROWS = 20;
+
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
 }
@@ -55,6 +62,7 @@ export function renderThresholdChangeReexpansion(
   const testCases = input.testCases ?? [];
   const boundaryBindings = input.boundaryBindings ?? [];
   const equivalenceBindings = input.equivalenceBindings ?? [];
+  const verbose = input.verbose ?? false;
 
   const documentsBefore = input.documentsBefore
     ? sanitizeTestBasisDocuments(input.documentsBefore)
@@ -110,6 +118,12 @@ export function renderThresholdChangeReexpansion(
   const lines: string[] = [];
   lines.push("# 閾値変更の影響再展開結果");
   lines.push("");
+  if (!verbose) {
+    lines.push(
+      "既定(verbose未指定/false)は要約表示。0.2/0.3/0.4/2.1/4.1/4.2に件数上限を適用し、打ち切った箇所には全件数と省略件数を併記する。全件は verbose: true で取得できる。"
+    );
+    lines.push("");
+  }
 
   // --- 0. 投入文書と閾値の自前抽出（documents 指定時のみ） ---
   if (extraction.enabled) {
@@ -118,10 +132,15 @@ export function renderThresholdChangeReexpansion(
       const rows = buildDocumentDigests(documents);
       return renderDocumentDigestLines(rows, findDocumentDigestFindings(rows));
     };
-    for (const l of renderThresholdExtractionLines(extraction, extractionCriteria, {
-      before: digestFor(documentsBefore),
-      after: digestFor(documentsAfter),
-    })) {
+    for (const l of renderThresholdExtractionLines(
+      extraction,
+      extractionCriteria,
+      {
+        before: digestFor(documentsBefore),
+        after: digestFor(documentsAfter),
+      },
+      verbose
+    )) {
       lines.push(l);
     }
   }
@@ -165,13 +184,22 @@ export function renderThresholdChangeReexpansion(
   if (references.length === 0) {
     lines.push("- 対象なし");
   } else {
+    const referencesToShow = verbose ? references : references.slice(0, MAX_REFERENCE_ROWS);
     lines.push("| パラメータ名 | 参照元 | ID | 参照箇所 | 参照形式 |");
     lines.push("| --- | --- | --- | --- | --- |");
-    for (const ref of references) {
+    for (const ref of referencesToShow) {
       lines.push(
         `| ${escapeCell(ref.parameterName)} | ${ref.ownerKind} | ${escapeCell(ref.ownerId)} | ${escapeCell(
           ref.place
         )} | ${ref.form} |`
+      );
+    }
+    if (references.length > referencesToShow.length) {
+      lines.push("");
+      lines.push(
+        `- パラメータ×参照箇所: 全${references.length}件中 ${referencesToShow.length}件を表示（${
+          references.length - referencesToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }
@@ -251,9 +279,17 @@ export function renderThresholdChangeReexpansion(
   if (findings.length === 0) {
     lines.push("- 指摘なし");
   } else {
-    for (const f of findings) {
+    const findingsToShow = verbose ? findings : findings.slice(0, MAX_FINDING_ROWS);
+    for (const f of findingsToShow) {
       const owner = f.ownerId ? f.ownerId : "-";
       lines.push(`- [${f.severity}] ${f.categoryId} ${owner}: ${escapeCell(f.detail)}（${f.places.join(", ") || "-"}）`);
+    }
+    if (findings.length > findingsToShow.length) {
+      lines.push(
+        `- 指摘一覧: 全${findings.length}件中 ${findingsToShow.length}件を表示（${
+          findings.length - findingsToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
+      );
     }
   }
   lines.push("");
@@ -263,13 +299,22 @@ export function renderThresholdChangeReexpansion(
   if (impacted.length === 0) {
     lines.push("- 対象なし");
   } else {
+    const impactedToShow = verbose ? impacted : impacted.slice(0, MAX_IMPACTED_ARTIFACT_ROWS);
     lines.push("| 種別 | ID | 内容 | 影響パラメータ | 該当区分 | 判定 |");
     lines.push("| --- | --- | --- | --- | --- | --- |");
-    for (const row of impacted) {
+    for (const row of impactedToShow) {
       lines.push(
         `| ${row.ownerKind} | ${escapeCell(row.ownerId)} | ${escapeCell(row.title)} | ${escapeCell(
           row.parameterNames.length > 0 ? row.parameterNames.join(", ") : "-"
         )} | ${escapeCell(row.categoryIds.length > 0 ? row.categoryIds.join(", ") : "-")} | ${row.verdict} |`
+      );
+    }
+    if (impacted.length > impactedToShow.length) {
+      lines.push("");
+      lines.push(
+        `- 成果物別の影響判定: 全${impacted.length}件中 ${impactedToShow.length}件を表示（${
+          impacted.length - impactedToShow.length
+        }件を省略）。全件は verbose: true で取得できる。`
       );
     }
   }
@@ -607,6 +652,12 @@ export const reexpandThresholdChangesInputShape = {
     )
     .optional()
     .describe("Equivalence partitioning variables bound to parameter names, re-expanded for before/after snapshots"),
+  verbose: z
+    .boolean()
+    .optional()
+    .describe(
+      "If false/omitted (default), sections 0.2/0.3/0.4/2.1/4.1/4.2 are truncated to a fixed number of rows with total/omitted counts noted. If true, lists every row in full (as in previous versions)."
+    ),
 } as const;
 
 export function registerReexpandThresholdChangesTool(server: McpServer): void {

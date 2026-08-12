@@ -246,7 +246,7 @@ describe("renderThresholdChangeReexpansion", () => {
     };
     const md = renderThresholdChangeReexpansion(input);
     expect(md.split("\n")[0]).toBe("# 閾値変更の影響再展開結果");
-    expect(md.split("\n")[2]).toBe("## 1. パラメータ差分");
+    expect(md.split("\n")[4]).toBe("## 1. パラメータ差分");
     expect(md).toContain("| MAX_TICKETS | value-changed | 10 | 20 | 枚→枚 | - |");
     expect(md.match(/^## \d\./gm)).toEqual([
       "## 1.",
@@ -400,5 +400,124 @@ describe("renderThresholdChangeReexpansion 検査実行状況節", () => {
     });
     expectExecuted(md, "TCE-06");
     expectExecuted(md, "TCE-07");
+  });
+});
+
+const REEXPAND_HEADINGS = [
+  "## 0. 投入文書と閾値の自前抽出",
+  "### 0.1 投入文書ダイジェスト",
+  "### 0.2 抽出した閾値パラメータ候補",
+  "### 0.3 自前抽出による新旧対照表(提案・未反映)",
+  "### 0.4 宣言パラメータ表との突合結果",
+  "### 0.5 判定区分と対処指針(自前抽出)",
+  "### 0.6 抽出サマリ",
+  "## 1. パラメータ差分",
+  "### 1.1 差分表",
+  "### 1.2 変更区分の内訳",
+  "## 2. 参照インデックス(決定的層)",
+  "### 2.1 パラメータ × 参照箇所",
+  "### 2.2 参照が見つからない変更パラメータ",
+  "## 3. 再展開結果(決定的層)",
+  "### 3.1 境界値の再展開差分",
+  "### 3.2 同値クラス代表値の再展開差分",
+  "### 3.3 解決できなかった束縛",
+  "## 4. 影響と要対応(決定的層)",
+  "### 4.1 指摘一覧",
+  "### 4.2 成果物別の影響判定",
+  "### 4.3 サマリ",
+  "## 5. 判定区分と対処指針(カタログ)",
+  "## 6. 再生成指示(意味的層)",
+];
+
+function buildLargeReexpandInput(): ReexpandThresholdChangesInput {
+  const PARAM_COUNT = 12;
+  const CASE_COUNT = 22;
+  const DOC_CANDIDATE_COUNT = 32;
+
+  const parametersBefore: ReexpandThresholdChangesInput["parametersBefore"] = [];
+  const parametersAfter: ReexpandThresholdChangesInput["parametersAfter"] = [];
+  for (let i = 1; i <= PARAM_COUNT; i++) {
+    parametersBefore.push({ name: `PARAM${i}`, value: String(i * 10), unit: "枚" });
+    parametersAfter.push({ name: `PARAM${i}`, value: String(i * 10 + 1), unit: "枚" });
+  }
+
+  const testConditions: NonNullable<ReexpandThresholdChangesInput["testConditions"]> = [];
+  const testCases: NonNullable<ReexpandThresholdChangesInput["testCases"]> = [];
+  for (let i = 1; i <= CASE_COUNT; i++) {
+    const paramName = `PARAM${(i % PARAM_COUNT) + 1}`;
+    testConditions.push({
+      id: `TCOND-${String(i).padStart(3, "0")}`,
+      statement: `${paramName} の上限付近の値を確認する`,
+      target: `対象${i}`,
+    });
+    testCases.push({
+      caseId: `TCS-${String(i).padStart(3, "0")}`,
+      title: `${paramName} 境界のテスト${i}`,
+      coverageTargets: [],
+      steps: [{ no: 1, action: `${paramName} 枚を入力する`, expected: "エラーが表示される" }],
+    });
+  }
+
+  const beforeLines: string[] = [];
+  const afterLines: string[] = [];
+  for (let i = 1; i <= DOC_CANDIDATE_COUNT; i++) {
+    beforeLines.push(`| DOCVAL${i} | ${i * 10}枚 |`);
+    afterLines.push(`| DOCVAL${i} | ${i * 10 + 5}枚 |`);
+  }
+
+  return {
+    parametersBefore,
+    parametersAfter,
+    testConditions,
+    testCases,
+    documentsBefore: [{ name: "spec-before.md", content: beforeLines.join("\n") }],
+    documentsAfter: [{ name: "spec-after.md", content: afterLines.join("\n") }],
+  };
+}
+
+describe("renderThresholdChangeReexpansion 件数上限つき既定出力(verbose)", () => {
+  const largeInput = buildLargeReexpandInput();
+  const defaultMarkdown = renderThresholdChangeReexpansion(largeInput);
+  const verboseMarkdown = renderThresholdChangeReexpansion({ ...largeInput, verbose: true });
+
+  it("既定出力が全ての見出しを保持したまま40,000字未満になる", () => {
+    expect(defaultMarkdown.length).toBeLessThan(40000);
+    for (const heading of REEXPAND_HEADINGS) {
+      expect(defaultMarkdown).toContain(heading);
+    }
+  });
+
+  it("打ち切り注記が既定出力に出る", () => {
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(defaultMarkdown).toMatch(truncationLine);
+  });
+
+  it("verbose: true では打ち切り注記が出ず全件になる", () => {
+    const truncationLine = /全\d+件中 \d+件を表示（\d+件を省略）。全件は verbose: true で取得できる。/;
+    expect(verboseMarkdown).not.toMatch(truncationLine);
+
+    const section02Before = verboseMarkdown
+      .split("### 0.2 抽出した閾値パラメータ候補")[1]
+      .split("### 0.3")[0]
+      .split("変更前:")[1]
+      .split("変更後:")[0];
+    expect((section02Before.match(/^\| DOCVAL/gm) ?? []).length).toBe(32);
+  });
+
+  it("verbose有無でサマリ・集計値が一致する", () => {
+    const defaultSummary = defaultMarkdown.split("### 4.3 サマリ")[1].split("## 5.")[0];
+    const verboseSummary = verboseMarkdown.split("### 4.3 サマリ")[1].split("## 5.")[0];
+    expect(defaultSummary).toBe(verboseSummary);
+  });
+
+  it("is deterministic across repeated calls", () => {
+    const first = renderThresholdChangeReexpansion(largeInput);
+    const second = renderThresholdChangeReexpansion(largeInput);
+    expect(first).toBe(second);
+  });
+
+  it("verbose未指定時のみ冒頭の要約表示に関する1行が出る", () => {
+    expect(defaultMarkdown).toContain("既定(verbose未指定/false)は要約表示。");
+    expect(verboseMarkdown).not.toContain("既定(verbose未指定/false)は要約表示。");
   });
 });

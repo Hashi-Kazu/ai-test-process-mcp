@@ -1518,6 +1518,7 @@ export interface GenerateTestCasesInput {
   requirementSources?: RequirementSourceRef[];     // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
   testBasisDocuments?: TestBasisDocument[];        // 引用文言・IDの実在照合に使うテストベース全文（未指定なら照合をスキップ）
   idPatterns?: string[];                           // ID抽出の追加パターン（実在照合で使う）
+  verbose?: boolean;                               // true なら件数上限なしの全件表示（既定は要約表示）
 }
 
 // --- 決定的検査の結果型（generate_test_cases） ---
@@ -2282,6 +2283,7 @@ export interface ReexpandThresholdChangesInput {
   boundaryBindings?: ThresholdBoundaryBinding[];
   boundaryMode?: BoundaryValueMode;
   equivalenceBindings?: ThresholdEquivalenceBinding[];
+  verbose?: boolean;                               // true なら件数上限なしの全件表示（既定は要約表示）
 }
 
 export interface ThresholdChangeImpactCriteria {
