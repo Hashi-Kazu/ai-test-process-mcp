@@ -38,7 +38,7 @@ import { deliverableConsistencyCriteria } from "./deliverableConsistencyCriteria
 import { coverageBalanceCriteria } from "./coverageBalanceCriteria.js";
 import { testPurposeDerivationFrame } from "./testPurposeDerivationFrame.js";
 import { testDesignNotationCatalog } from "./testDesignNotationCatalog.js";
-import { nextToolCatalog, registeredToolNames } from "./nextToolCatalog.js";
+import { nextToolCatalog, nextToolEntryPoints, registeredToolNames } from "./nextToolCatalog.js";
 import { toolOutputSignatures } from "./toolOutputSignatures.js";
 import {
   inspectabilityCatalog,
@@ -958,7 +958,8 @@ export function registerResources(server: McpServer): void {
         "Japanese reason shown to the caller, plus the list of all tool names registered by this MCP server " +
         "used to reject completedTools declarations naming tools that do not exist. Also includes the output " +
         "heading signature table (toolOutputSignatures) used to verify that a completedTools declaration's " +
-        "outputExcerpt actually contains that tool's own output heading.",
+        "outputExcerpt actually contains that tool's own output heading. Also includes nextToolEntryPoints, " +
+        "a map from input-state key to the tool candidates that should be called first when no tool has been run yet.",
       mimeType: "application/json",
     },
     async (uri) => ({
@@ -966,7 +967,7 @@ export function registerResources(server: McpServer): void {
         {
           uri: uri.href,
           mimeType: "application/json",
-          text: JSON.stringify({ registeredToolNames, nextToolCatalog, toolOutputSignatures }, null, 2),
+          text: JSON.stringify({ registeredToolNames, nextToolEntryPoints, nextToolCatalog, toolOutputSignatures }, null, 2),
         },
       ],
     })
