@@ -80,6 +80,16 @@ src/
     testPlanInterview.ts  # test_plan_interview プロンプト（質問形式の収集ガイド + buildInterviewPrompt純関数）
     requirementsAnalysisInterview.ts # requirements_analysis_interview プロンプト（buildRequirementsInterviewPrompt純関数）
     testDesignInterview.ts # test_design_interview プロンプト（buildTestDesignInterviewPrompt純関数）
+    exploratoryCharterInterview.ts # exploratory_charter_interview プロンプト（buildExploratoryCharterInterviewPrompt純関数）
+    personaJourneyInterview.ts # persona_journey_interview プロンプト（buildPersonaJourneyInterviewPrompt純関数）
+    interviewTopic.ts    # interview prompt の共有型と純関数（InterviewTopic型・collectToからの入力トップレベルキー抽出 extractCollectToRootKeys・本文レンダリング buildInterviewPromptText）。既存5本は移行せず、以下の新規7本のみが利用する
+    testConditionInterview.ts # test_condition_interview プロンプト（extract_test_conditions 向け、buildTestConditionInterviewPrompt純関数）
+    testArchitectureInterview.ts # test_architecture_interview プロンプト（design_test_architecture 向け、buildTestArchitectureInterviewPrompt純関数）
+    scenarioFlowInterview.ts # scenario_flow_interview プロンプト（design_scenario_flows 向け、buildScenarioFlowInterviewPrompt純関数）
+    testSpecificationReviewInterview.ts # test_specification_review_interview プロンプト（review_test_specification 向け、buildTestSpecificationReviewInterviewPrompt純関数）
+    idPopulationAuditInterview.ts # id_population_audit_interview プロンプト（audit_id_population 向け、buildIdPopulationAuditInterviewPrompt純関数）
+    thresholdChangeInterview.ts # threshold_change_interview プロンプト（reexpand_threshold_changes 向け、buildThresholdChangeInterviewPrompt純関数）
+    dataFlowTimingInterview.ts # data_flow_timing_interview プロンプト（analyze_data_flow_timing 向け、buildDataFlowTimingInterviewPrompt純関数）
   testBasisAnalysis.ts   # テストベース決定的検査の共有純関数群（ID重複・未解決参照・プレフィックス逸脱・曖昧語・数量表現）。analyze_requirements からも再利用予定
   testConditionAnalysis.ts # テスト条件の決定的検査の共有純関数群（カバレッジマトリクス・観点未使用・ID重複/欠番・derivedFrom未解決参照・リスクスコア算出）
   testCaseAnalysis.ts    # テストケースの決定的検査の共有純関数群（網羅対象ユニバース構築・網羅率カウント・網羅対象宣言のケース本文からの裏付け検査・引用文言/IDのテストベース実在照合・トレーサビリティ・ID重複/欠番・未解決参照・主観語/空欄/手順粒度/直値埋め込み検査・技法推奨）

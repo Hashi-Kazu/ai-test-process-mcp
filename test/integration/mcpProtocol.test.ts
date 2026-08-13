@@ -84,9 +84,9 @@ describe("MCP protocol: resources", () => {
 });
 
 describe("MCP protocol: prompts", () => {
-  it("prompts/list returns 5 prompts, all resolvable via getPrompt", async () => {
+  it("prompts/list returns 12 prompts, all resolvable via getPrompt", async () => {
     const { prompts } = await testClient.client.listPrompts();
-    expect(prompts.length).toBe(5);
+    expect(prompts.length).toBe(12);
     for (const prompt of prompts) {
       const result = await testClient.client.getPrompt({ name: prompt.name, arguments: {} });
       expect(result.messages.length).toBeGreaterThanOrEqual(1);
