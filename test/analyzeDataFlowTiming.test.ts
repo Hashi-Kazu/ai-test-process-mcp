@@ -282,6 +282,8 @@ describe("renderDataFlowTiming", () => {
       "## 6. 決定的検査",
       "## 7. extract_test_conditions 引き渡し",
       "## 8. サマリ",
+      "## 9. テストベースとの実在照合",
+      "## 検査実行状況(実行された検査 / 検査不能な検査)",
       "## 次に実行すべきツール",
     ]);
     expectNextToolsSection(markdown);

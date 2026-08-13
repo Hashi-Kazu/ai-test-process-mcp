@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   DEFAULT_MAX_DATA_FLOW_COMMUNICATIONS,
@@ -13,6 +21,7 @@ import { dataFlowTimingAnalysisCriteria } from "../resources/dataFlowTimingCrite
 import type {
   DataFlowCommunicationInput,
   DataFlowTimingSpec,
+  TestBasisGroundingSubject,
 } from "../types.js";
 
 // analyze_data_flow_timing のレンダリング層。決定的エンジン(src/dataFlowTimingAnalysis.ts)の
@@ -77,7 +86,109 @@ export function buildMermaidAliases(componentIds: readonly string[]): Map<string
   return aliases;
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * 構成要素ID・データ項目ID・通信ID・窓IDのような入力内部で採番される値は対象にしない。
+ * requirementIds はテストベース側で定義された外部IDなので ID 照合、
+ * sourceRef.document は本文ではなく投入文書名と突き合わせる。
+ */
+export function collectDataFlowTimingGroundingSubjects(
+  spec: DataFlowTimingSpec
+): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  (spec.components ?? []).forEach((c, i) => {
+    subjects.push({
+      kind: "label",
+      place: `components[${i}].nameJa`,
+      target: c.id,
+      fieldLabel: "構成要素名",
+      text: c.nameJa,
+    });
+    if (c.note !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `components[${i}].note`,
+        target: c.id,
+        fieldLabel: "注記",
+        text: c.note,
+      });
+    }
+  });
+  (spec.dataItems ?? []).forEach((d, i) => {
+    subjects.push({
+      kind: "label",
+      place: `dataItems[${i}].nameJa`,
+      target: d.id,
+      fieldLabel: "データ項目名",
+      text: d.nameJa,
+    });
+    if (d.note !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `dataItems[${i}].note`,
+        target: d.id,
+        fieldLabel: "注記",
+        text: d.note,
+      });
+    }
+  });
+  (spec.communications ?? []).forEach((comm, i) => {
+    if (comm.timing?.trigger !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `communications[${i}].timing.trigger`,
+        target: comm.id,
+        fieldLabel: "送信契機",
+        text: comm.timing.trigger,
+      });
+    }
+    if (comm.note !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `communications[${i}].note`,
+        target: comm.id,
+        fieldLabel: "注記",
+        text: comm.note,
+      });
+    }
+    (comm.requirementIds ?? []).forEach((id, j) => {
+      subjects.push({
+        kind: "id",
+        place: `communications[${i}].requirementIds[${j}]`,
+        target: comm.id,
+        fieldLabel: "要件ID",
+        text: id,
+      });
+    });
+    if (comm.sourceRef !== undefined) {
+      subjects.push({
+        kind: "documentName",
+        place: `communications[${i}].sourceRef.document`,
+        target: comm.id,
+        fieldLabel: "出典文書名",
+        text: comm.sourceRef.document,
+      });
+    }
+  });
+  (spec.testConditions ?? []).forEach((tc, i) => {
+    if (tc.statement === undefined) return;
+    subjects.push({
+      kind: "quotation",
+      place: `testConditions[${i}].statement`,
+      target: tc.id,
+      fieldLabel: "テスト条件文",
+      text: tc.statement,
+    });
+  });
+  return subjects;
+}
+
 export function renderDataFlowTiming(spec: DataFlowTimingSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectDataFlowTimingGroundingSubjects(spec);
   const result = computeDataFlowTiming(spec);
   const components = spec.components;
   const dataItems = spec.dataItems;
@@ -464,6 +575,24 @@ export function renderDataFlowTiming(spec: DataFlowTimingSpec): string {
     lines.push("");
   }
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+  lines.push("");
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 9. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("analyze_data_flow_timing", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
+
   const signals: string[] = [];
   if (
     result.delayWindows.some((w) => w.computed && (w.maxLatencySeconds ?? 0) > 0) ||
@@ -491,6 +620,7 @@ const dataFlowAckKindEnum = z.enum(["none", "application-ack", "transport-ack", 
 
 export const analyzeDataFlowTimingInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   title: z.string().optional(),
   components: z
     .array(

@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { classifyTestSize, classifyTestSizes, buildTestSizeDistribution } from "../testSizeAnalysis.js";
 import { computeRiskScore, mapRiskScoreToBand, resolveEffectiveRiskAxes } from "../testConditionAnalysis.js";
@@ -17,6 +25,7 @@ import type {
   RegressionSuiteResult,
   RegressionSuiteTestCaseInput,
   RegressionSuiteTestConditionInput,
+  TestBasisGroundingSubject,
   TestCaseSpec,
   TestConditionPriority,
   ThresholdArtifactKind,
@@ -650,7 +659,93 @@ function fmtNum(value: number | undefined): string {
   return value === undefined ? "-" : String(value);
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * 条件ID・ケースID・基準ID・コンテナIDのような入力内部で採番される値、
+ * および changeCategory / priority / verdict 等の enum は対象にしない。
+ */
+export function collectRegressionSuiteGroundingSubjects(
+  spec: RegressionSelectionSpec
+): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  (spec.testConditions ?? []).forEach((tc, i) => {
+    if (tc.target !== undefined) {
+      subjects.push({
+        kind: "label",
+        place: `testConditions[${i}].target`,
+        target: tc.id,
+        fieldLabel: "テスト対象",
+        text: tc.target,
+      });
+    }
+    if (tc.statement !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `testConditions[${i}].statement`,
+        target: tc.id,
+        fieldLabel: "テスト条件文",
+        text: tc.statement,
+      });
+    }
+  });
+  (spec.selectionCriteria ?? []).forEach((c, i) => {
+    subjects.push({
+      kind: "quotation",
+      place: `selectionCriteria[${i}].statement`,
+      target: c.id,
+      fieldLabel: "選択基準文",
+      text: c.statement,
+    });
+  });
+  (spec.selections ?? []).forEach((sel, i) => {
+    if (sel.reason !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `selections[${i}].reason`,
+        target: sel.itemId,
+        fieldLabel: "選択理由",
+        text: sel.reason,
+      });
+    }
+    if (sel.note !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `selections[${i}].note`,
+        target: sel.itemId,
+        fieldLabel: "選択注記",
+        text: sel.note,
+      });
+    }
+  });
+  (spec.removalReasons ?? []).forEach((r, i) => {
+    subjects.push({
+      kind: "quotation",
+      place: `removalReasons[${i}].reason`,
+      target: r.itemId,
+      fieldLabel: "除外理由",
+      text: r.reason,
+    });
+  });
+  (spec.computedImpactVerdicts ?? []).forEach((v, i) => {
+    (v.parameterNames ?? []).forEach((name, j) => {
+      subjects.push({
+        kind: "label",
+        place: `computedImpactVerdicts[${i}].parameterNames[${j}]`,
+        target: v.ownerId,
+        fieldLabel: "パラメータ名",
+        text: name,
+      });
+    });
+  });
+  return subjects;
+}
+
 export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectRegressionSuiteGroundingSubjects(spec);
   const suiteId = spec.suiteId ?? DEFAULT_REGRESSION_SUITE_ID;
   const result = computeRegressionSuite(spec);
   const selectionCriteria = spec.selectionCriteria ?? [];
@@ -957,6 +1052,7 @@ export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
         `指摘件数 ${result.findings.length}`
     );
   }
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
   lines.push("");
 
   // 11. 再検討指示(意味的層)
@@ -986,6 +1082,22 @@ export function renderRegressionSuite(spec: RegressionSelectionSpec): string {
     for (const line of guidanceLines) lines.push(line);
   }
 
+  lines.push("");
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 12. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("select_regression_suite", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
+
   lines.push(
     ...renderNextToolsSection(
       "select_regression_suite",
@@ -1003,6 +1115,7 @@ const regressionItemKindEnum = z.enum(["condition", "case"]);
 
 export const selectRegressionSuiteInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   suiteId: z.string().optional().describe("Suite id used in headings and summary (default REG)"),
   title: z.string().optional(),
   testConditions: z

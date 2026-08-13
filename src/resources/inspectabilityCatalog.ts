@@ -22,6 +22,8 @@ export type { InspectabilityCheckEntry, InspectabilityPrecondition, Inspectabili
 // 「本入力で実際に実行された決定的検査 / 検査不能だった決定的検査」の対照表を描画するための静的カタログ。
 // nextToolCatalog と同じ方針で、静的表はこのファイルに閉じ、判定は inspectabilityAnalysis.ts の純関数に閉じる。
 // 新規の判定区分ID体系は発明せず、既存判定区分カタログの id / nameJa をそのまま参照する。
+// ツール別カタログに属さない共有判定区分（src/testBasisGrounding.ts の TBG-01〜TBG-04 など）を使う検査は
+// catalogId を付けず、出力節ラベルをそのまま検査名として使う。
 
 /**
  * 決定的検査が成立するための入力上の前提の一覧。
@@ -403,7 +405,20 @@ function outOfScopeNote(structuralExamples: string): string {
   );
 }
 
-/** ツール名 → 検査実行状況カタログ。原文入力口を持つ11ツールのみを登録する。 */
+/**
+ * テストベース実在照合（TBG-01〜TBG-04）の共通検査。
+ * 判定区分IDは src/testBasisGrounding.ts の module 定数であり、
+ * ツール別 resource カタログの id 体系ではないため catalogId は付けない。
+ */
+function testBasisGroundingCheck(): InspectabilityCheckEntry {
+  return {
+    checkKey: "testbasis-grounding",
+    sectionLabel: "テストベースとの実在照合",
+    requires: ["documents-supplied"],
+  };
+}
+
+/** ツール名 → 検査実行状況カタログ。原文入力口を持つ19ツールのみを登録する。 */
 export const inspectabilityCatalog: Record<string, InspectabilityToolEntry> = {
   review_test_basis: {
     toolName: "review_test_basis",
@@ -888,6 +903,78 @@ export const inspectabilityCatalog: Record<string, InspectabilityToolEntry> = {
     ],
     outOfScopeNote: outOfScopeNote(
       "パラメータ差分・参照インデックス・境界値/同値クラスの再展開（TCI-01〜TCI-08）"
+    ),
+  },
+
+  design_scenario_flows: {
+    toolName: "design_scenario_flows",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "actors / useCases / mainFlow / branches の構造検査とシナリオ列挙・機能ID被覆（SFC-01〜）"
+    ),
+  },
+
+  design_test_data: {
+    toolName: "design_test_data",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "dataClasses / states / transitions の構造検査とデータ×ケース供給トレーサビリティ（TDC-01〜）"
+    ),
+  },
+
+  design_config_matrix: {
+    toolName: "design_config_matrix",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "factors / excludedCombinations / actualRows の構造検査と到達可否・被覆算出（CMC-01〜）"
+    ),
+  },
+
+  design_decision_table: {
+    toolName: "design_decision_table",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "conditions / actions / invalidCombinations / rules の構造検査と組合せ列挙・圧縮（DTC-01〜）"
+    ),
+  },
+
+  design_pairwise: {
+    toolName: "design_pairwise",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "factors / forbiddenCombinations / seedRows の構造検査とペア到達可否・被覆算出（PWC-01〜）"
+    ),
+  },
+
+  design_test_architecture: {
+    toolName: "design_test_architecture",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "scope / containers / testConditions の構造検査と階層・帰属・分布の算出（TAC-01〜）"
+    ),
+  },
+
+  analyze_data_flow_timing: {
+    toolName: "analyze_data_flow_timing",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "components / dataItems / communications の構造検査と遅延窓・乖離窓の算出（DFT-01〜DFT-20）"
+    ),
+  },
+
+  select_regression_suite: {
+    toolName: "select_regression_suite",
+    includesDigestChecks: false,
+    checks: [testBasisGroundingCheck()],
+    outOfScopeNote: outOfScopeNote(
+      "testConditions / selectionCriteria / selections / previousSuite の構造検査と選択・差分・影響範囲被覆の算出（RSC-01〜RSC-25）"
     ),
   },
 };

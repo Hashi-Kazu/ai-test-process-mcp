@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {
   ConfigMatrixActualRow,
@@ -12,6 +20,7 @@ import type {
   ConfigMatrixRow,
   ConfigMatrixSelector,
   ConfigMatrixSpec,
+  TestBasisGroundingSubject,
   TestCaseCoverageTarget,
 } from "../types.js";
 
@@ -766,7 +775,61 @@ export function buildConfigMatrixCoverageTargets(spec: ConfigMatrixSpec): TestCa
   }));
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * 因子ID・水準の内部添字のような入力内部で採番される値は対象にしない。
+ */
+export function collectConfigMatrixGroundingSubjects(
+  spec: ConfigMatrixSpec
+): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  spec.factors.forEach((f, i) => {
+    subjects.push({
+      kind: "label",
+      place: `factors[${i}].name`,
+      target: f.id,
+      fieldLabel: "因子名",
+      text: f.name,
+    });
+    f.levels.forEach((lv, j) => {
+      subjects.push({
+        kind: "label",
+        place: `factors[${i}].levels[${j}]`,
+        target: f.id,
+        fieldLabel: "水準値",
+        text: lv,
+      });
+    });
+  });
+  (spec.excludedCombinations ?? []).forEach((ex, i) => {
+    if (ex.reason === undefined) return;
+    subjects.push({
+      kind: "quotation",
+      place: `excludedCombinations[${i}].reason`,
+      target: excludedLabel(ex, i),
+      fieldLabel: "除外理由",
+      text: ex.reason,
+    });
+  });
+  (spec.actualRows ?? []).forEach((row, i) => {
+    if (row.note === undefined) return;
+    subjects.push({
+      kind: "quotation",
+      place: `actualRows[${i}].note`,
+      target: actualRowLabel(row, i),
+      fieldLabel: "構成注記",
+      text: row.note,
+    });
+  });
+  return subjects;
+}
+
 export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectConfigMatrixGroundingSubjects(spec);
   const matrixId = spec.matrixId ?? DEFAULT_CONFIG_MATRIX_ID;
   const result = computeConfigMatrixRows(spec);
   const factors = spec.factors;
@@ -999,6 +1062,24 @@ export function renderConfigMatrix(spec: ConfigMatrixSpec): string {
     );
   }
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+  lines.push("");
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 9. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("design_config_matrix", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
+
   const configMatrixSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
     configMatrixSignals.push("has-high-findings");
@@ -1024,6 +1105,7 @@ const configMatrixSelectorSchema = z.record(z.string(), z.union([z.string(), z.a
 
 export const designConfigMatrixInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   matrixId: z.string().optional().describe("Matrix id used to build coverage target ids (default MAIN)"),
   title: z.string().optional(),
   factors: z

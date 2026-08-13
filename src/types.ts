@@ -272,6 +272,44 @@ export interface TestBasisDocument {
   content: string; // 自由テキスト（Markdown / プレーンテキスト、フォーマット不問）
 }
 
+// --- テストベース実在照合(TBG-01..TBG-04。src/testBasisGrounding.ts が正本) ---
+
+/** 照合の種別。label/quotation/id は本文コーパス、documentName は投入文書名集合と突き合わせる。 */
+export type TestBasisGroundingKind = "label" | "quotation" | "id" | "documentName";
+
+/** 照合対象の申告。text は kind に応じて名詞句・自由記述・ID・文書名のいずれか。 */
+export interface TestBasisGroundingSubject {
+  kind: TestBasisGroundingKind;
+  /** 入力上の位置。例 `factors[0].levels[1]` */
+  place: string;
+  /** 所有者の識別子（因子ID・条件ID・コンテナID・ケースID等） */
+  target: string;
+  /** フィールドの日本語名。例 `水準値` */
+  fieldLabel: string;
+  text: string;
+}
+
+/** テストベースに裏付けが無かった照合対象。各ツールの findings 配列とは独立に扱う。 */
+export interface UngroundedTestBasisSubject {
+  categoryId: string; // "TBG-01" 等
+  severity: "high" | "medium" | "info";
+  kind: TestBasisGroundingKind;
+  place: string;
+  target: string;
+  fieldLabel: string;
+  text: string;
+  detail: string;
+}
+
+/** テストベース実在照合の判定区分。MCP resource としては公開しない。 */
+export interface TestBasisGroundingCriterion {
+  id: string; // "TBG-01" 等
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+
 export type TestBasisIdRole = "definition" | "reference" | "toc";
 
 /**
@@ -1133,6 +1171,8 @@ export interface DecisionTableSpec {
   rules?: DecisionTableRuleSpec[];
   maxCombinations?: number;   // 全列挙上限。既定 4096
   factorInventory?: FactorInventoryEntry[]; // 因子分解フレームの因子表（因子引き渡し検査 FHO-03 用）
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export interface DecisionTableCombination {
@@ -1217,6 +1257,8 @@ export interface PairwiseSpec {
   maxEnumerationCombinations?: number; // 有効全組合せの厳密列挙上限。既定 4096
   maxSearchNodes?: number;         // 到達可否探索の1回あたりノード上限。既定 20000
   factorInventory?: FactorInventoryEntry[]; // 因子分解フレームの因子表（因子引き渡し検査 FHO-04 用）
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export type PairwisePairStatus = "reachable" | "unreachable" | "undetermined";
@@ -1309,6 +1351,8 @@ export interface ConfigMatrixSpec {
   maxCombinationCount?: number; // 全構成の列挙上限。既定 5000
   maxSearchNodes?: number; // single/pairwise の貪欲生成で使う完全割当探索の予算。既定 5000
   actualRows?: ConfigMatrixActualRow[]; // 実際にテストした/する構成表。被覆率の分子はこれのみから数える
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export type ConfigMatrixLevelStatusKind = "reachable" | "unreachable";
@@ -1436,6 +1480,8 @@ export interface ScenarioFlowSpec {
   testConditions?: ScenarioTestConditionRef[];
   maxScenariosPerUseCase?: number; // 既定 200
   emitHandoverPayload?: boolean;   // 下流ツール引き渡しJSONの本文を出力するか（既定 false）
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export type ScenarioOutcomeClass = "normal" | "semi-normal" | "abnormal";
@@ -2517,6 +2563,8 @@ export interface TestArchitectureSpec {
   maxContainers?: number;              // 既定 200
   maxDepth?: number;                   // 既定 5
   emitHandoverPayload?: boolean;       // 下流ツール引き渡しJSONの本文を出力するか（既定 false）
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export interface TestArchitectureFinding {
@@ -2684,6 +2732,8 @@ export interface TestDataSpec {
   testCases?: TestDataCaseSpec[];
   maxDataClasses?: number;          // 既定 100
   maxStatesPerClass?: number;       // 既定 50
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export interface TestDataFinding {
@@ -3590,6 +3640,8 @@ export interface RegressionSelectionSpec {
   claimedImpactScopeCoveragePercent?: number;
   highRiskMinScore?: number; // 既定 riskAnalysisFrame.bands の R1.minScore
   maxItems?: number; // 既定 DEFAULT_MAX_REGRESSION_ITEMS
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 // --- 決定的検査の結果型(select_regression_suite, RSC-01..RSC-25) ---
@@ -4186,6 +4238,8 @@ export interface DataFlowTimingSpec {
   claimedDelayWindowCoveragePercent?: number;
   maxCommunications?: number; // 既定 DEFAULT_MAX_DATA_FLOW_COMMUNICATIONS
   maxPathsPerPair?: number; // 既定 DEFAULT_MAX_DATA_FLOW_PATHS_PER_PAIR
+  /** テストベース原文。宣言した文言・IDの実在照合(TBG-01..TBG-04)に使う。未指定なら当該検査は「検査不能(要確認)」 */
+  testBasisDocuments?: TestBasisDocument[];
 }
 
 export interface DataFlowTimingFinding {
