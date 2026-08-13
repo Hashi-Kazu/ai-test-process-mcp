@@ -1,0 +1,2136 @@
+{
+  "axes": [
+    {
+      "axisId": "REQ",
+      "axisName": "要件ID（工程Aで確定した母集団32件。01_）",
+      "items": [
+        {
+          "id": "031-1",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "TC-001",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-002",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-009",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-026",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-027",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-028",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-030",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-040",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-045",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "031-2",
+          "label": "個人番号",
+          "links": [
+            {
+              "targetId": "TC-010",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-035",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-042",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-07",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            }
+          ]
+        },
+        {
+          "id": "031-3",
+          "label": "氏名",
+          "links": [
+            {
+              "targetId": "TC-011",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "TC-038",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "TC-039",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            }
+          ]
+        },
+        {
+          "id": "031-4",
+          "label": "氏_日本人",
+          "links": [
+            {
+              "targetId": "TC-012",
+              "evidence": "住登外者の氏",
+              "evidenceSource": "item-definition:17"
+            },
+            {
+              "targetId": "TC-039",
+              "evidence": "住登外者の氏",
+              "evidenceSource": "item-definition:17"
+            }
+          ]
+        },
+        {
+          "id": "031-5",
+          "label": "名_日本人",
+          "links": [
+            {
+              "targetId": "TC-012",
+              "evidence": "住登外者の名",
+              "evidenceSource": "item-definition:18"
+            },
+            {
+              "targetId": "TC-039",
+              "evidence": "住登外者の名",
+              "evidenceSource": "item-definition:18"
+            }
+          ]
+        },
+        {
+          "id": "031-6",
+          "label": "氏名_外国人アルファベット",
+          "links": [
+            {
+              "targetId": "TC-013",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            },
+            {
+              "targetId": "TC-037",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            }
+          ]
+        },
+        {
+          "id": "031-7",
+          "label": "氏名_外国人漢字",
+          "links": [
+            {
+              "targetId": "TC-013",
+              "evidence": "外国人住登外者の氏名（漢字）",
+              "evidenceSource": "item-definition:22"
+            },
+            {
+              "targetId": "TC-037",
+              "evidence": "外国人住登外者の氏名（漢字）",
+              "evidenceSource": "item-definition:22"
+            }
+          ]
+        },
+        {
+          "id": "031-8",
+          "label": "氏名_読み仮名",
+          "links": [
+            {
+              "targetId": "TC-014",
+              "evidence": "住登外者の氏名（読み仮名）",
+              "evidenceSource": "item-definition:25"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "住登外者の氏名（読み仮名）",
+              "evidenceSource": "item-definition:25"
+            }
+          ]
+        },
+        {
+          "id": "031-9",
+          "label": "氏_日本人_読み仮名",
+          "links": [
+            {
+              "targetId": "TC-014",
+              "evidence": "住登外者の氏（読み仮名）",
+              "evidenceSource": "item-definition:26"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "住登外者の氏（読み仮名）",
+              "evidenceSource": "item-definition:26"
+            }
+          ]
+        },
+        {
+          "id": "031-10",
+          "label": "名_日本人_読み仮名",
+          "links": [
+            {
+              "targetId": "TC-014",
+              "evidence": "住登外者の名（読み仮名）",
+              "evidenceSource": "item-definition:27"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "住登外者の名（読み仮名）",
+              "evidenceSource": "item-definition:27"
+            }
+          ]
+        },
+        {
+          "id": "031-11",
+          "label": "性別",
+          "links": [
+            {
+              "targetId": "TC-022",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            },
+            {
+              "targetId": "TC-038",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            }
+          ]
+        },
+        {
+          "id": "031-12",
+          "label": "生年月日",
+          "links": [
+            {
+              "targetId": "TC-023",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            },
+            {
+              "targetId": "TC-038",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            }
+          ]
+        },
+        {
+          "id": "031-13",
+          "label": "生年月日_不詳表記",
+          "links": [
+            {
+              "targetId": "TC-015",
+              "evidence": "生年月日が不詳である場合の不詳日表記",
+              "evidenceSource": "item-definition:31"
+            }
+          ]
+        },
+        {
+          "id": "031-14",
+          "label": "住所_市区町村コード",
+          "links": [
+            {
+              "targetId": "TC-016",
+              "evidence": "住登外者の住所（都道府県から市区町村まで）を一意に識別できるコード",
+              "evidenceSource": "item-definition:33"
+            }
+          ]
+        },
+        {
+          "id": "031-15",
+          "label": "住所_町字コード",
+          "links": [
+            {
+              "targetId": "TC-016",
+              "evidence": "住登外者の住所（町字）を一意に識別できるコード",
+              "evidenceSource": "item-definition:34"
+            }
+          ]
+        },
+        {
+          "id": "031-16",
+          "label": "住所_都道府県",
+          "links": [
+            {
+              "targetId": "TC-017",
+              "evidence": "住登外者の住所における都道府県",
+              "evidenceSource": "item-definition:37"
+            }
+          ]
+        },
+        {
+          "id": "031-17",
+          "label": "住所_市区郡町村名",
+          "links": [
+            {
+              "targetId": "TC-017",
+              "evidence": "住登外者の住所における市区郡町村名",
+              "evidenceSource": "item-definition:38"
+            }
+          ]
+        },
+        {
+          "id": "031-18",
+          "label": "住所_町字",
+          "links": [
+            {
+              "targetId": "TC-018",
+              "evidence": "住登外者の住所における町字（丁目を含む）",
+              "evidenceSource": "item-definition:42"
+            },
+            {
+              "targetId": "RK-01",
+              "evidence": "住登外者の住所における町字（丁目を含む）",
+              "evidenceSource": "item-definition:42"
+            }
+          ]
+        },
+        {
+          "id": "031-19",
+          "label": "住所_番地号表記",
+          "links": [
+            {
+              "targetId": "TC-019",
+              "evidence": "住登外者の住所における番地号の日本語を含む表記（住居表示を実施していない区域においては「番地」、住居表示を実施している区域においては「番」及び「号」で表記する。）",
+              "evidenceSource": "item-definition:43"
+            }
+          ]
+        },
+        {
+          "id": "031-20",
+          "label": "住所_方書",
+          "links": [
+            {
+              "targetId": "TC-020",
+              "evidence": "住登外者の住所における方書",
+              "evidenceSource": "item-definition:45"
+            }
+          ]
+        },
+        {
+          "id": "031-21",
+          "label": "住所_方書_フリガナ",
+          "links": [
+            {
+              "targetId": "TC-020",
+              "evidence": "住登外者の住所における方書（フリガナ）",
+              "evidenceSource": "item-definition:47"
+            }
+          ]
+        },
+        {
+          "id": "031-22",
+          "label": "住所_郵便番号",
+          "links": [
+            {
+              "targetId": "TC-019",
+              "evidence": "住登外者の住所における郵便番号",
+              "evidenceSource": "item-definition:48"
+            }
+          ]
+        },
+        {
+          "id": "031-23",
+          "label": "業務ID",
+          "links": [
+            {
+              "targetId": "TC-003",
+              "evidence": "住登外者宛名基本情報を登録、利用する業務のID",
+              "evidenceSource": "item-definition:49"
+            },
+            {
+              "targetId": "TC-043",
+              "evidence": "住登外者宛名基本情報を登録、利用する業務のID",
+              "evidenceSource": "item-definition:49"
+            },
+            {
+              "targetId": "TC-046",
+              "evidence": "住登外者宛名基本情報を登録、利用する業務のID",
+              "evidenceSource": "item-definition:49"
+            }
+          ]
+        },
+        {
+          "id": "031-24",
+          "label": "独自施策システム等ID",
+          "links": [
+            {
+              "targetId": "TC-004",
+              "evidence": "住登外者宛名基本情報を登録、利用する独自施策システム等のID",
+              "evidenceSource": "item-definition:51"
+            },
+            {
+              "targetId": "TC-043",
+              "evidence": "住登外者宛名基本情報を登録、利用する独自施策システム等のID",
+              "evidenceSource": "item-definition:51"
+            }
+          ]
+        },
+        {
+          "id": "031-26",
+          "label": "名寄せ先宛名番号",
+          "links": [
+            {
+              "targetId": "TC-025",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "TC-042",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            }
+          ]
+        },
+        {
+          "id": "031-27",
+          "label": "操作者ID",
+          "links": [
+            {
+              "targetId": "TC-021",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            },
+            {
+              "targetId": "TC-029",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            },
+            {
+              "targetId": "TC-033",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            },
+            {
+              "targetId": "TC-034",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            },
+            {
+              "targetId": "TC-044",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            }
+          ]
+        },
+        {
+          "id": "031-28",
+          "label": "操作年月日",
+          "links": [
+            {
+              "targetId": "TC-024",
+              "evidence": "操作を行った年月日",
+              "evidenceSource": "item-definition:57"
+            },
+            {
+              "targetId": "TC-028",
+              "evidence": "操作を行った年月日",
+              "evidenceSource": "item-definition:57"
+            },
+            {
+              "targetId": "TC-041",
+              "evidence": "操作を行った年月日",
+              "evidenceSource": "item-definition:57"
+            }
+          ]
+        },
+        {
+          "id": "031-29",
+          "label": "操作時刻",
+          "links": [
+            {
+              "targetId": "TC-024",
+              "evidence": "操作を行った時刻",
+              "evidenceSource": "item-definition:58"
+            },
+            {
+              "targetId": "TC-031",
+              "evidence": "操作を行った時刻",
+              "evidenceSource": "item-definition:58"
+            }
+          ]
+        },
+        {
+          "id": "E0001",
+          "label": "必須エラー",
+          "links": [
+            {
+              "targetId": "TC-005",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-032",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-036",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-04",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            }
+          ]
+        },
+        {
+          "id": "E0002",
+          "label": "指定文字エラー",
+          "links": [
+            {
+              "targetId": "TC-006",
+              "evidence": "パラメータの文字種に指定できない文字が使われている状態。",
+              "evidenceSource": "fuban-api_spec:243"
+            },
+            {
+              "targetId": "RK-05",
+              "evidence": "パラメータの文字種に指定できない文字が使われている状態。",
+              "evidenceSource": "fuban-api_spec:243"
+            }
+          ]
+        },
+        {
+          "id": "E0003",
+          "label": "桁数エラー（固定項目）",
+          "links": [
+            {
+              "targetId": "TC-007",
+              "evidence": "パラメータの固定桁項目の桁数が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:244"
+            },
+            {
+              "targetId": "RK-05",
+              "evidence": "パラメータの固定桁項目の桁数が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:244"
+            }
+          ]
+        },
+        {
+          "id": "E0004",
+          "label": "相関チェックエラー",
+          "links": [
+            {
+              "targetId": "TC-008",
+              "evidence": "パラメータの項目設定が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:245"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "パラメータの項目設定が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:245"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "axisId": "CONDITION",
+      "axisName": "テスト条件（11_ の TC-001〜TC-046）",
+      "items": [
+        {
+          "id": "TC-001",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-002",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-003",
+          "label": "業務ID",
+          "links": [
+            {
+              "targetId": "031-23",
+              "evidence": "住登外者宛名基本情報を登録、利用する業務のID",
+              "evidenceSource": "item-definition:49"
+            }
+          ]
+        },
+        {
+          "id": "TC-004",
+          "label": "独自施策システム等ID",
+          "links": [
+            {
+              "targetId": "031-24",
+              "evidence": "住登外者宛名基本情報を登録、利用する独自施策システム等のID",
+              "evidenceSource": "item-definition:51"
+            }
+          ]
+        },
+        {
+          "id": "TC-005",
+          "label": "必須エラー",
+          "links": [
+            {
+              "targetId": "E0001",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-04",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            }
+          ]
+        },
+        {
+          "id": "TC-006",
+          "label": "指定文字エラー",
+          "links": [
+            {
+              "targetId": "E0002",
+              "evidence": "パラメータの文字種に指定できない文字が使われている状態。",
+              "evidenceSource": "fuban-api_spec:243"
+            },
+            {
+              "targetId": "RK-05",
+              "evidence": "パラメータの文字種に指定できない文字が使われている状態。",
+              "evidenceSource": "fuban-api_spec:243"
+            }
+          ]
+        },
+        {
+          "id": "TC-007",
+          "label": "桁数エラー（固定項目）",
+          "links": [
+            {
+              "targetId": "E0003",
+              "evidence": "パラメータの固定桁項目の桁数が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:244"
+            },
+            {
+              "targetId": "RK-05",
+              "evidence": "パラメータの固定桁項目の桁数が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:244"
+            }
+          ]
+        },
+        {
+          "id": "TC-008",
+          "label": "相関チェックエラー",
+          "links": [
+            {
+              "targetId": "E0004",
+              "evidence": "パラメータの項目設定が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:245"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "パラメータの項目設定が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:245"
+            }
+          ]
+        },
+        {
+          "id": "TC-009",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-010",
+          "label": "個人番号",
+          "links": [
+            {
+              "targetId": "031-2",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-07",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            }
+          ]
+        },
+        {
+          "id": "TC-011",
+          "label": "氏名",
+          "links": [
+            {
+              "targetId": "031-3",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            }
+          ]
+        },
+        {
+          "id": "TC-012",
+          "label": "氏_日本人",
+          "links": [
+            {
+              "targetId": "031-4",
+              "evidence": "住登外者の氏",
+              "evidenceSource": "item-definition:17"
+            },
+            {
+              "targetId": "031-5",
+              "evidence": "住登外者の名",
+              "evidenceSource": "item-definition:18"
+            }
+          ]
+        },
+        {
+          "id": "TC-013",
+          "label": "氏名_外国人アルファベット",
+          "links": [
+            {
+              "targetId": "031-6",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            },
+            {
+              "targetId": "031-7",
+              "evidence": "外国人住登外者の氏名（漢字）",
+              "evidenceSource": "item-definition:22"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            }
+          ]
+        },
+        {
+          "id": "TC-014",
+          "label": "氏名_読み仮名",
+          "links": [
+            {
+              "targetId": "031-8",
+              "evidence": "住登外者の氏名（読み仮名）",
+              "evidenceSource": "item-definition:25"
+            },
+            {
+              "targetId": "031-9",
+              "evidence": "住登外者の氏（読み仮名）",
+              "evidenceSource": "item-definition:26"
+            },
+            {
+              "targetId": "031-10",
+              "evidence": "住登外者の名（読み仮名）",
+              "evidenceSource": "item-definition:27"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "住登外者の氏名（読み仮名）",
+              "evidenceSource": "item-definition:25"
+            }
+          ]
+        },
+        {
+          "id": "TC-015",
+          "label": "生年月日_不詳表記",
+          "links": [
+            {
+              "targetId": "031-13",
+              "evidence": "生年月日が不詳である場合の不詳日表記",
+              "evidenceSource": "item-definition:31"
+            }
+          ]
+        },
+        {
+          "id": "TC-016",
+          "label": "住所_市区町村コード",
+          "links": [
+            {
+              "targetId": "031-14",
+              "evidence": "住登外者の住所（都道府県から市区町村まで）を一意に識別できるコード",
+              "evidenceSource": "item-definition:33"
+            },
+            {
+              "targetId": "031-15",
+              "evidence": "住登外者の住所（町字）を一意に識別できるコード",
+              "evidenceSource": "item-definition:34"
+            }
+          ]
+        },
+        {
+          "id": "TC-017",
+          "label": "住所_都道府県",
+          "links": [
+            {
+              "targetId": "031-16",
+              "evidence": "住登外者の住所における都道府県",
+              "evidenceSource": "item-definition:37"
+            },
+            {
+              "targetId": "031-17",
+              "evidence": "住登外者の住所における市区郡町村名",
+              "evidenceSource": "item-definition:38"
+            }
+          ]
+        },
+        {
+          "id": "TC-018",
+          "label": "住所_町字",
+          "links": [
+            {
+              "targetId": "031-18",
+              "evidence": "住登外者の住所における町字（丁目を含む）",
+              "evidenceSource": "item-definition:42"
+            },
+            {
+              "targetId": "RK-01",
+              "evidence": "住登外者の住所における町字（丁目を含む）",
+              "evidenceSource": "item-definition:42"
+            }
+          ]
+        },
+        {
+          "id": "TC-019",
+          "label": "住所_番地号表記",
+          "links": [
+            {
+              "targetId": "031-19",
+              "evidence": "住登外者の住所における番地号の日本語を含む表記（住居表示を実施していない区域においては「番地」、住居表示を実施している区域においては「番」及び「号」で表記する。）",
+              "evidenceSource": "item-definition:43"
+            },
+            {
+              "targetId": "031-22",
+              "evidence": "住登外者の住所における郵便番号",
+              "evidenceSource": "item-definition:48"
+            }
+          ]
+        },
+        {
+          "id": "TC-020",
+          "label": "住所_方書",
+          "links": [
+            {
+              "targetId": "031-20",
+              "evidence": "住登外者の住所における方書",
+              "evidenceSource": "item-definition:45"
+            },
+            {
+              "targetId": "031-21",
+              "evidence": "住登外者の住所における方書（フリガナ）",
+              "evidenceSource": "item-definition:47"
+            }
+          ]
+        },
+        {
+          "id": "TC-021",
+          "label": "操作者ID",
+          "links": [
+            {
+              "targetId": "031-27",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            }
+          ]
+        },
+        {
+          "id": "TC-022",
+          "label": "性別",
+          "links": [
+            {
+              "targetId": "031-11",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            }
+          ]
+        },
+        {
+          "id": "TC-023",
+          "label": "生年月日",
+          "links": [
+            {
+              "targetId": "031-12",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            }
+          ]
+        },
+        {
+          "id": "TC-024",
+          "label": "操作年月日",
+          "links": [
+            {
+              "targetId": "031-28",
+              "evidence": "操作を行った年月日",
+              "evidenceSource": "item-definition:57"
+            },
+            {
+              "targetId": "031-29",
+              "evidence": "操作を行った時刻",
+              "evidenceSource": "item-definition:58"
+            }
+          ]
+        },
+        {
+          "id": "TC-025",
+          "label": "名寄せ先宛名番号",
+          "links": [
+            {
+              "targetId": "031-26",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            }
+          ]
+        },
+        {
+          "id": "TC-026",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-027",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-028",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "031-28",
+              "evidence": "操作を行った年月日",
+              "evidenceSource": "item-definition:57"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-029",
+          "label": "操作者ID",
+          "links": [
+            {
+              "targetId": "031-27",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            }
+          ]
+        },
+        {
+          "id": "TC-030",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-031",
+          "label": "操作時刻",
+          "links": [
+            {
+              "targetId": "031-29",
+              "evidence": "操作を行った時刻",
+              "evidenceSource": "item-definition:58"
+            }
+          ]
+        },
+        {
+          "id": "TC-032",
+          "label": "必須エラー",
+          "links": [
+            {
+              "targetId": "E0001",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-04",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            }
+          ]
+        },
+        {
+          "id": "TC-033",
+          "label": "操作者ID",
+          "links": [
+            {
+              "targetId": "031-27",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            }
+          ]
+        },
+        {
+          "id": "TC-034",
+          "label": "操作者ID",
+          "links": [
+            {
+              "targetId": "031-27",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            }
+          ]
+        },
+        {
+          "id": "TC-035",
+          "label": "個人番号",
+          "links": [
+            {
+              "targetId": "031-2",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-07",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            }
+          ]
+        },
+        {
+          "id": "TC-036",
+          "label": "必須エラー",
+          "links": [
+            {
+              "targetId": "E0001",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "RK-04",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            }
+          ]
+        },
+        {
+          "id": "TC-037",
+          "label": "氏名_外国人アルファベット",
+          "links": [
+            {
+              "targetId": "031-6",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            },
+            {
+              "targetId": "031-7",
+              "evidence": "外国人住登外者の氏名（漢字）",
+              "evidenceSource": "item-definition:22"
+            },
+            {
+              "targetId": "RK-02",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            }
+          ]
+        },
+        {
+          "id": "TC-038",
+          "label": "氏名",
+          "links": [
+            {
+              "targetId": "031-3",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "031-11",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            },
+            {
+              "targetId": "031-12",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            }
+          ]
+        },
+        {
+          "id": "TC-039",
+          "label": "氏名",
+          "links": [
+            {
+              "targetId": "031-3",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "031-4",
+              "evidence": "住登外者の氏",
+              "evidenceSource": "item-definition:17"
+            },
+            {
+              "targetId": "031-5",
+              "evidence": "住登外者の名",
+              "evidenceSource": "item-definition:18"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            }
+          ]
+        },
+        {
+          "id": "TC-040",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-041",
+          "label": "操作年月日",
+          "links": [
+            {
+              "targetId": "031-28",
+              "evidence": "操作を行った年月日",
+              "evidenceSource": "item-definition:57"
+            }
+          ]
+        },
+        {
+          "id": "TC-042",
+          "label": "個人番号",
+          "links": [
+            {
+              "targetId": "031-2",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "031-26",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "RK-06",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-07",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            }
+          ]
+        },
+        {
+          "id": "TC-043",
+          "label": "業務ID",
+          "links": [
+            {
+              "targetId": "031-23",
+              "evidence": "住登外者宛名基本情報を登録、利用する業務のID",
+              "evidenceSource": "item-definition:49"
+            },
+            {
+              "targetId": "031-24",
+              "evidence": "住登外者宛名基本情報を登録、利用する独自施策システム等のID",
+              "evidenceSource": "item-definition:51"
+            }
+          ]
+        },
+        {
+          "id": "TC-044",
+          "label": "操作者ID",
+          "links": [
+            {
+              "targetId": "031-27",
+              "evidence": "操作者を一意に識別するコード",
+              "evidenceSource": "item-definition:56"
+            }
+          ]
+        },
+        {
+          "id": "TC-045",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-03",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "RK-08",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "TC-046",
+          "label": "業務ID",
+          "links": [
+            {
+              "targetId": "031-23",
+              "evidence": "住登外者宛名基本情報を登録、利用する業務のID",
+              "evidenceSource": "item-definition:49"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "axisId": "RISK",
+      "axisName": "プロダクトリスク（11_ の risks 8件）",
+      "items": [
+        {
+          "id": "RK-01",
+          "label": "住所_町字",
+          "links": [
+            {
+              "targetId": "031-18",
+              "evidence": "住登外者の住所における町字（丁目を含む）",
+              "evidenceSource": "item-definition:42"
+            },
+            {
+              "targetId": "TC-018",
+              "evidence": "住登外者の住所における町字（丁目を含む）",
+              "evidenceSource": "item-definition:42"
+            }
+          ]
+        },
+        {
+          "id": "RK-02",
+          "label": "氏名_外国人アルファベット",
+          "links": [
+            {
+              "targetId": "031-6",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            },
+            {
+              "targetId": "031-8",
+              "evidence": "住登外者の氏名（読み仮名）",
+              "evidenceSource": "item-definition:25"
+            },
+            {
+              "targetId": "031-9",
+              "evidence": "住登外者の氏（読み仮名）",
+              "evidenceSource": "item-definition:26"
+            },
+            {
+              "targetId": "031-10",
+              "evidence": "住登外者の名（読み仮名）",
+              "evidenceSource": "item-definition:27"
+            },
+            {
+              "targetId": "TC-013",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            },
+            {
+              "targetId": "TC-014",
+              "evidence": "住登外者の氏名（読み仮名）",
+              "evidenceSource": "item-definition:25"
+            },
+            {
+              "targetId": "TC-037",
+              "evidence": "外国人住登外者の氏名（アルファベット）",
+              "evidenceSource": "item-definition:19"
+            }
+          ]
+        },
+        {
+          "id": "RK-03",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "E0001",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "E0004",
+              "evidence": "パラメータの項目設定が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:245"
+            },
+            {
+              "targetId": "TC-001",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-002",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-005",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-008",
+              "evidence": "パラメータの項目設定が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:245"
+            },
+            {
+              "targetId": "TC-009",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-026",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-027",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-028",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-030",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-032",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-036",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-040",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-045",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        },
+        {
+          "id": "RK-04",
+          "label": "必須エラー",
+          "links": [
+            {
+              "targetId": "E0001",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-005",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-032",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            },
+            {
+              "targetId": "TC-036",
+              "evidence": "必須のパラメータが設定されていない状態。",
+              "evidenceSource": "fuban-api_spec:242"
+            }
+          ]
+        },
+        {
+          "id": "RK-05",
+          "label": "指定文字エラー",
+          "links": [
+            {
+              "targetId": "E0002",
+              "evidence": "パラメータの文字種に指定できない文字が使われている状態。",
+              "evidenceSource": "fuban-api_spec:243"
+            },
+            {
+              "targetId": "E0003",
+              "evidence": "パラメータの固定桁項目の桁数が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:244"
+            },
+            {
+              "targetId": "TC-006",
+              "evidence": "パラメータの文字種に指定できない文字が使われている状態。",
+              "evidenceSource": "fuban-api_spec:243"
+            },
+            {
+              "targetId": "TC-007",
+              "evidence": "パラメータの固定桁項目の桁数が誤っている状態。",
+              "evidenceSource": "fuban-api_spec:244"
+            }
+          ]
+        },
+        {
+          "id": "RK-06",
+          "label": "個人番号",
+          "links": [
+            {
+              "targetId": "031-2",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "031-3",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "031-11",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            },
+            {
+              "targetId": "031-12",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            },
+            {
+              "targetId": "TC-010",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-011",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "TC-022",
+              "evidence": "住登外者の性別を示すコード",
+              "evidenceSource": "item-definition:28"
+            },
+            {
+              "targetId": "TC-023",
+              "evidence": "住登外者の生年月日",
+              "evidenceSource": "item-definition:29"
+            },
+            {
+              "targetId": "TC-035",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-038",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "TC-039",
+              "evidence": "住登外者の氏名",
+              "evidenceSource": "item-definition:15"
+            },
+            {
+              "targetId": "TC-042",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            }
+          ]
+        },
+        {
+          "id": "RK-07",
+          "label": "個人番号",
+          "links": [
+            {
+              "targetId": "031-2",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-010",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-035",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            },
+            {
+              "targetId": "TC-042",
+              "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号",
+              "evidenceSource": "item-definition:14"
+            }
+          ]
+        },
+        {
+          "id": "RK-08",
+          "label": "宛名番号",
+          "links": [
+            {
+              "targetId": "031-1",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "031-26",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "TC-001",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-002",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-009",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-025",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "TC-026",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-027",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-028",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-030",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-040",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            },
+            {
+              "targetId": "TC-042",
+              "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号",
+              "evidenceSource": "item-definition:54"
+            },
+            {
+              "targetId": "TC-045",
+              "evidence": "自治体内において、個人を一意に識別する番号",
+              "evidenceSource": "item-definition:12"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "axisId": "REQ",
+      "itemId": "031-4",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-4（氏_日本人）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-5",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-5（名_日本人）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-7",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-7（氏名_外国人漢字）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-13",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-13（生年月日_不詳表記）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-14",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-14（住所_市区町村コード）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-15",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-15（住所_町字コード）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-16",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-16（住所_都道府県）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-17",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-17（住所_市区郡町村名）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-19",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-19（住所_番地号表記）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-20",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-20（住所_方書）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-21",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-21（住所_方書_フリガナ）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-22",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-22（住所_郵便番号）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-23",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-23（業務ID）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-24",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-24（独自施策システム等ID）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-27",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-27（操作者ID）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-28",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-28（操作年月日）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "REQ",
+      "itemId": "031-29",
+      "pairedAxisId": "RISK",
+      "reason": "要件ID 031-29（操作時刻）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-003",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-003 の由来要件ID（031-23）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-004",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-004 の由来要件ID（031-24）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-012",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-012 の由来要件ID（031-4, 031-5）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-015",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-015 の由来要件ID（031-13）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-016",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-016 の由来要件ID（031-14, 031-15）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-017",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-017 の由来要件ID（031-16, 031-17）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-019",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-019 の由来要件ID（031-19, 031-22）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-020",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-020 の由来要件ID（031-20, 031-21）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-021",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-021 の由来要件ID（031-27）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-024",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-024 の由来要件ID（031-28, 031-29）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-029",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-029 の由来要件ID（031-27）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-031",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-031 の由来要件ID（031-29）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-033",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-033 の由来要件ID（031-27）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-034",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-034 の由来要件ID（031-27）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-041",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-041 の由来要件ID（031-28）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-043",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-043 の由来要件ID（031-23, 031-24）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-044",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-044 の由来要件ID（031-27）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    },
+    {
+      "axisId": "CONDITION",
+      "itemId": "TC-046",
+      "pairedAxisId": "RISK",
+      "reason": "テスト条件 TC-046 の由来要件ID（031-23）を targetIds に挙げたプロダクトリスクが 11_ の risks 8件に存在しないため、リスク軸との交点を持たない。リスクを後付けで作らず空行のまま残す"
+    }
+  ],
+  "declaredCoverage": [
+    {
+      "axisA": "REQ",
+      "axisB": "CONDITION",
+      "claimedFillRatePercent": 4.3,
+      "claimedRowCoveragePercent": 100,
+      "claimedColumnCoveragePercent": 100,
+      "claimedNoEmptyCells": false,
+      "note": "分母 32 × 46 = 1472 セルのうち、11_ のテスト条件の derivedFrom(requirement) 63件が充填セルである"
+    },
+    {
+      "axisA": "REQ",
+      "axisB": "RISK",
+      "claimedFillRatePercent": 7,
+      "claimedRowCoveragePercent": 100,
+      "claimedColumnCoveragePercent": 100,
+      "claimedNoEmptyCells": false,
+      "note": "分母 32 × 8 = 256 セルのうち、11_ の risks[].targetIds のうち母集団32件に属する18件が充填セルである"
+    },
+    {
+      "axisA": "CONDITION",
+      "axisB": "RISK",
+      "claimedFillRatePercent": 12,
+      "claimedRowCoveragePercent": 100,
+      "claimedColumnCoveragePercent": 100,
+      "claimedNoEmptyCells": false,
+      "note": "分母 46 × 8 = 368 セルのうち、テスト条件の由来要件IDとリスクの targetIds が共有される44件が充填セルである"
+    }
+  ],
+  "expectedAxisPopulations": [
+    {
+      "axisId": "REQ",
+      "ids": [
+        "031-1",
+        "031-2",
+        "031-3",
+        "031-4",
+        "031-5",
+        "031-6",
+        "031-7",
+        "031-8",
+        "031-9",
+        "031-10",
+        "031-11",
+        "031-12",
+        "031-13",
+        "031-14",
+        "031-15",
+        "031-16",
+        "031-17",
+        "031-18",
+        "031-19",
+        "031-20",
+        "031-21",
+        "031-22",
+        "031-23",
+        "031-24",
+        "031-26",
+        "031-27",
+        "031-28",
+        "031-29",
+        "E0001",
+        "E0002",
+        "E0003",
+        "E0004"
+      ]
+    },
+    {
+      "axisId": "CONDITION",
+      "ids": [
+        "TC-001",
+        "TC-002",
+        "TC-003",
+        "TC-004",
+        "TC-005",
+        "TC-006",
+        "TC-007",
+        "TC-008",
+        "TC-009",
+        "TC-010",
+        "TC-011",
+        "TC-012",
+        "TC-013",
+        "TC-014",
+        "TC-015",
+        "TC-016",
+        "TC-017",
+        "TC-018",
+        "TC-019",
+        "TC-020",
+        "TC-021",
+        "TC-022",
+        "TC-023",
+        "TC-024",
+        "TC-025",
+        "TC-026",
+        "TC-027",
+        "TC-028",
+        "TC-029",
+        "TC-030",
+        "TC-031",
+        "TC-032",
+        "TC-033",
+        "TC-034",
+        "TC-035",
+        "TC-036",
+        "TC-037",
+        "TC-038",
+        "TC-039",
+        "TC-040",
+        "TC-041",
+        "TC-042",
+        "TC-043",
+        "TC-044",
+        "TC-045",
+        "TC-046"
+      ]
+    },
+    {
+      "axisId": "RISK",
+      "ids": [
+        "RK-01",
+        "RK-02",
+        "RK-03",
+        "RK-04",
+        "RK-05",
+        "RK-06",
+        "RK-07",
+        "RK-08"
+      ]
+    }
+  ],
+  "idPatterns": [
+    "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+    "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"
+  ]
+}

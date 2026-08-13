@@ -1,0 +1,1230 @@
+{
+  "title": "住登外者宛名番号付番API テストデータ設計（データ区分・ライフサイクル状態・データ実体・ケース別要求）。データ区分名・状態名・遷移イベント名・データ実体ラベルはテストベース本文の実文言に限定し、根拠位置は 00_成果物生成手順.md 3.19 に記載する",
+  "dataClasses": [
+    {
+      "id": "DC-01",
+      "nameJa": "住登外者宛名基本情報",
+      "kind": "master",
+      "description": "項目定義書（住登外者宛名番号管理）が定義する「住登外者宛名基本情報」(item-definition:3, 12-58)。主キーは「宛名番号」(item-definition:12)である",
+      "owner": "テスト実施者（住登外者宛名番号管理機能側）",
+      "preparation": "付番APIの処理区分0 / 1 / 2 の要求電文を送信して生成・更新する（fuban-api_spec:66, 96-98）",
+      "sharingPolicy": "per-case",
+      "states": [
+        {
+          "id": "ST-01",
+          "nameJa": "付番",
+          "definition": "「0：付番依頼新規住登外者宛名番号を付番する。」(fuban-api_spec:66)により住登外者宛名番号が確定した状態",
+          "isInitial": true
+        },
+        {
+          "id": "ST-02",
+          "nameJa": "登録",
+          "definition": "「1：既存宛名番号利用→受信した宛名番号を住登外者宛名番号として登録する。」(fuban-api_spec:66)により住登外者宛名基本情報が登録された状態"
+        },
+        {
+          "id": "ST-03",
+          "nameJa": "更新",
+          "definition": "「２：住登外者宛名番号選択情報送信→受信した住登外者宛名番号の住登外者宛名基本情報の業務IDを更新する。」(fuban-api_spec:66)により業務IDが更新された状態",
+          "isTerminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "id": "TR-01",
+          "from": "ST-01",
+          "to": "ST-02",
+          "event": "登録",
+          "guard": "「※※処理区分\"1\"、または\"2\"の場合は必須」(fuban-api_spec:101)の宛名番号が設定されていること"
+        },
+        {
+          "id": "TR-02",
+          "from": "ST-02",
+          "to": "ST-03",
+          "event": "更新",
+          "guard": "処理区分に「候補者から宛名番号を選択し、登録する場合\"2\"を設定」(fuban-api_spec:98)されていること"
+        }
+      ]
+    },
+    {
+      "id": "DC-02",
+      "nameJa": "アクセストークン",
+      "kind": "credential",
+      "description": "「本APIの要求元認証は、OAuth2.0 アクセストークン：Bearerタイプ、認証方式：client_secret_jwtで行う。」(fuban-api_spec:37)で用いる資格情報",
+      "owner": "アクセス先APIの認可サーバ（fuban-api_spec:56）",
+      "preparation": "認可サーバから取得し、「1. APIアクセス w/アクセストークン」(fuban-api_spec:61)として要求に添付する",
+      "sharingPolicy": "shared",
+      "states": [
+        {
+          "id": "ST-04",
+          "nameJa": "未指定",
+          "definition": "「認証情報が取得できないまたはアクセストークンが未指定の場合は、HTTPステータスコード401とJSON形式のレスポンスオブジェクトが返却される。」(fuban-api_spec:82)における未指定の状態",
+          "isInitial": true
+        },
+        {
+          "id": "ST-05",
+          "nameJa": "検証",
+          "definition": "「アクセストークンの検証を行う」(fuban-api_spec:63)の対象として指定された状態"
+        },
+        {
+          "id": "ST-06",
+          "nameJa": "無効",
+          "definition": "検証の結果、処理結果メッセージが「アクセストークンが無効です。」(fuban-api_spec:222)となる状態",
+          "isTerminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "id": "TR-03",
+          "from": "ST-04",
+          "to": "ST-05",
+          "event": "指定",
+          "guard": "「1. APIアクセス w/アクセストークン」(fuban-api_spec:61)としてアクセストークンが添付されていること"
+        },
+        {
+          "id": "TR-04",
+          "from": "ST-05",
+          "to": "ST-06",
+          "event": "検証",
+          "guard": "「アクセストークンの検証を行う」(fuban-api_spec:63)結果が不合格であること"
+        }
+      ]
+    }
+  ],
+  "dataItems": [
+    {
+      "id": "031-1",
+      "dataClassId": "DC-01",
+      "label": "宛名番号",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-1（item-definition:12）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-2",
+      "dataClassId": "DC-01",
+      "label": "個人番号",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-2（item-definition:14）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-3",
+      "dataClassId": "DC-01",
+      "label": "氏名",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-3（item-definition:15）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-4",
+      "dataClassId": "DC-01",
+      "label": "氏_日本人",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-4（item-definition:17）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-5",
+      "dataClassId": "DC-01",
+      "label": "名_日本人",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-5（item-definition:18）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-6",
+      "dataClassId": "DC-01",
+      "label": "氏名_外国人アルファベット",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-6（item-definition:19）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-7",
+      "dataClassId": "DC-01",
+      "label": "氏名_外国人漢字",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-7（item-definition:22）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-8",
+      "dataClassId": "DC-01",
+      "label": "氏名_読み仮名",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-8（item-definition:25）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-9",
+      "dataClassId": "DC-01",
+      "label": "氏_日本人_読み仮名",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-9（item-definition:26）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-10",
+      "dataClassId": "DC-01",
+      "label": "名_日本人_読み仮名",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-10（item-definition:27）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-11",
+      "dataClassId": "DC-01",
+      "label": "性別",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-11（item-definition:28）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-12",
+      "dataClassId": "DC-01",
+      "label": "生年月日",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-12（item-definition:29）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-13",
+      "dataClassId": "DC-01",
+      "label": "生年月日_不詳表記",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-13（item-definition:31）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-14",
+      "dataClassId": "DC-01",
+      "label": "住所_市区町村コード",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-14（item-definition:33）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-15",
+      "dataClassId": "DC-01",
+      "label": "住所_町字コード",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-15（item-definition:34）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-16",
+      "dataClassId": "DC-01",
+      "label": "住所_都道府県",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-16（item-definition:37）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-17",
+      "dataClassId": "DC-01",
+      "label": "住所_市区郡町村名",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-17（item-definition:38）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-18",
+      "dataClassId": "DC-01",
+      "label": "住所_町字",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-18（item-definition:42）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-19",
+      "dataClassId": "DC-01",
+      "label": "住所_番地号表記",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-19（item-definition:43）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-20",
+      "dataClassId": "DC-01",
+      "label": "住所_方書",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-20（item-definition:45）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-21",
+      "dataClassId": "DC-01",
+      "label": "住所_方書_フリガナ",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-21（item-definition:47）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-22",
+      "dataClassId": "DC-01",
+      "label": "住所_郵便番号",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-22（item-definition:48）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-23",
+      "dataClassId": "DC-01",
+      "label": "業務ID",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-23（item-definition:49）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-24",
+      "dataClassId": "DC-01",
+      "label": "独自施策システム等ID",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-24（item-definition:51）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-26",
+      "dataClassId": "DC-01",
+      "label": "名寄せ先宛名番号",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-26（item-definition:54）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-27",
+      "dataClassId": "DC-01",
+      "label": "操作者ID",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-27（item-definition:56）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-28",
+      "dataClassId": "DC-01",
+      "label": "操作年月日",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-28（item-definition:57）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "031-29",
+      "dataClassId": "DC-01",
+      "label": "操作時刻",
+      "initialStateId": "ST-01",
+      "note": "項目定義書のデータ項目ID 031-29（item-definition:58）。工程Aで確定した母集団32件のうち住登外者宛名基本情報のデータ項目に対応する"
+    },
+    {
+      "id": "TKN-01",
+      "dataClassId": "DC-02",
+      "label": "アクセストークン",
+      "initialStateId": "ST-04",
+      "note": "「本APIの要求元認証は、OAuth2.0 アクセストークン：Bearerタイプ、認証方式：client_secret_jwtで行う。」(fuban-api_spec:37)で用いる資格情報の実体。工程Aの母集団33件には対応するIDが無い（09_ の記録どおり要件IDを付与しない）"
+    }
+  ],
+  "testCases": [
+    {
+      "caseId": "TCS-001",
+      "title": "処理区分0による新規住登外者宛名番号の付番",
+      "preconditionText": "処理区分: 0 / 住登外者宛名基本情報: 未登録",
+      "stepsText": [
+        "1. shorikubun に 0 を設定した要求電文を組み立てる → 必須パラメータ7件がすべて設定された要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200とJSON形式のレスポンスオブジェクトが返却される",
+        "3. レスポンスの result 配列を確認する → result 配列の atenabango に新規に付番された値が設定されている",
+        "事後条件: 住登外者宛名基本情報: 新規に登録され主キーの宛名番号が確定している"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "update",
+          "resultStateId": "ST-02"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-002",
+      "title": "処理区分1による既存宛名番号の住登外者宛名番号としての登録",
+      "preconditionText": "処理区分: 1 / 送信する宛名番号: 既存の値",
+      "stepsText": [
+        "1. shorikubun に 1 を設定し atenabango に既存の宛名番号を設定する → 要求電文に atenabango が含まれる",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200が返却される",
+        "3. result 配列の atenabango を送信値と照合する → 送信した宛名番号がそのまま返却されている",
+        "事後条件: 住登外者宛名基本情報: 送信した宛名番号で登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-003",
+      "title": "処理区分2による業務IDの更新",
+      "preconditionText": "処理区分: 2 / 対象の住登外者宛名基本情報: 登録済み",
+      "stepsText": [
+        "1. shorikubun に 2 を設定し gyomuid に更新後の値を設定する → 要求電文に gyomuid が含まれる",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200が返却される",
+        "3. 更新前後の住登外者宛名基本情報を比較する → 業務IDだけが更新され他のデータ項目は更新前と同一である",
+        "事後条件: 住登外者宛名基本情報: 業務IDのみ更新済み"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "update",
+          "resultStateId": "ST-03"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-03",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-004",
+      "title": "独自施策システム等IDによる登録の受理",
+      "preconditionText": "業務ID: 未設定 / 独自施策システム等ID: 設定あり",
+      "stepsText": [
+        "1. gyomuid を設定せず dokujishisakushisutemutoid に自治体固有のコードを設定する → 要求電文に独自施策システム等IDが含まれる",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200が返却される",
+        "3. 登録された住登外者宛名基本情報のデータ項目 031-24 を確認する → 送信した独自施策システム等IDが登録されている",
+        "事後条件: 住登外者宛名基本情報: 独自施策システム等IDが記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-005",
+      "title": "必須パラメータ欠落時の必須エラー返却",
+      "preconditionText": "欠落させる必須パラメータ: 1件 / その他のパラメータ: すべて有効値",
+      "stepsText": [
+        "1. 必須（◎）指定のパラメータを1件だけ送信しない要求電文を組み立てる → 対象パラメータを含まない要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード400とJSON形式のレスポンスオブジェクトが返却される",
+        "3. errors 配列の要素を確認する → errors[0].code が E0001 であり message が「【項目名】が設定されていません。」の形式である",
+        "事後条件: 住登外者宛名基本情報: 登録されない"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-006",
+      "title": "データ型に合致しない文字種を設定した場合の指定文字エラー返却",
+      "preconditionText": "対象パラメータ: atenabango / 設定する値: 全角数字",
+      "stepsText": [
+        "1. データ型 X の atenabango に全角数字を設定した要求電文を組み立てる → 全角数字を含む要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード400が返却される",
+        "3. errors 配列の要素を確認する → errors[0].code が E0002 であり message が「【項目名】は【指定文字】で設定してください。」の形式である",
+        "事後条件: 住登外者宛名基本情報: 登録されない"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-007",
+      "title": "固定桁項目の桁数誤りによる桁数エラー返却",
+      "preconditionText": "対象パラメータ: atenabango / 設定する桁数: 宛名番号の桁数より1つ多い値",
+      "stepsText": [
+        "1. atenabango に宛名番号の桁数を1つ超える値を設定した要求電文を組み立てる → 規定より長い値を含む要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード400が返却される",
+        "3. errors 配列の要素を確認する → errors[0].code が E0003 であり message が「【項目名】はX桁で設定してください。」の形式である",
+        "事後条件: 住登外者宛名基本情報: 登録されない"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-008",
+      "title": "処理区分1で宛名番号を未設定にした場合の相関チェックエラー返却",
+      "preconditionText": "処理区分: 1 / 宛名番号: 未設定",
+      "stepsText": [
+        "1. shorikubun に 1 を設定し atenabango を送信しない要求電文を組み立てる → atenabango を含まない要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード400が返却される",
+        "3. errors 配列の code を確認する → errors[0].code が E0004 である。E0001 が返却された場合はQAとして起票する",
+        "事後条件: 起票状況: 返却されたコードを記録済み"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-009",
+      "title": "宛名番号の桁数境界の確認",
+      "preconditionText": "対象パラメータ: atenabango / 処理区分: 1",
+      "stepsText": [
+        "1. 宛名番号の桁数の直下・同値・直上の3通りの atenabango を用意する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 3通りの応答を比較する → 宛名番号の桁数に一致する値のみHTTPステータスコード200が返却され、他の2通りは400と E0003 が返却される",
+        "事後条件: 住登外者宛名基本情報: 有効値の1件のみ登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-010",
+      "title": "個人番号の桁数境界の確認",
+      "preconditionText": "対象パラメータ: kojinbango / 処理区分: 0",
+      "stepsText": [
+        "1. 個人番号の桁数の直下・同値・直上の3通りの kojinbango を用意する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 3通りの応答を比較する → 個人番号の桁数に一致する値のみHTTPステータスコード200が返却され、他の2通りは400が返却される",
+        "事後条件: 住登外者宛名基本情報: 有効値の1件のみ登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-011",
+      "title": "氏名の文字数境界の確認",
+      "preconditionText": "対象パラメータ: shimei / 処理区分: 0",
+      "stepsText": [
+        "1. 氏名の文字数上限の直下・同値・直上の3通りの shimei を用意する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 3通りの応答を比較する → 氏名の文字数上限以下の2通りはHTTPステータスコード200が返却され、上限を超える1通りは400が返却される",
+        "事後条件: 住登外者宛名基本情報: 有効値の2件が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-012",
+      "title": "氏および名の文字数境界の確認",
+      "preconditionText": "対象パラメータ: uji_nihonjin / na_nihonjin / 処理区分: 0",
+      "stepsText": [
+        "1. 氏名構成要素の文字数上限の直下・同値・直上の3通りの uji_nihonjin と na_nihonjin を用意する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 3通りの応答を比較する → 氏名構成要素の文字数上限以下の2通りはHTTPステータスコード200が返却され、上限を超える1通りは400が返却される",
+        "事後条件: 住登外者宛名基本情報: 有効値の2件が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-013",
+      "title": "外国人氏名のローマ字表記と漢字表記の文字数境界の確認",
+      "preconditionText": "対象パラメータ: shimei_gaikokujinromaji / shimei_gaikokujinkanji / 処理区分: 0",
+      "stepsText": [
+        "1. 氏名の文字数上限の直下・同値・直上の3通りの値を両パラメータへ設定する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 登録結果とデータ項目 031-6 と 031-7 を照合する → 氏名の文字数上限以下の値のみが登録され、項目定義書側の名称との対応が記録される",
+        "事後条件: 対応表: API側パラメータ名と項目定義書側名称の対応が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-014",
+      "title": "読み仮名3項目の文字数境界の確認",
+      "preconditionText": "対象パラメータ: shimei_furigana / uji_nihonjin_furigana / na_nihonjin_furigana / 処理区分: 0",
+      "stepsText": [
+        "1. 氏名の文字数上限と氏名構成要素の文字数上限の前後の値を各パラメータへ設定する → 境界値を含む要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコードが返却される",
+        "3. 登録結果とデータ項目 031-8 / 031-9 / 031-10 を照合する → 規定の文字数以内の値のみが登録され、項目定義書側の名称との対応が記録される",
+        "事後条件: 対応表: 読み仮名とフリガナの呼称差が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-015",
+      "title": "生年月日_不詳表記の文字数境界の確認",
+      "preconditionText": "対象パラメータ: seinengappi_fushohyoki / 生年月日: 不詳",
+      "stepsText": [
+        "1. データ項目 031-13 の規定文字数の直下・同値・直上の3通りの値を用意する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 3通りの応答を比較する → 規定文字数以下の2通りはHTTPステータスコード200が返却され、超える1通りは400が返却される",
+        "事後条件: 住登外者宛名基本情報: 不詳表記が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-016",
+      "title": "住所コード2項目の桁数境界と特殊値の確認",
+      "preconditionText": "対象パラメータ: jusho_shikuchosonkodo / jusho_choazakodo / 処理区分: 0",
+      "stepsText": [
+        "1. 市区町村コードの桁数の前後の値と、町字コードの特殊値2種を用意する → 境界値と特殊値を含む要求電文が生成される",
+        "2. 各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 応答とデータ項目 031-14 と 031-15 を照合する → 規定桁の値のみが受理され、町字コードの特殊値2種はいずれも受理される",
+        "事後条件: 住登外者宛名基本情報: 住所コードが登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-017",
+      "title": "都道府県と市区郡町村名の文字数境界の確認",
+      "preconditionText": "対象パラメータ: jusho_todofuken / jusho_shikugunchosonmei / 処理区分: 0",
+      "stepsText": [
+        "1. データ項目 031-16 と 031-17 の規定文字数の前後の値を用意する → 境界値を含む要求電文が生成される",
+        "2. 各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 応答を比較する → 規定文字数以下の値のみが受理される",
+        "事後条件: 住登外者宛名基本情報: 住所の名称項目が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-018",
+      "title": "住所_町字の文字数上限が2文書で食い違う箇所の実測",
+      "preconditionText": "対象パラメータ: jusho_choaza / 判定: 確定させずQAとして起票する",
+      "stepsText": [
+        "1. 住所_町字の文字数上限_項目定義書 と 住所_町字の文字数上限_付番API仕様 のそれぞれについて、直下・同値・直上の値を用意する → 6通りの要求電文が生成される",
+        "2. 6通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 受理された最大の文字数を記録する → 実装が採用している上限がどちらの記述に一致するかが記録され、判定はQAとして起票される",
+        "事後条件: 質問状: 住所_町字の上限に関する照会が起票されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-019",
+      "title": "番地号表記と郵便番号の桁数境界の確認",
+      "preconditionText": "対象パラメータ: jusho_banchigohyoki / jusho_yubinbango / 処理区分: 0",
+      "stepsText": [
+        "1. データ項目 031-19 と 031-22 の規定桁の前後の値を用意する → 境界値を含む要求電文が生成される",
+        "2. 各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 応答を比較する → 規定桁以内の値のみが受理される",
+        "事後条件: 住登外者宛名基本情報: 番地号表記と郵便番号が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-020",
+      "title": "方書と方書フリガナの文字数境界の確認",
+      "preconditionText": "対象パラメータ: jusho_katagaki / jusho_katagaki_furigana / 処理区分: 0",
+      "stepsText": [
+        "1. データ項目 031-20 と 031-21 の規定文字数の前後の値を用意する → 境界値を含む要求電文が生成される",
+        "2. 各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 応答を比較する → 規定文字数以内の値のみが受理される",
+        "事後条件: 住登外者宛名基本情報: 方書が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-021",
+      "title": "操作者IDの桁数境界の確認",
+      "preconditionText": "対象パラメータ: sosashaid / 処理区分: 0",
+      "stepsText": [
+        "1. 操作者IDの桁数の直下・同値・直上の3通りの sosashaid を用意する → 3通りの要求電文が生成される",
+        "2. 3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 3通りの応答を比較する → 操作者IDの桁数に一致する値のみHTTPステータスコード200が返却される",
+        "事後条件: 住登外者宛名基本情報: 操作者IDが記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-022",
+      "title": "性別コードの同値クラスの確認",
+      "preconditionText": "対象パラメータ: seibetsu / 処理区分: 0",
+      "stepsText": [
+        "1. コード一覧に定義された3値と、定義されていない値を用意する → 4通りの要求電文が生成される",
+        "2. 4通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 登録結果とデータ項目 031-11 を照合する → コード一覧に定義された3値のみが登録され、定義されていない値の扱いが記録される",
+        "事後条件: 住登外者宛名基本情報: 性別コードが登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-023",
+      "title": "生年月日の同値クラスと不詳日の扱いの確認",
+      "preconditionText": "対象パラメータ: seinengappi / 処理区分: 0",
+      "stepsText": [
+        "1. DATE 形式の有効値・不詳日・期間の下限値・期間の上限値・形式不正値を用意する → 5通りの要求電文が生成される",
+        "2. 5通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 登録結果とデータ項目 031-12 を照合する → 不詳日を許容する記述どおりに不詳日が受理され、形式不正値は受理されない",
+        "事後条件: 住登外者宛名基本情報: 生年月日が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-024",
+      "title": "操作年月日と操作時刻の書式クラスの確認",
+      "preconditionText": "対象パラメータ: sosanengappi / sosajikoku / 処理区分: 0",
+      "stepsText": [
+        "1. DATE 形式の有効値、TIME 形式の有効値と秒省略値、いずれも形式不正値を用意する → 複数通りの要求電文が生成される",
+        "2. 各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 登録結果とデータ項目 031-28 と 031-29 を照合する → 秒省略値が受理され、形式不正値は受理されない",
+        "事後条件: 住登外者宛名基本情報: 操作年月日と操作時刻が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-025",
+      "title": "名寄せ実施時の名寄せ先宛名番号と名寄せ元フラグの遷移",
+      "preconditionText": "名寄せ元の宛名基本情報: 登録済み / 名寄せ先の宛名番号: 既存の値",
+      "stepsText": [
+        "1. nayosesakiatenabango に名寄せ先の宛名番号を設定し nayosemotofuragu を 1 に設定する → 名寄せを表す要求電文が生成される",
+        "2. POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200が返却される",
+        "3. 登録結果とデータ項目 031-26 を照合する → 名寄せ先宛名番号が設定され名寄せ元フラグが 1 に遷移している",
+        "事後条件: 住登外者宛名基本情報: 名寄せ元として記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-026",
+      "title": "同一住登外者への同時付番依頼における二重付番の有無の確認",
+      "preconditionText": "同時実行数: 2 / 処理区分: 0",
+      "stepsText": [
+        "1. 同一の住登外者を表す要求電文を2件用意する → 同一内容の要求電文が2件生成される",
+        "2. 2件を同時に POST で app_submit/v10/jutogaishaatenabangofuban へ送信する → 2件それぞれにHTTPステータスコードが返却される",
+        "3. 登録された住登外者宛名基本情報の件数とデータ項目 031-1 を確認する → 宛名番号が二重に付番されていないか、二重付番が発生した事実が記録される",
+        "事後条件: 質問状: 並行付番の扱いに関する照会が起票されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "update",
+          "resultStateId": "ST-02"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-027",
+      "title": "APIシーケンスの実行順序の確認",
+      "preconditionText": "認可サーバ: 稼働中 / トレース取得: 有効",
+      "stepsText": [
+        "1. アクセストークンを付与した要求電文を送信する → 1. APIアクセス w/アクセストークン が観測される",
+        "2. 認可サーバとアクセス先APIのトレースを取得する → アクセストークンの検証を行う が付番処理より前に観測される",
+        "3. 応答の受領までのトレースを確認する → ②住登外者宛名番号付番等 の後に 2. API結果返却 が観測される",
+        "事後条件: トレース記録: 図形内テキスト（APIシーケンス）の順序と一致することが記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-02",
+          "stateId": "ST-05",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-028",
+      "title": "付番から名寄せまでの宛名情報ライフサイクルの確認",
+      "preconditionText": "処理区分: 0 から順に実施 / 対象: 同一の住登外者",
+      "stepsText": [
+        "1. 処理区分 0 で付番し、続けて処理区分 2 で業務IDを更新する → 2回の呼び出しがいずれも成功する",
+        "2. 名寄せを実施して nayosesakiatenabango を設定する → 名寄せの要求電文が受理される",
+        "3. データ項目 031-1 と 031-28 を各段階で確認する → 主キーの宛名番号は変化せず、操作年月日が段階ごとに記録されている",
+        "事後条件: 住登外者宛名基本情報: 履歴が段階ごとに記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-03",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-029",
+      "title": "要求元認証の2方式による応答の同一性の確認",
+      "preconditionText": "認証方式: 2通り / 要求電文: 同一",
+      "stepsText": [
+        "1. OAuth2.0 client_secret_jwt でアクセストークンを取得して送信する → HTTPステータスコード200が返却される",
+        "2. OAuth2.0 client_secret_basic でアクセストークンを取得して同一の要求電文を送信する → HTTPステータスコード200が返却される",
+        "3. 2回の応答本文を比較する → metadata と _links と result の各キーの構造が同一である",
+        "事後条件: 比較記録: 2方式の応答差が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-030",
+      "title": "付番失敗後の再依頼による回復の確認",
+      "preconditionText": "初回の付番処理: 失敗させる / 処理区分: 0",
+      "stepsText": [
+        "1. 付番処理を失敗させた状態で要求電文を送信する → HTTPステータスコード200以外が返却される",
+        "2. 再度同一の要求電文で POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200が返却される",
+        "3. result 配列の atenabango を確認する → 新規付番された番号が返却されている",
+        "事後条件: 住登外者宛名基本情報: 再依頼により登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "update",
+          "resultStateId": "ST-02"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-031",
+      "title": "連続付番依頼における操作時刻の記録欠落の有無の確認",
+      "preconditionText": "連続送信件数: 1000件 / 処理区分: 0",
+      "stepsText": [
+        "1. 付番依頼を連続して送信する → 各回でHTTPステータスコードが返却される",
+        "2. 登録された住登外者宛名基本情報の件数を数える → 送信件数と登録件数が一致する",
+        "3. 各レコードのデータ項目 031-29 を確認する → 操作時刻がすべてのレコードに記録されており欠落がない",
+        "事後条件: 住登外者宛名基本情報: 連続登録分がすべて記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "update",
+          "resultStateId": "ST-02"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-032",
+      "title": "タイムアウト境界における応答形式の切り替わりの実測",
+      "preconditionText": "処理時間の制御: スタブで可変 / 判定: 確定させずQAとして起票する",
+      "stepsText": [
+        "1. 処理時間をタイムアウト時間の直前に制御して要求電文を送信する → JSON形式のレスポンスオブジェクトが返却される",
+        "2. 処理時間をタイムアウト時間の直後に制御して要求電文を送信する → HTTPステータスコード500番台のエラーが返却されJSON形式では返却されない",
+        "3. 切り替わりが生じた処理時間を記録する → 実装が採用している打ち切り時間が記録され、判定はQAとして起票される",
+        "事後条件: 質問状: タイムアウトの確定値に関する照会が起票されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-033",
+      "title": "サービスメンテナンス中の応答の確認",
+      "preconditionText": "アクセス先API: サービスメンテナンス中 / 要求電文: 有効値",
+      "stepsText": [
+        "1. サービスメンテナンス状態のアクセス先APIへ要求電文を送信する → 応答が返却される",
+        "2. HTTPステータスコードを確認する → HTTPステータスコード500番台のエラーが返却される",
+        "3. 応答本文を確認する → JSON形式では返却されない",
+        "事後条件: 住登外者宛名基本情報: 登録されない"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-034",
+      "title": "アクセストークンの3状態に対する認証エラー応答の確認",
+      "preconditionText": "アクセストークン: 未指定・期限切れ・改ざん済みの3通り / 要求電文: 有効値",
+      "stepsText": [
+        "1. アクセストークンを未指定にして要求電文を送信する → HTTPステータスコード401が返却される",
+        "2. 期限切れのアクセストークンと改ざん済みのアクセストークンで同様に送信する → いずれもHTTPステータスコード401が返却される",
+        "3. 3回の応答本文の detail を確認する → detail が「アクセストークンが無効です。」で一致している",
+        "事後条件: 住登外者宛名基本情報: 登録されない"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-02",
+          "stateId": "ST-04",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-02",
+          "stateId": "ST-06",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-035",
+      "title": "個人番号の秘匿性の確認",
+      "preconditionText": "対象パラメータ: kojinbango / 通信の記録: 取得する",
+      "stepsText": [
+        "1. 個人番号を含む要求電文をTLS1.2以上の接続で送信する → 平文の個人番号が通信路上に現れない",
+        "2. 個人番号の桁数を誤らせて400応答を発生させる → HTTPステータスコード400が返却される",
+        "3. errors 配列の message とログを確認する → 個人番号そのものが message とログのいずれにも含まれていない",
+        "事後条件: ログ: 個人番号が記録されていない"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-036",
+      "title": "必須エラーのメッセージから対処が読み取れることの確認",
+      "preconditionText": "欠落させる必須パラメータ: 1件 / 評価者: 窓口業務の担当者",
+      "stepsText": [
+        "1. 必須パラメータを1件欠落させた要求電文を送信する → HTTPステータスコード400が返却される",
+        "2. errors 配列の message を窓口業務の担当者へ提示する → message から欠落した項目名が特定できる",
+        "3. 担当者が次に行う操作を回答する → 欠落した項目に値を設定して再送するという対処が回答される",
+        "事後条件: 評価記録: 対処が読み取れたかどうかが記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-037",
+      "title": "文字コードと外国人氏名の往復の確認",
+      "preconditionText": "対象パラメータ: shimei_gaikokujinkanji / shimei_gaikokujinromaji / 応答ヘッダ: 記録する",
+      "stepsText": [
+        "1. 漢字表記とローマ字表記の外国人氏名を含む要求電文を送信する → HTTPステータスコード200が返却される",
+        "2. 応答の Content-Type ヘッダを確認する → Content-Type が application/json;charset=UTF-8 である",
+        "3. 登録値を読み出してデータ項目 031-6 と 031-7 に照合する → 送信した文字列と読み出した文字列が一致し文字化けが生じていない",
+        "事後条件: 住登外者宛名基本情報: 外国人氏名が登録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-038",
+      "title": "業務ID更新後の他項目のリグレッション確認",
+      "preconditionText": "対象の住登外者宛名基本情報: 全項目に値を設定済み / 処理区分: 2",
+      "stepsText": [
+        "1. 更新前の住登外者宛名基本情報の全項目を退避する → 更新前の値が取得できる",
+        "2. 処理区分 2 の要求電文で app_submit/v10/jutogaishaatenabangofuban を呼び出す → HTTPステータスコード200が返却される",
+        "3. 更新後のデータ項目 031-3 と 031-11 と 031-12 を退避値と比較する → 氏名と性別と生年月日が更新前と同一である",
+        "事後条件: 住登外者宛名基本情報: 業務ID以外は更新前と同一である"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-03",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-039",
+      "title": "条件付き必須項目の条件成立時と不成立時の登録可否の確認",
+      "preconditionText": "対象データ項目: 031-3 / 031-4 / 031-5 / 条件: 氏名未定であるかどうか",
+      "stepsText": [
+        "1. 氏名未定でない住登外者の要求電文を、氏名系項目を設定した状態と未設定の状態の2通りで用意する → 2通りの要求電文が生成される",
+        "2. 2通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す → 各回でHTTPステータスコードが返却される",
+        "3. 氏名未定の住登外者について氏名系項目を未設定にして送信する → 条件が成立しないため未設定のまま受理される",
+        "事後条件: 判定表: 条件成立時と不成立時の受理結果が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-040",
+      "title": "正常系レスポンスの固定値の確認",
+      "preconditionText": "処理区分: 0 / 要求電文: 有効値",
+      "stepsText": [
+        "1. 有効な要求電文を送信する → HTTPステータスコード200が返却される",
+        "2. metadata の各キーを確認する → title が「住登外者宛名番号付番」であり detail が「登録が完了しました。」である",
+        "3. _links.self.href を確認する → 実行したAPIのURLが返却されている",
+        "事後条件: 応答記録: 固定値の一致が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "update",
+          "resultStateId": "ST-02"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-041",
+      "title": "正常系レスポンスの result 配列が返す項目範囲の記録",
+      "preconditionText": "処理区分: 0 / 送信項目: 住登外者宛名基本情報の全項目",
+      "stepsText": [
+        "1. 住登外者宛名基本情報の全項目を設定した要求電文を送信する → HTTPステータスコード200が返却される",
+        "2. result 配列に含まれるキーを列挙する → result 配列が返すキーが6件であることが記録される",
+        "3. 送信した他の項目が応答から確認できるかを判定する → データ項目 031-28 を含む送信項目のうち応答に現れないものが記録される",
+        "事後条件: 確認手段の合意: 応答以外の確認手段の要否が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-042",
+      "title": "データ出力条件3区分に対する値の有無の扱いの確認",
+      "preconditionText": "対象データ項目: 031-1 / 031-2 / 031-26 / 処理区分: 0",
+      "stepsText": [
+        "1. 必須項目に値を設定し任意項目を未設定にした要求電文を送信する → HTTPステータスコード200が返却される",
+        "2. 必須項目を未設定にした要求電文を送信する → HTTPステータスコード400と E0001 が返却される",
+        "3. 条件付き必須項目について条件成立時に未設定とした要求電文を送信する → 条件成立時の未設定に対する応答が記録される",
+        "事後条件: 判定表: 3区分それぞれの扱いが記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-043",
+      "title": "業務IDと独自施策システム等IDの繰り返し上限到達時の扱いの確認",
+      "preconditionText": "登録済みの業務ID件数: 繰り返し上限に到達済み / 処理区分: 2",
+      "stepsText": [
+        "1. 繰り返し上限まで業務IDを登録した住登外者宛名基本情報を用意する → 上限件数の業務IDが登録された状態になる",
+        "2. さらに別業務からの登録要求を POST で app_submit/v10/jutogaishaatenabangofuban へ送信する → 応答が返却される",
+        "3. 応答とデータ項目 031-23 と 031-24 を確認する → 上限を超える登録の可否が記録される",
+        "事後条件: 質問状: 繰り返し上限超過時の扱いに関する照会が起票されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-044",
+      "title": "アクセストークンの有効期限が処理途中で切れた場合の扱いの確認",
+      "preconditionText": "アクセストークンの有効期限: 処理途中で満了するよう設定 / 処理区分: 0",
+      "stepsText": [
+        "1. 有効期限が短いアクセストークンを取得して要求電文を送信する → リクエストが受け付けられる",
+        "2. 付番処理の実行中に有効期限を満了させる → 処理が継続するか中断するかが観測される",
+        "3. 応答と登録結果を確認する → 処理が完了したか401が返却されたかが記録される",
+        "事後条件: 質問状: 処理途中の有効期限満了に関する照会が起票されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "update",
+          "resultStateId": "ST-02"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-045",
+      "title": "503応答後の同一要求電文の再送における二重登録の有無の確認",
+      "preconditionText": "初回の応答: HTTPステータスコード503 / 処理区分: 0",
+      "stepsText": [
+        "1. 想定外エラーを発生させた状態で要求電文を送信する → HTTPステータスコード503が返却され detail が「想定外のエラーが発生しました。」である",
+        "2. 同一の要求電文を再送する → 応答が返却される",
+        "3. 登録された住登外者宛名基本情報の件数を確認する → 同一の住登外者に対する登録が二重に行われていないことが記録される",
+        "事後条件: 住登外者宛名基本情報: 二重登録の有無が記録されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-02",
+          "access": "read"
+        }
+      ]
+    },
+    {
+      "caseId": "TCS-046",
+      "title": "付番後の業務ID更新における履歴番号の増加の確認",
+      "preconditionText": "処理区分: 0 の後に 2 / 対象: 同一の宛名番号",
+      "stepsText": [
+        "1. 処理区分 0 で付番して result 配列の rirekibango を記録する → 初回の履歴番号が記録される",
+        "2. 同一の宛名番号に対して処理区分 2 で業務IDを更新する → HTTPステータスコード200が返却される",
+        "3. 2回目の result 配列の rirekibango を初回と比較する → 履歴番号が増加しているか同値のままかが記録される",
+        "事後条件: 質問状: 履歴番号の採番規則に関する照会が起票されている"
+      ],
+      "requiredData": [
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-01",
+          "access": "read"
+        },
+        {
+          "dataClassId": "DC-01",
+          "stateId": "ST-03",
+          "access": "read"
+        }
+      ]
+    }
+  ]
+}

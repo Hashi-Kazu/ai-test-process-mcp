@@ -1,0 +1,18 @@
+{
+  "matrixId": "FUBAN-API-ENV",
+  "title": "住登外者宛名番号付番API 実行環境の構成マトリクス（fuban-api_spec:32-41 APIコールにおける補足事項）。因子名・水準値はテストベース本文の実文言に限定し、根拠位置は 00_成果物生成手順.md 3.17 に記載する",
+  "coveragePolicy": "pairwise",
+  "factors": [
+    { "id": "F1", "name": "通信プロトコル", "levels": ["HTTP1.1以上"] },
+    { "id": "F2", "name": "通信セキュリティ", "levels": ["TLS1.2(Transport Layer Security1.2)以上"] },
+    { "id": "F3", "name": "要求元認証", "levels": ["client_secret_jwt", "client_secret_basic", "API Key"] },
+    { "id": "F4", "name": "環境", "levels": ["ガバメントクラウド", "オンプレミス環境等"] }
+  ],
+  "excludedCombinations": [
+    {
+      "id": "EX-01",
+      "when": { "F3": "API Key", "F4": "ガバメントクラウド" },
+      "reason": "「API Keyについてはガバメントクラウドでは原則認めない。認可サーバーの設置が難しいオンプレミス環境等においては当面認めるが、あくまで時限的な措置とする。」(fuban-api_spec:40)により、ガバメントクラウド上でのAPI Key認証は構成として成立しない"
+    }
+  ]
+}

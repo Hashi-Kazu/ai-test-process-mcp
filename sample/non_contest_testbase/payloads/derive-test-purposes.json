@@ -1,0 +1,767 @@
+{
+  "projectName": "住登外者宛名番号管理機能 住登外者宛名番号付番API 第2.0版 テスト",
+  "expectations": [
+    {
+      "id": "EXP-01",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "本APIを使用して住登外者宛名番号を付番し、登録できること(fuban-api_spec:74)"
+    },
+    {
+      "id": "EXP-02",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "正常に登録が完了した場合は、処理結果情報が返却されること(fuban-api_spec:75)"
+    },
+    {
+      "id": "EXP-03",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "正常に登録されなかった場合は、失敗した理由がエラーメッセージとして返却されること(fuban-api_spec:75)"
+    },
+    {
+      "id": "EXP-04",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "URL形式でリクエストし、JSON形式で返却されること。サポートするHTTPメソッドはPOSTであること(fuban-api_spec:22, 76-77)"
+    },
+    {
+      "id": "EXP-05",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "本APIが正常に終了した場合は、HTTPステータスコード200とJSON形式のレスポンスオブジェクトが返却されること(fuban-api_spec:80)"
+    },
+    {
+      "id": "EXP-06",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "送信したパラメータのチェックにてエラーとなった場合は、HTTPステータスコード400とJSON形式のレスポンスオブジェクトが返却されること(fuban-api_spec:81)"
+    },
+    {
+      "id": "EXP-07",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "認証情報が取得できないまたはアクセストークンが未指定の場合は、HTTPステータスコード401とJSON形式のレスポンスオブジェクトが返却されること(fuban-api_spec:82)"
+    },
+    {
+      "id": "EXP-08",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "処理が30秒以上経過した場合はタイムアウトとなり、原則HTTPステータスコード500番台のエラーが返却されること。ただし30秒は目安であり、性能テストを踏まえた適切なタイムアウト時間を設定すること(fuban-api_spec:83)"
+    },
+    {
+      "id": "EXP-09",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "サービスメンテナンス時も同様に原則HTTPステータスコード500番台のエラーが返却されること(fuban-api_spec:84)"
+    },
+    {
+      "id": "EXP-10",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "上記以外の想定外エラーが発生した場合は、HTTPステータスコード503とJSON形式のレスポンスオブジェクトが返却されること(fuban-api_spec:85)"
+    },
+    {
+      "id": "EXP-11",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "必須が「◎」のパラメータまたはオブジェクトは必ず出現し、空白のものは出現しない場合があること(fuban-api_spec:86)"
+    },
+    {
+      "id": "EXP-12",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "null設定有無が「〇」の項目は値にnullが設定される場合があり、「-」の項目には値にnullは設定されないこと(fuban-api_spec:87-88)"
+    },
+    {
+      "id": "EXP-13",
+      "requesterRole": "API要求元（基幹業務システム）(fuban-api_spec:55)",
+      "statement": "「地方公共団体情報システムデータ要件・連携要件標準仕様書」の「文字要件」で定めた標準仕様に従うこと(fuban-api_spec:21)"
+    }
+  ],
+  "testRequirements": [
+    {
+      "id": "TR-01",
+      "line": "management",
+      "statement": "タイムアウト時間のように仕様書側が確定値を打ち消している事項は合否を確定させず、観測値の記録とQAとしての起票にとどめる",
+      "expectationIds": [
+        "EXP-08"
+      ],
+      "rationale": "「※目安として30秒と記載しているが、性能テストを踏まえ、適切なタイムアウト時間を設定されたい」(fuban-api_spec:83)により確定値が存在しない"
+    },
+    {
+      "id": "TR-02",
+      "line": "management",
+      "statement": "処理区分 0 / 1 / 2 の3分岐すべてを受入範囲に含め、いずれかの分岐が未実施のままテストを完了としない",
+      "expectationIds": [
+        "EXP-01",
+        "EXP-02"
+      ],
+      "rationale": "「処理区分」により3通りの処理を行うと規定されている(fuban-api_spec:66, 96-98)"
+    },
+    {
+      "id": "TR-03",
+      "line": "management",
+      "statement": "エラーコード一覧に定義された E0001〜E0004 の4件すべてを検証対象母集団に含め、未実施のままテストを完了としない",
+      "expectationIds": [
+        "EXP-03",
+        "EXP-06"
+      ],
+      "rationale": "エラーコード一覧(fuban-api_spec:242-245)が母集団であり、工程Aでも4件すべてを宣言済みである"
+    },
+    {
+      "id": "TR-04",
+      "line": "engineering",
+      "statement": "HTTPステータスコード 200 / 400 / 401 / 503 および500番台の各応答が、留意事項に規定された発生条件どおりに返却されることを確認する",
+      "expectationIds": [
+        "EXP-05",
+        "EXP-06",
+        "EXP-07",
+        "EXP-08",
+        "EXP-09",
+        "EXP-10"
+      ],
+      "rationale": "留意事項(fuban-api_spec:80-85)が応答の切り分け条件を規定している"
+    },
+    {
+      "id": "TR-05",
+      "line": "engineering",
+      "statement": "必須「◎」およびnull設定有無の記述どおりに、リクエストパラメータとレスポンスオブジェクトの各項目が出現・非出現となることを確認する",
+      "expectationIds": [
+        "EXP-11",
+        "EXP-12"
+      ],
+      "rationale": "必須とnull設定有無の凡例(fuban-api_spec:86-88)が出現有無の判定基準である"
+    },
+    {
+      "id": "TR-06",
+      "line": "engineering",
+      "statement": "データ型・桁数・コード値の制約が要求電文と応答電文の双方で守られ、項目定義書の定義と一致することを確認する",
+      "expectationIds": [
+        "EXP-01",
+        "EXP-13"
+      ],
+      "rationale": "リクエスト_API仕様のデータ型・桁数列(fuban-api_spec:96-155)と項目定義書(item-definition:12-58)が制約を規定している"
+    },
+    {
+      "id": "TR-07",
+      "line": "engineering",
+      "statement": "URL形式のリクエスト・JSON形式の返却・HTTPメソッドPOSTというインタフェース形式が満たされることを確認する",
+      "expectationIds": [
+        "EXP-04"
+      ],
+      "rationale": "使用方法(fuban-api_spec:76-77)とAPI概要(fuban-api_spec:22)がインタフェース形式を規定している"
+    },
+    {
+      "id": "TR-08",
+      "line": "engineering",
+      "statement": "アクセストークンの検証を経てはじめて付番処理が行われ、検証に失敗した場合は付番処理が行われないことを確認する",
+      "expectationIds": [
+        "EXP-07"
+      ],
+      "rationale": "シーケンス図の「アクセストークンの検証を行う」(fuban-api_spec:63)と401の規定(fuban-api_spec:82)による"
+    }
+  ],
+  "strategyStatements": [
+    {
+      "id": "ST-01",
+      "statement": "テストベースはxlsx 2文書のみであるため、テスト条件・期待結果には必ず「文書名:行番号」形式の根拠位置を添え、記述の無い事項からは期待結果を作らない"
+    },
+    {
+      "id": "ST-02",
+      "statement": "画面の記述が一切ないため、テストレベルはAPI入出力を対象とするシステムテストと、項目定義書との整合を対象とする結合テストに限定する"
+    },
+    {
+      "id": "ST-03",
+      "statement": "住所_町字の桁数不一致やタイムアウトの目安値のように記述が一意に定まらない事項は、判定ステータスQAとして起票し、テスト結果は観測値の記録にとどめる"
+    },
+    {
+      "id": "ST-04",
+      "statement": "処理区分と条件付き必須の相関はデシジョンテーブルで、任意コード値の組合せはペアワイズで削減し、組合せ爆発を避ける"
+    }
+  ],
+  "purposes": [
+    {
+      "id": "TP-01",
+      "statement": "処理区分 0 / 1 / 2 の3分岐で住登外者宛名番号が仕様どおりに付番・登録・更新されることを確かめる",
+      "testRequirementIds": [
+        "TR-02",
+        "TR-06",
+        "TR-07"
+      ],
+      "strategyIds": [
+        "ST-01",
+        "ST-04"
+      ],
+      "successCriterion": "処理区分3値それぞれについて、HTTPステータスコード200とresult配列のatenabangoが返却され、fuban-api_spec:66に記述された処理内容（新規付番／受信宛名番号の登録／業務IDの更新）が実現していることを確認できた件数が、対象テストケース全件に一致する",
+      "priorityRank": 1,
+      "priorityRationale": "処理区分は本APIの唯一の処理方法指定パラメータであり(fuban-api_spec:96)、3分岐のいずれかが誤ると付番そのものが成立しないため最優先とする",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-01",
+        "QC-01-02"
+      ]
+    },
+    {
+      "id": "TP-02",
+      "statement": "パラメータチェックの結果として E0001〜E0004 のエラーコードとエラーメッセージが規定どおり返却されることを確かめる",
+      "testRequirementIds": [
+        "TR-03",
+        "TR-05"
+      ],
+      "strategyIds": [
+        "ST-01",
+        "ST-04"
+      ],
+      "successCriterion": "E0001〜E0004 の4件それぞれについて、HTTPステータスコード400のレスポンスのerrors配列にエラーコード一覧(fuban-api_spec:242-245)と同じcodeとmessageが返却されることを確認できる",
+      "priorityRank": 2,
+      "priorityRationale": "誤った入力を受理すると住登外者宛名基本情報に不正なデータが登録され、後続の名寄せまで波及するため付番成立の次に優先する",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-02",
+        "QC-04-04"
+      ]
+    },
+    {
+      "id": "TP-03",
+      "statement": "各データ項目のデータ型・桁数の制約が、リクエスト_API仕様と項目定義書の双方の記述どおりに扱われることを確かめる",
+      "testRequirementIds": [
+        "TR-06"
+      ],
+      "strategyIds": [
+        "ST-01",
+        "ST-03"
+      ],
+      "successCriterion": "境界値分析(12_)で設計した11変数64ケースの観測値が、fuban-api_spec:96-155 と item-definition:12-58 の桁数記述と一致する。両文書で記述が食い違う住所_町字(031-18)は両方の値を観測し、QAとして起票する",
+      "priorityRank": 3,
+      "priorityRationale": "桁数エラー E0003 の判定に直結し、かつ住所_町字で2文書の記述が食い違う（09_ SF-01）ため優先度が高い",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-02"
+      ]
+    },
+    {
+      "id": "TP-04",
+      "statement": "コード値と「データ出力条件」3区分（必須／任意／条件付き必須）の取り扱いが規定どおりであることを確かめる",
+      "testRequirementIds": [
+        "TR-05",
+        "TR-06"
+      ],
+      "strategyIds": [
+        "ST-01",
+        "ST-04"
+      ],
+      "successCriterion": "性別 0 / 1 / 2 とデータ出力条件3区分のそれぞれについて、同値分割(13_)で設計した37クラスすべてが1件以上のテストケースで被覆され、item-definition:12-58 の記述と観測値が一致する",
+      "priorityRank": 4,
+      "priorityRationale": "コード値と出力条件は項目数が多く誤りが混入しやすいが、誤っても付番自体は成立するため処理区分・エラーコードの次とする",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-01",
+        "QC-01-02"
+      ]
+    },
+    {
+      "id": "TP-05",
+      "statement": "付番後の住登外者宛名基本情報の状態遷移（登録・業務ID更新・名寄せ）が一貫して保たれることを確かめる",
+      "testRequirementIds": [
+        "TR-02"
+      ],
+      "strategyIds": [
+        "ST-02",
+        "ST-03"
+      ],
+      "successCriterion": "処理区分2による業務ID更新後に、更新対象外の項目（氏名・性別・生年月日など）の値が更新前と一致していることを確認できる",
+      "priorityRank": 5,
+      "priorityRationale": "住登外者宛名基本情報は主キーを宛名番号とするマスタであり(item-definition:12)、更新の副作用は後続業務へ波及するが、応答だけでは確認できる範囲が限られる",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-01",
+        "QC-06-02"
+      ]
+    },
+    {
+      "id": "TP-06",
+      "statement": "アクセストークンの検証を経て付番処理が行われ、要求元認証方式の構成差によらず同一の応答が返ることを確かめる",
+      "testRequirementIds": [
+        "TR-08"
+      ],
+      "strategyIds": [
+        "ST-01",
+        "ST-02"
+      ],
+      "successCriterion": "アクセストークン未指定・無効の場合にHTTPステータスコード401が返り付番処理が行われないこと、および client_secret_jwt と client_secret_basic の双方の構成で同一リクエストに同一応答が返ることを確認できる",
+      "priorityRank": 6,
+      "priorityRationale": "認証は付番処理の前提であるが、認可サーバ側の責務であり本APIの記述範囲は401の返却条件(fuban-api_spec:82)に限られる",
+      "relatedQualityCharacteristicIds": [
+        "QC-06-01",
+        "QC-06-05",
+        "QC-08-01"
+      ]
+    },
+    {
+      "id": "TP-07",
+      "statement": "タイムアウト・メンテナンス・想定外エラーの各状況で規定の応答が返り、再依頼により回復できることを確かめる",
+      "testRequirementIds": [
+        "TR-01",
+        "TR-04"
+      ],
+      "strategyIds": [
+        "ST-03"
+      ],
+      "successCriterion": "500番台・503の応答が発生する状況を再現し、そのときの応答形式（JSON形式で返却されるか否か）を観測できる。かつ「正常に付番処理が実行されなかった場合は再度付番依頼を実施することにより、新規付番された番号が返却される」(fuban-api_spec:64)が再現する",
+      "priorityRank": 7,
+      "priorityRationale": "回復手順が仕様書に明記されている一方、タイムアウトの確定値が存在せず合否を確定できないため、記録目的の優先度にとどめる",
+      "relatedQualityCharacteristicIds": [
+        "QC-02-01",
+        "QC-05-02",
+        "QC-05-04"
+      ]
+    },
+    {
+      "id": "TP-08",
+      "statement": "エラーメッセージの内容と外国人氏名の文字要件が、利用者が原因を特定できる形で扱われることを確かめる",
+      "testRequirementIds": [
+        "TR-05",
+        "TR-06"
+      ],
+      "strategyIds": [
+        "ST-01"
+      ],
+      "successCriterion": "E0001〜E0004 のメッセージの【項目名】等の可変部が実際の項目名に置換されて返却されること、および漢字・ローマ字表記の外国人氏名が欠落・化けなく登録・返却されることを確認できる",
+      "priorityRank": 8,
+      "priorityRationale": "画面の記述が無く利用者は基幹業務システム経由であるため、理解性は当該システム側の実装に依存する割合が大きい",
+      "relatedQualityCharacteristicIds": [
+        "QC-03-02",
+        "QC-04-01"
+      ]
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-001",
+      "statement": "処理区分（shorikubun）に \"0\" を設定した付番依頼で、新規の住登外者宛名番号が付番され、200応答の result 配列に atenabango が返ることを確認する。",
+      "purposeIds": [
+        "TP-01"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-002",
+      "statement": "処理区分に \"1\" を設定し既存の宛名番号を送信した場合に、受信した宛名番号がそのまま住登外者宛名番号として登録されることを確認する。",
+      "purposeIds": [
+        "TP-01"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-003",
+      "statement": "処理区分に \"2\" を設定した場合に、受信した住登外者宛名番号の住登外者宛名基本情報の業務IDだけが更新され、他の項目が変化しないことを確認する。",
+      "purposeIds": [
+        "TP-01"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-004",
+      "statement": "独自施策システム等ID（031-24）が設定された付番依頼で、業務IDを持たないシステムからの登録が受け付けられることを確認する。",
+      "purposeIds": [
+        "TP-01"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-005",
+      "statement": "必須（◎）のパラメータをそれぞれ1件ずつ欠落させた要求電文で、HTTPステータスコード400と errors[].code = E0001 が返ることを確認する。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-02"
+    },
+    {
+      "id": "TC-006",
+      "statement": "データ型 X の項目に全角文字を、データ型 Ｎ の項目に規定外の文字を設定した要求電文で、errors[].code = E0002 が返ることを確認する。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-02"
+    },
+    {
+      "id": "TC-007",
+      "statement": "固定桁項目の桁数を規定より1桁多く／少なく設定した要求電文で、errors[].code = E0003 が返ることを確認する。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-02"
+    },
+    {
+      "id": "TC-008",
+      "statement": "処理区分 \"1\" / \"2\" で atenabango を未設定にした要求電文で、errors[].code = E0004 が返ることを確認する。返却されるコードが E0001 であった場合はQAとして起票する。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-02"
+    },
+    {
+      "id": "TC-009",
+      "statement": "宛名番号（atenabango）を14桁・15桁・16桁で送信し、15桁でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-010",
+      "statement": "個人番号（kojinbango）を11桁・12桁・13桁で送信し、12桁でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-011",
+      "statement": "氏名（shimei）を99文字・100文字・101文字で送信し、100文字でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-012",
+      "statement": "氏_日本人（uji_nihonjin）と名_日本人（na_nihonjin）を49文字・50文字・51文字で送信し、50文字でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-013",
+      "statement": "外国人氏名のアルファベット表記（031-6）と漢字表記（031-7）を99文字・100文字・101文字で送信し、100文字でのみ受理されることを確認する。API側のパラメータ名は shimei_gaikokujinromaji / shimei_gaikokujinkanji である。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-014",
+      "statement": "氏名_読み仮名（031-8、Ｎ100）・氏_日本人_読み仮名（031-9、Ｎ50）・名_日本人_読み仮名（031-10、Ｎ50）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。API側は shimei_furigana / uji_nihonjin_furigana / na_nihonjin_furigana である。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-015",
+      "statement": "生年月日_不詳表記（seinengappi_fushohyoki）を71文字・72文字・73文字で送信し、72文字でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-016",
+      "statement": "住所_市区町村コード（031-14、X6）と住所_町字コード（031-15、X7）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。町字コードは 0000000 と 9999999 の特殊値も送信する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-017",
+      "statement": "住所_都道府県（031-16、Ｎ4）と住所_市区郡町村名（031-17、Ｎ12）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-018",
+      "statement": "住所_町字（jusho_choaza）を17文字・18文字・19文字・119文字・120文字・121文字で送信し、受理される上限が Ｎ18 と Ｎ120 のどちらであるかを記録する。合否は確定させずQAとして起票する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-019",
+      "statement": "住所_番地号表記（031-19、Ｎ50）と住所_郵便番号（031-22、X7）を規定桁の前後で送信し、規定桁でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-020",
+      "statement": "住所_方書（031-20）と住所_方書_フリガナ（031-21）を299文字・300文字・301文字で送信し、300文字でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-021",
+      "statement": "操作者ID（sosashaid、X10）を9桁・10桁・11桁で送信し、10桁でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-022",
+      "statement": "性別（seibetsu）に 0（不明（未記入））・1（男）・2（女）と規定外の値を設定し、コード一覧に定義された3値でのみ受理されることを確認する。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-04"
+    },
+    {
+      "id": "TC-023",
+      "statement": "生年月日（seinengappi）に DATE 形式の有効値・不詳日・0000-01-01・9999-12-31・形式不正値を設定し、不詳日を許容する記述どおりに扱われることを確認する。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-04"
+    },
+    {
+      "id": "TC-024",
+      "statement": "操作年月日（031-28、DATE10）と操作時刻（031-29、TIME8）に、有効値・秒省略値・形式不正値を設定し、GIF コアデータパーツの規定どおりに扱われることを確認する。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-04"
+    },
+    {
+      "id": "TC-025",
+      "statement": "名寄せを実施したとき、名寄せ元となった宛名基本情報に名寄せ先宛名番号（031-26）が設定され、名寄せ元フラグが 1 に遷移することを確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-05"
+    },
+    {
+      "id": "TC-026",
+      "statement": "同一の住登外者に対する処理区分 \"0\" の付番依頼を同時に2件送信し、宛名番号が二重に付番されないことを確認する。仕様書に並行時の規定が無いため、観測結果を記録してQAとして起票する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-07"
+    },
+    {
+      "id": "TC-027",
+      "statement": "APIアクセス w/アクセストークン → アクセストークンの検証 → 住登外者宛名番号付番 → API結果返却 の順序で処理が進み、検証前に付番が行われないことを確認する。",
+      "purposeIds": [
+        "TP-06"
+      ],
+      "perspectiveCategoryId": "TPC-08"
+    },
+    {
+      "id": "TC-028",
+      "statement": "付番→登録→名寄せ→参照の一連の流れで、住登外者宛名基本情報の主キー（031-1 宛名番号）が変わらず、操作年月日・操作時刻が更新ごとに記録されることを確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-09"
+    },
+    {
+      "id": "TC-029",
+      "statement": "要求元認証を OAuth2.0 client_secret_jwt とした構成と client_secret_basic とした構成の双方で、同一の要求電文が同一の応答を返すことを確認する。",
+      "purposeIds": [
+        "TP-06"
+      ],
+      "perspectiveCategoryId": "TPC-10"
+    },
+    {
+      "id": "TC-030",
+      "statement": "正常に付番処理が実行されなかった場合に再度付番依頼を実施し、新規付番された番号が返却されることを確認する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-11"
+    },
+    {
+      "id": "TC-031",
+      "statement": "付番依頼を長時間にわたり連続送信し、履歴番号と操作年月日・操作時刻が欠落なく記録され続けることを確認する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-12"
+    },
+    {
+      "id": "TC-032",
+      "statement": "処理時間を30秒の直前と直後に制御し、30秒未満ではJSON形式のレスポンス、30秒以上ではJSONを伴わない500番台のエラーへ切り替わる点を測定する。判定値が未確定であるため観測値を記録する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-13"
+    },
+    {
+      "id": "TC-033",
+      "statement": "サービスメンテナンス中に付番依頼を送信し、原則HTTPステータスコード500番台のエラーが返却され、JSON形式では返却されないことを確認する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-14"
+    },
+    {
+      "id": "TC-034",
+      "statement": "アクセストークンを未指定、期限切れ、改ざん済みの3通りで送信し、いずれもHTTPステータスコード401と detail「アクセストークンが無効です。」が返ることを確認する。",
+      "purposeIds": [
+        "TP-06"
+      ],
+      "perspectiveCategoryId": "TPC-15"
+    },
+    {
+      "id": "TC-035",
+      "statement": "個人番号（031-2）を含む要求電文がTLS1.2以上で送信され、応答および誤り時のエラーメッセージに個人番号そのものが含まれないことを確認する。",
+      "purposeIds": [
+        "TP-06"
+      ],
+      "perspectiveCategoryId": "TPC-15"
+    },
+    {
+      "id": "TC-036",
+      "statement": "400応答の errors[].message が「【項目名】が設定されていません。」のように、どの項目をどう直せばよいかを読み取れる文言で返ることを確認する。",
+      "purposeIds": [
+        "TP-08"
+      ],
+      "perspectiveCategoryId": "TPC-16"
+    },
+    {
+      "id": "TC-037",
+      "statement": "レスポンスの Content-Type が application/json;charset=UTF-8 であり、外国人氏名の漢字表記・アルファベット表記・フリガナが文字化けせずに往復することを確認する。",
+      "purposeIds": [
+        "TP-08"
+      ],
+      "perspectiveCategoryId": "TPC-17"
+    },
+    {
+      "id": "TC-038",
+      "statement": "処理区分 \"2\" による業務IDの更新後に、更新対象外である氏名・住所・生年月日・性別の各項目が更新前と同一であることを再確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-18"
+    },
+    {
+      "id": "TC-039",
+      "statement": "条件付き必須の条件（項目説明の ※※）を満たす場合と満たさない場合の双方で登録を試み、条件を満たさない場合に当該項目を空欄のまま受理されることを確認する。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-02"
+    },
+    {
+      "id": "TC-040",
+      "statement": "200応答の metadata.title「住登外者宛名番号付番」・metadata.detail「登録が完了しました。」・_links.self.href「/app_submit/v10/jutogaishaatenabangofuban」が固定値で返ることを確認する。",
+      "purposeIds": [
+        "TP-01"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-041",
+      "statement": "200応答の result 配列が shikuchosonkodo・atenabango・rirekibango・sosashaid・sosanengappi・sosajikoku の6項目のみを返し、送信した他のデータ項目が応答からは確認できないことを記録する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-09"
+    },
+    {
+      "id": "TC-042",
+      "statement": "データ出力条件が「必須」「任意」「条件付き必須」の3区分それぞれについて代表項目を選び、区分どおりの受理／拒否になることを確認する。代表項目は 031-1（必須）・031-2（任意）・031-26（条件付き必須）とする。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-04"
+    },
+    {
+      "id": "TC-043",
+      "statement": "業務IDと独自施策システム等IDの繰り返しが999件に達した状態で、さらに同一の住登外者宛名基本情報へ別業務からの登録を行った場合の扱いを確認する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-07"
+    },
+    {
+      "id": "TC-044",
+      "statement": "アクセストークンの有効期限が付番処理の途中で切れた場合に、処理が完了するか401が返るかを確認する。仕様書に規定が無いため観測結果を記録してQAとして起票する。",
+      "purposeIds": [
+        "TP-06"
+      ],
+      "perspectiveCategoryId": "TPC-08"
+    },
+    {
+      "id": "TC-045",
+      "statement": "503応答（想定外エラー）を受けた後に同一の要求電文を再送し、二重登録が生じないことを確認する。",
+      "purposeIds": [
+        "TP-07"
+      ],
+      "perspectiveCategoryId": "TPC-11"
+    },
+    {
+      "id": "TC-046",
+      "statement": "処理区分 \"0\" で付番した宛名番号に対し、続けて処理区分 \"2\" で業務IDを更新する遷移を行い、履歴番号が増加することを確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-05"
+    }
+  ],
+  "testTypeSelections": [
+    {
+      "name": "機能テスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-01",
+        "TP-02",
+        "TP-03",
+        "TP-04",
+        "TP-06",
+        "TP-08"
+      ],
+      "reason": "リクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定・データ型・桁数・コード値が期待どおりの結果を返すかを確認する必要があるため選定する(fuban-api_spec:96-155)"
+    },
+    {
+      "name": "シナリオテスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-01",
+        "TP-05"
+      ],
+      "reason": "APIアクセスからアクセストークン検証、付番処理、結果返却までの一続きの利用手順(fuban-api_spec:55-66)を通しで実行する必要があるため選定する"
+    },
+    {
+      "name": "性能テスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-07"
+      ],
+      "reason": "処理が30秒以上経過した場合のタイムアウト挙動(fuban-api_spec:83)を測定し、適切なタイムアウト時間の設定判断に必要な観測値を得るため選定する"
+    },
+    {
+      "name": "ロードテスト",
+      "selected": false,
+      "reason": "同時接続数・リクエスト件数の上限がテストベースに記述されておらず、与えるべき状況を仕様から定められないため選定しない"
+    },
+    {
+      "name": "ストレステスト",
+      "selected": false,
+      "reason": "限界負荷の水準を定める記述がテストベースに存在せず、限界を超えた際の期待動作も規定されていないため選定しない"
+    },
+    {
+      "name": "ユーザビリティテスト",
+      "selected": false,
+      "reason": "本テストベースはAPI仕様書と項目定義書のみで構成され画面の記述が一切ないため、理解性・使いやすさを評価する対象が存在しない"
+    },
+    {
+      "name": "ローカライゼーションテスト",
+      "selected": false,
+      "reason": "多言語対応の記述がテストベースに存在しない。外国人氏名の文字種の扱いはTP-08の文字要件確認として機能テストに含める"
+    },
+    {
+      "name": "保守性テスト",
+      "selected": false,
+      "reason": "欠陥修正や機能追加のしやすさを評価する設計情報がテストベースに含まれておらず、判定基準を仕様から定められないため選定しない"
+    },
+    {
+      "name": "信頼性テスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-07"
+      ],
+      "reason": "正常に付番処理が実行されなかった場合に再度付番依頼を実施すれば新規付番された番号が返却される(fuban-api_spec:64)という回復手順が明記されており、反復実行で確かめる必要があるため選定する"
+    },
+    {
+      "name": "移植性テスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-06"
+      ],
+      "reason": "要求元認証方式として client_secret_jwt に加え client_secret_basic とAPI Keyが条件付きで認められており(fuban-api_spec:37-40)、構成差によらず同一の応答となることを確認するため選定する"
+    }
+  ],
+  "claimedPurposeCoveragePercent": 100,
+  "claimedTestTypeJustificationPercent": 100
+}

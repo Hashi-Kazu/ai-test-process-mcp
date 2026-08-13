@@ -1,0 +1,1835 @@
+{
+  "suiteId": "REG-FUBAN",
+  "title": "住登外者宛名番号付番API 回帰テストスイートの選択（11_ のテスト条件46件と 14_ のテストケース46件を母集団とする）",
+  "testConditions": [
+    {
+      "id": "TC-001",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "impact": 4,
+      "likelihood": 5,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-002",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "impact": 4,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-003",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-004",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-005",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "高",
+      "impact": 4,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-006",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-007",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-008",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "高",
+      "impact": 4,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-009",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "impact": 4,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-010",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 5,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-011",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-012",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-013",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-014",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-015",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "impact": 2,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-016",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-017",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "impact": 2,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-018",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "impact": 4,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-019",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "impact": 2,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-020",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "impact": 2,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-021",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-022",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-023",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-024",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-025",
+      "perspectiveCategoryId": "TPC-05",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-026",
+      "perspectiveCategoryId": "TPC-07",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-027",
+      "perspectiveCategoryId": "TPC-08",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-028",
+      "perspectiveCategoryId": "TPC-09",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-029",
+      "perspectiveCategoryId": "TPC-10",
+      "priority": "低",
+      "impact": 3,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-030",
+      "perspectiveCategoryId": "TPC-11",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-031",
+      "perspectiveCategoryId": "TPC-12",
+      "priority": "低",
+      "impact": 3,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-032",
+      "perspectiveCategoryId": "TPC-13",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-033",
+      "perspectiveCategoryId": "TPC-14",
+      "priority": "低",
+      "impact": 2,
+      "likelihood": 2,
+      "changeCategory": "existing-unaffected"
+    },
+    {
+      "id": "TC-034",
+      "perspectiveCategoryId": "TPC-15",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-035",
+      "perspectiveCategoryId": "TPC-15",
+      "priority": "中",
+      "impact": 5,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-036",
+      "perspectiveCategoryId": "TPC-16",
+      "priority": "低",
+      "impact": 2,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-037",
+      "perspectiveCategoryId": "TPC-17",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-038",
+      "perspectiveCategoryId": "TPC-18",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-039",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-040",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-041",
+      "perspectiveCategoryId": "TPC-09",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-042",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 4,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-043",
+      "perspectiveCategoryId": "TPC-07",
+      "priority": "低",
+      "impact": 3,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-044",
+      "perspectiveCategoryId": "TPC-08",
+      "priority": "低",
+      "impact": 3,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-045",
+      "perspectiveCategoryId": "TPC-11",
+      "priority": "中",
+      "impact": 4,
+      "likelihood": 2,
+      "changeCategory": "existing-impacted"
+    },
+    {
+      "id": "TC-046",
+      "perspectiveCategoryId": "TPC-05",
+      "priority": "中",
+      "impact": 3,
+      "likelihood": 3,
+      "changeCategory": "existing-impacted"
+    }
+  ],
+  "testCases": [
+    {
+      "caseId": "TCS-001",
+      "title": "処理区分0による新規住登外者宛名番号の付番",
+      "testConditionId": "TC-001",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-002",
+      "title": "処理区分1による既存宛名番号の住登外者宛名番号としての登録",
+      "testConditionId": "TC-002",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-003",
+      "title": "処理区分2による業務IDの更新",
+      "testConditionId": "TC-003",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-004",
+      "title": "独自施策システム等IDによる登録の受理",
+      "testConditionId": "TC-004",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-005",
+      "title": "必須パラメータ欠落時の必須エラー返却",
+      "testConditionId": "TC-005",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-006",
+      "title": "データ型に合致しない文字種を設定した場合の指定文字エラー返却",
+      "testConditionId": "TC-006",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-007",
+      "title": "固定桁項目の桁数誤りによる桁数エラー返却",
+      "testConditionId": "TC-007",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-008",
+      "title": "処理区分1で宛名番号を未設定にした場合の相関チェックエラー返却",
+      "testConditionId": "TC-008",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-009",
+      "title": "宛名番号の桁数境界の確認",
+      "testConditionId": "TC-009",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-010",
+      "title": "個人番号の桁数境界の確認",
+      "testConditionId": "TC-010",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-011",
+      "title": "氏名の文字数境界の確認",
+      "testConditionId": "TC-011",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-012",
+      "title": "氏および名の文字数境界の確認",
+      "testConditionId": "TC-012",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-013",
+      "title": "外国人氏名のローマ字表記と漢字表記の文字数境界の確認",
+      "testConditionId": "TC-013",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-014",
+      "title": "読み仮名3項目の文字数境界の確認",
+      "testConditionId": "TC-014",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-015",
+      "title": "生年月日_不詳表記の文字数境界の確認",
+      "testConditionId": "TC-015",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-016",
+      "title": "住所コード2項目の桁数境界と特殊値の確認",
+      "testConditionId": "TC-016",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-017",
+      "title": "都道府県と市区郡町村名の文字数境界の確認",
+      "testConditionId": "TC-017",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-018",
+      "title": "住所_町字の文字数上限が2文書で食い違う箇所の実測",
+      "testConditionId": "TC-018",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-019",
+      "title": "番地号表記と郵便番号の桁数境界の確認",
+      "testConditionId": "TC-019",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-020",
+      "title": "方書と方書フリガナの文字数境界の確認",
+      "testConditionId": "TC-020",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-021",
+      "title": "操作者IDの桁数境界の確認",
+      "testConditionId": "TC-021",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-022",
+      "title": "性別コードの同値クラスの確認",
+      "testConditionId": "TC-022",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-023",
+      "title": "生年月日の同値クラスと不詳日の扱いの確認",
+      "testConditionId": "TC-023",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-024",
+      "title": "操作年月日と操作時刻の書式クラスの確認",
+      "testConditionId": "TC-024",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-025",
+      "title": "名寄せ実施時の名寄せ先宛名番号と名寄せ元フラグの遷移",
+      "testConditionId": "TC-025",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-026",
+      "title": "同一住登外者への同時付番依頼における二重付番の有無の確認",
+      "testConditionId": "TC-026",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-027",
+      "title": "APIシーケンスの実行順序の確認",
+      "testConditionId": "TC-027",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-028",
+      "title": "付番から名寄せまでの宛名情報ライフサイクルの確認",
+      "testConditionId": "TC-028",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-029",
+      "title": "要求元認証の2方式による応答の同一性の確認",
+      "testConditionId": "TC-029",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-030",
+      "title": "付番失敗後の再依頼による回復の確認",
+      "testConditionId": "TC-030",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-031",
+      "title": "連続付番依頼における操作時刻の記録欠落の有無の確認",
+      "testConditionId": "TC-031",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-032",
+      "title": "タイムアウト境界における応答形式の切り替わりの実測",
+      "testConditionId": "TC-032",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-033",
+      "title": "サービスメンテナンス中の応答の確認",
+      "testConditionId": "TC-033",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-034",
+      "title": "アクセストークンの3状態に対する認証エラー応答の確認",
+      "testConditionId": "TC-034",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-035",
+      "title": "個人番号の秘匿性の確認",
+      "testConditionId": "TC-035",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-036",
+      "title": "必須エラーのメッセージから対処が読み取れることの確認",
+      "testConditionId": "TC-036",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-037",
+      "title": "文字コードと外国人氏名の往復の確認",
+      "testConditionId": "TC-037",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-038",
+      "title": "業務ID更新後の他項目のリグレッション確認",
+      "testConditionId": "TC-038",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-039",
+      "title": "条件付き必須項目の条件成立時と不成立時の登録可否の確認",
+      "testConditionId": "TC-039",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-040",
+      "title": "正常系レスポンスの固定値の確認",
+      "testConditionId": "TC-040",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-041",
+      "title": "正常系レスポンスの result 配列が返す項目範囲の記録",
+      "testConditionId": "TC-041",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-042",
+      "title": "データ出力条件3区分に対する値の有無の扱いの確認",
+      "testConditionId": "TC-042",
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-043",
+      "title": "業務IDと独自施策システム等IDの繰り返し上限到達時の扱いの確認",
+      "testConditionId": "TC-043",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-044",
+      "title": "アクセストークンの有効期限が処理途中で切れた場合の扱いの確認",
+      "testConditionId": "TC-044",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-045",
+      "title": "503応答後の同一要求電文の再送における二重登録の有無の確認",
+      "testConditionId": "TC-045",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-046",
+      "title": "付番後の業務ID更新における履歴番号の増加の確認",
+      "testConditionId": "TC-046",
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    }
+  ],
+  "selectionCriteria": [
+    {
+      "id": "RSF-01",
+      "axis": "risk",
+      "statement": "11_ で宣言した影響度×発生確率のリスクスコアと変更差分区分（changeCategory）を軸に、existing-impacted の条件をすべて含め、existing-unaffected かつリスクスコアが R4 相当の条件だけを外す"
+    },
+    {
+      "id": "RSF-02",
+      "axis": "test-size",
+      "statement": "14_ で宣言したテストサイズ（declaredTestSize）と推定実行時間を軸に、ラージ構成比が推奨上限を超えないかを確認し、超える場合はラージテストの分解を検討する"
+    }
+  ],
+  "selections": [
+    {
+      "itemKind": "condition",
+      "itemId": "TC-001",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 20（影響度 4 × 発生確率 5）／優先度「高」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-002",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 16（影響度 4 × 発生確率 4）／優先度「高」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-003",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-004",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-005",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 16（影響度 4 × 発生確率 4）／優先度「高」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-006",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-007",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-008",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 16（影響度 4 × 発生確率 4）／優先度「高」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-009",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 16（影響度 4 × 発生確率 4）／優先度「高」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-010",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 10（影響度 5 × 発生確率 2）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-011",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-012",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-013",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-014",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-015",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 2 × 発生確率 3）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-016",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-017",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 2 × 発生確率 3）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-018",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 16（影響度 4 × 発生確率 4）／優先度「高」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-019",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 2 × 発生確率 3）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-020",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 2 × 発生確率 3）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-021",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-022",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-023",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-024",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-025",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 8（影響度 4 × 発生確率 2）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-026",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 8（影響度 4 × 発生確率 2）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-027",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-028",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-029",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 3 × 発生確率 2）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-030",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-031",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 3 × 発生確率 2）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-032",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-033",
+      "decision": "exclude",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-unaffected（11_ の宣言）であり、リスクスコア 4（影響度 2 × 発生確率 2）が R4 相当で優先度も「低」であるため、回帰スイートから外す"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-034",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-035",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 10（影響度 5 × 発生確率 2）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-036",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 2 × 発生確率 3）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-037",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-038",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-039",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-040",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-041",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 4 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-042",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 12（影響度 3 × 発生確率 4）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-043",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 3 × 発生確率 2）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-044",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 6（影響度 3 × 発生確率 2）／優先度「低」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-045",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 8（影響度 4 × 発生確率 2）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "condition",
+      "itemId": "TC-046",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01"
+      ],
+      "reason": "変更差分区分が existing-impacted（11_ の宣言）であり影響範囲に含まれる。リスクスコア 9（影響度 3 × 発生確率 3）／優先度「中」から、回帰スイートに含める"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-001",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-001 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-002",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-002 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-003",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-003 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-004",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-004 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-005",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-005 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-006",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-006 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-007",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-007 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-008",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-008 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-009",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-009 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-010",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-010 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-011",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-011 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-012",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-012 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-013",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-013 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-014",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-014 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-015",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-015 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-016",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-016 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-017",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-017 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-018",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-018 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-019",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-019 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-020",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-020 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-021",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-021 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-022",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-022 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-023",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-023 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-024",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-024 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-025",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-025 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-026",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-026 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-027",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-027 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-028",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-028 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-029",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-029 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-030",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-030 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-031",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-031 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 900秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-032",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-032 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 900秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-033",
+      "decision": "exclude",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-033 を回帰スイートから外したため、対応するケースも外す（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-034",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-034 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-035",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-035 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-036",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-036 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-037",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-037 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-038",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-038 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-039",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-039 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-040",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-040 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-041",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-041 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-042",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-042 を回帰スイートに含めたため、対応するケースも含める（テストサイズ medium、推定実行時間 180秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-043",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-043 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-044",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-044 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 900秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-045",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-045 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    },
+    {
+      "itemKind": "case",
+      "itemId": "TCS-046",
+      "decision": "include",
+      "criterionIds": [
+        "RSF-01",
+        "RSF-02"
+      ],
+      "reason": "由来条件 TC-046 を回帰スイートに含めたため、対応するケースも含める（テストサイズ large、推定実行時間 600秒）"
+    }
+  ]
+}
