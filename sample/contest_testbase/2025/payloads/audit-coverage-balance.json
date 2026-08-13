@@ -1,0 +1,207 @@
+{
+  "declaredDistributions": [
+    {
+      "axis": "perspective",
+      "label": "TPC-01",
+      "declaredCount": 15
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-02",
+      "declaredCount": 12
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-03",
+      "declaredCount": 20
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-04",
+      "declaredCount": 3
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-05",
+      "declaredCount": 6
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-06",
+      "declaredCount": 4
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-07",
+      "declaredCount": 3
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-08",
+      "declaredCount": 9
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-09",
+      "declaredCount": 4
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-10",
+      "declaredCount": 3
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-11",
+      "declaredCount": 6
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-12",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-13",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-14",
+      "declaredCount": 3
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-15",
+      "declaredCount": 9
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-16",
+      "declaredCount": 3
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-17",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-18",
+      "declaredCount": 3
+    },
+    {
+      "axis": "technique",
+      "label": "boundary-value-analysis",
+      "declaredCount": 21
+    },
+    {
+      "axis": "technique",
+      "label": "checklist-based",
+      "declaredCount": 7
+    },
+    {
+      "axis": "technique",
+      "label": "concurrency-test",
+      "declaredCount": 3
+    },
+    {
+      "axis": "technique",
+      "label": "config-matrix",
+      "declaredCount": 4
+    },
+    {
+      "axis": "technique",
+      "label": "data-lifecycle-test",
+      "declaredCount": 2
+    },
+    {
+      "axis": "technique",
+      "label": "decision-table",
+      "declaredCount": 5
+    },
+    {
+      "axis": "technique",
+      "label": "equivalence-partitioning",
+      "declaredCount": 16
+    },
+    {
+      "axis": "technique",
+      "label": "error-guessing",
+      "declaredCount": 3
+    },
+    {
+      "axis": "technique",
+      "label": "exploratory",
+      "declaredCount": 2
+    },
+    {
+      "axis": "technique",
+      "label": "fault-injection",
+      "declaredCount": 9
+    },
+    {
+      "axis": "technique",
+      "label": "load-test",
+      "declaredCount": 2
+    },
+    {
+      "axis": "technique",
+      "label": "long-run-test",
+      "declaredCount": 1
+    },
+    {
+      "axis": "technique",
+      "label": "regression-selection",
+      "declaredCount": 3
+    },
+    {
+      "axis": "technique",
+      "label": "scenario-based",
+      "declaredCount": 13
+    },
+    {
+      "axis": "technique",
+      "label": "state-transition",
+      "declaredCount": 10
+    },
+    {
+      "axis": "technique",
+      "label": "timing-order-test",
+      "declaredCount": 6
+    },
+    {
+      "axis": "test-level",
+      "label": "acceptance-testing",
+      "declaredCount": 17
+    },
+    {
+      "axis": "test-level",
+      "label": "integration-testing",
+      "declaredCount": 15
+    },
+    {
+      "axis": "test-level",
+      "label": "system-testing",
+      "declaredCount": 75
+    }
+  ],
+  "caseIdPatterns": [
+    "\\b(TCS-V?\\d{2,3})\\b"
+  ],
+  "additionalKnownTerms": [
+    "入場ゲートハブ",
+    "入場券情報一覧",
+    "時間枠別残数",
+    "残数アイコン切替閾値",
+    "いますぐ入場券",
+    "時間指定入場券",
+    "予約済み入場券",
+    "入場用QRコード",
+    "残数表示インジケータ",
+    "ログイン用QRコード",
+    "入場券分け与え",
+    "購入情報",
+    "死活管理"
+  ]
+}

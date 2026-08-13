@@ -1,0 +1,71 @@
+{
+  "declaredDistributions": [
+    {
+      "axis": "perspective",
+      "label": "TPC-01",
+      "declaredCount": 4
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-03",
+      "declaredCount": 6
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-04",
+      "declaredCount": 5
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-05",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-06",
+      "declaredCount": 4
+    },
+    {
+      "axis": "technique",
+      "label": "boundary-value-analysis",
+      "declaredCount": 6
+    },
+    {
+      "axis": "technique",
+      "label": "equivalence-partitioning",
+      "declaredCount": 5
+    },
+    {
+      "axis": "technique",
+      "label": "scenario-based",
+      "declaredCount": 8
+    },
+    {
+      "axis": "technique",
+      "label": "state-transition",
+      "declaredCount": 2
+    },
+    {
+      "axis": "test-level",
+      "label": "system-testing",
+      "declaredCount": 21
+    }
+  ],
+  "caseIdPatterns": [
+    "\\b(TCS-V?\\d{2,3})\\b"
+  ],
+  "additionalKnownTerms": [
+    "入場券情報一覧",
+    "時間枠別残数",
+    "残数アイコン切替閾値",
+    "いますぐ入場券",
+    "時間指定入場券",
+    "予約済み入場券",
+    "入場用QRコード",
+    "残数表示インジケータ",
+    "ログイン用QRコード",
+    "入場券分け与え",
+    "購入情報",
+    "死活管理"
+  ]
+}

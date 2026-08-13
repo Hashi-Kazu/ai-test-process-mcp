@@ -1,0 +1,1781 @@
+{
+  "title": "だんだん動物園入場システム（2024年版テストベース / V02構成・縮小プローブ）のテストアーキテクチャ",
+  "scope": {
+    "inScope": [
+      {
+        "item": "発券機",
+        "reason": "01号:305-306「既存システムと新システムの差分」に該当するため対象に含める。"
+      },
+      {
+        "item": "入場ゲート",
+        "reason": "V02構成では入場ゲートが単独で入場券情報一覧による有効/無効判定を行い、時間枠という新しい判定材料を扱うため対象に含める。"
+      },
+      {
+        "item": "入場管理",
+        "reason": "入場券情報一覧同期と死活管理が新システムの差分に含まれるため対象に含める。"
+      },
+      {
+        "item": "Webチケットシステム",
+        "reason": "01号:123「園内およびWebでの予約購入、発券そして入場の流れについて特に確認をお願いしたい」に該当するため対象に含める。"
+      },
+      {
+        "item": "データ連携",
+        "reason": "園内側とWeb側が別会社開発であり、72号が規定する機器間データが結合点になるため対象に含める。"
+      }
+    ],
+    "outOfScope": [
+      {
+        "item": "決済システム",
+        "reason": "01号:297-299 がスコープ外の理由を「すでにテストエビデンスがあるため」としているのに従い対象外とする。"
+      },
+      {
+        "item": "残数表示インジケータ",
+        "reason": "V02縮小プローブでは対象機能を絞っており、残数表示インジケータのテスト条件を投入していないため対象外とする。"
+      },
+      {
+        "item": "会員登録",
+        "reason": "01号:120「会員登録・変更・退会、お問い合わせ、画面デザイン、QRコードの作成は保証済み」に従い対象外とする。"
+      }
+    ]
+  },
+  "decompositionAxisIds": [
+    "TAX-02",
+    "TAX-01"
+  ],
+  "containers": [
+    {
+      "id": "TCN-01",
+      "nameJa": "園内チケットシステム",
+      "responsibility": "発券機・入場ゲート・入場管理の各機器が、園内で入場券の販売から入場までを成立させることを保証する。V02構成では入場ゲートが単独でQRコードの有効/無効判定を行う。",
+      "objective": "園内側の機器群が入場券の販売と入場判定を成立させられることを確かめる。",
+      "testTypes": [
+        "機能テスト",
+        "シナリオテスト"
+      ],
+      "priorityClass": "must",
+      "targets": [
+        "園内チケットシステム"
+      ],
+      "testLevel": "system-testing"
+    },
+    {
+      "id": "TCN-02",
+      "nameJa": "発券機",
+      "parentId": "TCN-01",
+      "responsibility": "発券機が、起動処理と会員向けログインを提供することを保証する。",
+      "objective": "発券機の起動系処理が後続の購入操作の前提を満たすことを確かめる。",
+      "testTypes": [
+        "機能テスト",
+        "シナリオテスト"
+      ],
+      "priorityClass": "must",
+      "targets": [
+        "発券機"
+      ],
+      "testLevel": "system-testing",
+      "perspectiveCategoryIds": [
+        "TPC-01"
+      ]
+    },
+    {
+      "id": "TCN-03",
+      "nameJa": "入場ゲート",
+      "parentId": "TCN-01",
+      "responsibility": "入場ゲートが、QRコードの読み取り、入場券情報一覧に基づく有効/無効判定、判定結果に応じた扉の開閉制御を単独で行うことを保証する。",
+      "objective": "V02構成の入場ゲート単独判定が入場可否を誤らないことを確かめる。",
+      "testTypes": [
+        "機能テスト"
+      ],
+      "priorityClass": "must",
+      "targets": [
+        "入場ゲート"
+      ],
+      "testLevel": "system-testing",
+      "perspectiveCategoryIds": [
+        "TPC-01",
+        "TPC-04",
+        "TPC-05",
+        "TPC-06"
+      ]
+    },
+    {
+      "id": "TCN-04",
+      "nameJa": "入場管理",
+      "parentId": "TCN-01",
+      "responsibility": "入場管理が、入場券情報一覧同期と死活管理を行うことを保証する。",
+      "objective": "機器停止が検知され長時間稼働が保証できることを確かめる。",
+      "testTypes": [
+        "機能テスト",
+        "信頼性テスト"
+      ],
+      "priorityClass": "must",
+      "targets": [
+        "入場管理"
+      ],
+      "testLevel": "system-testing",
+      "perspectiveCategoryIds": [
+        "TPC-03"
+      ]
+    },
+    {
+      "id": "TCN-05",
+      "nameJa": "Webチケットシステム",
+      "responsibility": "Webチケットシステムの予約購入画面が、時間枠指定と購入枚数上限の判定を行うことを保証する。",
+      "objective": "時間枠の重複販売が発生しないことを確かめる。",
+      "testTypes": [
+        "機能テスト"
+      ],
+      "priorityClass": "must",
+      "targets": [
+        "Webチケットシステム"
+      ],
+      "testLevel": "system-testing",
+      "perspectiveCategoryIds": [
+        "TPC-03"
+      ]
+    },
+    {
+      "id": "TCN-06",
+      "nameJa": "データ連携",
+      "responsibility": "入場管理・入場ゲート・クラウド２の間で受け渡されるデータが、規定のタイミングと内容で伝播することを保証する。",
+      "objective": "園内側とWeb側の結合点でデータの解釈が食い違わないことを確かめる。",
+      "testTypes": [
+        "機能テスト"
+      ],
+      "priorityClass": "must",
+      "targets": [
+        "データ連携"
+      ],
+      "testLevel": "system-testing",
+      "perspectiveCategoryIds": [
+        "TPC-06"
+      ]
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-V01",
+      "statement": "V02構成では EH-100 は発券機起動のみを指す。発券機の起動処理で残数アイコン切替閾値と設定情報（号機番号）を取得し、起動処理終了後に開始画面（S-001-01）を表示することを確認する。",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-V02",
+      "statement": "V02構成では EH-210 は発券機の会員向けログインのみを指し、入場券の有効/無効判定は含まない。ログイン用QRコードによるログイン（S-007-02）とキーボード入力によるログイン（S-007-03）の2方法で会員認証が成立することを確認する。",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-V03",
+      "statement": "入場ゲートがQRコードを読み取り、QRコード有効/無効判定に必要な情報を取得することを確認する。V02構成では読み取り情報を外部の判定機器へ送信する経路が存在しない。",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-V04",
+      "statement": "入場ゲート内で保持している「入場券情報一覧」に該当する未使用の入場券があるとき、入場ゲート単独で有効と判定し、状態を未使用から使用済へ変更することを確認する。",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "高",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-V05",
+      "statement": "入場券情報一覧に無いQRコード、状態が使用済または無効の入場券、および入場用QRコードの形式を満たさないQRコードのいずれでも、入場ゲート単独で無効と判定することを確認する。",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "高",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-V06",
+      "statement": "入場ゲートが保持する「入場券情報一覧」が、入場ゲート起動時・新しい時間枠の開始時・いますぐ入場券の購入を契機とする更新通知時の3タイミングで入場管理から取得され現在の情報に上書きされることを確認する。",
+      "perspectiveCategoryId": "TPC-06",
+      "priority": "高",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-V07",
+      "statement": "新しい時間枠の開始時に、あたらしい「入場券情報一覧」の取得に先立って状態が未使用のままだった入場券情報が無効へ変更され、その状態が入場管理経由でWebチケットシステム側の予約管理DBサーバへ反映されることを確認する。",
+      "perspectiveCategoryId": "TPC-05",
+      "priority": "高",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-V08",
+      "statement": "EG-220 の判定結果に基づき、入場ゲートの開閉制御が「入場可能入場券」時と「入場不能入場券」時で切り替わることを確認する。",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-V09",
+      "statement": "V02構成の連携経路として、時間枠の開始時刻またはいますぐ入場券の購入（決済完了）時に入場管理が購入された入場券情報を入場ゲートへ渡し、入場ゲートが自身の入場券情報へコピーまたは追加することを確認する。",
+      "perspectiveCategoryId": "TPC-06",
+      "priority": "高",
+      "containerIds": [
+        "TCN-06"
+      ]
+    },
+    {
+      "id": "TC-V10",
+      "statement": "入場者が入場用QRコードを入場ゲートにタッチして入場した時、入場ゲートが状態を使用済へ変更した分の情報を入場管理へ渡し、入場管理が自身の入場券情報とクラウド2の購入情報を更新することを確認する。",
+      "perspectiveCategoryId": "TPC-06",
+      "priority": "高",
+      "containerIds": [
+        "TCN-06"
+      ]
+    },
+    {
+      "id": "TC-V11",
+      "statement": "入場管理が60秒毎に、入場券情報のうち状態が使用済へ変更された分の情報をクラウド2の購入情報へ反映することを確認する。",
+      "perspectiveCategoryId": "TPC-06",
+      "priority": "中",
+      "containerIds": [
+        "TCN-06"
+      ]
+    },
+    {
+      "id": "TC-V12",
+      "statement": "入場管理が1秒周期で稼働状態を配信してACKを要求し、3回連続でACKの応答がない構成機器を障害発生と認識することを確認する。V02構成の定期通信の宛先は発券機・入場ゲート・クラウド2・残数表示インジケータ1・残数表示インジケータ2の5系統である。",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-V13",
+      "statement": "Web予約購入で、指定時間帯の時間枠指定ボタン表記が入場券残数によって切り替わり、購入確認時に残数が無い場合はエラーメッセージが表示されて遷移しないことを確認する。2025年版と本文が同一の文書のため、構成差の影響を受けないことの対照として扱う。",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-V14",
+      "statement": "Web予約購入で、購入枚数が合計0枚のときと合計10枚以上のときにそれぞれエラーメッセージが表示され、遷移しないことを確認する。2025年版と本文が同一の文書のため、構成差の影響を受けないことの対照として扱う。",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "containerIds": [
+        "TCN-05"
+      ]
+    }
+  ],
+  "testCases": [
+    {
+      "caseId": "TCS-V01",
+      "title": "V02構成の EH-100 が発券機起動のみを指し、起動処理終了後に開始画面へ遷移することの確認",
+      "testConditionId": "TC-V01",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-100"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V01-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "シナリオテスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "発券機の電源",
+          "value": "OFF"
+        },
+        {
+          "name": "入場管理",
+          "value": "稼働中"
+        },
+        {
+          "name": "発券機内の設定情報",
+          "value": "号機番号=1号機"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "動物園管理者の操作で発券機を起動する",
+          "expected": "発券機のハードウェア初期化等必要な起動処理が実行される"
+        },
+        {
+          "no": 2,
+          "action": "発券機から入場管理へ残数アイコン切替閾値の情報を要求させる",
+          "expected": "入場管理から残数アイコン切替閾値の情報が取得される"
+        },
+        {
+          "no": 3,
+          "action": "発券機内に保存されている設定情報（号機番号）の読み取り結果を確認する",
+          "expected": "自機が1号機であると判断される"
+        },
+        {
+          "no": 4,
+          "action": "起動処理終了後の発券機画面を確認する",
+          "expected": "発券機画面に開始画面（S-001-01）を表示する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "発券機の画面",
+          "value": "開始画面（S-001-01）"
+        },
+        {
+          "name": "発券機が保持する残数アイコン切替閾値",
+          "value": "取得済み"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 359,
+          "endLine": 377,
+          "label": "EH-100 発券機起動"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06",
+        "TSD-07"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V02",
+      "title": "V02構成の EH-210 が発券機の会員ログインのみを指し、2つのログイン方法で会員認証が成立することの確認",
+      "testConditionId": "TC-V02",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EH-210"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V02-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "シナリオテスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "発券機の画面",
+          "value": "開始画面（S-001-01）"
+        },
+        {
+          "name": "Webチケットシステム側の会員登録",
+          "value": "登録済み"
+        },
+        {
+          "name": "入場管理とWebチケットシステム間のVPN",
+          "value": "接続済み"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "開始画面から会員情報入力（S-007-01）画面へ遷移させる",
+          "expected": "ログイン方法の選択のために会員情報入力（S-007-01）画面を提供する"
+        },
+        {
+          "no": 2,
+          "action": "ログイン用QRコードによるログイン（S-007-02）を選択し、会員情報QRコードを発券機のQRコードリーダーにかざす",
+          "expected": "会員メールアドレスとパスワードを読み込ませ、ログインする"
+        },
+        {
+          "no": 3,
+          "action": "Webチケットシステム側の会員認証結果を確認する",
+          "expected": "ログインが成功した場合、発券機画面に入場者が確認するために、会員情報を表示（S-007-04）する"
+        },
+        {
+          "no": 4,
+          "action": "一度ログアウトさせ、キーボード入力によるログイン（S-007-03）を選択して会員メールアドレスとパスワードを発券機画面のタッチ操作により入力する",
+          "expected": "会員情報を表示（S-007-04）する"
+        },
+        {
+          "no": 5,
+          "action": "EH-210 の処理範囲に入場券の有効/無効判定が含まれないことを、入場ゲート側の判定処理を停止した状態で確認する",
+          "expected": "EH-210 ログインは入場ゲート側の判定処理の停止に影響されず会員認証を完了する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "発券機の会員ログイン状態",
+          "value": "ログイン済み"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 503,
+          "endLine": 530,
+          "label": "EH-210 ログイン"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-06",
+        "TSD-07"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V03",
+      "title": "EG-210 が読み取り情報を入場ゲート内の判定へ渡し、外部の判定機器への送信経路を持たないことの確認",
+      "testConditionId": "TC-V03",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-210"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V03-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "シナリオテスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        },
+        {
+          "name": "入場ゲートが保持する入場券情報一覧",
+          "value": "現在枠分を取得済み"
+        },
+        {
+          "name": "入場管理",
+          "value": "稼働中"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "印字された入場用QRコードを入場ゲートのQRコードリーダーにかざす",
+          "expected": "QRコード有効/無効判定に必要な情報を取得する"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲートから外部へ送出された通信を計測する",
+          "expected": "読み取り情報の送信先は入場ゲート内の判定処理のみで、入場ゲート外の判定機器への送信は発生しない"
+        },
+        {
+          "no": 3,
+          "action": "入場管理との通信を切断した状態で同じ入場用QRコードをかざす",
+          "expected": "入場ゲート内で保持している「入場券情報一覧」を用いて判定が継続する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲート外への判定要求",
+          "value": "0件"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1100,
+          "endLine": 1106,
+          "label": "EG-210 QRコード読み取り"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V04",
+      "title": "入場券情報一覧に存在する入場用QRコードで未使用の入場券が有効と判定され使用済へ変わることの確認",
+      "testConditionId": "TC-V04",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-210"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "EP:入場券情報一覧の入場券状態:未使用",
+        "EP:入場ゲートに提示されたQRコード:入場券情報一覧に存在する入場用QRコード",
+        "ST:TR-01"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場ゲートに提示されたQRコード",
+          "value": "入場券情報一覧に存在する入場用QRコード"
+        },
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "未使用"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場券情報一覧に存在する入場用QRコードを入場ゲートにかざす",
+          "expected": "読み取ったQRコード情報から検索用データとハッシュ値が取得される"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲート内で保持している入場券情報一覧との照合結果を確認する",
+          "expected": "状態が未使用の入場券が該当し、入場券の有効/無効の判定結果は有効となる"
+        },
+        {
+          "no": 3,
+          "action": "判定後の入場券情報一覧の該当入場券の状態を確認する",
+          "expected": "状態が未使用から使用済へ変更される"
+        },
+        {
+          "no": 4,
+          "action": "入場ゲートのハードウェア動作を確認する",
+          "expected": "「入場可能入場券」時のハードウェア制御が実行される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "使用済"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1110,
+          "endLine": 1128,
+          "label": "EG-220 QRコード有効/無効判定"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V05",
+      "title": "状態が使用済の入場券のQRコードが無効と判定されることの確認",
+      "testConditionId": "TC-V05",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "EP:入場券情報一覧の入場券状態:使用済"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "使用済"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場券情報一覧の状態が使用済である入場券の入場用QRコードを入場ゲートにかざす",
+          "expected": "使用済または無効状態の入場券は入場不可と判断する"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲートのハードウェア動作を確認する",
+          "expected": "「入場不能入場券」時のハードウェア制御が実行される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "使用済"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 194,
+          "endLine": 196,
+          "label": "入場券情報の状態"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V06",
+      "title": "状態が無効の入場券のQRコードが無効と判定されることの確認",
+      "testConditionId": "TC-V05",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "EP:入場券情報一覧の入場券状態:無効"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "無効"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場券情報一覧の状態が無効である入場券の入場用QRコードを入場ゲートにかざす",
+          "expected": "使用済または無効状態の入場券は入場不可と判断する"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲートのハードウェア動作を確認する",
+          "expected": "「入場不能入場券」時のハードウェア制御が実行される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "無効"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 194,
+          "endLine": 196,
+          "label": "入場券情報の状態"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V07",
+      "title": "「入場券情報一覧」に無いQRコードが無効と判定されることの確認",
+      "testConditionId": "TC-V05",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "EP:入場ゲートに提示されたQRコード:入場券情報一覧に無いQRコード"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場ゲートに提示されたQRコード",
+          "value": "入場券情報一覧に無いQRコード"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "翌日の時間枠で購入した入場券の入場用QRコードを入場ゲートにかざす",
+          "expected": "入場ゲートは入場可能な入場券情報に無い入場券を入場不可と判断する"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲートのハードウェア動作を確認する",
+          "expected": "「入場不能入場券」時のハードウェア制御が実行される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートが保持する入場券情報一覧",
+          "value": "変化なし"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 190,
+          "endLine": 193,
+          "label": "入場ゲートが持つ入場券情報"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V08",
+      "title": "入場用QRコードの形式を満たさないQRコードが無効と判定されることの確認",
+      "testConditionId": "TC-V05",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "EP:入場ゲートに提示されたQRコード:入場用QRコードの形式を満たさないQRコード"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場ゲートに提示されたQRコード",
+          "value": "入場用QRコードの形式を満たさないQRコード"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "ログイン用QRコードを入場ゲートのQRコードリーダーにかざす",
+          "expected": "入場用QRコードの形式を満たさないQRコードだった場合、「入場不能入場券」時のハードウェア制御が実行される"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲートが保持する入場券情報一覧の状態を確認する",
+          "expected": "入場券情報一覧の各入場券の状態は変化しない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートが保持する入場券情報一覧",
+          "value": "変化なし"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1129,
+          "endLine": 1132,
+          "label": "EG-220 無効時のハードウェア制御"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V09",
+      "title": "入場券情報一覧が3タイミングで入場管理から取得され現在の情報に上書きされることの確認",
+      "testConditionId": "TC-V06",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        },
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V06-01"
+      ],
+      "perspectiveCategoryId": "TPC-06",
+      "testType": "シナリオテスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場ゲートの電源",
+          "value": "OFF"
+        },
+        {
+          "name": "入場管理が保持する入場券情報一覧",
+          "value": "当日分を保持済み"
+        },
+        {
+          "name": "現在時刻",
+          "value": "時間枠の開始時刻の直前"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場ゲートを起動する",
+          "expected": "入場ゲート起動時に入場管理から初回分の有効な入場券情報一覧が取得され現在の情報に上書きされる"
+        },
+        {
+          "no": 2,
+          "action": "時間枠の開始時刻（毎時00分と30分のいずれか）まで待機する",
+          "expected": "新しい時間枠の開始時に入場券情報一覧が取得され現在の情報に上書きされる"
+        },
+        {
+          "no": 3,
+          "action": "別の発券機でいますぐ入場券を購入して決済を完了させる",
+          "expected": "入場管理でもっている「入場券情報一覧」がいますぐ入場券の購入を契機に更新されたことが通知された時、入場ゲートが追加分情報を取得する"
+        },
+        {
+          "no": 4,
+          "action": "入場ゲートが保持する入場券情報一覧の内容を入場管理側と突き合わせる",
+          "expected": "入場ゲートは現在枠で入場可能な入場券情報を持っている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートが保持する入場券情報一覧",
+          "value": "現在枠分の最新状態"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1133,
+          "endLine": 1137,
+          "label": "入場券情報一覧の取得タイミング"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 1800,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V10",
+      "title": "新しい時間枠の開始時に未使用のままだった入場券が無効へ変わることの確認",
+      "testConditionId": "TC-V07",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "state-transition",
+      "coverageTargets": [
+        "ST:TR-02"
+      ],
+      "perspectiveCategoryId": "TPC-05",
+      "testType": "状態遷移テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "未使用"
+        },
+        {
+          "name": "現在時刻",
+          "value": "時間枠の開始時刻の直前"
+        },
+        {
+          "name": "入場管理とWebチケットシステム間のVPN",
+          "value": "接続済み"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "現在枠の入場券を使用せずに時間枠の開始時刻まで待機する",
+          "expected": "あたらしい入場券情報一覧の取得に先立ち、状態が未使用のままだった入場券情報は、無効へ変更する"
+        },
+        {
+          "no": 2,
+          "action": "変更後の入場券情報の状態が予約管理DBサーバへ届いたかを確認する",
+          "expected": "状態の情報は入場管理経由でWebチケットシステム側の予約管理DBサーバに送信され該当する入場券分の購入情報の状態に反映される"
+        },
+        {
+          "no": 3,
+          "action": "無効へ変更された入場券の入場用QRコードを入場ゲートにかざす",
+          "expected": "状態が無効の入場券は入場不可と判断される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "無効"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1141,
+          "endLine": 1146,
+          "label": "未使用のままだった入場券情報の無効化"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-06",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 1800,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V11",
+      "title": "時間枠の終了時刻経過により未使用の入場券が入場ゲート側で無効へ変わることの確認",
+      "testConditionId": "TC-V07",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "state-transition",
+      "coverageTargets": [
+        "ST:TR-03"
+      ],
+      "perspectiveCategoryId": "TPC-05",
+      "testType": "状態遷移テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "未使用"
+        },
+        {
+          "name": "現在時刻",
+          "value": "時間枠の終了時刻の直前"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場券を使用せずに時間枠の終了時刻を経過させる",
+          "expected": "時間枠の終了時刻が経過した入場券の状態は入場ゲート側で無効に変更する"
+        },
+        {
+          "no": 2,
+          "action": "入場管理側が保持する入場券情報を確認する",
+          "expected": "入場管理側の入場券情報にも無効へ変更した状態が反映される"
+        },
+        {
+          "no": 3,
+          "action": "終了時刻を経過した入場券の入場用QRコードを入場ゲートにかざす",
+          "expected": "状態が無効となった入場券は入場不可と判断される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "無効"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 203,
+          "endLine": 204,
+          "label": "時間枠の終了時刻経過時の状態変更"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 1800,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V12",
+      "title": "EG-310 のゲート開閉制御が有効判定時と無効判定時で切り替わることの確認",
+      "testConditionId": "TC-V08",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EG-310"
+        },
+        {
+          "kind": "requirement",
+          "id": "EG-220"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V08-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "入場ゲートの扉",
+          "value": "閉"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "有効と判定される入場用QRコードを入場ゲートにかざす",
+          "expected": "「入場可能入場券」時のハードウェア制御として入場ゲートの扉が開く"
+        },
+        {
+          "no": 2,
+          "action": "無効と判定される入場用QRコードを入場ゲートにかざす",
+          "expected": "「入場不能入場券」時のハードウェア制御として入場ゲートの扉が閉のまま保たれる"
+        },
+        {
+          "no": 3,
+          "action": "EG-220 の判定処理を停止させた状態で入場用QRコードをかざす",
+          "expected": "判定結果が得られないため入場ゲートの扉は開かない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートの扉",
+          "value": "閉"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1151,
+          "endLine": 1154,
+          "label": "EG-310 ゲート開閉制御"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V13",
+      "title": "入場管理から入場ゲートへの入場券情報配信が2契機で成立することの確認",
+      "testConditionId": "TC-V09",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V09-01"
+      ],
+      "perspectiveCategoryId": "TPC-06",
+      "testType": "連携テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場管理",
+          "value": "稼働中"
+        },
+        {
+          "name": "入場ゲートの電源",
+          "value": "ON"
+        },
+        {
+          "name": "クラウド2の購入情報",
+          "value": "当日分の予約購入済み"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "時間枠の開始時刻まで待機して入場管理の動作を確認する",
+          "expected": "入場管理はクラウド2に問い合わせ、5-2.購入情報から該当時間枠の購入情報を取得し、1-4.入場券情報を生成する"
+        },
+        {
+          "no": 2,
+          "action": "入場ゲート側の入場券情報を確認する",
+          "expected": "入場ゲートは入場管理から1-4.入場券情報を取得し、3-1.入場券情報にコピーする"
+        },
+        {
+          "no": 3,
+          "action": "発券機でいますぐ入場券を購入して決済を完了させる",
+          "expected": "入場管理はクラウド2に問い合わせ、5-2.購入情報から該当するいますぐ入場券の購入情報を取得し、1-4.入場券情報を追加する"
+        },
+        {
+          "no": 4,
+          "action": "追加分が入場ゲートへ届いたことを確認する",
+          "expected": "入場ゲートは入場管理から1-4.入場券情報の追加分情報を取得し、3-1.入場券情報に追加する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートが保持する3-1.入場券情報",
+          "value": "現在枠分といますぐ入場券分を保持"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 169,
+          "endLine": 182,
+          "label": "②（入場管理→入場ゲート）"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-06",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 1800,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V14",
+      "title": "入場ゲートから入場管理へ使用済状態が反映されクラウド2の購入情報まで到達することの確認",
+      "testConditionId": "TC-V10",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V10-01"
+      ],
+      "perspectiveCategoryId": "TPC-06",
+      "testType": "連携テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場券情報一覧の入場券状態",
+          "value": "未使用"
+        },
+        {
+          "name": "入場管理",
+          "value": "稼働中"
+        },
+        {
+          "name": "クラウド2",
+          "value": "稼働中"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場者が入場用QRコードを入場ゲートにタッチして入場する",
+          "expected": "入場ゲートは使用された入場券情報の状態を｛使用済｝変更する"
+        },
+        {
+          "no": 2,
+          "action": "入場管理が取得した更新分を確認する",
+          "expected": "入場管理は3-1.入場券情報の更新分を取得し、1-4.入場券情報を更新する"
+        },
+        {
+          "no": 3,
+          "action": "クラウド2側の購入情報の状態を確認する",
+          "expected": "クラウド2の5-2.購入情報について、使用済に状態が変化した分の購入情報を更新する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "クラウド2の5-2.購入情報の状態",
+          "value": "使用済"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 184,
+          "endLine": 196,
+          "label": "②（入場ゲート→入場管理）"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-06"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V15",
+      "title": "入場管理からクラウド2への使用済状態の反映が反映周期で行われることの確認",
+      "testConditionId": "TC-V11",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-520"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-V11-01"
+      ],
+      "perspectiveCategoryId": "TPC-06",
+      "testType": "連携テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "入場管理の1-4.入場券情報",
+          "value": "使用済へ変更された分を保持"
+        },
+        {
+          "name": "クラウド2の5-2.購入情報の状態",
+          "value": "未使用"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "使用済状態のクラウド2反映周期（60秒）が経過するまで待機する",
+          "expected": "入場管理は入場券情報の状態｛未使用/使用済/無効｝をクラウド2の5-2.購入情報に反映する"
+        },
+        {
+          "no": 2,
+          "action": "反映周期の1周期分だけ経過した時点でクラウド2の5-2.購入情報を確認する",
+          "expected": "使用済へ変更された分の状態がクラウド2の5-2.購入情報に反映されている"
+        },
+        {
+          "no": 3,
+          "action": "入場管理とクラウド2の間のVPNを切断して同じ操作を繰り返す",
+          "expected": "反映は行われず、入場管理側の1-4.入場券情報の状態は使用済のまま保持される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "クラウド2の5-2.購入情報の状態",
+          "value": "使用済"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 214,
+          "endLine": 217,
+          "label": "③ 60秒毎の反映"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V16",
+      "title": "V02構成の死活状態通知が5系統へ配信され連続無応答回数が下限付近では障害と認識されないことの確認",
+      "testConditionId": "TC-V12",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-530"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-V12-01",
+        "BV:死活状態通知の連続無応答回数:0",
+        "BV:死活状態通知の連続無応答回数:1"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "境界値テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場管理",
+          "value": "稼働中"
+        },
+        {
+          "name": "死活状態通知の連続無応答回数",
+          "value": "0"
+        },
+        {
+          "name": "死活状態通知の配信周期",
+          "value": "1秒"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場管理が配信する死活状態通知の宛先を計測する",
+          "expected": "配信先は発券機・入場ゲート・クラウド2・残数表示インジケータ1・残数表示インジケータ2の5系統で、入場ゲート以外に判定機器への配信は発生しない"
+        },
+        {
+          "no": 2,
+          "action": "各機器がACKに応答する状態で死活状態通知の連続無応答回数が0のまま推移させる",
+          "expected": "ACKには各システム構成要素または機器に割り当てられた機器IDを含める"
+        },
+        {
+          "no": 3,
+          "action": "入場ゲートのACK応答を1回だけ止め、死活状態通知の連続無応答回数を1にする",
+          "expected": "入場管理は入場ゲートを障害発生と認識しない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートの稼働状態",
+          "value": "稼働中"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "72_だんだん動物園入場システムデータ連携仕様書",
+          "startLine": 335,
+          "endLine": 346,
+          "label": "生存確認のための定期通信"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-06",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V17",
+      "title": "死活状態通知の連続無応答回数が上限付近で障害発生と認識されることの確認",
+      "testConditionId": "TC-V12",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "EK-530"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "BV:死活状態通知の連続無応答回数:3",
+        "BV:死活状態通知の連続無応答回数:4"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "境界値テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "入場管理",
+          "value": "稼働中"
+        },
+        {
+          "name": "死活状態通知の連続無応答回数",
+          "value": "0"
+        },
+        {
+          "name": "死活監視の連続無応答許容回数",
+          "value": "3回"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "入場ゲートのACK応答を止め、死活状態通知の連続無応答回数を3にする",
+          "expected": "3回連続でACKが返ってこなかったら停止と判断"
+        },
+        {
+          "no": 2,
+          "action": "次回の稼働状態の配信内容を確認する",
+          "expected": "次回の稼働状態を配信時にその機器の稼働状態を「障害発生」に設定して、情報を配信する"
+        },
+        {
+          "no": 3,
+          "action": "さらにACK応答を止め、死活状態通知の連続無応答回数を4にする",
+          "expected": "だんだん動物園の管理者に通知する動作が継続し、稼働状態は「障害発生」のまま配信される"
+        },
+        {
+          "no": 4,
+          "action": "発券機画面の表示を確認する",
+          "expected": "発券機以外のシステム構成要素の1つ以上が非稼働状態になった場合、障害発生と判断して、発券機画面に障害停止画面（S-008-01）を表示する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "入場ゲートの稼働状態",
+          "value": "障害発生"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "11_園内チケットシステム要求仕様書",
+          "startLine": 1445,
+          "endLine": 1458,
+          "label": "EK-530 死活管理"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-06",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V18",
+      "title": "指定時間枠の入場券残数が閾値と同値および閾値超で時間枠指定ボタン表記が〇になることの確認",
+      "testConditionId": "TC-V13",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-020"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "BV:指定時間枠の入場券残数:10",
+        "BV:指定時間枠の入場券残数:11"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "境界値テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "Webチケットシステムのログイン状態",
+          "value": "ログイン済み"
+        },
+        {
+          "name": "指定時間枠の入場券残数",
+          "value": "残数アイコン切替閾値と同じ10"
+        },
+        {
+          "name": "表示画面",
+          "value": "W-008-01 予約購入画面"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "指定時間枠の入場券残数を残数アイコン切替閾値と同じ10とした状態で予約購入画面を表示する",
+          "expected": "「〇」ボタンの通知条件：入場券残数が10枚以上である。を満たし「〇」ボタンが表示される（残数アイコン切替閾値）"
+        },
+        {
+          "no": 2,
+          "action": "指定時間枠の入場券残数を11に増やして表示を更新する",
+          "expected": "「〇」ボタンが表示される"
+        },
+        {
+          "no": 3,
+          "action": "「〇」ボタンを押す",
+          "expected": "指定時間帯に指定時間枠を表示し、「お支払方法選択へ」ボタンを活性状態にする"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "「お支払方法選択へ」ボタン",
+          "value": "活性状態"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 653,
+          "endLine": 670,
+          "label": "W-008-01 時間枠指定ボタン表記"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-07"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V19",
+      "title": "指定時間枠の入場券残数が閾値未満および残数なしで表記が切り替わり購入できないことの確認",
+      "testConditionId": "TC-V13",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-020"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "BV:指定時間枠の入場券残数:1",
+        "BV:指定時間枠の入場券残数:0"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "境界値テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "Webチケットシステムのログイン状態",
+          "value": "ログイン済み"
+        },
+        {
+          "name": "指定時間枠の入場券残数",
+          "value": "1"
+        },
+        {
+          "name": "表示画面",
+          "value": "W-008-01 予約購入画面"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "指定時間枠の入場券残数を1とした状態で予約購入画面を表示する",
+          "expected": "「△:残<入場券残数>」ボタンの通知条件：入場券残数が10枚未満である。を満たし残数が併記される（残数アイコン切替閾値）"
+        },
+        {
+          "no": 2,
+          "action": "指定時間枠の入場券残数を0に減らして表示を更新する",
+          "expected": "「×」ボタンが表示され、「×」ボタンは、非活性状態になっており、入場者は押せない。"
+        },
+        {
+          "no": 3,
+          "action": "指定時間枠の入場券残数が0になった状態で「お支払方法選択へ」ボタンを押す",
+          "expected": "エラーメッセージ通知エリアにエラーメッセージ(E-020 購入できる入場券残数がありません。)を表示し、遷移しない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "表示画面",
+          "value": "W-008-01 予約購入画面"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 653,
+          "endLine": 677,
+          "label": "W-008-01 残数なし時のエラー"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-07"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V20",
+      "title": "Web予約購入の購入枚数が下限付近で未入力エラーと購入継続が切り替わることの確認",
+      "testConditionId": "TC-V14",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-015"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "BV:Web予約購入の購入枚数(合計):0",
+        "BV:Web予約購入の購入枚数(合計):1"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "境界値テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "Webチケットシステムのログイン状態",
+          "value": "ログイン済み"
+        },
+        {
+          "name": "Web予約購入の購入枚数(合計)",
+          "value": "0"
+        },
+        {
+          "name": "指定時間枠の入場券残数",
+          "value": "残数アイコン切替閾値を超える枚数"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "「購入枚数」ドロップダウンリストを両方とも0枚選択のままにしてWeb予約購入の購入枚数(合計)が0となる状態で「お支払方法選択へ」ボタンを押す",
+          "expected": "エラーメッセージ(E-015 購入枚数が入力されていません。)を表示し、遷移しない"
+        },
+        {
+          "no": 2,
+          "action": "おとなを1枚選択してWeb予約購入の購入枚数(合計)が1となる状態にする",
+          "expected": "「お支払方法選択へ」ボタンを活性状態にする"
+        },
+        {
+          "no": 3,
+          "action": "「お支払方法選択へ」ボタンを押す",
+          "expected": "W-008-02 お支払方法選択画面に遷移する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "表示画面",
+          "value": "W-008-02 お支払方法選択画面"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 1092,
+          "endLine": 1094,
+          "label": "E-015 購入枚数が入力されていません。"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-07"
+      ],
+      "estimatedDurationSeconds": 300,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-V21",
+      "title": "Web予約購入の購入枚数が上限付近で購入継続と上限超エラーが切り替わることの確認",
+      "testConditionId": "TC-V14",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "W-008-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "E-016"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "BV:Web予約購入の購入枚数(合計):9",
+        "BV:Web予約購入の購入枚数(合計):10"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "境界値テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "Webチケットシステムのログイン状態",
+          "value": "ログイン済み"
+        },
+        {
+          "name": "Web予約購入の購入枚数(合計)",
+          "value": "Web予約購入の購入枚数の上限である9"
+        },
+        {
+          "name": "指定時間枠の入場券残数",
+          "value": "残数アイコン切替閾値を超える枚数"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "「購入枚数」ドロップダウンリストでWeb予約購入の購入枚数(合計)が上限の9となる組み合わせを選択して「お支払方法選択へ」ボタンを押す",
+          "expected": "W-008-02 お支払方法選択画面に遷移する"
+        },
+        {
+          "no": 2,
+          "action": "予約購入画面へ戻り、Web予約購入の購入枚数(合計)が10となる組み合わせを選択する",
+          "expected": "「購入枚数」ドロップダウンリストの選択を反映して「時間枠指定」ボタン表記を更新する"
+        },
+        {
+          "no": 3,
+          "action": "その状態で「お支払方法選択へ」ボタンを押す",
+          "expected": "エラーメッセージ(E-016 購入枚数は合計9枚までです。)を表示し、遷移しない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "表示画面",
+          "value": "W-008-01 予約購入画面"
+        }
+      ],
+      "sourceRefs": [
+        {
+          "document": "21_Webチケットシステム要求仕様書",
+          "startLine": 1096,
+          "endLine": 1096,
+          "label": "E-016 購入枚数は合計9枚までです。"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-07"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    }
+  ]
+}

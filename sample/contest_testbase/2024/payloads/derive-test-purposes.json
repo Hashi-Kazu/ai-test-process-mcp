@@ -1,0 +1,527 @@
+{
+  "projectName": "だんだん動物園入場システム（2024年版テストベース / V02構成・縮小プローブ）",
+  "expectations": [
+    {
+      "id": "EXP-01",
+      "statement": "システムが長時間稼働することを保証したい",
+      "requesterRole": "だんだん動物園（テスト重点項目）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 127,
+        "endLine": 127,
+        "heading": "今回のテスト設計にあたっての考慮事項",
+        "label": "テスト重点項目1"
+      }
+    },
+    {
+      "id": "EXP-02",
+      "statement": "一度に制限人数以上の来場者が来てしまう事態は回避したいために時間枠の重複販売が発生しないことを保証したい",
+      "requesterRole": "だんだん動物園（テスト重点項目）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 128,
+        "endLine": 129,
+        "heading": "今回のテスト設計にあたっての考慮事項",
+        "label": "テスト重点項目2"
+      }
+    },
+    {
+      "id": "EXP-03",
+      "statement": "今回の施策により、確実に「密回避」が達成できたことの効果を示したい",
+      "requesterRole": "だんだん動物園（テスト重点項目）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 130,
+        "endLine": 132,
+        "heading": "今回のテスト設計にあたっての考慮事項",
+        "label": "テスト重点項目3（既存の仕組みで達成済みの注記付き）"
+      }
+    },
+    {
+      "id": "EXP-04",
+      "statement": "園内およびWebでの予約購入、発券そして入場の流れについて特に確認をお願いしたい",
+      "requesterRole": "だんだん動物園（前提）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 123,
+        "endLine": 123,
+        "heading": "今回のテスト設計にあたっての考慮事項",
+        "label": "前提3"
+      }
+    },
+    {
+      "id": "EXP-05",
+      "statement": "既存の入場システムから差分のない箇所については、現在までの運用実績から、相応の信頼性は確保されていると考えている",
+      "requesterRole": "だんだん動物園（前提）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 121,
+        "endLine": 122,
+        "heading": "今回のテスト設計にあたっての考慮事項",
+        "label": "前提2"
+      }
+    },
+    {
+      "id": "EXP-06",
+      "statement": "既存システムと新システムの差分を強くテストしていただきたい",
+      "requesterRole": "だんだん動物園（テスト設計スコープ）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 305,
+        "endLine": 306,
+        "heading": "テスト設計スコープ",
+        "label": "強くテストをしていただきたい点1"
+      }
+    },
+    {
+      "id": "EXP-07",
+      "statement": "リスク分析などを行い、ご提案いただきたい",
+      "requesterRole": "だんだん動物園（テスト設計スコープ）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 308,
+        "endLine": 308,
+        "heading": "テスト設計スコープ",
+        "label": "強くテストをしていただきたい点3"
+      }
+    },
+    {
+      "id": "EXP-08",
+      "statement": "開発完了報告には、特に、「追加・変更点に品質上問題がないこと」を示す必要がある",
+      "requesterRole": "だんだん市（補助金交付元）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 112,
+        "endLine": 115,
+        "heading": "開発背景",
+        "label": "補助金申請と開発完了報告"
+      }
+    },
+    {
+      "id": "EXP-09",
+      "statement": "決済システムはすでにテストエビデンスがあるためスコープ外として扱ってほしい",
+      "requesterRole": "だんだん動物園（テスト設計スコープ）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 297,
+        "endLine": 299,
+        "heading": "テスト設計スコープ",
+        "label": "スコープ外1"
+      }
+    },
+    {
+      "id": "EXP-10",
+      "statement": "入場ゲートは既存と変更点がないためスコープ外として扱ってほしい",
+      "requesterRole": "だんだん動物園（テスト設計スコープ）",
+      "sourceRef": {
+        "document": "01_だんだん動物園入場システムテスト依頼書_20240513",
+        "startLine": 300,
+        "endLine": 301,
+        "heading": "テスト設計スコープ",
+        "label": "スコープ外2（V02構成では入場ゲートはスコープ外）"
+      }
+    }
+  ],
+  "testRequirements": [
+    {
+      "id": "TR-01",
+      "line": "management",
+      "statement": "V02縮小プローブの範囲で、長時間稼働の確認対象を死活管理と定期通信に限定して確認する",
+      "expectationIds": [
+        "EXP-01"
+      ],
+      "rationale": "01号:127 の重点項目1に対応する。プローブは規模を絞っているため対象機能を限定する"
+    },
+    {
+      "id": "TR-02",
+      "line": "engineering",
+      "statement": "入場券残数と購入枚数上限の入力制約が、重複販売を許す方向へ緩まないことを確認する",
+      "expectationIds": [
+        "EXP-02"
+      ],
+      "rationale": "01号:128-129 の重複販売防止に対応する"
+    },
+    {
+      "id": "TR-03",
+      "line": "management",
+      "statement": "密回避の効果提示は既存の仕組みの退行検知として扱う",
+      "expectationIds": [
+        "EXP-03"
+      ],
+      "rationale": "01号:130-132 が既に達成していると注記しているため"
+    },
+    {
+      "id": "TR-04",
+      "line": "engineering",
+      "statement": "発券機のログインから入場ゲートのQRコード読み取り・判定・開閉制御までを一続きの流れとして確認する",
+      "expectationIds": [
+        "EXP-04"
+      ],
+      "rationale": "01号:123 の依頼を利用手順の通し確認として展開する"
+    },
+    {
+      "id": "TR-05",
+      "line": "management",
+      "statement": "既存の入場システムから差分のない箇所は運用実績を信頼性の根拠として扱う",
+      "expectationIds": [
+        "EXP-05"
+      ],
+      "rationale": "01号:121-122 の前提に従う"
+    },
+    {
+      "id": "TR-06",
+      "line": "engineering",
+      "statement": "V02構成では入場ゲートが単独でQRコード有効/無効判定を行うため、判定と入場券情報一覧の上書きタイミングを入場ゲート内で確認する",
+      "expectationIds": [
+        "EXP-06",
+        "EXP-10"
+      ],
+      "rationale": "V02構成では判定を仲介する上位機器が存在せず、QRコード有効/無効判定が入場ゲート単独で完結する"
+    },
+    {
+      "id": "TR-07",
+      "line": "management",
+      "statement": "プロダクトリスク分析の結果を提示し、優先順位の根拠として使う",
+      "expectationIds": [
+        "EXP-07"
+      ],
+      "rationale": "01号:308 の依頼に対応する"
+    },
+    {
+      "id": "TR-08",
+      "line": "management",
+      "statement": "追加・変更点に品質上問題がないことを示せる形で成果物を構成する",
+      "expectationIds": [
+        "EXP-08"
+      ],
+      "rationale": "01号:112-115 の開発完了報告の要件に対応する"
+    },
+    {
+      "id": "TR-09",
+      "line": "engineering",
+      "statement": "入場管理・入場ゲート・クラウド2の各機器間データのタイミング規定を確認する",
+      "expectationIds": [
+        "EXP-04"
+      ],
+      "rationale": "72号の機器間データはV02構成でも園内側とWeb側の結合点である"
+    },
+    {
+      "id": "TR-10",
+      "line": "management",
+      "statement": "決済システム本体は確認対象から外す",
+      "expectationIds": [
+        "EXP-09"
+      ],
+      "rationale": "01号:297-299 のスコープ外宣言に従う"
+    }
+  ],
+  "strategyStatements": [
+    {
+      "id": "ST-01",
+      "statement": "テスト条件・期待結果には必ず「文書名:行番号」形式の根拠位置を添え、9文書に記述の無い事項からは合否判定を作らない"
+    },
+    {
+      "id": "ST-02",
+      "statement": "V02構成では入場ゲートが単独で判定するため、判定ロジックと入場券情報一覧の同期を入場ゲート内に閉じた確認として設計する"
+    },
+    {
+      "id": "ST-03",
+      "statement": "本プローブは規模を意図的に絞ったV02縮小プローブであり、2025年版との件数比較は行わない"
+    },
+    {
+      "id": "ST-04",
+      "statement": "72号のタイミング規定のように値が確定していない事項は合否を確定させず、質問状候補として起票する"
+    }
+  ],
+  "purposes": [
+    {
+      "id": "TP-01",
+      "statement": "入場管理の死活管理と生存確認のための定期通信により、機器の停止が検知され長時間稼働が確認できることを確認する",
+      "testRequirementIds": [
+        "TR-01"
+      ],
+      "strategyIds": [
+        "ST-02"
+      ],
+      "successCriterion": "定期通信の間隔と応答なし判定が11号・72号の記述どおりに動作し、停止機器が検知される",
+      "priorityRank": 1,
+      "priorityRationale": "01号:127 でテスト重点項目の1番目に挙げられているため",
+      "relatedQualityCharacteristicIds": [
+        "QC-05",
+        "QC-05-02"
+      ]
+    },
+    {
+      "id": "TP-02",
+      "statement": "予約購入画面の購入枚数上限と入場券残数の判定により、時間枠の重複販売が発生しないことを確認する",
+      "testRequirementIds": [
+        "TR-02"
+      ],
+      "strategyIds": [
+        "ST-02"
+      ],
+      "successCriterion": "購入枚数の上限超過と残数不足のそれぞれで、21号に記述されたエラーコードとメッセージが返り購入が成立しない",
+      "priorityRank": 2,
+      "priorityRationale": "01号:128-129 でテスト重点項目の2番目に挙げられているため",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-02"
+      ]
+    },
+    {
+      "id": "TP-03",
+      "statement": "V02構成の入場ゲートが単独でQRコード有効/無効判定を行い、入場券情報一覧の上書きと未使用入場券の無効化が仕様どおりになることを確認する",
+      "testRequirementIds": [
+        "TR-06"
+      ],
+      "strategyIds": [
+        "ST-02"
+      ],
+      "successCriterion": "有効・無効の各条件で入場ゲート単独の判定結果が11号の記述と一致し、入場券情報一覧が3つの契機で上書きされる",
+      "priorityRank": 3,
+      "priorityRationale": "V02構成では判定が入場ゲート単独で完結し、入場可否の誤りに直結するため",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-01"
+      ]
+    },
+    {
+      "id": "TP-04",
+      "statement": "発券機のログインから入場ゲートの読み取り・判定・開閉制御までの流れが一続きに成立することを確認する",
+      "testRequirementIds": [
+        "TR-04"
+      ],
+      "strategyIds": [
+        "ST-02"
+      ],
+      "successCriterion": "発券機起動・ログインから入場ゲート通過までの通しシナリオが完了する",
+      "priorityRank": 4,
+      "priorityRationale": "01号:123 で予約購入・発券・入場の流れを特に確認するよう依頼されているため",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-01",
+        "QC-02-01"
+      ]
+    },
+    {
+      "id": "TP-05",
+      "statement": "72号の機器間データのタイミング規定が、入場管理・入場ゲート・クラウド2の各経路で満たされることを確認する",
+      "testRequirementIds": [
+        "TR-09"
+      ],
+      "strategyIds": [
+        "ST-04"
+      ],
+      "successCriterion": "各経路の通信契機と反映タイミングが72号の記述どおりであり、記述の無い経路は質問状候補として起票されている",
+      "priorityRank": 5,
+      "priorityRationale": "園内側とWeb側の結合点であり、V02構成でも差分の確認対象に残るため",
+      "relatedQualityCharacteristicIds": [
+        "QC-01-01",
+        "QC-04-01"
+      ]
+    },
+    {
+      "id": "TP-06",
+      "statement": "既存と差分のない箇所について、退行が発生していないことをリグレッション観点で確認する",
+      "testRequirementIds": [
+        "TR-03",
+        "TR-05",
+        "TR-07",
+        "TR-08",
+        "TR-10"
+      ],
+      "strategyIds": [
+        "ST-01",
+        "ST-03"
+      ],
+      "successCriterion": "差分のない箇所として選定した対象がすべて実行可能で、判定結果が改修前の期待と一致する",
+      "priorityRank": 6,
+      "priorityRationale": "01号:121-122 の前提により運用実績が信頼性の根拠として使えるため優先度を下げる",
+      "relatedQualityCharacteristicIds": [
+        "QC-07-02"
+      ]
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-V01",
+      "statement": "V02構成では EH-100 は発券機起動のみを指す。発券機の起動処理で残数アイコン切替閾値と設定情報（号機番号）を取得し、起動処理終了後に開始画面（S-001-01）を表示することを確認する。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-V02",
+      "statement": "V02構成では EH-210 は発券機の会員向けログインのみを指し、入場券の有効/無効判定は含まない。ログイン用QRコードによるログイン（S-007-02）とキーボード入力によるログイン（S-007-03）の2方法で会員認証が成立することを確認する。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-V03",
+      "statement": "入場ゲートがQRコードを読み取り、QRコード有効/無効判定に必要な情報を取得することを確認する。V02構成では読み取り情報を外部の判定機器へ送信する経路が存在しない。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-V04",
+      "statement": "入場ゲート内で保持している「入場券情報一覧」に該当する未使用の入場券があるとき、入場ゲート単独で有効と判定し、状態を未使用から使用済へ変更することを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-04"
+    },
+    {
+      "id": "TC-V05",
+      "statement": "入場券情報一覧に無いQRコード、状態が使用済または無効の入場券、および入場用QRコードの形式を満たさないQRコードのいずれでも、入場ゲート単独で無効と判定することを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-04"
+    },
+    {
+      "id": "TC-V06",
+      "statement": "入場ゲートが保持する「入場券情報一覧」が、入場ゲート起動時・新しい時間枠の開始時・いますぐ入場券の購入を契機とする更新通知時の3タイミングで入場管理から取得され現在の情報に上書きされることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-06"
+    },
+    {
+      "id": "TC-V07",
+      "statement": "新しい時間枠の開始時に、あたらしい「入場券情報一覧」の取得に先立って状態が未使用のままだった入場券情報が無効へ変更され、その状態が入場管理経由でWebチケットシステム側の予約管理DBサーバへ反映されることを確認する。",
+      "purposeIds": [
+        "TP-03"
+      ],
+      "perspectiveCategoryId": "TPC-05"
+    },
+    {
+      "id": "TC-V08",
+      "statement": "EG-220 の判定結果に基づき、入場ゲートの開閉制御が「入場可能入場券」時と「入場不能入場券」時で切り替わることを確認する。",
+      "purposeIds": [
+        "TP-04"
+      ],
+      "perspectiveCategoryId": "TPC-01"
+    },
+    {
+      "id": "TC-V09",
+      "statement": "V02構成の連携経路として、時間枠の開始時刻またはいますぐ入場券の購入（決済完了）時に入場管理が購入された入場券情報を入場ゲートへ渡し、入場ゲートが自身の入場券情報へコピーまたは追加することを確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-06"
+    },
+    {
+      "id": "TC-V10",
+      "statement": "入場者が入場用QRコードを入場ゲートにタッチして入場した時、入場ゲートが状態を使用済へ変更した分の情報を入場管理へ渡し、入場管理が自身の入場券情報とクラウド2の購入情報を更新することを確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-06"
+    },
+    {
+      "id": "TC-V11",
+      "statement": "入場管理が60秒毎に、入場券情報のうち状態が使用済へ変更された分の情報をクラウド2の購入情報へ反映することを確認する。",
+      "purposeIds": [
+        "TP-05"
+      ],
+      "perspectiveCategoryId": "TPC-06"
+    },
+    {
+      "id": "TC-V12",
+      "statement": "入場管理が1秒周期で稼働状態を配信してACKを要求し、3回連続でACKの応答がない構成機器を障害発生と認識することを確認する。V02構成の定期通信の宛先は発券機・入場ゲート・クラウド2・残数表示インジケータ1・残数表示インジケータ2の5系統である。",
+      "purposeIds": [
+        "TP-01"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-V13",
+      "statement": "Web予約購入で、指定時間帯の時間枠指定ボタン表記が入場券残数によって切り替わり、購入確認時に残数が無い場合はエラーメッセージが表示されて遷移しないことを確認する。2025年版と本文が同一の文書のため、構成差の影響を受けないことの対照として扱う。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    },
+    {
+      "id": "TC-V14",
+      "statement": "Web予約購入で、購入枚数が合計0枚のときと合計10枚以上のときにそれぞれエラーメッセージが表示され、遷移しないことを確認する。2025年版と本文が同一の文書のため、構成差の影響を受けないことの対照として扱う。",
+      "purposeIds": [
+        "TP-02"
+      ],
+      "perspectiveCategoryId": "TPC-03"
+    }
+  ],
+  "testTypeSelections": [
+    {
+      "name": "機能テスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-02",
+        "TP-03"
+      ],
+      "reason": "V02構成の入場ゲート単独判定と、予約購入画面の購入枚数上限・残数判定が11号・21号の記述どおりの結果を返すかを確認する必要があるため選定する"
+    },
+    {
+      "name": "シナリオテスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-04"
+      ],
+      "reason": "01号:123 が求める発券・入場の流れを、発券機起動からゲート開閉制御まで通しで実行する必要があるため選定する"
+    },
+    {
+      "name": "性能テスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "V02構成では入場ゲートが単独で判定するため機器間の判定応答時間の制約が存在せず、測定対象が無いため選定しない"
+    },
+    {
+      "name": "ロードテスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "V02縮小プローブでは同時購入・同時判定の条件を作る対象機能を含めていないため選定しない"
+    },
+    {
+      "name": "ストレステスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "限界を超える負荷での挙動は9文書に要求として記述が無く判定基準を置けないため選定しない"
+    },
+    {
+      "name": "ユーザビリティテスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "V02縮小プローブでは表示系の機能を対象に含めていないため選定しない"
+    },
+    {
+      "name": "ローカライゼーションテスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "9文書に多言語対応の要求記述が無いため選定しない"
+    },
+    {
+      "name": "保守性テスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "欠陥修正や機能追加のしやすさに関する要求が9文書に記述されていないため選定しない"
+    },
+    {
+      "name": "信頼性テスト",
+      "selected": true,
+      "purposeIds": [
+        "TP-01"
+      ],
+      "reason": "01号:127 の長時間稼働の保証に対して、死活管理の定期通信が要件で決めた間隔・条件のもとで動作するかを確認する必要があるため選定する"
+    },
+    {
+      "name": "移植性テスト",
+      "selected": false,
+      "purposeIds": [],
+      "reason": "V02縮小プローブではWebチケットシステムの対応ブラウザ構成を対象に含めていないため選定しない"
+    }
+  ],
+  "claimedPurposeCoveragePercent": 100,
+  "claimedTestTypeJustificationPercent": 100
+}
