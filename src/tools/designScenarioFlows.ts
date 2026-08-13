@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   emitHandoverPayloadInputShape,
@@ -16,6 +24,7 @@ import type {
   ScenarioOutcomeClass,
   ScenarioPassStep,
   ScenarioStepSpec,
+  TestBasisGroundingSubject,
   TestCaseCoverageTarget,
   UseCaseSpec,
 } from "../types.js";
@@ -528,7 +537,113 @@ export function buildScenarioFlowCoverageTargets(spec: ScenarioFlowSpec): TestCa
   return targets;
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * アクターID・ユースケースID・分岐ID・テスト条件IDのような入力内部で採番される値は対象にしない。
+ * featureIds は宣言母集団（テストベース側で定義された外部ID）なので ID 照合の対象にする。
+ */
+export function collectScenarioFlowGroundingSubjects(
+  spec: ScenarioFlowSpec
+): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  (spec.actors ?? []).forEach((a, i) => {
+    subjects.push({
+      kind: "label",
+      place: `actors[${i}].nameJa`,
+      target: a.id,
+      fieldLabel: "アクター名",
+      text: a.nameJa,
+    });
+  });
+  (spec.useCases ?? []).forEach((uc, i) => {
+    subjects.push({
+      kind: "label",
+      place: `useCases[${i}].nameJa`,
+      target: uc.id,
+      fieldLabel: "ユースケース名",
+      text: uc.nameJa,
+    });
+    (uc.preconditions ?? []).forEach((text, j) => {
+      subjects.push({
+        kind: "quotation",
+        place: `useCases[${i}].preconditions[${j}]`,
+        target: uc.id,
+        fieldLabel: "事前条件",
+        text,
+      });
+    });
+    (uc.postconditions ?? []).forEach((text, j) => {
+      subjects.push({
+        kind: "quotation",
+        place: `useCases[${i}].postconditions[${j}]`,
+        target: uc.id,
+        fieldLabel: "事後条件",
+        text,
+      });
+    });
+    (uc.mainFlow ?? []).forEach((step, j) => {
+      subjects.push({
+        kind: "quotation",
+        place: `useCases[${i}].mainFlow[${j}].action`,
+        target: uc.id,
+        fieldLabel: "ステップ動作",
+        text: step.action,
+      });
+    });
+    (uc.branches ?? []).forEach((br, j) => {
+      subjects.push({
+        kind: "label",
+        place: `useCases[${i}].branches[${j}].nameJa`,
+        target: `${uc.id}/${br.id}`,
+        fieldLabel: "分岐名",
+        text: br.nameJa,
+      });
+      subjects.push({
+        kind: "quotation",
+        place: `useCases[${i}].branches[${j}].trigger`,
+        target: `${uc.id}/${br.id}`,
+        fieldLabel: "分岐条件",
+        text: br.trigger,
+      });
+      (br.steps ?? []).forEach((step, k) => {
+        subjects.push({
+          kind: "quotation",
+          place: `useCases[${i}].branches[${j}].steps[${k}].action`,
+          target: `${uc.id}/${br.id}`,
+          fieldLabel: "ステップ動作",
+          text: step.action,
+        });
+      });
+    });
+  });
+  (spec.testConditions ?? []).forEach((tc, i) => {
+    if (tc.statement === undefined) return;
+    subjects.push({
+      kind: "quotation",
+      place: `testConditions[${i}].statement`,
+      target: tc.id,
+      fieldLabel: "テスト条件文",
+      text: tc.statement,
+    });
+  });
+  (spec.featureIds ?? []).forEach((id, i) => {
+    subjects.push({
+      kind: "id",
+      place: `featureIds[${i}]`,
+      target: id,
+      fieldLabel: "機能ID",
+      text: id,
+    });
+  });
+  return subjects;
+}
+
 export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectScenarioFlowGroundingSubjects(spec);
   const result = computeScenarioFlows(spec);
   const useCases = spec.useCases ?? [];
 
@@ -785,6 +900,8 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
     );
   }
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+
   // --- 10. 下流ツール引き渡しJSON ---
   lines.push("");
   lines.push("## 10. 下流ツール引き渡しJSON");
@@ -799,6 +916,21 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
       spec.emitHandoverPayload === true
     ).split("\n")
   );
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 11. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("design_scenario_flows", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
 
   const scenarioFlowSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
@@ -827,6 +959,7 @@ const scenarioStepShape = z.object({
 
 export const designScenarioFlowsInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   title: z.string().optional(),
   actors: z
     .array(

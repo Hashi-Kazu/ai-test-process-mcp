@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import {
   factorInventoryShape,
   renderFactorHandoverSection,
@@ -16,6 +24,7 @@ import type {
   DecisionTableRuleSpec,
   DecisionTableSelector,
   DecisionTableSpec,
+  TestBasisGroundingSubject,
   TestCaseCoverageTarget,
 } from "../types.js";
 
@@ -477,7 +486,69 @@ export function buildDecisionTableCoverageTargets(spec: DecisionTableSpec): Test
   });
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * 条件ID・動作IDのような入力内部で採番される値は対象にしない。
+ */
+export function collectDecisionTableGroundingSubjects(
+  spec: DecisionTableSpec
+): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  spec.conditions.forEach((c, i) => {
+    subjects.push({
+      kind: "quotation",
+      place: `conditions[${i}].statement`,
+      target: c.id,
+      fieldLabel: "条件文",
+      text: c.statement,
+    });
+    c.levels.forEach((lv, j) => {
+      subjects.push({
+        kind: "label",
+        place: `conditions[${i}].levels[${j}]`,
+        target: c.id,
+        fieldLabel: "条件水準値",
+        text: lv,
+      });
+    });
+  });
+  spec.actions.forEach((a, i) => {
+    subjects.push({
+      kind: "quotation",
+      place: `actions[${i}].statement`,
+      target: a.id,
+      fieldLabel: "動作文",
+      text: a.statement,
+    });
+  });
+  (spec.invalidCombinations ?? []).forEach((ic, i) => {
+    subjects.push({
+      kind: "quotation",
+      place: `invalidCombinations[${i}].reason`,
+      target: ic.id ?? `invalidCombinations[${i}]`,
+      fieldLabel: "組合せ不成立理由",
+      text: ic.reason,
+    });
+  });
+  (spec.rules ?? []).forEach((r, i) => {
+    if (r.note === undefined) return;
+    subjects.push({
+      kind: "quotation",
+      place: `rules[${i}].note`,
+      target: r.id ?? `rules[${i}]`,
+      fieldLabel: "ルール注記",
+      text: r.note,
+    });
+  });
+  return subjects;
+}
+
 export function renderDecisionTable(spec: DecisionTableSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectDecisionTableGroundingSubjects(spec);
   const tableId = spec.tableId ?? DEFAULT_DECISION_TABLE_ID;
   const result = computeDecisionTableRows(spec);
 
@@ -622,6 +693,8 @@ export function renderDecisionTable(spec: DecisionTableSpec): string {
     `- 条件数: ${result.conditionCount} / 全組合せ数: ${result.totalCombinationCount} / 無効: ${result.invalidCombinationCount} / 有効: ${result.validCombinationCount} / 動作定義済み: ${result.definedCombinationCount} / 未定義: ${result.undefinedCombinationIndexes.length} / 矛盾: ${result.conflictingCombinationIndexes.length} / 圧縮後列数: ${result.compressedRules.length} / 削減率: ${result.compressionRatioPercent.toFixed(1)}%`
   );
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+
   lines.push("");
   lines.push(
     ...renderFactorHandoverSection("## 8. 因子引き渡し検査(FHO-03)", {
@@ -636,6 +709,21 @@ export function renderDecisionTable(spec: DecisionTableSpec): string {
       })),
     }).split("\n")
   );
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 9. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("design_decision_table", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
 
   const decisionTableSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
@@ -659,6 +747,7 @@ const decisionTableSelectorSchema = z.record(z.string(), z.union([z.string(), z.
 
 export const designDecisionTableInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   tableId: z.string().optional().describe("Table id used to build coverage target ids (default MAIN)"),
   title: z.string().optional(),
   conditions: z

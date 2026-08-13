@@ -38,6 +38,14 @@ const EXPECTED_TOOL_NAMES = [
   "audit_coverage_balance",
   "audit_deliverable_consistency",
   "reexpand_threshold_changes",
+  "design_scenario_flows",
+  "design_test_data",
+  "design_config_matrix",
+  "design_decision_table",
+  "design_pairwise",
+  "design_test_architecture",
+  "analyze_data_flow_timing",
+  "select_regression_suite",
 ];
 
 /** 既存判定区分カタログが実際に持つID母集団（`catalogId` の照合先）。 */
@@ -65,7 +73,7 @@ function tableRows(markdown: string): string[] {
 }
 
 describe("inspectabilityCatalog - 静的表の不変条件", () => {
-  it("原文入力口を持つ11ツールを網羅し、いずれも実際の登録ツール名である", () => {
+  it("原文入力口を持つ19ツールを網羅し、いずれも実際の登録ツール名である", () => {
     expect(inspectabilityToolNames).toEqual(EXPECTED_TOOL_NAMES);
     for (const toolName of inspectabilityToolNames) {
       expect(registeredToolNames).toContain(toolName);

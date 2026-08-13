@@ -191,6 +191,7 @@ Tier 1〜3 を Phase A・B の一部として再配置し、同等ラインま�
 
 - A-1 `findUnsubstantiatedCoverageTargets`（網羅対象の実体裏付け／`testCaseAnalysis.ts`）
 - A-2 `findUngroundedQuotations`（引用文言・IDの実在照合／`generate_test_cases`・`review_test_specification` に optional `testBasisDocuments`）
+  - 対象は `design_*` 系8ツール（`design_scenario_flows` / `design_test_data` / `design_config_matrix` / `design_decision_table` / `design_pairwise` / `design_test_architecture` / `analyze_data_flow_timing` / `select_regression_suite`）へ拡張済み（Issue #212 / Jira `HSKZ-216`）。共有純関数は `src/testBasisGrounding.ts`、判定区分は `TBG-01`（ラベル）/ `TBG-02`（引用）/ `TBG-03`（ID）/ `TBG-04`（出典文書名）。指摘は各ツール既存の `findings` へマージせず独立節として出し、`testBasisDocuments` 未指定時は「検査不能(要確認)」として出す。
 - A-3 文書ダイジェスト出力（`src/documentDigest.ts`／documents系ツール共通）
 
 → 充足 #34。**この時点で「サンプルを作り直す」を実施すること**（未使用の `audit_id_population` / `reexpand_threshold_changes` / `generate_exploratory_charters` / `generate_user_story_map` / testsize を投入 → #22 も充足）。

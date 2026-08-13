@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildConditionTraceability, findUncoveredConditionIds } from "../testCaseAnalysis.js";
 import {
@@ -21,6 +29,7 @@ import {
 } from "../testArchitectureHandover.js";
 import type {
   TestArchitectureConditionInput,
+  TestBasisGroundingSubject,
   TestArchitectureDistributionRow,
   TestArchitectureFinding,
   TestArchitectureResult,
@@ -646,7 +655,150 @@ function mermaidLabel(value: string): string {
   return value.replace(/"/g, "'").replace(/[[\]]/g, " ");
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * コンテナID・テスト条件ID・観点カテゴリID(TPC-xx)・分割軸ID(TAX-xx)、
+ * および testTypes（「機能テスト」等の一般語）は対象にしない。
+ */
+export function collectTestArchitectureGroundingSubjects(
+  spec: TestArchitectureSpec
+): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  (spec.scope?.inScope ?? []).forEach((item, i) => {
+    subjects.push({
+      kind: "label",
+      place: `scope.inScope[${i}].item`,
+      target: "scope.inScope",
+      fieldLabel: "スコープ項目",
+      text: item.item,
+    });
+    if (item.reason !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `scope.inScope[${i}].reason`,
+        target: "scope.inScope",
+        fieldLabel: "スコープ理由",
+        text: item.reason,
+      });
+    }
+  });
+  (spec.scope?.outOfScope ?? []).forEach((item, i) => {
+    subjects.push({
+      kind: "label",
+      place: `scope.outOfScope[${i}].item`,
+      target: "scope.outOfScope",
+      fieldLabel: "スコープ項目",
+      text: item.item,
+    });
+    if (item.reason !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `scope.outOfScope[${i}].reason`,
+        target: "scope.outOfScope",
+        fieldLabel: "スコープ理由",
+        text: item.reason,
+      });
+    }
+  });
+  (spec.containers ?? []).forEach((c, i) => {
+    subjects.push({
+      kind: "label",
+      place: `containers[${i}].nameJa`,
+      target: c.id,
+      fieldLabel: "コンテナ名",
+      text: c.nameJa,
+    });
+    (c.targets ?? []).forEach((t, j) => {
+      subjects.push({
+        kind: "label",
+        place: `containers[${i}].targets[${j}]`,
+        target: c.id,
+        fieldLabel: "コンテナ対象",
+        text: t,
+      });
+    });
+    if (c.environment !== undefined) {
+      subjects.push({
+        kind: "label",
+        place: `containers[${i}].environment`,
+        target: c.id,
+        fieldLabel: "テスト環境",
+        text: c.environment,
+      });
+    }
+    subjects.push({
+      kind: "quotation",
+      place: `containers[${i}].responsibility`,
+      target: c.id,
+      fieldLabel: "コンテナ責務",
+      text: c.responsibility,
+    });
+    if (c.objective !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `containers[${i}].objective`,
+        target: c.id,
+        fieldLabel: "コンテナ目的",
+        text: c.objective,
+      });
+    }
+    if (c.note !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `containers[${i}].note`,
+        target: c.id,
+        fieldLabel: "コンテナ注記",
+        text: c.note,
+      });
+    }
+    (c.entryCriteria ?? []).forEach((text, j) => {
+      subjects.push({
+        kind: "quotation",
+        place: `containers[${i}].entryCriteria[${j}]`,
+        target: c.id,
+        fieldLabel: "開始基準",
+        text,
+      });
+    });
+    (c.exitCriteria ?? []).forEach((text, j) => {
+      subjects.push({
+        kind: "quotation",
+        place: `containers[${i}].exitCriteria[${j}]`,
+        target: c.id,
+        fieldLabel: "終了基準",
+        text,
+      });
+    });
+  });
+  (spec.testConditions ?? []).forEach((tc, i) => {
+    if (tc.target !== undefined) {
+      subjects.push({
+        kind: "label",
+        place: `testConditions[${i}].target`,
+        target: tc.id,
+        fieldLabel: "テスト対象",
+        text: tc.target,
+      });
+    }
+    if (tc.statement !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `testConditions[${i}].statement`,
+        target: tc.id,
+        fieldLabel: "テスト条件文",
+        text: tc.statement,
+      });
+    }
+  });
+  return subjects;
+}
+
 export function renderTestArchitecture(spec: TestArchitectureSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectTestArchitectureGroundingSubjects(spec);
   const result = computeTestArchitecture(spec);
   const containers = spec.containers ?? [];
   const testConditions = spec.testConditions ?? [];
@@ -954,6 +1106,8 @@ export function renderTestArchitecture(spec: TestArchitectureSpec): string {
     "- 本検査は渡されたコンテナ・テスト条件に対してのみ成立し、そもそも洗い出されていない観点の取りこぼしは検出できない。"
   );
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+
   // --- 10. 下流ツール引き渡しJSON ---
   lines.push("");
   lines.push("## 10. 下流ツール引き渡しJSON");
@@ -975,6 +1129,21 @@ export function renderTestArchitecture(spec: TestArchitectureSpec): string {
       emitHandover
     ).split("\n")
   );
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 11. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("design_test_architecture", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
 
   const testArchitectureSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
@@ -1005,6 +1174,7 @@ const testLevelEnum = z.enum([
 
 export const designTestArchitectureInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   title: z.string().optional(),
   scope: z
     .object({

@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import {
   factorInventoryShape,
   renderFactorHandoverSection,
@@ -15,6 +23,7 @@ import type {
   PairwiseRow,
   PairwiseSelector,
   PairwiseSpec,
+  TestBasisGroundingSubject,
   TestCaseCoverageTarget,
 } from "../types.js";
 
@@ -620,7 +629,58 @@ export function buildPairwiseCoverageTargets(spec: PairwiseSpec): TestCaseCovera
     }));
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * 因子ID・禁則IDのような入力内部で採番される値は対象にしない。
+ */
+export function collectPairwiseGroundingSubjects(spec: PairwiseSpec): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  spec.factors.forEach((f, i) => {
+    subjects.push({
+      kind: "label",
+      place: `factors[${i}].name`,
+      target: f.id,
+      fieldLabel: "因子名",
+      text: f.name,
+    });
+    f.levels.forEach((lv, j) => {
+      subjects.push({
+        kind: "label",
+        place: `factors[${i}].levels[${j}]`,
+        target: f.id,
+        fieldLabel: "水準値",
+        text: lv,
+      });
+    });
+  });
+  (spec.forbiddenCombinations ?? []).forEach((fc, i) => {
+    subjects.push({
+      kind: "quotation",
+      place: `forbiddenCombinations[${i}].reason`,
+      target: forbiddenLabel(fc, i),
+      fieldLabel: "禁則理由",
+      text: fc.reason,
+    });
+  });
+  (spec.seedRows ?? []).forEach((row, i) => {
+    if (row.note === undefined) return;
+    subjects.push({
+      kind: "quotation",
+      place: `seedRows[${i}].note`,
+      target: row.id ?? `seedRows[${i}]`,
+      fieldLabel: "シード行注記",
+      text: row.note,
+    });
+  });
+  return subjects;
+}
+
 export function renderPairwise(spec: PairwiseSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectPairwiseGroundingSubjects(spec);
   const setId = spec.setId ?? DEFAULT_PAIRWISE_SET_ID;
   const result = computePairwiseRows(spec);
   const factors = spec.factors;
@@ -801,6 +861,8 @@ export function renderPairwise(spec: PairwiseSpec): string {
     );
   }
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+
   lines.push("");
   lines.push(
     ...renderFactorHandoverSection("## 9. 因子引き渡し検査(FHO-04)", {
@@ -815,6 +877,21 @@ export function renderPairwise(spec: PairwiseSpec): string {
       })),
     }).split("\n")
   );
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 10. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("design_pairwise", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
 
   const pairwiseSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
@@ -838,6 +915,7 @@ const pairwiseSelectorSchema = z.record(z.string(), z.union([z.string(), z.array
 
 export const designPairwiseInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   setId: z.string().optional().describe("Set id used to build coverage target ids (default MAIN)"),
   title: z.string().optional(),
   factors: z

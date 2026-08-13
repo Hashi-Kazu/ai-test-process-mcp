@@ -1,4 +1,5 @@
 import { normalizeForGrounding } from "./groundingNormalization.js";
+import { extractQuotedStrings } from "./testBasisGrounding.js";
 import { computeBoundaryRows } from "./tools/designBoundaryValues.js";
 import { listEquivalenceClasses } from "./tools/designEquivalencePartitioning.js";
 import { buildDecisionTableCoverageTargets, computeDecisionTableRows } from "./tools/designDecisionTable.js";
@@ -948,26 +949,9 @@ export interface UngroundedQuotationOptions {
 // 照合用の文字列正規化は ./groundingNormalization.ts が正本。従来の公開名を維持するため re-export する。
 export { normalizeForGrounding };
 
-const QUOTE_PATTERN_SOURCES = [
-  "「([^」]{1,200})」",
-  "『([^』]{1,200})』",
-  "“([^”]{1,200})”",
-  '"([^"]{1,200})"',
-];
-
-/** 括弧（「」『』“”""）で囲まれた引用文言を出現順に抽出する（入れ子は扱わない）。 */
-export function extractQuotedStrings(text: string): string[] {
-  const hits: { index: number; value: string }[] = [];
-  for (const source of QUOTE_PATTERN_SOURCES) {
-    const regex = new RegExp(source, "g");
-    let m: RegExpExecArray | null;
-    while ((m = regex.exec(text)) !== null) {
-      hits.push({ index: m.index, value: m[1] });
-      if (m[0].length === 0) regex.lastIndex++;
-    }
-  }
-  return hits.sort((a, b) => a.index - b.index).map((h) => h.value);
-}
+// 括弧引用の抽出は ./testBasisGrounding.ts が正本（design_* 系ツールからも使うため、
+// 循環 import を避けて葉モジュール側へ置いている）。従来の公開名を維持するため re-export する。
+export { extractQuotedStrings };
 
 export interface GroundingCandidate {
   caseId: string;

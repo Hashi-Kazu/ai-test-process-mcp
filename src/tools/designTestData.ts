@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
+import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
+import {
+  renderTestBasisGroundingLines,
+  sanitizeTestBasisDocuments,
+  testBasisDocumentsInputShape,
+  testBasisGroundingSignal,
+  testBasisGroundingSummaryLine,
+} from "../testBasisGrounding.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { testDataDesignCriteria } from "../resources/testDataDesignCriteria.js";
 import type {
@@ -7,6 +15,7 @@ import type {
   DataLifecycleTransitionSpec,
   DataItemSpec,
   RequiredDataSpec,
+  TestBasisGroundingSubject,
   TestCaseCoverageTarget,
   TestDataCaseSpec,
   TestDataCoverageBucket,
@@ -891,7 +900,114 @@ function sharingPolicyLabel(policy: string | undefined): string {
   return "-";
 }
 
+/**
+ * テストベース実在照合の対象を組み立てる。
+ * 区分ID・状態ID・遷移ID・ケースIDのような入力内部で採番される値、
+ * および volume / owner / preparation（実装都合の記述）は対象にしない。
+ */
+export function collectTestDataGroundingSubjects(spec: TestDataSpec): TestBasisGroundingSubject[] {
+  const subjects: TestBasisGroundingSubject[] = [];
+  spec.dataClasses.forEach((c, i) => {
+    subjects.push({
+      kind: "label",
+      place: `dataClasses[${i}].nameJa`,
+      target: c.id,
+      fieldLabel: "データ区分名",
+      text: c.nameJa,
+    });
+    if (c.description !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `dataClasses[${i}].description`,
+        target: c.id,
+        fieldLabel: "データ区分の説明",
+        text: c.description,
+      });
+    }
+    (c.keyAttributes ?? []).forEach((attr, j) => {
+      subjects.push({
+        kind: "label",
+        place: `dataClasses[${i}].keyAttributes[${j}]`,
+        target: c.id,
+        fieldLabel: "鍵属性名",
+        text: attr,
+      });
+    });
+    (c.states ?? []).forEach((st, j) => {
+      subjects.push({
+        kind: "label",
+        place: `dataClasses[${i}].states[${j}].nameJa`,
+        target: `${c.id}/${st.id}`,
+        fieldLabel: "状態名",
+        text: st.nameJa,
+      });
+      if (st.definition !== undefined) {
+        subjects.push({
+          kind: "quotation",
+          place: `dataClasses[${i}].states[${j}].definition`,
+          target: `${c.id}/${st.id}`,
+          fieldLabel: "状態定義",
+          text: st.definition,
+        });
+      }
+    });
+    (c.transitions ?? []).forEach((tr, j) => {
+      subjects.push({
+        kind: "label",
+        place: `dataClasses[${i}].transitions[${j}].event`,
+        target: `${c.id}/${tr.id}`,
+        fieldLabel: "遷移イベント名",
+        text: tr.event,
+      });
+      if (tr.guard !== undefined) {
+        subjects.push({
+          kind: "quotation",
+          place: `dataClasses[${i}].transitions[${j}].guard`,
+          target: `${c.id}/${tr.id}`,
+          fieldLabel: "ガード条件",
+          text: tr.guard,
+        });
+      }
+    });
+  });
+  (spec.dataItems ?? []).forEach((item, i) => {
+    subjects.push({
+      kind: "label",
+      place: `dataItems[${i}].label`,
+      target: item.id,
+      fieldLabel: "データ実体ラベル",
+      text: item.label,
+    });
+  });
+  (spec.testCases ?? []).forEach((tc, i) => {
+    if (tc.preconditionText !== undefined) {
+      subjects.push({
+        kind: "quotation",
+        place: `testCases[${i}].preconditionText`,
+        target: tc.caseId,
+        fieldLabel: "ケース前提",
+        text: tc.preconditionText,
+      });
+    }
+    (tc.stepsText ?? []).forEach((text, j) => {
+      subjects.push({
+        kind: "quotation",
+        place: `testCases[${i}].stepsText[${j}]`,
+        target: tc.caseId,
+        fieldLabel: "ケース手順",
+        text,
+      });
+    });
+  });
+  return subjects;
+}
+
 export function renderTestData(spec: TestDataSpec): string {
+  const basisDocuments =
+    spec.testBasisDocuments === undefined
+      ? undefined
+      : sanitizeTestBasisDocuments(spec.testBasisDocuments);
+  const groundingSubjects = collectTestDataGroundingSubjects(spec);
   const result = computeTestDataDesign(spec);
   const dataClasses = spec.dataClasses;
   const dataItems = spec.dataItems ?? [];
@@ -1201,6 +1317,24 @@ export function renderTestData(spec: TestDataSpec): string {
     );
   }
 
+  lines.push(testBasisGroundingSummaryLine(groundingSubjects, basisDocuments));
+  lines.push("");
+
+  lines.push(
+    ...renderTestBasisGroundingLines(
+      "## 10. テストベースとの実在照合",
+      groundingSubjects,
+      basisDocuments
+    )
+  );
+
+  lines.push(
+    ...renderInspectabilitySection("design_test_data", [
+      testBasisGroundingSignal(basisDocuments),
+    ]).split("\n")
+  );
+  lines.push("");
+
   const testDataSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
     testDataSignals.push("has-high-findings");
@@ -1308,6 +1442,7 @@ export const testDataCaseShape = z.object({
 
 export const designTestDataInputShape = {
   ...completedToolsInputShape,
+  ...testBasisDocumentsInputShape,
   title: z.string().optional(),
   dataClasses: z.array(dataClassShape).min(1).describe("Data classes with their lifecycle states and transitions"),
   dataItems: z.array(dataItemShape).optional().describe("Data management table rows (concrete data item instances)"),
