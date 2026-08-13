@@ -935,6 +935,7 @@ export interface ExtractTestConditionsInput {
   idPrefix?: string;                 // 既定 "TC-"
   requirementSources?: RequirementSourceRef[]; // 要件ID → テストベース根拠位置（analyze_requirements の 2.6 から引き継ぐ）
   testPurposes?: TestPlanTestPurposeRef[]; // derive_test_purposes のテスト目的一覧
+  emitHandoverPayload?: boolean;     // 下流ツール引き渡しJSONの本文を出力するか（既定 false）
 }
 
 // 決定的検査の結果型
@@ -1434,6 +1435,7 @@ export interface ScenarioFlowSpec {
   featureIds?: string[];           // 機能IDの母集団（宣言）。未宣言なら被覆率は未算出
   testConditions?: ScenarioTestConditionRef[];
   maxScenariosPerUseCase?: number; // 既定 200
+  emitHandoverPayload?: boolean;   // 下流ツール引き渡しJSONの本文を出力するか（既定 false）
 }
 
 export type ScenarioOutcomeClass = "normal" | "semi-normal" | "abnormal";
@@ -2514,6 +2516,7 @@ export interface TestArchitectureSpec {
   testCases?: TestCaseSpec[];          // 任意。既存 TestCaseSpec をそのまま受ける
   maxContainers?: number;              // 既定 200
   maxDepth?: number;                   // 既定 5
+  emitHandoverPayload?: boolean;       // 下流ツール引き渡しJSONの本文を出力するか（既定 false）
 }
 
 export interface TestArchitectureFinding {
@@ -4695,4 +4698,69 @@ export interface InspectabilityRow {
   catalogId: string;
   condition: string;
   measured: string;
+}
+
+// --- 下流ツール引き渡しJSON（handover payload / HPO-01..HPO-05） ---
+
+/** `src/handoverPayload.ts` が持つ判定区分カタログの1件。MCP resource としては公開しない。 */
+export interface HandoverPayloadCriterion {
+  id: string;                 // "HPO-01" 形式
+  nameJa: string;
+  severity: "high" | "medium" | "info";
+  definition: string;
+  recommendedAction: string;
+}
+
+/** extract_test_conditions → design_test_architecture 引き渡しペイロード。 */
+export interface TestArchitectureHandoverPayload {
+  testConditions: {
+    id: string;
+    statement?: string;
+    target?: string;
+    perspectiveCategoryId?: string;
+    priority?: TestConditionPriority;
+    containerIds: string[];
+  }[];
+}
+
+/** extract_test_conditions → generate_test_cases 引き渡しペイロード。 */
+export interface TestCaseHandoverPayload {
+  testConditions: {
+    id: string;
+    target: string;
+    statement: string;
+    derivedFrom: DerivedFromEntry[];
+    priority?: TestConditionPriority;
+    perspectiveCategoryId?: string;
+    recommendedTechniques?: string[];
+    sourceRefs?: TestBasisSourceRef[];
+  }[];
+  requirementIds: string[];
+  riskIds?: string[];
+  personaIds?: string[];
+  requirementSources?: RequirementSourceRef[];
+}
+
+/** design_test_architecture → analyze_execution_order 引き渡しペイロード。 */
+export interface ExecutionOrderHandoverPayload {
+  title?: string;
+  nodes: {
+    id: string;
+    nameJa: string;
+    kind: "container";
+    priorityClass: TestContainerPriorityClass;
+  }[];
+  architectureContainerIds: string[];
+}
+
+/** design_scenario_flows → generate_test_cases 引き渡しペイロード。 */
+export interface ScenarioFlowTestCaseHandoverPayload {
+  scenarioFlows: {
+    title?: string;
+    actors: ScenarioActorSpec[];
+    useCases: UseCaseSpec[];
+    featureIds?: string[];
+    testConditions?: ScenarioTestConditionRef[];
+    maxScenariosPerUseCase?: number;
+  };
 }

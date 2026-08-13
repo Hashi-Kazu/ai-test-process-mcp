@@ -401,7 +401,7 @@ describe("buildScenarioFlowCoverageTargets", () => {
 });
 
 describe("renderScenarioFlows", () => {
-  it("renders all nine sections", () => {
+  it("renders all ten sections", () => {
     const md = renderScenarioFlows(baseSpec());
     for (const heading of [
       "# ユースケース／シナリオ設計結果",
@@ -414,6 +414,7 @@ describe("renderScenarioFlows", () => {
       "## 7. 決定的検査",
       "## 8. 網羅対象一覧(generate_test_cases 引き渡し)",
       "## 9. サマリ",
+      "## 10. 下流ツール引き渡しJSON",
     ]) {
       expect(md).toContain(heading);
     }

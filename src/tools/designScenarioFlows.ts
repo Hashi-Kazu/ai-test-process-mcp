@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  emitHandoverPayloadInputShape,
+  renderHandoverPayloadSection,
+} from "../handoverPayload.js";
+import { buildScenarioFlowsTestCaseRender } from "../scenarioFlowHandover.js";
 import type {
   GeneratedScenario,
   ScenarioBranchSpec,
@@ -780,6 +785,21 @@ export function renderScenarioFlows(spec: ScenarioFlowSpec): string {
     );
   }
 
+  // --- 10. 下流ツール引き渡しJSON ---
+  lines.push("");
+  lines.push("## 10. 下流ツール引き渡しJSON");
+  lines.push("");
+  lines.push(
+    "本節のJSONは上流の宣言をそのまま写したものではなく、本ツールが算出したシナリオ実体から組み立て、受け側ツールの算出ロジックへ通し直して突き合わせた結果である。判定区分は HPO-01〜HPO-05。"
+  );
+  lines.push("");
+  lines.push(
+    ...renderHandoverPayloadSection(
+      buildScenarioFlowsTestCaseRender(spec, "### 10.1 generate_test_cases 入力(JSON)"),
+      spec.emitHandoverPayload === true
+    ).split("\n")
+  );
+
   const scenarioFlowSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
     scenarioFlowSignals.push("has-high-findings");
@@ -873,6 +893,7 @@ export const designScenarioFlowsInputShape = {
     .positive()
     .optional()
     .describe("Scenario count cap per use case (default 200)"),
+  ...emitHandoverPayloadInputShape,
 } as const;
 
 const designScenarioFlowsInputSchema = z.object(designScenarioFlowsInputShape);
@@ -887,7 +908,8 @@ export function registerDesignScenarioFlowsTool(server: McpServer): void {
         "アクター・事前条件・主フロー・代替/例外フローから、シナリオ一覧（正常系/準正常系/異常系分類つき）を決定的に生成し、" +
         "フロー被覆・機能ID通過・テスト条件との突合を検査してMarkdownで返す。" +
         "各フローは UC:、各シナリオは SC: プレフィックスの網羅対象IDとして generate_test_cases の scenarioFlows へそのまま渡せる。" +
-        "1シナリオは主フロー＋高々1分岐であり、複数分岐が同時に絡む経路は生成しない（必要なら additionalCoverageTargets で補うこと）。",
+        "1シナリオは主フロー＋高々1分岐であり、複数分岐が同時に絡む経路は生成しない（必要なら additionalCoverageTargets で補うこと）。" +
+        "下流ツールの入力形式そのままの引き渡しJSONを `emitHandoverPayload: true` で出力し、受け側の算出ロジックで往復照合した結果を併記する。",
       inputSchema: designScenarioFlowsInputShape,
     },
     async (input) => {

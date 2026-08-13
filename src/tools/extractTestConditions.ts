@@ -39,6 +39,15 @@ import {
 } from "../testConditionAnalysis.js";
 import { formatSourceCitation } from "../testBasisAnalysis.js";
 import {
+  emitHandoverPayloadInputShape,
+  renderHandoverPayloadSection,
+} from "../handoverPayload.js";
+import {
+  buildCrossMatrixHandoverRender,
+  buildTestArchitectureHandoverRender,
+  buildTestCaseHandoverRender,
+} from "../testConditionHandover.js";
+import {
   findFocusConditionPriorityIssues,
   findFocusPersonasWithoutConditions,
   hasAnyStakeholderWeighting,
@@ -990,6 +999,33 @@ export function renderTestConditions(
   );
   lines.push("");
 
+  // --- 10. 下流ツール引き渡しJSON ---
+  lines.push("## 10. 下流ツール引き渡しJSON");
+  lines.push("");
+  lines.push(
+    "本節のJSONは上流の宣言をそのまま写したものではなく、本ツールが算出に使った実体から組み立て、受け側ツールの算出ロジックへ通し直して突き合わせた結果である。判定区分は HPO-01〜HPO-05。"
+  );
+  lines.push("");
+  const emitHandover = input.emitHandoverPayload === true;
+  lines.push(
+    ...renderHandoverPayloadSection(
+      buildTestArchitectureHandoverRender(input, "### 10.1 design_test_architecture 入力(JSON)", catalog, frame),
+      emitHandover
+    ).split("\n")
+  );
+  lines.push(
+    ...renderHandoverPayloadSection(
+      buildTestCaseHandoverRender(input, "### 10.2 generate_test_cases 入力(JSON)"),
+      emitHandover
+    ).split("\n")
+  );
+  lines.push(
+    ...renderHandoverPayloadSection(
+      buildCrossMatrixHandoverRender(input, "### 10.3 audit_cross_matrix 入力(JSON)"),
+      emitHandover
+    ).split("\n")
+  );
+
   // 推奨技法 → 対応ツールの技法由来エントリ。5節で構築した techniqueOrder / techniqueMap を再利用する。
   const techniqueNextToolEntries: { toolName: string; techniqueIds: string[]; conditionIds: string[] }[] = [];
   for (const mapping of testTechniqueToolMapping) {
@@ -1264,6 +1300,7 @@ export const extractTestConditionsInputShape = {
     .describe(
       "Test purposes from derive_test_purposes, used to cross-check testConditions[].purposeIds bidirectionally"
     ),
+  ...emitHandoverPayloadInputShape,
 } as const;
 
 export function registerExtractTestConditionsTool(server: McpServer): void {
@@ -1272,7 +1309,7 @@ export function registerExtractTestConditionsTool(server: McpServer): void {
     {
       title: "Extract Test Conditions",
       description:
-        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照・重点クラス(SWC-01)ステークホルダーの条件紐づけと優先度引き下げ理由の有無を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。既存のテスト条件一覧を testConditions に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。",
+        "テスト条件をテストベース／ステークホルダー／リスク／ガイドワードの4系統から導出させ、要件ID×テスト条件の双方向カバレッジ・観点カテゴリの未使用・条件IDの重複/欠番・優先度未設定・derivedFrom の未解決参照・重点クラス(SWC-01)ステークホルダーの条件紐づけと優先度引き下げ理由の有無を決定的に検査する。観点カタログ・ガイドワード辞書・リスク分析フレームに基づく追加洗い出しは呼び出し側LLMへの指示として返す。既存のテスト条件一覧を testConditions に渡せば、既存成果物のレビューとしても同じ決定的検査を実行できる。下流ツールの入力形式そのままの引き渡しJSONを `emitHandoverPayload: true` で出力し、受け側の算出ロジックで往復照合した結果を併記する。",
       inputSchema: extractTestConditionsInputShape,
     },
     async (input) => {

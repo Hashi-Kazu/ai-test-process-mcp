@@ -66,7 +66,7 @@ describe("renderTestConditions", () => {
     expect(markdown.split("\n").filter((l) => l === "# テスト条件抽出結果")).toHaveLength(1);
   });
 
-  it("renders all sections from 1 to 9", () => {
+  it("renders all sections from 1 to 10", () => {
     for (const heading of [
       "## 1. 前提と宣言",
       "## 2. テスト条件表",
@@ -77,6 +77,7 @@ describe("renderTestConditions", () => {
       "## 7. ガイドワード法による未記載リスクの洗い出し指示(意味的層)",
       "## 8. リスク分析フレームの適用指示(意味的層)",
       "## 9. ステークホルダー／ペルソナ視点の洗い出し指示(意味的層)",
+      "## 10. 下流ツール引き渡しJSON",
     ]) {
       expect(markdown).toContain(heading);
     }
