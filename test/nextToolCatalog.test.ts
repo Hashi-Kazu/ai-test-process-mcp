@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { nextToolCatalog, registeredToolNames } from "../src/resources/nextToolCatalog.js";
+import { nextToolCatalog, nextToolEntryPoints, registeredToolNames } from "../src/resources/nextToolCatalog.js";
 import { testTechniqueToolMapping } from "../src/resources/testPerspectiveCatalog.js";
 
 const toolsDir = fileURLToPath(new URL("../src/tools", import.meta.url));
@@ -90,6 +90,43 @@ describe("nextToolCatalog", () => {
   it("testTechniqueToolMapping の全 toolName が実ツール名に含まれる", () => {
     for (const mapping of testTechniqueToolMapping) {
       expect(actual.has(mapping.toolName), mapping.techniqueId).toBe(true);
+    }
+  });
+
+  it("起点エントリの toolName がすべて実在ツールである", () => {
+    for (const [state, entries] of Object.entries(nextToolEntryPoints)) {
+      for (const entry of entries) {
+        expect(actual.has(entry.toolName), `${state} -> ${entry.toolName}`).toBe(true);
+      }
+    }
+  });
+
+  it("起点エントリから nextToolCatalog を辿って到達不能なツールが0本である", () => {
+    const roots = new Set<string>();
+    for (const entries of Object.values(nextToolEntryPoints)) {
+      for (const entry of entries) roots.add(entry.toolName);
+    }
+    const visited = new Set(roots);
+    const queue = [...roots];
+    while (queue.length > 0) {
+      const current = queue.shift() as string;
+      for (const next of nextToolCatalog[current] ?? []) {
+        if (!visited.has(next.toolName)) {
+          visited.add(next.toolName);
+          queue.push(next.toolName);
+        }
+      }
+    }
+    const unreachable = [...actual].filter((toolName) => !visited.has(toolName));
+    expect(unreachable, "起点から到達できないツール（起点追加またはカタログのエッジ追加が必要）").toEqual([]);
+  });
+
+  it("起点エントリの reason と when が非空であり、when がすべて always である", () => {
+    for (const [state, entries] of Object.entries(nextToolEntryPoints)) {
+      for (const entry of entries) {
+        expect(entry.reason.trim().length, `${state} -> ${entry.toolName}`).toBeGreaterThan(0);
+        expect(entry.when, `${state} -> ${entry.toolName}`).toBe("always");
+      }
     }
   });
 });

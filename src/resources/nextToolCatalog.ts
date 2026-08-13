@@ -603,3 +603,109 @@ export const nextToolCatalog: Record<string, NextToolCatalogEntry[]> = {
     },
   ],
 };
+
+/**
+ * 入力状態キー → 最初に呼ぶべきツール候補（起点カタログ）。
+ * `nextToolCatalog` が「実行済みツール → 次の候補」であるのに対し、
+ * こちらは「まだ何のツールも実行していない状態 → 最初に呼ぶツール」を表す。
+ * ここに列挙した toolName の集合を起点として `nextToolCatalog` を辿ったとき、
+ * `registeredToolNames` の全ツールに到達できることを test/nextToolCatalog.test.ts で検証する。
+ */
+export const nextToolEntryPoints: Record<string, NextToolCatalogEntry[]> = {
+  "no-artifact-yet": [
+    {
+      toolName: "create_test_plan",
+      when: "always",
+      reason: "テスト計画書を含む成果物が何も無く、最初のドラフト生成から始める必要がある",
+    },
+  ],
+  "test-basis-text-only": [
+    {
+      toolName: "audit_id_population",
+      when: "always",
+      reason: "テストベース原文のみの状態であり、ID母集団の対象／除外を最初に確定する必要がある",
+    },
+    {
+      toolName: "review_test_basis",
+      when: "always",
+      reason: "テストベース原文のみの状態であり、レビューによる矛盾・曖昧語の検出から始める必要がある",
+    },
+  ],
+  "test-plan-draft-only": [
+    {
+      toolName: "review_test_plan",
+      when: "always",
+      reason: "テスト計画書のドラフトのみの状態であり、第三者レビューが未実施である",
+    },
+  ],
+  "test-conditions-only": [
+    {
+      toolName: "generate_test_cases",
+      when: "always",
+      reason: "テスト条件一覧のみの状態であり、テストケース化が未実施である",
+    },
+  ],
+  "test-cases-only": [
+    {
+      toolName: "review_test_specification",
+      when: "always",
+      reason: "テストケース一覧のみの状態であり、第三者レビューが未実施である",
+    },
+  ],
+  "cause-effect-description-only": [
+    {
+      toolName: "analyze_cause_effect",
+      when: "always",
+      reason: "仕様書中の原因・結果を記述した自然言語の条件文のみの状態であり、論理関係の構造化が未実施である",
+    },
+  ],
+  "equivalence-partitioning-source-only": [
+    {
+      toolName: "design_equivalence_partitioning",
+      when: "always",
+      reason: "分割対象の変数・値域の記述のみの状態であり、同値クラスの設計が未実施である",
+    },
+  ],
+  "pairwise-factors-only": [
+    {
+      toolName: "design_pairwise",
+      when: "always",
+      reason: "組合せテスト対象の因子・水準一覧のみの状態であり、Pairwise設計が未実施である",
+    },
+  ],
+  "state-transition-source-only": [
+    {
+      toolName: "design_test_data",
+      when: "always",
+      reason: "状態遷移・データクラスの記述のみの状態であり、テストデータ設計が未実施である",
+    },
+  ],
+  "config-factors-only": [
+    {
+      toolName: "design_config_matrix",
+      when: "always",
+      reason: "構成要素・構成水準一覧のみの状態であり、構成マトリクス設計が未実施である",
+    },
+  ],
+  "data-flow-timing-source-only": [
+    {
+      toolName: "analyze_data_flow_timing",
+      when: "always",
+      reason: "通信・データ項目のタイミング記述のみの状態であり、遅延窓・乖離窓の算出が未実施である",
+    },
+  ],
+  "business-requirement-source-only": [
+    {
+      toolName: "generate_business_requirement_model",
+      when: "always",
+      reason: "業務ユースケース・業務フローの記述のみの状態であり、業務要求モデルの整理が未実施である",
+    },
+  ],
+  "threshold-change-diff-only": [
+    {
+      toolName: "reexpand_threshold_changes",
+      when: "always",
+      reason: "閾値変更の差分メモのみの状態であり、影響の再展開が未実施である",
+    },
+  ],
+};
