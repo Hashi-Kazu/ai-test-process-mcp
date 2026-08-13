@@ -11,6 +11,14 @@ import {
 import { testPerspectiveCatalog } from "../resources/testPerspectiveCatalog.js";
 import { testArchitectureDesignPrinciples } from "../resources/testArchitectureDesignPrinciples.js";
 import { testCaseSpecShape } from "./generateTestCases.js";
+import {
+  emitHandoverPayloadInputShape,
+  renderHandoverPayloadSection,
+} from "../handoverPayload.js";
+import {
+  buildArchitectureCrossMatrixRender,
+  buildExecutionOrderHandoverRender,
+} from "../testArchitectureHandover.js";
 import type {
   TestArchitectureConditionInput,
   TestArchitectureDistributionRow,
@@ -946,6 +954,28 @@ export function renderTestArchitecture(spec: TestArchitectureSpec): string {
     "- 本検査は渡されたコンテナ・テスト条件に対してのみ成立し、そもそも洗い出されていない観点の取りこぼしは検出できない。"
   );
 
+  // --- 10. 下流ツール引き渡しJSON ---
+  lines.push("");
+  lines.push("## 10. 下流ツール引き渡しJSON");
+  lines.push("");
+  lines.push(
+    "本節のJSONは上流の宣言をそのまま写したものではなく、本ツールが算出したコンテナ実体から組み立て、受け側ツールの算出ロジックへ通し直して突き合わせた結果である。判定区分は HPO-01〜HPO-05。"
+  );
+  lines.push("");
+  const emitHandover = spec.emitHandoverPayload === true;
+  lines.push(
+    ...renderHandoverPayloadSection(
+      buildExecutionOrderHandoverRender(spec, "### 10.1 analyze_execution_order 入力(JSON)"),
+      emitHandover
+    ).split("\n")
+  );
+  lines.push(
+    ...renderHandoverPayloadSection(
+      buildArchitectureCrossMatrixRender(spec, "### 10.2 audit_cross_matrix 入力(JSON)"),
+      emitHandover
+    ).split("\n")
+  );
+
   const testArchitectureSignals: string[] = [];
   if (result.findings.some((f) => f.severity === "high")) {
     testArchitectureSignals.push("has-high-findings");
@@ -1034,6 +1064,7 @@ export const designTestArchitectureInputShape = {
     ),
   maxContainers: z.number().int().positive().optional().describe("Container count cap (default 200)"),
   maxDepth: z.number().int().positive().optional().describe("Hierarchy depth cap (default 5)"),
+  ...emitHandoverPayloadInputShape,
 } as const;
 
 const designTestArchitectureInputSchema = z.object(designTestArchitectureInputShape);
@@ -1049,7 +1080,8 @@ export function registerDesignTestArchitectureTool(server: McpServer): void {
         "実際に帰属したテスト条件・テストケースの実体と決定的に照合してMarkdownで返す。" +
         "テストスコープ、コンテナ一覧、階層図、条件のコンテナ帰属、レベル/タイプ/優先度クラスの分布、コンテナ別テストサイズ分布、条件→ケースのトレーサビリティ、決定的検査、サマリの9節を出力する。" +
         "帰属率・構成比は必ず分母と未帰属条件IDの全列挙を併記し、テストケース未指定時はコンテナ別サイズ分布を数値で出さず未算出（理由）と明記する。" +
-        "コンテナ間の実行順序・依存関係・クリティカルパスは対象外。判定区分と対処指針は testarch://container/design-principles を参照する。",
+        "コンテナ間の実行順序・依存関係・クリティカルパスは対象外。判定区分と対処指針は testarch://container/design-principles を参照する。" +
+        "下流ツールの入力形式そのままの引き渡しJSONを `emitHandoverPayload: true` で出力し、受け側の算出ロジックで往復照合した結果を併記する。",
       inputSchema: designTestArchitectureInputShape,
     },
     async (input) => {

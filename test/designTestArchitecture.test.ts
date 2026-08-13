@@ -428,7 +428,7 @@ describe("computeTestArchitecture", () => {
 });
 
 describe("renderTestArchitecture", () => {
-  it("emits all nine sections", () => {
+  it("emits all ten sections", () => {
     const markdown = renderTestArchitecture(baseSpec());
     for (const heading of [
       "## 1. テストスコープ",
@@ -440,6 +440,7 @@ describe("renderTestArchitecture", () => {
       "## 7. 条件→ケースのトレーサビリティ",
       "## 8. 決定的検査",
       "## 9. サマリ",
+      "## 10. 下流ツール引き渡しJSON",
     ]) {
       expect(markdown).toContain(heading);
     }

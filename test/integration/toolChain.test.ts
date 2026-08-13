@@ -228,4 +228,69 @@ describe("tool chain: plan -> analysis -> design -> cases -> audit", () => {
     expect(completedRows.length).toBeGreaterThan(0);
     expect(boundaryWithCompleted).toContain("実施済み申告だが証跡未照合: 0件");
   }, 120000);
+
+  it("feeds the generated handover payloads straight into the receiving tools", async () => {
+    // #1 extract_test_conditions を引き渡しJSON付きで実行する
+    const extractPayload = readPayload("extract-test-conditions.json");
+    const conditionsOutput = await testClient.callTool("extract_test_conditions", {
+      ...extractPayload,
+      emitHandoverPayload: true,
+    });
+    expectSignatureHeading("extract_test_conditions", conditionsOutput);
+    expect(conditionsOutput).toContain("## 10. 下流ツール引き渡しJSON");
+
+    // #1 -> generate_test_cases: 10.2 のJSONをそのまま投入する
+    const casesInput = jsonBlockAfter(conditionsOutput, "### 10.2 generate_test_cases 入力(JSON)");
+    expect(Array.isArray(casesInput.testConditions)).toBe(true);
+    expect(casesInput.testConditions.length).toBeGreaterThan(0);
+    const testCases = readPayload("test-cases.json");
+    const casesOutput = await testClient.callTool("generate_test_cases", {
+      ...casesInput,
+      testCases,
+    });
+    expectSignatureHeading("generate_test_cases", casesOutput);
+
+    // #1 -> audit_cross_matrix: 10.3 のJSONをそのまま投入する
+    const matrixInput = jsonBlockAfter(conditionsOutput, "### 10.3 audit_cross_matrix 入力(JSON)");
+    expect(matrixInput.axes.length).toBeGreaterThanOrEqual(2);
+    const matrixOutput = await testClient.callTool("audit_cross_matrix", matrixInput);
+    expectSignatureHeading("audit_cross_matrix", matrixOutput);
+
+    // #1 -> design_test_architecture: 10.1 のJSONへコンテナ設計判断だけを足して投入する
+    const archInput = jsonBlockAfter(conditionsOutput, "### 10.1 design_test_architecture 入力(JSON)");
+    expect(archInput.testConditions.every((c: { containerIds: string[] }) => c.containerIds.length === 0)).toBe(
+      true
+    );
+    const archOutput = await testClient.callTool("design_test_architecture", {
+      title: "宛名番号 回帰テスト",
+      containers: [
+        {
+          id: "TCN-01",
+          nameJa: "宛名番号管理",
+          responsibility: "宛名番号の払い出しと管理が仕様どおり行われることを保証する",
+          testLevel: "system-testing",
+          testTypes: ["機能テスト"],
+          priorityClass: "must",
+        },
+      ],
+      testConditions: archInput.testConditions.map((c: { containerIds: string[] }) => ({
+        ...c,
+        containerIds: ["TCN-01"],
+      })),
+      emitHandoverPayload: true,
+    });
+    expectSignatureHeading("design_test_architecture", archOutput);
+
+    // #2 -> analyze_execution_order: 10.1 のJSONをそのまま投入する
+    const executionInput = jsonBlockAfter(archOutput, "### 10.1 analyze_execution_order 入力(JSON)");
+    expect(executionInput.nodes.map((n: { id: string }) => n.id)).toEqual(
+      executionInput.architectureContainerIds
+    );
+    const executionOutput = await testClient.callTool("analyze_execution_order", executionInput);
+    expectSignatureHeading("analyze_execution_order", executionOutput);
+    expect(executionOutput).toContain("未計画コンテナ: 対象なし");
+    expect(executionOutput).toContain(
+      `- 計画被覆率: 分母 ${executionInput.architectureContainerIds.length} / 分子 ${executionInput.architectureContainerIds.length} / 100%`
+    );
+  }, 120000);
 });
