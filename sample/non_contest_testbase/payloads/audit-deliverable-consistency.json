@@ -1,0 +1,46 @@
+{
+  "idPatterns": [
+    "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+    "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"
+  ],
+  "declaredReferencedDocuments": [
+    {
+      "deliverable": "05_テスト計画書_改訂版.md",
+      "readDocuments": [
+        "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "2026-08_digital-agency_atenabango-kanri_item-definition"
+      ],
+      "unreadDocuments": []
+    },
+    {
+      "deliverable": "11_テスト条件抽出結果.md",
+      "readDocuments": [
+        "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "2026-08_digital-agency_atenabango-kanri_item-definition"
+      ],
+      "unreadDocuments": []
+    },
+    {
+      "deliverable": "14_テストケース生成結果.md",
+      "readDocuments": [
+        "2026-08_digital-agency_atenabango-fuban-api_spec",
+        "2026-08_digital-agency_atenabango-kanri_item-definition"
+      ],
+      "unreadDocuments": []
+    }
+  ],
+  "idPrefixOwners": [
+    {
+      "documentKey": "2026-08_digital-agency_atenabango-kanri_item-definition",
+      "prefixes": ["031"]
+    },
+    {
+      "documentKey": "2026-08_digital-agency_atenabango-fuban-api_spec",
+      "prefixes": ["E"]
+    }
+  ],
+  "countClaimSubjects": [
+    { "keyword": "データ項目", "idPrefix": "031" },
+    { "keyword": "エラーコード", "idPrefix": "E" }
+  ]
+}

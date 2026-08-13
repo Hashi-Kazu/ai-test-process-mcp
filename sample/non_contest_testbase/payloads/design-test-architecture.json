@@ -1,0 +1,3381 @@
+{
+  "title": "住登外者宛名番号付番API テストアーキテクチャ（11_ のテスト条件46件を5コンテナへ帰属）。コンテナ名・スコープ項目・コンテナ対象はテストベース本文の実文言に限定し、根拠位置は 00_成果物生成手順.md 3.20 に記載する",
+  "scope": {
+    "inScope": [
+      {
+        "item": "リクエストパラメータ",
+        "reason": "「リクエストパラメータを元に住登外者宛名番号の付番依頼を行う。」(fuban-api_spec:30)が本APIの中心的な振る舞いであるため"
+      },
+      {
+        "item": "レスポンスオブジェクト",
+        "reason": "「本APIが正常に終了した場合は、HTTPステータスコード200とJSON形式のレスポンスオブジェクトが返却される。」(fuban-api_spec:80)が正常終了の判定根拠であるため"
+      },
+      {
+        "item": "エラーコード",
+        "reason": "エラーコード一覧のE0001〜E0004(fuban-api_spec:242-245)が工程Aで確定した母集団に含まれるため"
+      },
+      {
+        "item": "アクセストークン",
+        "reason": "「アクセストークンの検証を行う」(fuban-api_spec:63)が付番処理の前提であるため"
+      },
+      {
+        "item": "データ項目",
+        "reason": "項目定義書のデータ項目ID 031-1〜031-29(item-definition:12-58)のうち32件の母集団が工程Aで確定しているため"
+      },
+      {
+        "item": "タイムアウト",
+        "reason": "「処理が30秒以上※経過した場合は、タイムアウトとなる。」(fuban-api_spec:83)が応答の切り分け条件であるため"
+      }
+    ],
+    "outOfScope": [
+      {
+        "item": "代表宛名フラグ",
+        "reason": "工程A(01_ 2.3)で除外を宣言済みである。付番APIのリクエストパラメータ(fuban-api_spec:96-155)にもレスポンスオブジェクト(同:167-199)にも対応項目が存在せず、付番API経由では値を設定も確認もできないため対象外とする"
+      },
+      {
+        "item": "統一ID基盤",
+        "reason": "「※今後国で統一ID基盤の整備が検討されていることから、暫定措置として、以下の認証方式の実装も可能とする。」(fuban-api_spec:38)のとおり整備が検討段階であり、本API仕様に実装要件の記述が無いため対象外とする"
+      }
+    ]
+  },
+  "decompositionAxisIds": [
+    "TAX-01",
+    "TAX-02",
+    "TAX-05"
+  ],
+  "containers": [
+    {
+      "id": "TCN-01",
+      "nameJa": "レスポンスオブジェクト",
+      "responsibility": "処理区分0 / 1 / 2 の各処理が成立し、「本APIが正常に終了した場合は、HTTPステータスコード200とJSON形式のレスポンスオブジェクトが返却される。」(fuban-api_spec:80)ことと、その result 配列の内容が仕様どおりであることを保証する。レスポンスオブジェクトの項目とデータ項目の対応も本コンテナが引き受ける",
+      "objective": "付番APIが業務上の目的（住登外者宛名番号の付番・登録・業務ID更新）を達成したことをリリース判断者が確認できるようにする",
+      "testLevel": "system-testing",
+      "testTypes": [
+        "機能テスト",
+        "シナリオテスト"
+      ],
+      "priorityClass": "must",
+      "perspectiveCategoryIds": [
+        "TPC-01",
+        "TPC-05",
+        "TPC-09",
+        "TPC-18"
+      ],
+      "targets": [
+        "レスポンスオブジェクト",
+        "処理区分",
+        "業務ID"
+      ],
+      "entryCriteria": [
+        "API要求元・認可サーバ・アクセス先APIの3者が疎通していること（05_ 6.1 開始基準の第3条件）"
+      ],
+      "exitCriteria": [
+        "帰属するテスト条件9件に対応するテストケースがすべてOKであること（05_ 6.1 終了基準の第1・第2条件）"
+      ]
+    },
+    {
+      "id": "TCN-02",
+      "nameJa": "エラーコード",
+      "responsibility": "「送信したパラメータのチェックにてエラーとなった場合は、HTTPステータスコード400とJSON形式のレスポンスオブジェクトが返却される。」(fuban-api_spec:81)ことと、リクエストパラメータの検証結果として E0001〜E0004 のエラーコードとエラーメッセージが返却されることを保証する",
+      "objective": "誤った入力を受理して住登外者宛名基本情報へ不正なデータが登録されないことを、仕様所管部門が確認できるようにする",
+      "testLevel": "integration-testing",
+      "testTypes": [
+        "機能テスト"
+      ],
+      "priorityClass": "must",
+      "perspectiveCategoryIds": [
+        "TPC-01",
+        "TPC-02",
+        "TPC-16"
+      ],
+      "targets": [
+        "リクエストパラメータ",
+        "エラーコード",
+        "必須"
+      ],
+      "entryCriteria": [
+        "処理区分3値と各エラーコードの発生条件を再現できる入力値がそろっていること（05_ 6.1 開始基準の第4条件）"
+      ],
+      "exitCriteria": [
+        "E0001〜E0004 の4件すべてについて実行済みかつ判定ステータスがOKであること"
+      ]
+    },
+    {
+      "id": "TCN-03",
+      "nameJa": "アクセストークン",
+      "responsibility": "「アクセストークンの検証を行う」(fuban-api_spec:63)ことを前提に、「認証情報が取得できないまたはアクセストークンが未指定の場合は、HTTPステータスコード401とJSON形式のレスポンスオブジェクトが返却される。」(fuban-api_spec:82)ことと、要求元認証方式の構成差によらず同一の応答となることを保証する",
+      "objective": "認証されない要求で付番処理が行われないことを、個人番号を扱う業務の責任者が確認できるようにする",
+      "testLevel": "system-testing",
+      "testTypes": [
+        "機能テスト",
+        "移植性テスト"
+      ],
+      "priorityClass": "must",
+      "perspectiveCategoryIds": [
+        "TPC-08",
+        "TPC-10",
+        "TPC-15"
+      ],
+      "targets": [
+        "アクセストークン",
+        "要求元認証",
+        "個人番号"
+      ],
+      "entryCriteria": [
+        "認可サーバが稼働し、client_secret_jwt と client_secret_basic の双方の構成を用意できていること（fuban-api_spec:37-39）"
+      ],
+      "exitCriteria": [
+        "アクセストークン未指定・無効の双方でHTTPステータスコード401が返り、付番処理が行われないことを確認できていること"
+      ]
+    },
+    {
+      "id": "TCN-04",
+      "nameJa": "タイムアウト",
+      "responsibility": "「処理が30秒以上※経過した場合は、タイムアウトとなる。」(fuban-api_spec:83)、「サービスメンテナンス時も同様に原則HTTPステータスコード500番台のエラーが返却される。」(fuban-api_spec:84)、「上記以外の想定外エラーが発生した場合は、HTTPステータスコード503とJSON形式のレスポンスオブジェクトが返却される。」(fuban-api_spec:85)という異常時の応答と、「正常に付番処理が実行されなかった場合は再度付番依頼を実施することにより、新規付番された番号が返却される。」(fuban-api_spec:64)という回復手順を確認する",
+      "objective": "確定値が存在しないタイムアウト時間について観測値を記録し、適切なタイムアウト時間の設定判断（fuban-api_spec:83）の材料を提供する",
+      "testLevel": "system-testing",
+      "testTypes": [
+        "性能テスト",
+        "信頼性テスト"
+      ],
+      "priorityClass": "conditional",
+      "perspectiveCategoryIds": [
+        "TPC-07",
+        "TPC-11",
+        "TPC-12",
+        "TPC-13",
+        "TPC-14",
+        "TPC-17"
+      ],
+      "targets": [
+        "タイムアウト",
+        "サービスメンテナンス"
+      ],
+      "entryCriteria": [
+        "処理時間を可変にできるスタブが用意されていること"
+      ],
+      "exitCriteria": [
+        "観測値がすべて記録され、確定値が定まらない項目が質問状として起票されていること（05_ 6.2 のQA判定）"
+      ],
+      "note": "「※目安として30秒と記載しているが、性能テストを踏まえ、適切なタイムアウト時間を設定されたい」(fuban-api_spec:83)により合否を確定させないため、優先度クラスは条件付き実施とする"
+    },
+    {
+      "id": "TCN-05",
+      "nameJa": "データ項目",
+      "responsibility": "項目定義書のデータ項目（item-definition:12-58）と付番API仕様のリクエストパラメータ（fuban-api_spec:96-155）の桁数・データ型・コード値・データ出力条件が一致し、境界値と同値クラスが仕様どおりに扱われることを保証する",
+      "objective": "2文書間で記述が食い違う項目（住所_町字の桁数など）を実測して洗い出し、仕様所管部門への照会材料を提供する",
+      "testLevel": "integration-testing",
+      "testTypes": [
+        "機能テスト"
+      ],
+      "priorityClass": "must",
+      "perspectiveCategoryIds": [
+        "TPC-03",
+        "TPC-04"
+      ],
+      "targets": [
+        "データ項目",
+        "桁数",
+        "データ型",
+        "コード"
+      ],
+      "entryCriteria": [
+        "12_ 境界値分析結果 と 13_ 同値分割結果 が確定していること"
+      ],
+      "exitCriteria": [
+        "住所_町字(031-18)の桁数について、項目定義書側18と付番API仕様側120の双方の観測値が記録されていること"
+      ]
+    }
+  ],
+  "testConditions": [
+    {
+      "id": "TC-001",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-002",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "高",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-003",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-004",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-005",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "高",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-006",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "中",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-007",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "中",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-008",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "高",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-009",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-010",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-011",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-012",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-013",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-014",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-015",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-016",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-017",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-018",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "高",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-019",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-020",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "低",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-021",
+      "perspectiveCategoryId": "TPC-03",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-022",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-023",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-024",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-025",
+      "perspectiveCategoryId": "TPC-05",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-026",
+      "perspectiveCategoryId": "TPC-07",
+      "priority": "中",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-027",
+      "perspectiveCategoryId": "TPC-08",
+      "priority": "中",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-028",
+      "perspectiveCategoryId": "TPC-09",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-029",
+      "perspectiveCategoryId": "TPC-10",
+      "priority": "低",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-030",
+      "perspectiveCategoryId": "TPC-11",
+      "priority": "中",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-031",
+      "perspectiveCategoryId": "TPC-12",
+      "priority": "低",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-032",
+      "perspectiveCategoryId": "TPC-13",
+      "priority": "中",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-033",
+      "perspectiveCategoryId": "TPC-14",
+      "priority": "低",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-034",
+      "perspectiveCategoryId": "TPC-15",
+      "priority": "中",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-035",
+      "perspectiveCategoryId": "TPC-15",
+      "priority": "中",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-036",
+      "perspectiveCategoryId": "TPC-16",
+      "priority": "低",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-037",
+      "perspectiveCategoryId": "TPC-17",
+      "priority": "中",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-038",
+      "perspectiveCategoryId": "TPC-18",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-039",
+      "perspectiveCategoryId": "TPC-02",
+      "priority": "中",
+      "containerIds": [
+        "TCN-02"
+      ]
+    },
+    {
+      "id": "TC-040",
+      "perspectiveCategoryId": "TPC-01",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-041",
+      "perspectiveCategoryId": "TPC-09",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    },
+    {
+      "id": "TC-042",
+      "perspectiveCategoryId": "TPC-04",
+      "priority": "中",
+      "containerIds": [
+        "TCN-05"
+      ]
+    },
+    {
+      "id": "TC-043",
+      "perspectiveCategoryId": "TPC-07",
+      "priority": "低",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-044",
+      "perspectiveCategoryId": "TPC-08",
+      "priority": "低",
+      "containerIds": [
+        "TCN-03"
+      ]
+    },
+    {
+      "id": "TC-045",
+      "perspectiveCategoryId": "TPC-11",
+      "priority": "中",
+      "containerIds": [
+        "TCN-04"
+      ]
+    },
+    {
+      "id": "TC-046",
+      "perspectiveCategoryId": "TPC-05",
+      "priority": "中",
+      "containerIds": [
+        "TCN-01"
+      ]
+    }
+  ],
+  "testCases": [
+    {
+      "caseId": "TCS-001",
+      "title": "処理区分0による新規住登外者宛名番号の付番",
+      "testConditionId": "TC-001",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-001-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "シナリオテスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "0"
+        },
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "未登録"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "shorikubun に 0 を設定した要求電文を組み立てる",
+          "expected": "必須パラメータ7件がすべて設定された要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200とJSON形式のレスポンスオブジェクトが返却される"
+        },
+        {
+          "no": 3,
+          "action": "レスポンスの result 配列を確認する",
+          "expected": "result 配列の atenabango に新規に付番された値が設定されている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "新規に登録され主キーの宛名番号が確定している"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-002",
+      "title": "処理区分1による既存宛名番号の住登外者宛名番号としての登録",
+      "testConditionId": "TC-002",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-002-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "1"
+        },
+        {
+          "name": "送信する宛名番号",
+          "value": "既存の値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "shorikubun に 1 を設定し atenabango に既存の宛名番号を設定する",
+          "expected": "要求電文に atenabango が含まれる"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "result 配列の atenabango を送信値と照合する",
+          "expected": "送信した宛名番号がそのまま返却されている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "送信した宛名番号で登録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-003",
+      "title": "処理区分2による業務IDの更新",
+      "testConditionId": "TC-003",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-003-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "2"
+        },
+        {
+          "name": "対象の住登外者宛名基本情報",
+          "value": "登録済み"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "shorikubun に 2 を設定し gyomuid に更新後の値を設定する",
+          "expected": "要求電文に gyomuid が含まれる"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "更新前後の住登外者宛名基本情報を比較する",
+          "expected": "業務IDだけが更新され他のデータ項目は更新前と同一である"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "業務IDのみ更新済み"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-004",
+      "title": "独自施策システム等IDによる登録の受理",
+      "testConditionId": "TC-004",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-24"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-004-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "業務ID",
+          "value": "未設定"
+        },
+        {
+          "name": "独自施策システム等ID",
+          "value": "設定あり"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "gyomuid を設定せず dokujishisakushisutemutoid に自治体固有のコードを設定する",
+          "expected": "要求電文に独自施策システム等IDが含まれる"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録された住登外者宛名基本情報のデータ項目 031-24 を確認する",
+          "expected": "送信した独自施策システム等IDが登録されている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "独自施策システム等IDが記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-005",
+      "title": "必須パラメータ欠落時の必須エラー返却",
+      "testConditionId": "TC-005",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-005-01"
+      ],
+      "perspectiveCategoryId": "TPC-02",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "欠落させる必須パラメータ",
+          "value": "1件"
+        },
+        {
+          "name": "その他のパラメータ",
+          "value": "すべて有効値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "必須（◎）指定のパラメータを1件だけ送信しない要求電文を組み立てる",
+          "expected": "対象パラメータを含まない要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード400とJSON形式のレスポンスオブジェクトが返却される"
+        },
+        {
+          "no": 3,
+          "action": "errors 配列の要素を確認する",
+          "expected": "errors[0].code が E0001 であり message が「【項目名】が設定されていません。」の形式である"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "登録されない"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-006",
+      "title": "データ型に合致しない文字種を設定した場合の指定文字エラー返却",
+      "testConditionId": "TC-006",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0002"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-006-01"
+      ],
+      "perspectiveCategoryId": "TPC-02",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "atenabango"
+        },
+        {
+          "name": "設定する値",
+          "value": "全角数字"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "データ型 X の atenabango に全角数字を設定した要求電文を組み立てる",
+          "expected": "全角数字を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード400が返却される"
+        },
+        {
+          "no": 3,
+          "action": "errors 配列の要素を確認する",
+          "expected": "errors[0].code が E0002 であり message が「【項目名】は【指定文字】で設定してください。」の形式である"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "登録されない"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-007",
+      "title": "固定桁項目の桁数誤りによる桁数エラー返却",
+      "testConditionId": "TC-007",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0003"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-007-01"
+      ],
+      "perspectiveCategoryId": "TPC-02",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "atenabango"
+        },
+        {
+          "name": "設定する桁数",
+          "value": "宛名番号の桁数より1つ多い値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "atenabango に宛名番号の桁数を1つ超える値を設定した要求電文を組み立てる",
+          "expected": "規定より長い値を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード400が返却される"
+        },
+        {
+          "no": 3,
+          "action": "errors 配列の要素を確認する",
+          "expected": "errors[0].code が E0003 であり message が「【項目名】はX桁で設定してください。」の形式である"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "登録されない"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-008",
+      "title": "処理区分1で宛名番号を未設定にした場合の相関チェックエラー返却",
+      "testConditionId": "TC-008",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "E0004"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-03"
+        }
+      ],
+      "techniqueId": "decision-table",
+      "coverageTargets": [
+        "AC-TC-008-01"
+      ],
+      "perspectiveCategoryId": "TPC-02",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "1"
+        },
+        {
+          "name": "宛名番号",
+          "value": "未設定"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "shorikubun に 1 を設定し atenabango を送信しない要求電文を組み立てる",
+          "expected": "atenabango を含まない要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード400が返却される"
+        },
+        {
+          "no": 3,
+          "action": "errors 配列の code を確認する",
+          "expected": "errors[0].code が E0004 である。E0001 が返却された場合はQAとして起票する"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "起票状況",
+          "value": "返却されたコードを記録済み"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-009",
+      "title": "宛名番号の桁数境界の確認",
+      "testConditionId": "TC-009",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-009-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "atenabango"
+        },
+        {
+          "name": "処理区分",
+          "value": "1"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "宛名番号の桁数の直下・同値・直上の3通りの atenabango を用意する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "3通りの応答を比較する",
+          "expected": "宛名番号の桁数に一致する値のみHTTPステータスコード200が返却され、他の2通りは400と E0003 が返却される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "有効値の1件のみ登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-010",
+      "title": "個人番号の桁数境界の確認",
+      "testConditionId": "TC-010",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-010-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "kojinbango"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "個人番号の桁数の直下・同値・直上の3通りの kojinbango を用意する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "3通りの応答を比較する",
+          "expected": "個人番号の桁数に一致する値のみHTTPステータスコード200が返却され、他の2通りは400が返却される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "有効値の1件のみ登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-011",
+      "title": "氏名の文字数境界の確認",
+      "testConditionId": "TC-011",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-011-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "shimei"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "氏名の文字数上限の直下・同値・直上の3通りの shimei を用意する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "3通りの応答を比較する",
+          "expected": "氏名の文字数上限以下の2通りはHTTPステータスコード200が返却され、上限を超える1通りは400が返却される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "有効値の2件が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-012",
+      "title": "氏および名の文字数境界の確認",
+      "testConditionId": "TC-012",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-4"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-5"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-012-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "uji_nihonjin / na_nihonjin"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "氏名構成要素の文字数上限の直下・同値・直上の3通りの uji_nihonjin と na_nihonjin を用意する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "3通りの応答を比較する",
+          "expected": "氏名構成要素の文字数上限以下の2通りはHTTPステータスコード200が返却され、上限を超える1通りは400が返却される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "有効値の2件が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-013",
+      "title": "外国人氏名のローマ字表記と漢字表記の文字数境界の確認",
+      "testConditionId": "TC-013",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-6"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-7"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-013-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "shimei_gaikokujinromaji / shimei_gaikokujinkanji"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "氏名の文字数上限の直下・同値・直上の3通りの値を両パラメータへ設定する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録結果とデータ項目 031-6 と 031-7 を照合する",
+          "expected": "氏名の文字数上限以下の値のみが登録され、項目定義書側の名称との対応が記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "対応表",
+          "value": "API側パラメータ名と項目定義書側名称の対応が記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-014",
+      "title": "読み仮名3項目の文字数境界の確認",
+      "testConditionId": "TC-014",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-8"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-9"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-10"
+        },
+        {
+          "kind": "risk",
+          "id": "RK-02"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-014-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "shimei_furigana / uji_nihonjin_furigana / na_nihonjin_furigana"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "氏名の文字数上限と氏名構成要素の文字数上限の前後の値を各パラメータへ設定する",
+          "expected": "境界値を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録結果とデータ項目 031-8 / 031-9 / 031-10 を照合する",
+          "expected": "規定の文字数以内の値のみが登録され、項目定義書側の名称との対応が記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "対応表",
+          "value": "読み仮名とフリガナの呼称差が記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-015",
+      "title": "生年月日_不詳表記の文字数境界の確認",
+      "testConditionId": "TC-015",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-13"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-015-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "seinengappi_fushohyoki"
+        },
+        {
+          "name": "生年月日",
+          "value": "不詳"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "データ項目 031-13 の規定文字数の直下・同値・直上の3通りの値を用意する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "3通りの応答を比較する",
+          "expected": "規定文字数以下の2通りはHTTPステータスコード200が返却され、超える1通りは400が返却される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "不詳表記が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-016",
+      "title": "住所コード2項目の桁数境界と特殊値の確認",
+      "testConditionId": "TC-016",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-14"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-15"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-016-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "jusho_shikuchosonkodo / jusho_choazakodo"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "市区町村コードの桁数の前後の値と、町字コードの特殊値2種を用意する",
+          "expected": "境界値と特殊値を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "応答とデータ項目 031-14 と 031-15 を照合する",
+          "expected": "規定桁の値のみが受理され、町字コードの特殊値2種はいずれも受理される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "住所コードが登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-017",
+      "title": "都道府県と市区郡町村名の文字数境界の確認",
+      "testConditionId": "TC-017",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-16"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-17"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-017-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "jusho_todofuken / jusho_shikugunchosonmei"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "データ項目 031-16 と 031-17 の規定文字数の前後の値を用意する",
+          "expected": "境界値を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "応答を比較する",
+          "expected": "規定文字数以下の値のみが受理される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "住所の名称項目が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-018",
+      "title": "住所_町字の文字数上限が2文書で食い違う箇所の実測",
+      "testConditionId": "TC-018",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-18"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-018-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "高",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "jusho_choaza"
+        },
+        {
+          "name": "判定",
+          "value": "確定させずQAとして起票する"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "住所_町字の文字数上限_項目定義書 と 住所_町字の文字数上限_付番API仕様 のそれぞれについて、直下・同値・直上の値を用意する",
+          "expected": "6通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "6通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "受理された最大の文字数を記録する",
+          "expected": "実装が採用している上限がどちらの記述に一致するかが記録され、判定はQAとして起票される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "質問状",
+          "value": "住所_町字の上限に関する照会が起票されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-019",
+      "title": "番地号表記と郵便番号の桁数境界の確認",
+      "testConditionId": "TC-019",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-19"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-22"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-019-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "jusho_banchigohyoki / jusho_yubinbango"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "データ項目 031-19 と 031-22 の規定桁の前後の値を用意する",
+          "expected": "境界値を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "応答を比較する",
+          "expected": "規定桁以内の値のみが受理される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "番地号表記と郵便番号が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-020",
+      "title": "方書と方書フリガナの文字数境界の確認",
+      "testConditionId": "TC-020",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-20"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-21"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-020-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "jusho_katagaki / jusho_katagaki_furigana"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "データ項目 031-20 と 031-21 の規定文字数の前後の値を用意する",
+          "expected": "境界値を含む要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "応答を比較する",
+          "expected": "規定文字数以内の値のみが受理される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "方書が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-021",
+      "title": "操作者IDの桁数境界の確認",
+      "testConditionId": "TC-021",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-021-01"
+      ],
+      "perspectiveCategoryId": "TPC-03",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "sosashaid"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "操作者IDの桁数の直下・同値・直上の3通りの sosashaid を用意する",
+          "expected": "3通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "3通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "3通りの応答を比較する",
+          "expected": "操作者IDの桁数に一致する値のみHTTPステータスコード200が返却される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "操作者IDが記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-022",
+      "title": "性別コードの同値クラスの確認",
+      "testConditionId": "TC-022",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-11"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-022-01"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "seibetsu"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "コード一覧に定義された3値と、定義されていない値を用意する",
+          "expected": "4通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "4通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録結果とデータ項目 031-11 を照合する",
+          "expected": "コード一覧に定義された3値のみが登録され、定義されていない値の扱いが記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "性別コードが登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-023",
+      "title": "生年月日の同値クラスと不詳日の扱いの確認",
+      "testConditionId": "TC-023",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-12"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-023-01"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "seinengappi"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "DATE 形式の有効値・不詳日・期間の下限値・期間の上限値・形式不正値を用意する",
+          "expected": "5通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "5通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録結果とデータ項目 031-12 を照合する",
+          "expected": "不詳日を許容する記述どおりに不詳日が受理され、形式不正値は受理されない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "生年月日が登録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-024",
+      "title": "操作年月日と操作時刻の書式クラスの確認",
+      "testConditionId": "TC-024",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-29"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-024-01"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "sosanengappi / sosajikoku"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "DATE 形式の有効値、TIME 形式の有効値と秒省略値、いずれも形式不正値を用意する",
+          "expected": "複数通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "各パターンで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録結果とデータ項目 031-28 と 031-29 を照合する",
+          "expected": "秒省略値が受理され、形式不正値は受理されない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "操作年月日と操作時刻が記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-025",
+      "title": "名寄せ実施時の名寄せ先宛名番号と名寄せ元フラグの遷移",
+      "testConditionId": "TC-025",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-26"
+        }
+      ],
+      "techniqueId": "state-transition",
+      "coverageTargets": [
+        "AC-TC-025-01"
+      ],
+      "perspectiveCategoryId": "TPC-05",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "名寄せ元の宛名基本情報",
+          "value": "登録済み"
+        },
+        {
+          "name": "名寄せ先の宛名番号",
+          "value": "既存の値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "nayosesakiatenabango に名寄せ先の宛名番号を設定し nayosemotofuragu を 1 に設定する",
+          "expected": "名寄せを表す要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "POST で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録結果とデータ項目 031-26 を照合する",
+          "expected": "名寄せ先宛名番号が設定され名寄せ元フラグが 1 に遷移している"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "名寄せ元として記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-026",
+      "title": "同一住登外者への同時付番依頼における二重付番の有無の確認",
+      "testConditionId": "TC-026",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-026-01"
+      ],
+      "perspectiveCategoryId": "TPC-07",
+      "testType": "ロードテスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "同時実行数",
+          "value": "2"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "同一の住登外者を表す要求電文を2件用意する",
+          "expected": "同一内容の要求電文が2件生成される"
+        },
+        {
+          "no": 2,
+          "action": "2件を同時に POST で app_submit/v10/jutogaishaatenabangofuban へ送信する",
+          "expected": "2件それぞれにHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録された住登外者宛名基本情報の件数とデータ項目 031-1 を確認する",
+          "expected": "宛名番号が二重に付番されていないか、二重付番が発生した事実が記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "質問状",
+          "value": "並行付番の扱いに関する照会が起票されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-027",
+      "title": "APIシーケンスの実行順序の確認",
+      "testConditionId": "TC-027",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-027-01"
+      ],
+      "perspectiveCategoryId": "TPC-08",
+      "testType": "シナリオテスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "認可サーバ",
+          "value": "稼働中"
+        },
+        {
+          "name": "トレース取得",
+          "value": "有効"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "アクセストークンを付与した要求電文を送信する",
+          "expected": "1. APIアクセス w/アクセストークン が観測される"
+        },
+        {
+          "no": 2,
+          "action": "認可サーバとアクセス先APIのトレースを取得する",
+          "expected": "アクセストークンの検証を行う が付番処理より前に観測される"
+        },
+        {
+          "no": 3,
+          "action": "応答の受領までのトレースを確認する",
+          "expected": "②住登外者宛名番号付番等 の後に 2. API結果返却 が観測される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "トレース記録",
+          "value": "図形内テキスト（APIシーケンス）の順序と一致することが記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-028",
+      "title": "付番から名寄せまでの宛名情報ライフサイクルの確認",
+      "testConditionId": "TC-028",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-028-01"
+      ],
+      "perspectiveCategoryId": "TPC-09",
+      "testType": "シナリオテスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "0 から順に実施"
+        },
+        {
+          "name": "対象",
+          "value": "同一の住登外者"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "処理区分 0 で付番し、続けて処理区分 2 で業務IDを更新する",
+          "expected": "2回の呼び出しがいずれも成功する"
+        },
+        {
+          "no": 2,
+          "action": "名寄せを実施して nayosesakiatenabango を設定する",
+          "expected": "名寄せの要求電文が受理される"
+        },
+        {
+          "no": 3,
+          "action": "データ項目 031-1 と 031-28 を各段階で確認する",
+          "expected": "主キーの宛名番号は変化せず、操作年月日が段階ごとに記録されている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "履歴が段階ごとに記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-029",
+      "title": "要求元認証の2方式による応答の同一性の確認",
+      "testConditionId": "TC-029",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "techniqueId": "pairwise",
+      "coverageTargets": [
+        "AC-TC-029-01"
+      ],
+      "perspectiveCategoryId": "TPC-10",
+      "testType": "移植性テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "認証方式",
+          "value": "2通り"
+        },
+        {
+          "name": "要求電文",
+          "value": "同一"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "OAuth2.0 client_secret_jwt でアクセストークンを取得して送信する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 2,
+          "action": "OAuth2.0 client_secret_basic でアクセストークンを取得して同一の要求電文を送信する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "2回の応答本文を比較する",
+          "expected": "metadata と _links と result の各キーの構造が同一である"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "比較記録",
+          "value": "2方式の応答差が記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-030",
+      "title": "付番失敗後の再依頼による回復の確認",
+      "testConditionId": "TC-030",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-030-01"
+      ],
+      "perspectiveCategoryId": "TPC-11",
+      "testType": "信頼性テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "初回の付番処理",
+          "value": "失敗させる"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "付番処理を失敗させた状態で要求電文を送信する",
+          "expected": "HTTPステータスコード200以外が返却される"
+        },
+        {
+          "no": 2,
+          "action": "再度同一の要求電文で POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "result 配列の atenabango を確認する",
+          "expected": "新規付番された番号が返却されている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "再依頼により登録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-031",
+      "title": "連続付番依頼における操作時刻の記録欠落の有無の確認",
+      "testConditionId": "TC-031",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-29"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-031-01"
+      ],
+      "perspectiveCategoryId": "TPC-12",
+      "testType": "信頼性テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "連続送信件数",
+          "value": "1000件"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "付番依頼を連続して送信する",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 2,
+          "action": "登録された住登外者宛名基本情報の件数を数える",
+          "expected": "送信件数と登録件数が一致する"
+        },
+        {
+          "no": 3,
+          "action": "各レコードのデータ項目 031-29 を確認する",
+          "expected": "操作時刻がすべてのレコードに記録されており欠落がない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "連続登録分がすべて記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-032",
+      "title": "タイムアウト境界における応答形式の切り替わりの実測",
+      "testConditionId": "TC-032",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-04"
+        },
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-032-01"
+      ],
+      "perspectiveCategoryId": "TPC-13",
+      "testType": "性能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "処理時間の制御",
+          "value": "スタブで可変"
+        },
+        {
+          "name": "判定",
+          "value": "確定させずQAとして起票する"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "処理時間をタイムアウト時間の直前に制御して要求電文を送信する",
+          "expected": "JSON形式のレスポンスオブジェクトが返却される"
+        },
+        {
+          "no": 2,
+          "action": "処理時間をタイムアウト時間の直後に制御して要求電文を送信する",
+          "expected": "HTTPステータスコード500番台のエラーが返却されJSON形式では返却されない"
+        },
+        {
+          "no": 3,
+          "action": "切り替わりが生じた処理時間を記録する",
+          "expected": "実装が採用している打ち切り時間が記録され、判定はQAとして起票される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "質問状",
+          "value": "タイムアウトの確定値に関する照会が起票されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-033",
+      "title": "サービスメンテナンス中の応答の確認",
+      "testConditionId": "TC-033",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "techniqueId": "checklist-based",
+      "coverageTargets": [
+        "AC-TC-033-01"
+      ],
+      "perspectiveCategoryId": "TPC-14",
+      "testType": "機能テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "アクセス先API",
+          "value": "サービスメンテナンス中"
+        },
+        {
+          "name": "要求電文",
+          "value": "有効値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "サービスメンテナンス状態のアクセス先APIへ要求電文を送信する",
+          "expected": "応答が返却される"
+        },
+        {
+          "no": 2,
+          "action": "HTTPステータスコードを確認する",
+          "expected": "HTTPステータスコード500番台のエラーが返却される"
+        },
+        {
+          "no": 3,
+          "action": "応答本文を確認する",
+          "expected": "JSON形式では返却されない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "登録されない"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-034",
+      "title": "アクセストークンの3状態に対する認証エラー応答の確認",
+      "testConditionId": "TC-034",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-034-01"
+      ],
+      "perspectiveCategoryId": "TPC-15",
+      "testType": "セキュリティテスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "アクセストークン",
+          "value": "未指定・期限切れ・改ざん済みの3通り"
+        },
+        {
+          "name": "要求電文",
+          "value": "有効値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "アクセストークンを未指定にして要求電文を送信する",
+          "expected": "HTTPステータスコード401が返却される"
+        },
+        {
+          "no": 2,
+          "action": "期限切れのアクセストークンと改ざん済みのアクセストークンで同様に送信する",
+          "expected": "いずれもHTTPステータスコード401が返却される"
+        },
+        {
+          "no": 3,
+          "action": "3回の応答本文の detail を確認する",
+          "expected": "detail が「アクセストークンが無効です。」で一致している"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "登録されない"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-035",
+      "title": "個人番号の秘匿性の確認",
+      "testConditionId": "TC-035",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-07"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        }
+      ],
+      "techniqueId": "checklist-based",
+      "coverageTargets": [
+        "AC-TC-035-01"
+      ],
+      "perspectiveCategoryId": "TPC-15",
+      "testType": "セキュリティテスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "kojinbango"
+        },
+        {
+          "name": "通信の記録",
+          "value": "取得する"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "個人番号を含む要求電文をTLS1.2以上の接続で送信する",
+          "expected": "平文の個人番号が通信路上に現れない"
+        },
+        {
+          "no": 2,
+          "action": "個人番号の桁数を誤らせて400応答を発生させる",
+          "expected": "HTTPステータスコード400が返却される"
+        },
+        {
+          "no": 3,
+          "action": "errors 配列の message とログを確認する",
+          "expected": "個人番号そのものが message とログのいずれにも含まれていない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "ログ",
+          "value": "個人番号が記録されていない"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-036",
+      "title": "必須エラーのメッセージから対処が読み取れることの確認",
+      "testConditionId": "TC-036",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "E0001"
+        }
+      ],
+      "techniqueId": "checklist-based",
+      "coverageTargets": [
+        "AC-TC-036-01"
+      ],
+      "perspectiveCategoryId": "TPC-16",
+      "testType": "ユーザビリティテスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "欠落させる必須パラメータ",
+          "value": "1件"
+        },
+        {
+          "name": "評価者",
+          "value": "窓口業務の担当者"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "必須パラメータを1件欠落させた要求電文を送信する",
+          "expected": "HTTPステータスコード400が返却される"
+        },
+        {
+          "no": 2,
+          "action": "errors 配列の message を窓口業務の担当者へ提示する",
+          "expected": "message から欠落した項目名が特定できる"
+        },
+        {
+          "no": 3,
+          "action": "担当者が次に行う操作を回答する",
+          "expected": "欠落した項目に値を設定して再送するという対処が回答される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "評価記録",
+          "value": "対処が読み取れたかどうかが記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-037",
+      "title": "文字コードと外国人氏名の往復の確認",
+      "testConditionId": "TC-037",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-6"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-7"
+        }
+      ],
+      "techniqueId": "checklist-based",
+      "coverageTargets": [
+        "AC-TC-037-01"
+      ],
+      "perspectiveCategoryId": "TPC-17",
+      "testType": "ローカライゼーションテスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象パラメータ",
+          "value": "shimei_gaikokujinkanji / shimei_gaikokujinromaji"
+        },
+        {
+          "name": "応答ヘッダ",
+          "value": "記録する"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "漢字表記とローマ字表記の外国人氏名を含む要求電文を送信する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 2,
+          "action": "応答の Content-Type ヘッダを確認する",
+          "expected": "Content-Type が application/json;charset=UTF-8 である"
+        },
+        {
+          "no": 3,
+          "action": "登録値を読み出してデータ項目 031-6 と 031-7 に照合する",
+          "expected": "送信した文字列と読み出した文字列が一致し文字化けが生じていない"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "外国人氏名が登録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-038",
+      "title": "業務ID更新後の他項目のリグレッション確認",
+      "testConditionId": "TC-038",
+      "derivedFrom": [
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-11"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-12"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-038-01"
+      ],
+      "perspectiveCategoryId": "TPC-18",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象の住登外者宛名基本情報",
+          "value": "全項目に値を設定済み"
+        },
+        {
+          "name": "処理区分",
+          "value": "2"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "更新前の住登外者宛名基本情報の全項目を退避する",
+          "expected": "更新前の値が取得できる"
+        },
+        {
+          "no": 2,
+          "action": "処理区分 2 の要求電文で app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "更新後のデータ項目 031-3 と 031-11 と 031-12 を退避値と比較する",
+          "expected": "氏名と性別と生年月日が更新前と同一である"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "業務ID以外は更新前と同一である"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-039",
+      "title": "条件付き必須項目の条件成立時と不成立時の登録可否の確認",
+      "testConditionId": "TC-039",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-03"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-3"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-4"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-5"
+        }
+      ],
+      "techniqueId": "decision-table",
+      "coverageTargets": [
+        "AC-TC-039-01"
+      ],
+      "perspectiveCategoryId": "TPC-02",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象データ項目",
+          "value": "031-3 / 031-4 / 031-5"
+        },
+        {
+          "name": "条件",
+          "value": "氏名未定であるかどうか"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "氏名未定でない住登外者の要求電文を、氏名系項目を設定した状態と未設定の状態の2通りで用意する",
+          "expected": "2通りの要求電文が生成される"
+        },
+        {
+          "no": 2,
+          "action": "2通りそれぞれで POST により app_submit/v10/jutogaishaatenabangofuban を呼び出す",
+          "expected": "各回でHTTPステータスコードが返却される"
+        },
+        {
+          "no": 3,
+          "action": "氏名未定の住登外者について氏名系項目を未設定にして送信する",
+          "expected": "条件が成立しないため未設定のまま受理される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "判定表",
+          "value": "条件成立時と不成立時の受理結果が記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-040",
+      "title": "正常系レスポンスの固定値の確認",
+      "testConditionId": "TC-040",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "checklist-based",
+      "coverageTargets": [
+        "AC-TC-040-01"
+      ],
+      "perspectiveCategoryId": "TPC-01",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "0"
+        },
+        {
+          "name": "要求電文",
+          "value": "有効値"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "有効な要求電文を送信する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 2,
+          "action": "metadata の各キーを確認する",
+          "expected": "title が「住登外者宛名番号付番」であり detail が「登録が完了しました。」である"
+        },
+        {
+          "no": 3,
+          "action": "_links.self.href を確認する",
+          "expected": "実行したAPIのURLが返却されている"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "応答記録",
+          "value": "固定値の一致が記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-041",
+      "title": "正常系レスポンスの result 配列が返す項目範囲の記録",
+      "testConditionId": "TC-041",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-06"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-28"
+        }
+      ],
+      "techniqueId": "checklist-based",
+      "coverageTargets": [
+        "AC-TC-041-01"
+      ],
+      "perspectiveCategoryId": "TPC-09",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "0"
+        },
+        {
+          "name": "送信項目",
+          "value": "住登外者宛名基本情報の全項目"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "住登外者宛名基本情報の全項目を設定した要求電文を送信する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 2,
+          "action": "result 配列に含まれるキーを列挙する",
+          "expected": "result 配列が返すキーが6件であることが記録される"
+        },
+        {
+          "no": 3,
+          "action": "送信した他の項目が応答から確認できるかを判定する",
+          "expected": "データ項目 031-28 を含む送信項目のうち応答に現れないものが記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "確認手段の合意",
+          "value": "応答以外の確認手段の要否が記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-042",
+      "title": "データ出力条件3区分に対する値の有無の扱いの確認",
+      "testConditionId": "TC-042",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-01"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-2"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-26"
+        }
+      ],
+      "techniqueId": "equivalence-partitioning",
+      "coverageTargets": [
+        "AC-TC-042-01"
+      ],
+      "perspectiveCategoryId": "TPC-04",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "対象データ項目",
+          "value": "031-1 / 031-2 / 031-26"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "必須項目に値を設定し任意項目を未設定にした要求電文を送信する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 2,
+          "action": "必須項目を未設定にした要求電文を送信する",
+          "expected": "HTTPステータスコード400と E0001 が返却される"
+        },
+        {
+          "no": 3,
+          "action": "条件付き必須項目について条件成立時に未設定とした要求電文を送信する",
+          "expected": "条件成立時の未設定に対する応答が記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "判定表",
+          "value": "3区分それぞれの扱いが記録されている"
+        }
+      ],
+      "testLevel": "integration-testing",
+      "externalDependencyIds": [
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 180,
+      "declaredTestSize": "medium"
+    },
+    {
+      "caseId": "TCS-043",
+      "title": "業務IDと独自施策システム等IDの繰り返し上限到達時の扱いの確認",
+      "testConditionId": "TC-043",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-10"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-24"
+        }
+      ],
+      "techniqueId": "boundary-value-analysis",
+      "coverageTargets": [
+        "AC-TC-043-01"
+      ],
+      "perspectiveCategoryId": "TPC-07",
+      "testType": "機能テスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "登録済みの業務ID件数",
+          "value": "繰り返し上限に到達済み"
+        },
+        {
+          "name": "処理区分",
+          "value": "2"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "繰り返し上限まで業務IDを登録した住登外者宛名基本情報を用意する",
+          "expected": "上限件数の業務IDが登録された状態になる"
+        },
+        {
+          "no": 2,
+          "action": "さらに別業務からの登録要求を POST で app_submit/v10/jutogaishaatenabangofuban へ送信する",
+          "expected": "応答が返却される"
+        },
+        {
+          "no": 3,
+          "action": "応答とデータ項目 031-23 と 031-24 を確認する",
+          "expected": "上限を超える登録の可否が記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "質問状",
+          "value": "繰り返し上限超過時の扱いに関する照会が起票されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-044",
+      "title": "アクセストークンの有効期限が処理途中で切れた場合の扱いの確認",
+      "testConditionId": "TC-044",
+      "derivedFrom": [
+        {
+          "kind": "guideword",
+          "id": "GW-08"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-27"
+        }
+      ],
+      "techniqueId": "exploratory",
+      "coverageTargets": [
+        "AC-TC-044-01"
+      ],
+      "perspectiveCategoryId": "TPC-08",
+      "testType": "セキュリティテスト",
+      "priority": "低",
+      "preconditions": [
+        {
+          "name": "アクセストークンの有効期限",
+          "value": "処理途中で満了するよう設定"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "有効期限が短いアクセストークンを取得して要求電文を送信する",
+          "expected": "リクエストが受け付けられる"
+        },
+        {
+          "no": 2,
+          "action": "付番処理の実行中に有効期限を満了させる",
+          "expected": "処理が継続するか中断するかが観測される"
+        },
+        {
+          "no": 3,
+          "action": "応答と登録結果を確認する",
+          "expected": "処理が完了したか401が返却されたかが記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "質問状",
+          "value": "処理途中の有効期限満了に関する照会が起票されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-08"
+      ],
+      "estimatedDurationSeconds": 900,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-045",
+      "title": "503応答後の同一要求電文の再送における二重登録の有無の確認",
+      "testConditionId": "TC-045",
+      "derivedFrom": [
+        {
+          "kind": "risk",
+          "id": "RK-05"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-1"
+        }
+      ],
+      "techniqueId": "scenario-based",
+      "coverageTargets": [
+        "AC-TC-045-01"
+      ],
+      "perspectiveCategoryId": "TPC-11",
+      "testType": "信頼性テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "初回の応答",
+          "value": "HTTPステータスコード503"
+        },
+        {
+          "name": "処理区分",
+          "value": "0"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "想定外エラーを発生させた状態で要求電文を送信する",
+          "expected": "HTTPステータスコード503が返却され detail が「想定外のエラーが発生しました。」である"
+        },
+        {
+          "no": 2,
+          "action": "同一の要求電文を再送する",
+          "expected": "応答が返却される"
+        },
+        {
+          "no": 3,
+          "action": "登録された住登外者宛名基本情報の件数を確認する",
+          "expected": "同一の住登外者に対する登録が二重に行われていないことが記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "住登外者宛名基本情報",
+          "value": "二重登録の有無が記録されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    },
+    {
+      "caseId": "TCS-046",
+      "title": "付番後の業務ID更新における履歴番号の増加の確認",
+      "testConditionId": "TC-046",
+      "derivedFrom": [
+        {
+          "kind": "stakeholder",
+          "id": "P-02"
+        },
+        {
+          "kind": "requirement",
+          "id": "031-23"
+        }
+      ],
+      "techniqueId": "state-transition",
+      "coverageTargets": [
+        "AC-TC-046-01"
+      ],
+      "perspectiveCategoryId": "TPC-05",
+      "testType": "機能テスト",
+      "priority": "中",
+      "preconditions": [
+        {
+          "name": "処理区分",
+          "value": "0 の後に 2"
+        },
+        {
+          "name": "対象",
+          "value": "同一の宛名番号"
+        }
+      ],
+      "steps": [
+        {
+          "no": 1,
+          "action": "処理区分 0 で付番して result 配列の rirekibango を記録する",
+          "expected": "初回の履歴番号が記録される"
+        },
+        {
+          "no": 2,
+          "action": "同一の宛名番号に対して処理区分 2 で業務IDを更新する",
+          "expected": "HTTPステータスコード200が返却される"
+        },
+        {
+          "no": 3,
+          "action": "2回目の result 配列の rirekibango を初回と比較する",
+          "expected": "履歴番号が増加しているか同値のままかが記録される"
+        }
+      ],
+      "postconditions": [
+        {
+          "name": "質問状",
+          "value": "履歴番号の採番規則に関する照会が起票されている"
+        }
+      ],
+      "testLevel": "system-testing",
+      "externalDependencyIds": [
+        "TSD-01",
+        "TSD-02",
+        "TSD-04"
+      ],
+      "estimatedDurationSeconds": 600,
+      "declaredTestSize": "large"
+    }
+  ]
+}

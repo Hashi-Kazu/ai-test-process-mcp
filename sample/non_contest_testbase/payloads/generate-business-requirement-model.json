@@ -1,0 +1,231 @@
+{
+  "subjectName": "住登外者宛名番号管理機能 住登外者宛名番号付番API（fuban-api_spec:8, 10 第2.0版）",
+  "roles": [
+    { "id": "ROL-01", "nameJa": "API要求元（基幹業務システム）(fuban-api_spec:55)" },
+    { "id": "ROL-02", "nameJa": "アクセス先APIの認可サーバ(fuban-api_spec:56)" },
+    { "id": "ROL-03", "nameJa": "アクセス先API（住登外者宛名番号管理機能）(fuban-api_spec:57)" }
+  ],
+  "purposes": [
+    {
+      "id": "PUR-01",
+      "level": "businessGoal",
+      "statement": "自治体内において住登外者の個人を一意に識別する番号（住登外者宛名番号）を住登外者宛名番号管理機能で管理する(fuban-api_spec:100-101, item-definition:12)"
+    },
+    {
+      "id": "PUR-02",
+      "level": "systemizationPurpose",
+      "statement": "基幹業務システムが住登外者宛名番号付番APIをAPIコールし、リクエストパラメータを元に住登外者宛名番号の付番依頼を行えるようにする(fuban-api_spec:20, 29-30)"
+    },
+    {
+      "id": "PUR-03",
+      "level": "systemizationPurpose",
+      "statement": "住登外者宛名番号を付番し登録した結果を、正常時は処理結果情報として、異常時は失敗した理由をエラーメッセージとして要求元へ返却する(fuban-api_spec:74-75)"
+    }
+  ],
+  "businessUseCases": [
+    {
+      "id": "BUC-01",
+      "purposeIds": ["PUR-01", "PUR-02"],
+      "name": "住登外者宛名番号の新規付番依頼（処理区分0）",
+      "actorRoleId": "ROL-01",
+      "trigger": "基幹業務システムが住登外者を新規に登録する必要が生じ、処理区分 \"0\" で付番依頼を行うとき(fuban-api_spec:66, 96-98)",
+      "completionState": "新規住登外者宛名番号が付番され、HTTPステータスコード200のレスポンスオブジェクトの result 配列に atenabango が返却されている(fuban-api_spec:66, 80, 181-189)",
+      "featureIds": ["住登外者宛名番号付番依頼機能", "住登外者宛名番号付番依頼受信機能", "住登外者宛名基本情報送信機能"],
+      "exceptionOperation": "正常に付番処理が実行されなかった場合は再度付番依頼を実施する。これにより新規付番された番号が返却される(fuban-api_spec:64)"
+    },
+    {
+      "id": "BUC-02",
+      "purposeIds": ["PUR-01", "PUR-03"],
+      "name": "既存宛名番号を利用した住登外者の登録（処理区分1）",
+      "actorRoleId": "ROL-01",
+      "trigger": "既存の宛名番号を利用し住登外者を登録する場合に、処理区分 \"1\" を設定して付番依頼を行うとき(fuban-api_spec:66, 97)",
+      "completionState": "受信した宛名番号が住登外者宛名番号として登録されている(fuban-api_spec:66)",
+      "featureIds": ["住登外者宛名番号付番依頼機能", "住登外者宛名番号付番依頼受信機能"],
+      "exceptionOperation": "送信したパラメータのチェックにてエラーとなった場合はHTTPステータスコード400のエラーリストを確認し、宛名番号（処理区分1・2の場合は必須）を補正して再依頼する(fuban-api_spec:81, 101)"
+    },
+    {
+      "id": "BUC-03",
+      "purposeIds": ["PUR-01", "PUR-03"],
+      "name": "住登外者宛名番号選択情報送信による業務ID更新（処理区分2）",
+      "actorRoleId": "ROL-01",
+      "trigger": "候補者から宛名番号を選択し登録する場合に、処理区分 \"2\" を設定して付番依頼を行うとき(fuban-api_spec:66, 98)",
+      "completionState": "受信した住登外者宛名番号の住登外者宛名基本情報の業務IDが更新されている(fuban-api_spec:66, item-definition:49)",
+      "featureIds": ["住登外者宛名番号付番依頼機能", "住登外者宛名基本情報送信機能"],
+      "exceptionOperation": "送信したパラメータのチェックにてエラーとなった場合はHTTPステータスコード400のエラーリストを確認し、業務IDまたは独自施策システム等IDを補正して再依頼する(fuban-api_spec:81, item-definition:49-52)"
+    }
+  ],
+  "flowSteps": [
+    {
+      "id": "BFL-01",
+      "useCaseId": "BUC-01",
+      "no": 1,
+      "actorRoleId": "ROL-01",
+      "action": "1. APIアクセス w/アクセストークン。①住登外者宛名番号付番リクエストを POST で送信する(fuban-api_spec:60-61, 77)",
+      "handedOverInfo": "[app_submit/v10/jutogaishaatenabangofuban_R01]住登外者宛名番号付番要求電文（リクエスト_API仕様を参照)(fuban-api_spec:65)",
+      "branchCondition": "処理区分 \"0\" を設定する（通常新規付番する場合の初回付番依頼時）(fuban-api_spec:96)",
+      "featureIds": ["住登外者宛名番号付番依頼機能"],
+      "dataAccess": [{ "dataId": "BDT-02", "access": "read" }]
+    },
+    {
+      "id": "BFL-02",
+      "useCaseId": "BUC-01",
+      "no": 2,
+      "actorRoleId": "ROL-02",
+      "action": "アクセストークンの検証を行う(fuban-api_spec:63)",
+      "handedOverInfo": "検証済みのアクセストークン。認証情報が取得できないまたはアクセストークンが未指定の場合はHTTPステータスコード401が返却される(fuban-api_spec:82)",
+      "branchCondition": "認証情報が取得できないまたはアクセストークンが未指定の場合はHTTPステータスコード401(fuban-api_spec:82)",
+      "featureIds": ["住登外者宛名番号付番依頼受信機能"],
+      "dataAccess": [{ "dataId": "BDT-02", "access": "read" }]
+    },
+    {
+      "id": "BFL-03",
+      "useCaseId": "BUC-01",
+      "no": 3,
+      "actorRoleId": "ROL-03",
+      "action": "②住登外者宛名番号付番等。処理区分 0 により新規住登外者宛名番号を付番する(fuban-api_spec:62, 66)",
+      "handedOverInfo": "新規に付番された住登外者宛名番号（15桁）と履歴番号(fuban-api_spec:183-189)",
+      "branchCondition": "送信したパラメータのチェックにてエラーとなった場合はHTTPステータスコード400(fuban-api_spec:81)",
+      "featureIds": ["住登外者宛名番号付番依頼受信機能", "住登外者宛名基本情報送信機能"],
+      "dataAccess": [
+        { "dataId": "BDT-01", "access": "update" },
+        { "dataId": "BDT-03", "access": "update" }
+      ]
+    },
+    {
+      "id": "BFL-04",
+      "useCaseId": "BUC-01",
+      "no": 4,
+      "actorRoleId": "ROL-03",
+      "action": "2. API結果返却。[app_submit/v10/jutogaishaatenabangofuban_S01]住登外者宛名番号付番応答電文を返す(fuban-api_spec:58-59)",
+      "handedOverInfo": "HTTPステータスコード200とJSON形式のレスポンスオブジェクト（result 配列に atenabango / rirekibango を含む）(fuban-api_spec:80, 181-189)",
+      "branchCondition": "処理が30秒以上経過した場合は原則HTTPステータスコード500番台、想定外エラーは503(fuban-api_spec:83, 85)",
+      "featureIds": ["住登外者宛名基本情報送信機能"],
+      "dataAccess": [{ "dataId": "BDT-01", "access": "read" }]
+    },
+    {
+      "id": "BFL-05",
+      "useCaseId": "BUC-02",
+      "no": 1,
+      "actorRoleId": "ROL-01",
+      "action": "処理区分 \"1\" と既存の宛名番号を設定した要求電文を POST で送信する(fuban-api_spec:97, 101)",
+      "handedOverInfo": "住登外者宛名番号付番要求電文（atenabango は処理区分1・2の場合は必須）(fuban-api_spec:65, 101)",
+      "branchCondition": "既存の宛名番号を利用し住登外者を登録する場合 \"1\" を設定(fuban-api_spec:97)",
+      "featureIds": ["住登外者宛名番号付番依頼機能"],
+      "dataAccess": [{ "dataId": "BDT-02", "access": "read" }]
+    },
+    {
+      "id": "BFL-06",
+      "useCaseId": "BUC-02",
+      "no": 2,
+      "actorRoleId": "ROL-02",
+      "action": "アクセストークンの検証を行う(fuban-api_spec:63)",
+      "handedOverInfo": "検証済みのアクセストークン(fuban-api_spec:61, 63)",
+      "branchCondition": "認証情報が取得できないまたはアクセストークンが未指定の場合はHTTPステータスコード401(fuban-api_spec:82)",
+      "featureIds": ["住登外者宛名番号付番依頼受信機能"],
+      "dataAccess": [{ "dataId": "BDT-02", "access": "read" }]
+    },
+    {
+      "id": "BFL-07",
+      "useCaseId": "BUC-02",
+      "no": 3,
+      "actorRoleId": "ROL-03",
+      "action": "受信した宛名番号を住登外者宛名番号として登録する(fuban-api_spec:66)",
+      "handedOverInfo": "登録された住登外者宛名基本情報(item-definition:12)",
+      "branchCondition": "宛名番号が設定されていない場合は必須エラー E0001 または相関チェックエラー E0004(fuban-api_spec:242, 245)",
+      "featureIds": ["住登外者宛名番号付番依頼受信機能"],
+      "dataAccess": [
+        { "dataId": "BDT-01", "access": "update" },
+        { "dataId": "BDT-03", "access": "update" }
+      ]
+    },
+    {
+      "id": "BFL-08",
+      "useCaseId": "BUC-02",
+      "no": 4,
+      "actorRoleId": "ROL-03",
+      "action": "2. API結果返却(fuban-api_spec:58)",
+      "handedOverInfo": "HTTPステータスコード200とJSON形式のレスポンスオブジェクト(fuban-api_spec:80)",
+      "branchCondition": "送信したパラメータのチェックにてエラーとなった場合はHTTPステータスコード400(fuban-api_spec:81)",
+      "featureIds": ["住登外者宛名番号付番依頼機能"],
+      "dataAccess": [{ "dataId": "BDT-01", "access": "read" }]
+    },
+    {
+      "id": "BFL-09",
+      "useCaseId": "BUC-03",
+      "no": 1,
+      "actorRoleId": "ROL-01",
+      "action": "処理区分 \"2\" と選択された住登外者宛名番号を設定した要求電文を POST で送信する(fuban-api_spec:98, 101)",
+      "handedOverInfo": "住登外者宛名番号付番要求電文と業務ID（gyomuid）(fuban-api_spec:65, item-definition:49)",
+      "branchCondition": "候補者から宛名番号を選択し登録する場合 \"2\" を設定(fuban-api_spec:98)",
+      "featureIds": ["住登外者宛名番号付番依頼機能"],
+      "dataAccess": [{ "dataId": "BDT-02", "access": "read" }]
+    },
+    {
+      "id": "BFL-10",
+      "useCaseId": "BUC-03",
+      "no": 2,
+      "actorRoleId": "ROL-02",
+      "action": "アクセストークンの検証を行う(fuban-api_spec:63)",
+      "handedOverInfo": "検証済みのアクセストークン(fuban-api_spec:61, 63)",
+      "branchCondition": "認証情報が取得できないまたはアクセストークンが未指定の場合はHTTPステータスコード401(fuban-api_spec:82)",
+      "featureIds": ["住登外者宛名番号付番依頼受信機能"],
+      "dataAccess": [{ "dataId": "BDT-02", "access": "read" }]
+    },
+    {
+      "id": "BFL-11",
+      "useCaseId": "BUC-03",
+      "no": 3,
+      "actorRoleId": "ROL-03",
+      "action": "受信した住登外者宛名番号の住登外者宛名基本情報の業務IDを更新する(fuban-api_spec:66)",
+      "handedOverInfo": "業務IDが更新された住登外者宛名基本情報(item-definition:49)",
+      "branchCondition": "「地方公共団体情報システムの統一・標準化における各種IDの管理方針」に規定されていないシステムの場合は独自施策システム等IDを出力する(item-definition:52)",
+      "featureIds": ["住登外者宛名基本情報送信機能"],
+      "dataAccess": [
+        { "dataId": "BDT-01", "access": "update" },
+        { "dataId": "BDT-03", "access": "update" }
+      ]
+    },
+    {
+      "id": "BFL-12",
+      "useCaseId": "BUC-03",
+      "no": 4,
+      "actorRoleId": "ROL-03",
+      "action": "2. API結果返却(fuban-api_spec:58)",
+      "handedOverInfo": "HTTPステータスコード200とJSON形式のレスポンスオブジェクト(fuban-api_spec:80)",
+      "branchCondition": "上記以外の想定外エラーが発生した場合はHTTPステータスコード503(fuban-api_spec:85)",
+      "featureIds": ["住登外者宛名番号付番依頼機能"],
+      "dataAccess": [{ "dataId": "BDT-01", "access": "read" }]
+    }
+  ],
+  "drivingData": [
+    {
+      "id": "BDT-01",
+      "name": "住登外者宛名基本情報（031-1〜031-29）",
+      "suggestedKind": "master",
+      "source": "項目定義書（住登外者宛名番号管理）住登外者宛名基本情報(item-definition:12-58)",
+      "sharingScope": "住登外者宛名基本情報を登録、利用する業務のID（業務ID）を持つ基幹業務システムおよび独自施策システム等(item-definition:49-52)",
+      "usedByUseCaseIds": ["BUC-01", "BUC-02", "BUC-03"]
+    },
+    {
+      "id": "BDT-02",
+      "name": "アクセストークン（OAuth2.0 Bearerタイプ）",
+      "suggestedKind": "credential",
+      "source": "本APIの要求元認証は、OAuth2.0 アクセストークン：Bearerタイプ、認証方式：client_secret_jwtで行う(fuban-api_spec:37)",
+      "sharingScope": "API要求元とアクセス先APIの認可サーバの間(fuban-api_spec:55-56, 61, 63)",
+      "usedByUseCaseIds": ["BUC-01", "BUC-02", "BUC-03"]
+    },
+    {
+      "id": "BDT-03",
+      "name": "履歴情報（rirekibango 履歴番号）",
+      "suggestedKind": "transaction",
+      "source": "宛名番号ごとに履歴情報を管理する番号(fuban-api_spec:187)",
+      "usedByUseCaseIds": ["BUC-01", "BUC-02", "BUC-03"]
+    }
+  ],
+  "featureIdPopulation": [
+    "住登外者宛名番号付番依頼機能",
+    "住登外者宛名番号付番依頼受信機能",
+    "住登外者宛名基本情報送信機能"
+  ],
+  "claimedFeatureCoveragePercent": 100
+}

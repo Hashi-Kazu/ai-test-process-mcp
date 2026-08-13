@@ -1,0 +1,139 @@
+{
+  "declaredDistributions": [
+    {
+      "axis": "perspective",
+      "label": "TPC-01",
+      "declaredCount": 5
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-02",
+      "declaredCount": 5
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-03",
+      "declaredCount": 13
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-04",
+      "declaredCount": 4
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-05",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-07",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-08",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-09",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-10",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-11",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-12",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-13",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-14",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-15",
+      "declaredCount": 2
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-16",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-17",
+      "declaredCount": 1
+    },
+    {
+      "axis": "perspective",
+      "label": "TPC-18",
+      "declaredCount": 1
+    },
+    {
+      "axis": "technique",
+      "label": "boundary-value-analysis",
+      "declaredCount": 16
+    },
+    {
+      "axis": "technique",
+      "label": "checklist-based",
+      "declaredCount": 6
+    },
+    {
+      "axis": "technique",
+      "label": "decision-table",
+      "declaredCount": 2
+    },
+    {
+      "axis": "technique",
+      "label": "equivalence-partitioning",
+      "declaredCount": 8
+    },
+    {
+      "axis": "technique",
+      "label": "exploratory",
+      "declaredCount": 1
+    },
+    {
+      "axis": "technique",
+      "label": "pairwise",
+      "declaredCount": 1
+    },
+    {
+      "axis": "technique",
+      "label": "scenario-based",
+      "declaredCount": 10
+    },
+    {
+      "axis": "technique",
+      "label": "state-transition",
+      "declaredCount": 2
+    },
+    {
+      "axis": "test-level",
+      "label": "integration-testing",
+      "declaredCount": 24
+    },
+    {
+      "axis": "test-level",
+      "label": "system-testing",
+      "declaredCount": 22
+    }
+  ]
+}

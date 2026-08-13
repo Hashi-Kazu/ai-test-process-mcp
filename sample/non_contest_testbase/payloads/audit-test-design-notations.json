@@ -1,0 +1,1556 @@
+{
+  "fvTable": {
+    "rows": [
+      {
+        "id": "FV-1",
+        "functionId": "031-1",
+        "functionName": "031-1 宛名番号",
+        "verification": "宛名番号（031-1）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-01 機能、item-definition:12）を確認する",
+        "requirementIds": [
+          "031-1"
+        ],
+        "ngtNodeId": "NG-2",
+        "testConditionIds": [
+          "TC-001",
+          "TC-002",
+          "TC-009",
+          "TC-026",
+          "TC-027",
+          "TC-028",
+          "TC-030",
+          "TC-040",
+          "TC-045"
+        ],
+        "evidence": "自治体内において、個人を一意に識別する番号"
+      },
+      {
+        "id": "FV-2",
+        "functionId": "031-2",
+        "functionName": "031-2 個人番号",
+        "verification": "個人番号（031-2）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:14）を確認する",
+        "requirementIds": [
+          "031-2"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-010",
+          "TC-035",
+          "TC-042"
+        ],
+        "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号"
+      },
+      {
+        "id": "FV-3",
+        "functionId": "031-3",
+        "functionName": "031-3 氏名",
+        "verification": "氏名（031-3）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:15）を確認する",
+        "requirementIds": [
+          "031-3"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-011",
+          "TC-038",
+          "TC-039"
+        ],
+        "evidence": "住登外者の氏名"
+      },
+      {
+        "id": "FV-4",
+        "functionId": "031-4",
+        "functionName": "031-4 氏_日本人",
+        "verification": "氏_日本人（031-4）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:17）を確認する",
+        "requirementIds": [
+          "031-4"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-012",
+          "TC-039"
+        ],
+        "evidence": "住登外者の氏"
+      },
+      {
+        "id": "FV-5",
+        "functionId": "031-5",
+        "functionName": "031-5 名_日本人",
+        "verification": "名_日本人（031-5）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:18）を確認する",
+        "requirementIds": [
+          "031-5"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-012",
+          "TC-039"
+        ],
+        "evidence": "住登外者の名"
+      },
+      {
+        "id": "FV-6",
+        "functionId": "031-6",
+        "functionName": "031-6 氏名_外国人アルファベット",
+        "verification": "氏名_外国人アルファベット（031-6）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:19）を確認する",
+        "requirementIds": [
+          "031-6"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-013",
+          "TC-037"
+        ],
+        "evidence": "外国人住登外者の氏名（アルファベット）"
+      },
+      {
+        "id": "FV-7",
+        "functionId": "031-7",
+        "functionName": "031-7 氏名_外国人漢字",
+        "verification": "氏名_外国人漢字（031-7）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:22）を確認する",
+        "requirementIds": [
+          "031-7"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-013",
+          "TC-037"
+        ],
+        "evidence": "外国人住登外者の氏名（漢字）"
+      },
+      {
+        "id": "FV-8",
+        "functionId": "031-8",
+        "functionName": "031-8 氏名_読み仮名",
+        "verification": "氏名_読み仮名（031-8）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:25）を確認する",
+        "requirementIds": [
+          "031-8"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-014"
+        ],
+        "evidence": "住登外者の氏名（読み仮名）"
+      },
+      {
+        "id": "FV-9",
+        "functionId": "031-9",
+        "functionName": "031-9 氏_日本人_読み仮名",
+        "verification": "氏_日本人_読み仮名（031-9）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:26）を確認する",
+        "requirementIds": [
+          "031-9"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-014"
+        ],
+        "evidence": "住登外者の氏（読み仮名）"
+      },
+      {
+        "id": "FV-10",
+        "functionId": "031-10",
+        "functionName": "031-10 名_日本人_読み仮名",
+        "verification": "名_日本人_読み仮名（031-10）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:27）を確認する",
+        "requirementIds": [
+          "031-10"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-014"
+        ],
+        "evidence": "住登外者の名（読み仮名）"
+      },
+      {
+        "id": "FV-11",
+        "functionId": "031-11",
+        "functionName": "031-11 性別",
+        "verification": "性別（031-11）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-04 同値、item-definition:28）を確認する",
+        "requirementIds": [
+          "031-11"
+        ],
+        "ngtNodeId": "NG-5",
+        "testConditionIds": [
+          "TC-022",
+          "TC-038"
+        ],
+        "evidence": "住登外者の性別を示すコード"
+      },
+      {
+        "id": "FV-12",
+        "functionId": "031-12",
+        "functionName": "031-12 生年月日",
+        "verification": "生年月日（031-12）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-04 同値、item-definition:29）を確認する",
+        "requirementIds": [
+          "031-12"
+        ],
+        "ngtNodeId": "NG-5",
+        "testConditionIds": [
+          "TC-023",
+          "TC-038"
+        ],
+        "evidence": "住登外者の生年月日"
+      },
+      {
+        "id": "FV-13",
+        "functionId": "031-13",
+        "functionName": "031-13 生年月日_不詳表記",
+        "verification": "生年月日_不詳表記（031-13）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:31）を確認する",
+        "requirementIds": [
+          "031-13"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-015"
+        ],
+        "evidence": "生年月日が不詳である場合の不詳日表記"
+      },
+      {
+        "id": "FV-14",
+        "functionId": "031-14",
+        "functionName": "031-14 住所_市区町村コード",
+        "verification": "住所_市区町村コード（031-14）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:33）を確認する",
+        "requirementIds": [
+          "031-14"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-016"
+        ],
+        "evidence": "住登外者の住所（都道府県から市区町村まで）を一意に識別できるコード"
+      },
+      {
+        "id": "FV-15",
+        "functionId": "031-15",
+        "functionName": "031-15 住所_町字コード",
+        "verification": "住所_町字コード（031-15）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:34）を確認する",
+        "requirementIds": [
+          "031-15"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-016"
+        ],
+        "evidence": "住登外者の住所（町字）を一意に識別できるコード"
+      },
+      {
+        "id": "FV-16",
+        "functionId": "031-16",
+        "functionName": "031-16 住所_都道府県",
+        "verification": "住所_都道府県（031-16）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:37）を確認する",
+        "requirementIds": [
+          "031-16"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-017"
+        ],
+        "evidence": "住登外者の住所における都道府県"
+      },
+      {
+        "id": "FV-17",
+        "functionId": "031-17",
+        "functionName": "031-17 住所_市区郡町村名",
+        "verification": "住所_市区郡町村名（031-17）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:38）を確認する",
+        "requirementIds": [
+          "031-17"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-017"
+        ],
+        "evidence": "住登外者の住所における市区郡町村名"
+      },
+      {
+        "id": "FV-18",
+        "functionId": "031-18",
+        "functionName": "031-18 住所_町字",
+        "verification": "住所_町字（031-18）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:42）を確認する",
+        "requirementIds": [
+          "031-18"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-018"
+        ],
+        "evidence": "住登外者の住所における町字（丁目を含む）"
+      },
+      {
+        "id": "FV-19",
+        "functionId": "031-19",
+        "functionName": "031-19 住所_番地号表記",
+        "verification": "住所_番地号表記（031-19）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:43）を確認する",
+        "requirementIds": [
+          "031-19"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-019"
+        ],
+        "evidence": "住登外者の住所における番地号の日本語を含む表記（住居表示を実施していない区域においては「番地」、住居表示を実施している区域においては「番」及び「号」で表記する。）"
+      },
+      {
+        "id": "FV-20",
+        "functionId": "031-20",
+        "functionName": "031-20 住所_方書",
+        "verification": "住所_方書（031-20）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:45）を確認する",
+        "requirementIds": [
+          "031-20"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-020"
+        ],
+        "evidence": "住登外者の住所における方書"
+      },
+      {
+        "id": "FV-21",
+        "functionId": "031-21",
+        "functionName": "031-21 住所_方書_フリガナ",
+        "verification": "住所_方書_フリガナ（031-21）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:47）を確認する",
+        "requirementIds": [
+          "031-21"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-020"
+        ],
+        "evidence": "住登外者の住所における方書（フリガナ）"
+      },
+      {
+        "id": "FV-22",
+        "functionId": "031-22",
+        "functionName": "031-22 住所_郵便番号",
+        "verification": "住所_郵便番号（031-22）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:48）を確認する",
+        "requirementIds": [
+          "031-22"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-019"
+        ],
+        "evidence": "住登外者の住所における郵便番号"
+      },
+      {
+        "id": "FV-23",
+        "functionId": "031-23",
+        "functionName": "031-23 業務ID",
+        "verification": "業務ID（031-23）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-01 機能、item-definition:49）を確認する",
+        "requirementIds": [
+          "031-23"
+        ],
+        "ngtNodeId": "NG-2",
+        "testConditionIds": [
+          "TC-003",
+          "TC-043",
+          "TC-046"
+        ],
+        "evidence": "住登外者宛名基本情報を登録、利用する業務のID"
+      },
+      {
+        "id": "FV-24",
+        "functionId": "031-24",
+        "functionName": "031-24 独自施策システム等ID",
+        "verification": "独自施策システム等ID（031-24）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-01 機能、item-definition:51）を確認する",
+        "requirementIds": [
+          "031-24"
+        ],
+        "ngtNodeId": "NG-2",
+        "testConditionIds": [
+          "TC-004",
+          "TC-043"
+        ],
+        "evidence": "住登外者宛名基本情報を登録、利用する独自施策システム等のID"
+      },
+      {
+        "id": "FV-25",
+        "functionId": "031-26",
+        "functionName": "031-26 名寄せ先宛名番号",
+        "verification": "名寄せ先宛名番号（031-26）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-05 状態遷移、item-definition:54）を確認する",
+        "requirementIds": [
+          "031-26"
+        ],
+        "ngtNodeId": "NG-6",
+        "testConditionIds": [
+          "TC-025",
+          "TC-042"
+        ],
+        "evidence": "名寄せを実施した際に名寄せ先となる宛名番号が存在する場合、入力される番号"
+      },
+      {
+        "id": "FV-26",
+        "functionId": "031-27",
+        "functionName": "031-27 操作者ID",
+        "verification": "操作者ID（031-27）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-03 境界、item-definition:56）を確認する",
+        "requirementIds": [
+          "031-27"
+        ],
+        "ngtNodeId": "NG-4",
+        "testConditionIds": [
+          "TC-021",
+          "TC-029",
+          "TC-033",
+          "TC-034",
+          "TC-044"
+        ],
+        "evidence": "操作者を一意に識別するコード"
+      },
+      {
+        "id": "FV-27",
+        "functionId": "031-28",
+        "functionName": "031-28 操作年月日",
+        "verification": "操作年月日（031-28）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-04 同値、item-definition:57）を確認する",
+        "requirementIds": [
+          "031-28"
+        ],
+        "ngtNodeId": "NG-5",
+        "testConditionIds": [
+          "TC-024",
+          "TC-028",
+          "TC-041"
+        ],
+        "evidence": "操作を行った年月日"
+      },
+      {
+        "id": "FV-28",
+        "functionId": "031-29",
+        "functionName": "031-29 操作時刻",
+        "verification": "操作時刻（031-29）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-04 同値、item-definition:58）を確認する",
+        "requirementIds": [
+          "031-29"
+        ],
+        "ngtNodeId": "NG-5",
+        "testConditionIds": [
+          "TC-024",
+          "TC-031"
+        ],
+        "evidence": "操作を行った時刻"
+      },
+      {
+        "id": "FV-29",
+        "functionId": "E0001",
+        "functionName": "E0001 必須エラー",
+        "verification": "必須エラー（E0001）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-02 正常系・準正常系・異常系、fuban-api_spec:242）を確認する",
+        "requirementIds": [
+          "E0001"
+        ],
+        "ngtNodeId": "NG-3",
+        "testConditionIds": [
+          "TC-005",
+          "TC-032",
+          "TC-036"
+        ],
+        "evidence": "必須のパラメータが設定されていない状態。"
+      },
+      {
+        "id": "FV-30",
+        "functionId": "E0002",
+        "functionName": "E0002 指定文字エラー",
+        "verification": "指定文字エラー（E0002）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-02 正常系・準正常系・異常系、fuban-api_spec:243）を確認する",
+        "requirementIds": [
+          "E0002"
+        ],
+        "ngtNodeId": "NG-3",
+        "testConditionIds": [
+          "TC-006"
+        ],
+        "evidence": "パラメータの文字種に指定できない文字が使われている状態。"
+      },
+      {
+        "id": "FV-31",
+        "functionId": "E0003",
+        "functionName": "E0003 桁数エラー（固定項目）",
+        "verification": "桁数エラー（固定項目）（E0003）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-02 正常系・準正常系・異常系、fuban-api_spec:244）を確認する",
+        "requirementIds": [
+          "E0003"
+        ],
+        "ngtNodeId": "NG-3",
+        "testConditionIds": [
+          "TC-007"
+        ],
+        "evidence": "パラメータの固定桁項目の桁数が誤っている状態。"
+      },
+      {
+        "id": "FV-32",
+        "functionId": "E0004",
+        "functionName": "E0004 相関チェックエラー",
+        "verification": "相関チェックエラー（E0004）が付番APIのリクエスト・レスポンスで仕様どおりに扱われること（観点カテゴリ TPC-02 正常系・準正常系・異常系、fuban-api_spec:245）を確認する",
+        "requirementIds": [
+          "E0004"
+        ],
+        "ngtNodeId": "NG-3",
+        "testConditionIds": [
+          "TC-008"
+        ],
+        "evidence": "パラメータの項目設定が誤っている状態。"
+      },
+      {
+        "id": "FV-33",
+        "functionId": "031-1",
+        "functionName": "031-1 宛名番号",
+        "verification": "宛名番号（031-1）を観点カテゴリ TPC-07 並行・競合 の側面から確認する（item-definition:12）",
+        "requirementIds": [
+          "031-1"
+        ],
+        "ngtNodeId": "NG-7",
+        "testConditionIds": [
+          "TC-026"
+        ],
+        "evidence": "自治体内において、個人を一意に識別する番号"
+      },
+      {
+        "id": "FV-34",
+        "functionId": "031-1",
+        "functionName": "031-1 宛名番号",
+        "verification": "宛名番号（031-1）を観点カテゴリ TPC-08 タイミング・順序 の側面から確認する（item-definition:12）",
+        "requirementIds": [
+          "031-1"
+        ],
+        "ngtNodeId": "NG-8",
+        "testConditionIds": [
+          "TC-027"
+        ],
+        "evidence": "自治体内において、個人を一意に識別する番号"
+      },
+      {
+        "id": "FV-35",
+        "functionId": "031-1",
+        "functionName": "031-1 宛名番号",
+        "verification": "宛名番号（031-1）を観点カテゴリ TPC-09 データライフサイクル の側面から確認する（item-definition:12）",
+        "requirementIds": [
+          "031-1"
+        ],
+        "ngtNodeId": "NG-9",
+        "testConditionIds": [
+          "TC-028"
+        ],
+        "evidence": "自治体内において、個人を一意に識別する番号"
+      },
+      {
+        "id": "FV-36",
+        "functionId": "031-27",
+        "functionName": "031-27 操作者ID",
+        "verification": "操作者ID（031-27）を観点カテゴリ TPC-10 構成・環境 の側面から確認する（item-definition:56）",
+        "requirementIds": [
+          "031-27"
+        ],
+        "ngtNodeId": "NG-10",
+        "testConditionIds": [
+          "TC-029"
+        ],
+        "evidence": "操作者を一意に識別するコード"
+      },
+      {
+        "id": "FV-37",
+        "functionId": "031-1",
+        "functionName": "031-1 宛名番号",
+        "verification": "宛名番号（031-1）を観点カテゴリ TPC-11 障害・縮退・回復 の側面から確認する（item-definition:12）",
+        "requirementIds": [
+          "031-1"
+        ],
+        "ngtNodeId": "NG-11",
+        "testConditionIds": [
+          "TC-030",
+          "TC-045"
+        ],
+        "evidence": "自治体内において、個人を一意に識別する番号"
+      },
+      {
+        "id": "FV-38",
+        "functionId": "031-29",
+        "functionName": "031-29 操作時刻",
+        "verification": "操作時刻（031-29）を観点カテゴリ TPC-12 長時間稼働 の側面から確認する（item-definition:58）",
+        "requirementIds": [
+          "031-29"
+        ],
+        "ngtNodeId": "NG-12",
+        "testConditionIds": [
+          "TC-031"
+        ],
+        "evidence": "操作を行った時刻"
+      },
+      {
+        "id": "FV-39",
+        "functionId": "E0001",
+        "functionName": "E0001 必須エラー",
+        "verification": "必須エラー（E0001）を観点カテゴリ TPC-13 性能・負荷 の側面から確認する（fuban-api_spec:242）",
+        "requirementIds": [
+          "E0001"
+        ],
+        "ngtNodeId": "NG-13",
+        "testConditionIds": [
+          "TC-032"
+        ],
+        "evidence": "必須のパラメータが設定されていない状態。"
+      },
+      {
+        "id": "FV-40",
+        "functionId": "031-27",
+        "functionName": "031-27 操作者ID",
+        "verification": "操作者ID（031-27）を観点カテゴリ TPC-14 運用・保守 の側面から確認する（item-definition:56）",
+        "requirementIds": [
+          "031-27"
+        ],
+        "ngtNodeId": "NG-14",
+        "testConditionIds": [
+          "TC-033"
+        ],
+        "evidence": "操作者を一意に識別するコード"
+      },
+      {
+        "id": "FV-41",
+        "functionId": "031-2",
+        "functionName": "031-2 個人番号",
+        "verification": "個人番号（031-2）を観点カテゴリ TPC-15 セキュリティ の側面から確認する（item-definition:14）",
+        "requirementIds": [
+          "031-2"
+        ],
+        "ngtNodeId": "NG-15",
+        "testConditionIds": [
+          "TC-035"
+        ],
+        "evidence": "番号法に基づき、行政手続における特定の個人を識別するために各市区町村から住民に指定される番号"
+      },
+      {
+        "id": "FV-42",
+        "functionId": "E0001",
+        "functionName": "E0001 必須エラー",
+        "verification": "必須エラー（E0001）を観点カテゴリ TPC-16 ユーザビリティ・アクセシビリティ の側面から確認する（fuban-api_spec:242）",
+        "requirementIds": [
+          "E0001"
+        ],
+        "ngtNodeId": "NG-16",
+        "testConditionIds": [
+          "TC-036"
+        ],
+        "evidence": "必須のパラメータが設定されていない状態。"
+      },
+      {
+        "id": "FV-43",
+        "functionId": "031-6",
+        "functionName": "031-6 氏名_外国人アルファベット",
+        "verification": "氏名_外国人アルファベット（031-6）を観点カテゴリ TPC-17 ローカライズ の側面から確認する（item-definition:19）",
+        "requirementIds": [
+          "031-6"
+        ],
+        "ngtNodeId": "NG-17",
+        "testConditionIds": [
+          "TC-037"
+        ],
+        "evidence": "外国人住登外者の氏名（アルファベット）"
+      },
+      {
+        "id": "FV-44",
+        "functionId": "031-3",
+        "functionName": "031-3 氏名",
+        "verification": "氏名（031-3）を観点カテゴリ TPC-18 リグレッション の側面から確認する（item-definition:15）",
+        "requirementIds": [
+          "031-3"
+        ],
+        "ngtNodeId": "NG-18",
+        "testConditionIds": [
+          "TC-038"
+        ],
+        "evidence": "住登外者の氏名"
+      }
+    ],
+    "expectedFunctionIds": [
+      "031-1",
+      "031-2",
+      "031-3",
+      "031-4",
+      "031-5",
+      "031-6",
+      "031-7",
+      "031-8",
+      "031-9",
+      "031-10",
+      "031-11",
+      "031-12",
+      "031-13",
+      "031-14",
+      "031-15",
+      "031-16",
+      "031-17",
+      "031-18",
+      "031-19",
+      "031-20",
+      "031-21",
+      "031-22",
+      "031-23",
+      "031-24",
+      "031-26",
+      "031-27",
+      "031-28",
+      "031-29",
+      "E0001",
+      "E0002",
+      "E0003",
+      "E0004"
+    ],
+    "claimedFunctionCoveragePercent": 100,
+    "idPrefix": "FV-"
+  },
+  "ngt": {
+    "nodes": [
+      {
+        "id": "NG-1",
+        "label": "住登外者宛名番号付番APIのテスト観点",
+        "evidence": "住登外者宛名番号付番API仕様"
+      },
+      {
+        "id": "NG-2",
+        "label": "TPC-01 機能",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-01",
+        "testConditionIds": [
+          "TC-001",
+          "TC-002",
+          "TC-003",
+          "TC-004",
+          "TC-040"
+        ]
+      },
+      {
+        "id": "NG-3",
+        "label": "TPC-02 正常系・準正常系・異常系",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-02",
+        "testConditionIds": [
+          "TC-005",
+          "TC-006",
+          "TC-007",
+          "TC-008",
+          "TC-039"
+        ]
+      },
+      {
+        "id": "NG-4",
+        "label": "TPC-03 境界",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-03",
+        "testConditionIds": [
+          "TC-009",
+          "TC-010",
+          "TC-011",
+          "TC-012",
+          "TC-013",
+          "TC-014",
+          "TC-015",
+          "TC-016",
+          "TC-017",
+          "TC-018",
+          "TC-019",
+          "TC-020",
+          "TC-021"
+        ]
+      },
+      {
+        "id": "NG-5",
+        "label": "TPC-04 同値",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-04",
+        "testConditionIds": [
+          "TC-022",
+          "TC-023",
+          "TC-024",
+          "TC-042"
+        ]
+      },
+      {
+        "id": "NG-6",
+        "label": "TPC-05 状態遷移",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-05",
+        "testConditionIds": [
+          "TC-025",
+          "TC-046"
+        ]
+      },
+      {
+        "id": "NG-7",
+        "label": "TPC-07 並行・競合",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-07",
+        "testConditionIds": [
+          "TC-026",
+          "TC-043"
+        ]
+      },
+      {
+        "id": "NG-8",
+        "label": "TPC-08 タイミング・順序",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-08",
+        "testConditionIds": [
+          "TC-027",
+          "TC-044"
+        ]
+      },
+      {
+        "id": "NG-9",
+        "label": "TPC-09 データライフサイクル",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-09",
+        "testConditionIds": [
+          "TC-028",
+          "TC-041"
+        ]
+      },
+      {
+        "id": "NG-10",
+        "label": "TPC-10 構成・環境",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-10",
+        "testConditionIds": [
+          "TC-029"
+        ]
+      },
+      {
+        "id": "NG-11",
+        "label": "TPC-11 障害・縮退・回復",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-11",
+        "testConditionIds": [
+          "TC-030",
+          "TC-045"
+        ]
+      },
+      {
+        "id": "NG-12",
+        "label": "TPC-12 長時間稼働",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-12",
+        "testConditionIds": [
+          "TC-031"
+        ]
+      },
+      {
+        "id": "NG-13",
+        "label": "TPC-13 性能・負荷",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-13",
+        "testConditionIds": [
+          "TC-032"
+        ]
+      },
+      {
+        "id": "NG-14",
+        "label": "TPC-14 運用・保守",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-14",
+        "testConditionIds": [
+          "TC-033"
+        ]
+      },
+      {
+        "id": "NG-15",
+        "label": "TPC-15 セキュリティ",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-15",
+        "testConditionIds": [
+          "TC-034",
+          "TC-035"
+        ]
+      },
+      {
+        "id": "NG-16",
+        "label": "TPC-16 ユーザビリティ・アクセシビリティ",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-16",
+        "testConditionIds": [
+          "TC-036"
+        ]
+      },
+      {
+        "id": "NG-17",
+        "label": "TPC-17 ローカライズ",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-17",
+        "testConditionIds": [
+          "TC-037"
+        ]
+      },
+      {
+        "id": "NG-18",
+        "label": "TPC-18 リグレッション",
+        "parentId": "NG-1",
+        "perspectiveCategoryId": "TPC-18",
+        "testConditionIds": [
+          "TC-038"
+        ]
+      }
+    ],
+    "claimedLeafCount": 17,
+    "idPrefix": "NG-"
+  },
+  "yumotsuyoMatrix": {
+    "rows": [
+      {
+        "id": "MR-01",
+        "label": "TPC-01 機能",
+        "ngtNodeId": "NG-2"
+      },
+      {
+        "id": "MR-02",
+        "label": "TPC-02 正常系・準正常系・異常系",
+        "ngtNodeId": "NG-3"
+      },
+      {
+        "id": "MR-03",
+        "label": "TPC-03 境界",
+        "ngtNodeId": "NG-4"
+      },
+      {
+        "id": "MR-04",
+        "label": "TPC-04 同値",
+        "ngtNodeId": "NG-5"
+      },
+      {
+        "id": "MR-05",
+        "label": "TPC-05 状態遷移",
+        "ngtNodeId": "NG-6"
+      },
+      {
+        "id": "MR-06",
+        "label": "TPC-07 並行・競合",
+        "ngtNodeId": "NG-7"
+      },
+      {
+        "id": "MR-07",
+        "label": "TPC-08 タイミング・順序",
+        "ngtNodeId": "NG-8"
+      },
+      {
+        "id": "MR-08",
+        "label": "TPC-09 データライフサイクル",
+        "ngtNodeId": "NG-9"
+      },
+      {
+        "id": "MR-09",
+        "label": "TPC-10 構成・環境",
+        "ngtNodeId": "NG-10"
+      },
+      {
+        "id": "MR-10",
+        "label": "TPC-11 障害・縮退・回復",
+        "ngtNodeId": "NG-11"
+      },
+      {
+        "id": "MR-11",
+        "label": "TPC-12 長時間稼働",
+        "ngtNodeId": "NG-12"
+      },
+      {
+        "id": "MR-12",
+        "label": "TPC-13 性能・負荷",
+        "ngtNodeId": "NG-13"
+      },
+      {
+        "id": "MR-13",
+        "label": "TPC-14 運用・保守",
+        "ngtNodeId": "NG-14"
+      },
+      {
+        "id": "MR-14",
+        "label": "TPC-15 セキュリティ",
+        "ngtNodeId": "NG-15"
+      },
+      {
+        "id": "MR-15",
+        "label": "TPC-16 ユーザビリティ・アクセシビリティ",
+        "ngtNodeId": "NG-16"
+      },
+      {
+        "id": "MR-16",
+        "label": "TPC-17 ローカライズ",
+        "ngtNodeId": "NG-17"
+      },
+      {
+        "id": "MR-17",
+        "label": "TPC-18 リグレッション",
+        "ngtNodeId": "NG-18"
+      }
+    ],
+    "columns": [
+      {
+        "id": "MC-01",
+        "label": "機能テスト"
+      },
+      {
+        "id": "MC-02",
+        "label": "シナリオテスト"
+      },
+      {
+        "id": "MC-03",
+        "label": "性能テスト"
+      },
+      {
+        "id": "MC-04",
+        "label": "信頼性テスト"
+      },
+      {
+        "id": "MC-05",
+        "label": "移植性テスト"
+      }
+    ],
+    "cells": [
+      {
+        "rowId": "MR-01",
+        "columnId": "MC-01",
+        "testConditionIds": [
+          "TC-001",
+          "TC-002",
+          "TC-003",
+          "TC-004",
+          "TC-040"
+        ],
+        "note": "観点カテゴリ「機能」のテスト条件5件を機能テストで実行する"
+      },
+      {
+        "rowId": "MR-02",
+        "columnId": "MC-01",
+        "testConditionIds": [
+          "TC-005",
+          "TC-006",
+          "TC-007",
+          "TC-008",
+          "TC-039"
+        ],
+        "note": "観点カテゴリ「正常系・準正常系・異常系」のテスト条件5件を機能テストで実行する"
+      },
+      {
+        "rowId": "MR-03",
+        "columnId": "MC-01",
+        "testConditionIds": [
+          "TC-009",
+          "TC-010",
+          "TC-011",
+          "TC-012",
+          "TC-013",
+          "TC-014",
+          "TC-015",
+          "TC-016",
+          "TC-017",
+          "TC-018",
+          "TC-019",
+          "TC-020",
+          "TC-021"
+        ],
+        "note": "観点カテゴリ「境界」のテスト条件13件を機能テストで実行する"
+      },
+      {
+        "rowId": "MR-04",
+        "columnId": "MC-01",
+        "testConditionIds": [
+          "TC-022",
+          "TC-023",
+          "TC-024",
+          "TC-042"
+        ],
+        "note": "観点カテゴリ「同値」のテスト条件4件を機能テストで実行する"
+      },
+      {
+        "rowId": "MR-05",
+        "columnId": "MC-02",
+        "testConditionIds": [
+          "TC-025",
+          "TC-046"
+        ],
+        "note": "観点カテゴリ「状態遷移」のテスト条件2件をシナリオテストで実行する"
+      },
+      {
+        "rowId": "MR-06",
+        "columnId": "MC-02",
+        "testConditionIds": [
+          "TC-026",
+          "TC-043"
+        ],
+        "note": "観点カテゴリ「並行・競合」のテスト条件2件をシナリオテストで実行する"
+      },
+      {
+        "rowId": "MR-07",
+        "columnId": "MC-02",
+        "testConditionIds": [
+          "TC-027",
+          "TC-044"
+        ],
+        "note": "観点カテゴリ「タイミング・順序」のテスト条件2件をシナリオテストで実行する"
+      },
+      {
+        "rowId": "MR-08",
+        "columnId": "MC-02",
+        "testConditionIds": [
+          "TC-028",
+          "TC-041"
+        ],
+        "note": "観点カテゴリ「データライフサイクル」のテスト条件2件をシナリオテストで実行する"
+      },
+      {
+        "rowId": "MR-09",
+        "columnId": "MC-05",
+        "testConditionIds": [
+          "TC-029"
+        ],
+        "note": "観点カテゴリ「構成・環境」のテスト条件1件を移植性テストで実行する"
+      },
+      {
+        "rowId": "MR-10",
+        "columnId": "MC-04",
+        "testConditionIds": [
+          "TC-030",
+          "TC-045"
+        ],
+        "note": "観点カテゴリ「障害・縮退・回復」のテスト条件2件を信頼性テストで実行する"
+      },
+      {
+        "rowId": "MR-11",
+        "columnId": "MC-03",
+        "testConditionIds": [
+          "TC-031"
+        ],
+        "note": "観点カテゴリ「長時間稼働」のテスト条件1件を性能テストで実行する"
+      },
+      {
+        "rowId": "MR-12",
+        "columnId": "MC-03",
+        "testConditionIds": [
+          "TC-032"
+        ],
+        "note": "観点カテゴリ「性能・負荷」のテスト条件1件を性能テストで実行する"
+      },
+      {
+        "rowId": "MR-13",
+        "columnId": "MC-04",
+        "testConditionIds": [
+          "TC-033"
+        ],
+        "note": "観点カテゴリ「運用・保守」のテスト条件1件を信頼性テストで実行する"
+      },
+      {
+        "rowId": "MR-14",
+        "columnId": "MC-05",
+        "testConditionIds": [
+          "TC-034",
+          "TC-035"
+        ],
+        "note": "観点カテゴリ「セキュリティ」のテスト条件2件を移植性テストで実行する"
+      },
+      {
+        "rowId": "MR-15",
+        "columnId": "MC-01",
+        "testConditionIds": [
+          "TC-036"
+        ],
+        "note": "観点カテゴリ「ユーザビリティ・アクセシビリティ」のテスト条件1件を機能テストで実行する"
+      },
+      {
+        "rowId": "MR-16",
+        "columnId": "MC-05",
+        "testConditionIds": [
+          "TC-037"
+        ],
+        "note": "観点カテゴリ「ローカライズ」のテスト条件1件を移植性テストで実行する"
+      },
+      {
+        "rowId": "MR-17",
+        "columnId": "MC-02",
+        "testConditionIds": [
+          "TC-038"
+        ],
+        "note": "観点カテゴリ「リグレッション」のテスト条件1件をシナリオテストで実行する"
+      }
+    ],
+    "exclusions": [
+      {
+        "rowId": "MR-01",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「機能」のテスト条件（TC-001, TC-002, TC-003, TC-004, TC-040）は 機能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-01",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「機能」のテスト条件（TC-001, TC-002, TC-003, TC-004, TC-040）は 機能テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-01",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「機能」のテスト条件（TC-001, TC-002, TC-003, TC-004, TC-040）は 機能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-01",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「機能」のテスト条件（TC-001, TC-002, TC-003, TC-004, TC-040）は 機能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-02",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「正常系・準正常系・異常系」のテスト条件（TC-005, TC-006, TC-007, TC-008, TC-039）は 機能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-02",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「正常系・準正常系・異常系」のテスト条件（TC-005, TC-006, TC-007, TC-008, TC-039）は 機能テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-02",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「正常系・準正常系・異常系」のテスト条件（TC-005, TC-006, TC-007, TC-008, TC-039）は 機能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-02",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「正常系・準正常系・異常系」のテスト条件（TC-005, TC-006, TC-007, TC-008, TC-039）は 機能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-03",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「境界」のテスト条件（TC-009, TC-010, TC-011, TC-012, TC-013, TC-014, TC-015, TC-016, TC-017, TC-018, TC-019, TC-020, TC-021）は 機能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-03",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「境界」のテスト条件（TC-009, TC-010, TC-011, TC-012, TC-013, TC-014, TC-015, TC-016, TC-017, TC-018, TC-019, TC-020, TC-021）は 機能テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-03",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「境界」のテスト条件（TC-009, TC-010, TC-011, TC-012, TC-013, TC-014, TC-015, TC-016, TC-017, TC-018, TC-019, TC-020, TC-021）は 機能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-03",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「境界」のテスト条件（TC-009, TC-010, TC-011, TC-012, TC-013, TC-014, TC-015, TC-016, TC-017, TC-018, TC-019, TC-020, TC-021）は 機能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-04",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「同値」のテスト条件（TC-022, TC-023, TC-024, TC-042）は 機能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-04",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「同値」のテスト条件（TC-022, TC-023, TC-024, TC-042）は 機能テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-04",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「同値」のテスト条件（TC-022, TC-023, TC-024, TC-042）は 機能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-04",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「同値」のテスト条件（TC-022, TC-023, TC-024, TC-042）は 機能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-05",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「状態遷移」のテスト条件（TC-025, TC-046）は シナリオテスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-05",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「状態遷移」のテスト条件（TC-025, TC-046）は シナリオテスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-05",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「状態遷移」のテスト条件（TC-025, TC-046）は シナリオテスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-05",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「状態遷移」のテスト条件（TC-025, TC-046）は シナリオテスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-06",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「並行・競合」のテスト条件（TC-026, TC-043）は シナリオテスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-06",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「並行・競合」のテスト条件（TC-026, TC-043）は シナリオテスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-06",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「並行・競合」のテスト条件（TC-026, TC-043）は シナリオテスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-06",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「並行・競合」のテスト条件（TC-026, TC-043）は シナリオテスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-07",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「タイミング・順序」のテスト条件（TC-027, TC-044）は シナリオテスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-07",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「タイミング・順序」のテスト条件（TC-027, TC-044）は シナリオテスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-07",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「タイミング・順序」のテスト条件（TC-027, TC-044）は シナリオテスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-07",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「タイミング・順序」のテスト条件（TC-027, TC-044）は シナリオテスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-08",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「データライフサイクル」のテスト条件（TC-028, TC-041）は シナリオテスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-08",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「データライフサイクル」のテスト条件（TC-028, TC-041）は シナリオテスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-08",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「データライフサイクル」のテスト条件（TC-028, TC-041）は シナリオテスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-08",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「データライフサイクル」のテスト条件（TC-028, TC-041）は シナリオテスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-09",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「構成・環境」のテスト条件（TC-029）は 移植性テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-09",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「構成・環境」のテスト条件（TC-029）は 移植性テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-09",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「構成・環境」のテスト条件（TC-029）は 移植性テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-09",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「構成・環境」のテスト条件（TC-029）は 移植性テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-10",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「障害・縮退・回復」のテスト条件（TC-030, TC-045）は 信頼性テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-10",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「障害・縮退・回復」のテスト条件（TC-030, TC-045）は 信頼性テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-10",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「障害・縮退・回復」のテスト条件（TC-030, TC-045）は 信頼性テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-10",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「障害・縮退・回復」のテスト条件（TC-030, TC-045）は 信頼性テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-11",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「長時間稼働」のテスト条件（TC-031）は 性能テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-11",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「長時間稼働」のテスト条件（TC-031）は 性能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-11",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「長時間稼働」のテスト条件（TC-031）は 性能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-11",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「長時間稼働」のテスト条件（TC-031）は 性能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-12",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「性能・負荷」のテスト条件（TC-032）は 性能テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-12",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「性能・負荷」のテスト条件（TC-032）は 性能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-12",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「性能・負荷」のテスト条件（TC-032）は 性能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-12",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「性能・負荷」のテスト条件（TC-032）は 性能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-13",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「運用・保守」のテスト条件（TC-033）は 信頼性テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-13",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「運用・保守」のテスト条件（TC-033）は 信頼性テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-13",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「運用・保守」のテスト条件（TC-033）は 信頼性テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-13",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「運用・保守」のテスト条件（TC-033）は 信頼性テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-14",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「セキュリティ」のテスト条件（TC-034, TC-035）は 移植性テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-14",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「セキュリティ」のテスト条件（TC-034, TC-035）は 移植性テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-14",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「セキュリティ」のテスト条件（TC-034, TC-035）は 移植性テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-14",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「セキュリティ」のテスト条件（TC-034, TC-035）は 移植性テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-15",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「ユーザビリティ・アクセシビリティ」のテスト条件（TC-036）は 機能テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-15",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「ユーザビリティ・アクセシビリティ」のテスト条件（TC-036）は 機能テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-15",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「ユーザビリティ・アクセシビリティ」のテスト条件（TC-036）は 機能テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-15",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「ユーザビリティ・アクセシビリティ」のテスト条件（TC-036）は 機能テスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-16",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「ローカライズ」のテスト条件（TC-037）は 移植性テスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-16",
+        "columnId": "MC-02",
+        "reason": "観点カテゴリ「ローカライズ」のテスト条件（TC-037）は 移植性テスト で実行する。シナリオテストは処理区分 0 / 1 / 2 の3値それぞれについて、APIアクセスからアクセストークン検証、付番処理、結果返却までを通しで実行して確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-16",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「ローカライズ」のテスト条件（TC-037）は 移植性テスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-16",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「ローカライズ」のテスト条件（TC-037）は 移植性テスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-17",
+        "columnId": "MC-01",
+        "reason": "観点カテゴリ「リグレッション」のテスト条件（TC-038）は シナリオテスト で実行する。機能テストはリクエストパラメータ40件とレスポンスオブジェクトの各項目に対し、必須指定（◎）・データ型・データ長を仕様ベースで割り当てて確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-17",
+        "columnId": "MC-03",
+        "reason": "観点カテゴリ「リグレッション」のテスト条件（TC-038）は シナリオテスト で実行する。性能テストは処理時間が30秒に達する直前と直後の応答を測定して境界を確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-17",
+        "columnId": "MC-04",
+        "reason": "観点カテゴリ「リグレッション」のテスト条件（TC-038）は シナリオテスト で実行する。信頼性テストは正常に付番処理が実行されなかった場合の再依頼と503応答時の再試行での回復可否を繰り返し確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      },
+      {
+        "rowId": "MR-17",
+        "columnId": "MC-05",
+        "reason": "観点カテゴリ「リグレッション」のテスト条件（TC-038）は シナリオテスト で実行する。移植性テストは要求元認証を client_secret_jwt とした構成と client_secret_basic とした構成の双方で同一の応答となることを確かめるもの（05_ 5.3）であり、当該観点の条件を実行する交点にならないため実施しない"
+      }
+    ],
+    "claimedFillRatePercent": 100
+  },
+  "testConditionIds": [
+    "TC-001",
+    "TC-002",
+    "TC-003",
+    "TC-004",
+    "TC-005",
+    "TC-006",
+    "TC-007",
+    "TC-008",
+    "TC-009",
+    "TC-010",
+    "TC-011",
+    "TC-012",
+    "TC-013",
+    "TC-014",
+    "TC-015",
+    "TC-016",
+    "TC-017",
+    "TC-018",
+    "TC-019",
+    "TC-020",
+    "TC-021",
+    "TC-022",
+    "TC-023",
+    "TC-024",
+    "TC-025",
+    "TC-026",
+    "TC-027",
+    "TC-028",
+    "TC-029",
+    "TC-030",
+    "TC-031",
+    "TC-032",
+    "TC-033",
+    "TC-034",
+    "TC-035",
+    "TC-036",
+    "TC-037",
+    "TC-038",
+    "TC-039",
+    "TC-040",
+    "TC-041",
+    "TC-042",
+    "TC-043",
+    "TC-044",
+    "TC-045",
+    "TC-046"
+  ],
+  "idPatterns": [
+    "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+    "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"
+  ]
+}

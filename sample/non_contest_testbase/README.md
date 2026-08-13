@@ -11,7 +11,7 @@
 | 種別 | 置き場所 | コミット | 内容 |
 | --- | --- | --- | --- |
 | 原本 | 本ディレクトリ直下の `*.xlsx` | する | デジタル庁の公開資料をそのまま保存する。移動・改変・Markdownへの書き起こしはしない |
-| 成果物 | 本ディレクトリ直下の `00_`〜`18_` の Markdown と `payloads/` | する | 各ツールの payload と出力。`00_` と `09_` 以外はツール出力そのままで手編集しない |
+| 成果物 | 本ディレクトリ直下の `00_`〜`33_` の Markdown と `payloads/` | する | 各ツールの payload と出力。`00_` と `09_` 以外はツール出力そのままで手編集しない |
 | 変換中間物 | `.work/testbase/atenabango/*.txt` | **しない** | 原本をテキスト化した投入用データ。`.gitignore` の `.work/` により除外される |
 
 再生成の手順・実行コマンド・実測値は `00_成果物生成手順.md` にまとめてある。
@@ -64,7 +64,26 @@
 | `16_テスト仕様書レビュー結果.md` | `review_test_specification` |
 | `17_実行順序分析結果.md` | `analyze_execution_order` |
 | `18_データフロー・タイミング分析結果.md` | `analyze_data_flow_timing` |
+| `19_業務要件モデル生成結果.md` | `generate_business_requirement_model` |
+| `20_テスト目的導出結果.md` | `derive_test_purposes` |
+| `21_テストベース仕様矛盾監査結果.md` | `audit_basis_contradictions` |
+| `22_原因結果グラフ分析結果.md` | `analyze_cause_effect` |
+| `23_デシジョンテーブル設計結果.md` | `design_decision_table` |
+| `24_ペアワイズ設計結果.md` | `design_pairwise` |
+| `25_構成マトリクス設計結果.md` | `design_config_matrix` |
+| `26_シナリオフロー設計結果.md` | `design_scenario_flows` |
+| `27_テストデータ設計結果.md` | `design_test_data` |
+| `28_テストアーキテクチャ設計結果.md` | `design_test_architecture` |
+| `29_テスト設計技法記法監査結果.md` | `audit_test_design_notations` |
+| `30_クロスマトリクス監査結果.md` | `audit_cross_matrix` |
+| `31_網羅バランス監査結果.md` | `audit_coverage_balance` |
+| `32_成果物整合監査結果.md` | `audit_deliverable_consistency` |
+| `33_回帰スイート選択結果.md` | `select_regression_suite` |
 | `payloads/*.json` | 各ツール呼び出しの入力（テストベース本文は含まない） |
+
+本ディレクトリでは本MCPサーバの31ツールのうち **30本** を適用している。適用していない1本は
+`reexpand_threshold_changes` であり、本テストベースが単一版のみで版差分（変更前後の2スナップショット）を
+持たないため適用できない。理由は `00_成果物生成手順.md` 第1章と第9章に記載している。
 
 ## 形式リファレンス資料（Word / Markdown / JSON）
 
