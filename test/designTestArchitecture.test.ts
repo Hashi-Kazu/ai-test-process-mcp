@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { expectNextToolsSection } from "./nextToolSectionHelper.js";
 import {
+  collectTestArchitectureGroundingSubjects,
   computeTestArchitecture,
   renderTestArchitecture,
 } from "../src/tools/designTestArchitecture.js";
@@ -355,6 +356,50 @@ describe("computeTestArchitecture", () => {
         (f) => f.categoryId === "TAC-14" && f.detail.includes("ポイント付与")
       )
     ).toBe(true);
+  });
+
+  it("TBG-01 is not raised for outOfScope items with reasonKind: not-in-basis", () => {
+    const spec = baseSpec();
+    (spec.scope as NonNullable<TestArchitectureSpec["scope"]>).outOfScope = [
+      {
+        item: "画面",
+        reason: "テストベースに画面に関する記述が無いため対象外",
+        reasonKind: "not-in-basis",
+      },
+    ];
+    spec.testBasisDocuments = [
+      { name: "req.md", content: "予約と決済のバッチ連携について定めた要求仕様書。" },
+    ];
+    const subjects = collectTestArchitectureGroundingSubjects(spec);
+    expect(subjects.some((s) => s.place === "scope.outOfScope[0].item")).toBe(false);
+  });
+
+  it("regression: outOfScope items without reasonKind still get TBG-01 label grounding", () => {
+    const spec = baseSpec();
+    const subjects = collectTestArchitectureGroundingSubjects(spec);
+    expect(subjects.some((s) => s.place === "scope.outOfScope[0].item" && s.text === "帳票出力")).toBe(
+      true
+    );
+  });
+
+  it("TAC-14 flags reasonKind: not-in-basis items that actually appear in the test basis", () => {
+    const spec = baseSpec();
+    (spec.scope as NonNullable<TestArchitectureSpec["scope"]>).outOfScope = [
+      {
+        item: "画面",
+        reason: "テストベースに画面に関する記述が無いため対象外",
+        reasonKind: "not-in-basis",
+      },
+    ];
+    spec.testBasisDocuments = [
+      { name: "req.md", content: "予約入力画面のレイアウトについて定めた要求仕様書。" },
+    ];
+    const result = computeTestArchitecture(spec);
+    const hit = result.findings.find(
+      (f) => f.categoryId === "TAC-14" && f.detail.includes("矛盾")
+    );
+    expect(hit).toBeDefined();
+    expect(hit?.detail).toContain("画面");
   });
 
   it("TAC-15: reports assigned conditions that reach no test case", () => {
