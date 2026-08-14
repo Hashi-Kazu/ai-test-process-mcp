@@ -2856,6 +2856,10 @@ export interface CrossMatrixAxisItem {
   id: string;                 // 全軸を通じて一意であること(重複は CMX-02 で検出)
   label?: string;             // 表示名。未指定なら id を表示に使う
   links?: CrossMatrixLinkInput[]; // 他軸の item.id の列挙。自軸内IDの参照は CMX-05 で検出
+  /** "derived" を宣言すると CMX-10 の逐語照合対象から外れる。代わりに derivationQuote が必須になる(CMX-18/19)。 */
+  derivationKind?: "derived";
+  /** derivationKind: "derived" のときの、導出元となったテストベース本文からの逐語引用。CMX-18/19 で照合する。 */
+  derivationQuote?: string;
 }
 export interface CrossMatrixAxisSpec {
   axisId: string;             // 軸ID。例 "RISK" / "PERSPECTIVE"
@@ -2969,6 +2973,8 @@ export interface CrossMatrixSummary {
   linkDeclarationTotal: number;        // 他軸要素へ解決できたリンク宣言の総数(重複除去後)
   linksWithoutEvidenceTotal: number;   // CMX-16 対象の宣言数
   ungroundedLinkTotal: number;         // CMX-17 対象の宣言数
+  derivedItemsWithoutEvidenceTotal: number; // CMX-18 対象の要素数
+  ungroundedDerivedItemTotal: number;       // CMX-19 対象の要素数
   /** 根拠裏付け充填率の全体値。evidenceEvaluated=true のペアのみで集計。該当なしは 0 */
   overallGroundedCellFillRatePercent: number;
   findingTotal: number;

@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { crossMatrixAuditCriteria } from "../src/resources/crossMatrixAuditCriteria.js";
 
 describe("crossMatrixAuditCriteria", () => {
-  it("covers CMX-01..CMX-17 exactly once with unique ids", () => {
+  it("covers CMX-01..CMX-19 exactly once with unique ids", () => {
     const ids = crossMatrixAuditCriteria.categories.map((c) => c.id);
-    const expected = Array.from({ length: 17 }, (_, i) => `CMX-${String(i + 1).padStart(2, "0")}`);
+    const expected = Array.from({ length: 19 }, (_, i) => `CMX-${String(i + 1).padStart(2, "0")}`);
     expect(ids).toEqual(expected);
     expect(new Set(ids).size).toBe(ids.length);
   });

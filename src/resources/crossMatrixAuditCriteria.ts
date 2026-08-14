@@ -160,6 +160,23 @@ export const crossMatrixAuditCriteria: CrossMatrixAuditCriteria = {
       recommendedAction:
         "evidence は本文からそのまま切り出すこと。要約・言い換えは書かず、本文に無い関係であれば当該リンクを削除するかテストベースを更新すること。",
     },
+    {
+      id: "CMX-18",
+      nameJa: "導出宣言の根拠引用未記入",
+      severity: "high",
+      definition:
+        "items[].derivationKind が \"derived\" であるにもかかわらず、derivationQuote が未記入または短すぎて本文と照合できない。CMX-10の逐語照合を免除する代わりの根拠が示されていない。",
+      recommendedAction:
+        "当該要素がどのテストベース本文から導出したのか、根拠となる一文を derivationQuote に引用すること。引用できないなら derivationKind の宣言自体を見直すこと。",
+    },
+    {
+      id: "CMX-19",
+      nameJa: "導出宣言の根拠引用が本文に裏付けられない",
+      severity: "high",
+      definition: "derivationQuote が、投入されたテストベース本文に存在しない(表記差を吸収した照合でも一致しない)。",
+      recommendedAction:
+        "derivationQuote は本文からそのまま切り出すこと。要約・言い換えは書かず、本文に存在しない場合は当該要素の妥当性を再確認すること。",
+    },
   ],
   notes: [
     "本検査は渡された軸と紐づけに対してのみ成立する。渡していない軸・要素の取りこぼしは検出できない。",
@@ -170,5 +187,6 @@ export const crossMatrixAuditCriteria: CrossMatrixAuditCriteria = {
     "セルの充填は links の宣言で成立するが、根拠裏付け充填率は evidence が本文から裏付けられたセルだけを分子に数える。宣言充填率と根拠裏付け充填率の差が、宣言のみで成立している部分である。",
     "links は文字列(相手IDのみ)でも受け付けるが、その形式では根拠が無いため documents 指定時は CMX-16 になる。",
     "本文との照合は全角半角・空白・記号差を吸収した正規化後の包含判定であり、正規化により記号が落ちるため短い文字列は偶発一致し得る。",
+    "items[].derivationKind: \"derived\" を宣言した要素は CMX-10 の逐語照合対象から除外されるが、代わりに derivationQuote の未記入・未裏付けが CMX-18/CMX-19 として検出される。",
   ],
 };

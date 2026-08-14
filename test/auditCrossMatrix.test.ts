@@ -129,6 +129,103 @@ describe("renderCrossMatrixAudit", () => {
     expect(findingSection).toContain("| CMX-10 | high | RISK / R-03 |");
   });
 
+  it("flags an axis item declared derivationKind: \"derived\" with no derivationQuote as CMX-18 and not CMX-10", () => {
+    const md = renderCrossMatrixAudit({
+      ...baseInput(),
+      axes: [
+        {
+          ...baseAxes()[0],
+          items: [
+            ...baseAxes()[0].items.slice(0, 2),
+            { id: "R-03", label: "表示崩れ", derivationKind: "derived" },
+          ],
+        },
+        baseAxes()[1],
+        baseAxes()[2],
+      ],
+      documents: [
+        {
+          name: "risk-list.md",
+          content: ["# リスク一覧", "R-01 決済失敗", "R-02 在庫不整合"].join("\n"),
+        },
+      ],
+    });
+
+    const findingSection = md.split("### 2.10 検出事項一覧")[1].split("### 2.11")[0];
+    expect(findingSection).toContain("| CMX-18 | high | RISK / R-03 |");
+    expect(findingSection).not.toContain("| CMX-10 | high | RISK / R-03 |");
+  });
+
+  it("flags an axis item whose derivationQuote is not found in the documents as CMX-19", () => {
+    const md = renderCrossMatrixAudit({
+      ...baseInput(),
+      axes: [
+        {
+          ...baseAxes()[0],
+          items: [
+            ...baseAxes()[0].items.slice(0, 2),
+            {
+              id: "R-03",
+              label: "表示崩れ",
+              derivationKind: "derived",
+              derivationQuote: "本文に存在しない引用文",
+            },
+          ],
+        },
+        baseAxes()[1],
+        baseAxes()[2],
+      ],
+      documents: [
+        {
+          name: "risk-list.md",
+          content: ["# リスク一覧", "R-01 決済失敗", "R-02 在庫不整合"].join("\n"),
+        },
+      ],
+    });
+
+    const findingSection = md.split("### 2.10 検出事項一覧")[1].split("### 2.11")[0];
+    expect(findingSection).toContain("| CMX-19 | high | RISK / R-03 |");
+    expect(findingSection).not.toContain("| CMX-10 | high | RISK / R-03 |");
+  });
+
+  it("flags nothing (CMX-10/18/19) when derivationQuote is a verbatim excerpt found in the documents", () => {
+    const md = renderCrossMatrixAudit({
+      ...baseInput(),
+      axes: [
+        {
+          ...baseAxes()[0],
+          items: [
+            ...baseAxes()[0].items.slice(0, 2),
+            {
+              id: "R-03",
+              label: "表示崩れ",
+              derivationKind: "derived",
+              derivationQuote: "レイアウト崩れが発生する",
+            },
+          ],
+        },
+        baseAxes()[1],
+        baseAxes()[2],
+      ],
+      documents: [
+        {
+          name: "risk-list.md",
+          content: [
+            "# リスク一覧",
+            "R-01 決済失敗",
+            "R-02 在庫不整合",
+            "画面幅が狭い端末でレイアウト崩れが発生することがある。",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    const findingSection = md.split("### 2.10 検出事項一覧")[1].split("### 2.11")[0];
+    expect(findingSection).not.toContain("| CMX-10 | high | RISK / R-03 |");
+    expect(findingSection).not.toContain("| CMX-18 | high | RISK / R-03 |");
+    expect(findingSection).not.toContain("| CMX-19 | high | RISK / R-03 |");
+  });
+
   it("flags link declarations with no evidence as CMX-16 and marks the ungrounded cells with *", () => {
     const md = renderCrossMatrixAudit({
       axes: [
