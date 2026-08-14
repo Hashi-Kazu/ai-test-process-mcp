@@ -86,20 +86,26 @@ function buildIdRegexes(idPatterns: string[]): RegExp[] {
   return idPatterns.map((source) => new RegExp(source, "gi"));
 }
 
+// m のキャプチャグループ数でID組み立て規約を切り替える。testBasisAnalysis.findRawIdMatches と同一規約。
+// 2グループ以上（m[1],m[2]とも定義）: `${m[1]}-${m[2]}`
+// 1グループ（m[1]のみ定義）: m[1] をそのままIDとする
+// 0グループ: m[0]（マッチ全体）をIDとする
+function buildIdFromMatch(m: RegExpExecArray): string {
+  if (m.length >= 3 && m[1] !== undefined && m[2] !== undefined) return `${m[1]}-${m[2]}`;
+  if (m.length >= 2 && m[1] !== undefined) return m[1];
+  return m[0];
+}
+
+// normalizeText 後（空白除去済み）のテキスト用の先頭マーカー。
+const NORMALIZED_LEADING_MARKER_REGEX = /^(?:#{1,6}|[-*]|\d+[.)]|\|+)?/;
+
 function findIdAtStart(normalized: string, idRegexes: RegExp[]): string | null {
+  const leadMatch = NORMALIZED_LEADING_MARKER_REGEX.exec(normalized);
+  const leadPos = leadMatch ? leadMatch[0].length : 0;
   for (const re of idRegexes) {
     re.lastIndex = 0;
     const m = re.exec(normalized);
-    if (m && m.index === 0) return `${m[1]}-${m[2]}`;
-  }
-  const numMatch = /^\d+\./.exec(normalized);
-  if (numMatch) {
-    const rest = normalized.slice(numMatch[0].length);
-    for (const re of idRegexes) {
-      re.lastIndex = 0;
-      const m = re.exec(rest);
-      if (m && m.index === 0) return `${m[1]}-${m[2]}`;
-    }
+    if (m && m.index === leadPos) return buildIdFromMatch(m);
   }
   return null;
 }
@@ -108,7 +114,7 @@ function findIdMatchAt0(normalized: string, idRegexes: RegExp[]): { id: string; 
   for (const re of idRegexes) {
     re.lastIndex = 0;
     const m = re.exec(normalized);
-    if (m && m.index === 0) return { id: `${m[1]}-${m[2]}`, length: m[0].length };
+    if (m && m.index === 0) return { id: buildIdFromMatch(m), length: m[0].length };
   }
   return null;
 }
@@ -176,17 +182,19 @@ export function classifyEntityNameFragment(name: string): EntityNameFragmentRule
 }
 
 export function extractEntityOccurrencesWithQuality(
-  lines: BasisLine[]
+  lines: BasisLine[],
+  options: BasisContradictionOptions = {}
 ): { occurrences: BasisEntityOccurrence[]; excluded: BasisExcludedEntityName[] } {
   const occurrences: BasisEntityOccurrence[] = [];
   const excluded: BasisExcludedEntityName[] = [];
+  const idPatterns = [DEFAULT_ID_PATTERN_SOURCE, ...(options.idPatterns ?? [])];
+  const idRegexes = buildIdRegexes(idPatterns);
   for (const line of lines) {
-    const idRegexes = buildIdRegexes([DEFAULT_ID_PATTERN_SOURCE]);
     for (const re of idRegexes) {
       re.lastIndex = 0;
       let m: RegExpExecArray | null;
       while ((m = re.exec(line.normalized)) !== null) {
-        const id = `${m[1]}-${m[2]}`;
+        const id = buildIdFromMatch(m);
         const afterStart = m.index + m[0].length;
         let after = line.normalized.slice(afterStart, afterStart + 40);
         after = after.replace(/^[|｜：:、,\-–—・.]+/, "");
@@ -215,8 +223,11 @@ export function extractEntityOccurrencesWithQuality(
   return { occurrences, excluded };
 }
 
-export function extractEntityOccurrences(lines: BasisLine[]): BasisEntityOccurrence[] {
-  return extractEntityOccurrencesWithQuality(lines).occurrences;
+export function extractEntityOccurrences(
+  lines: BasisLine[],
+  options: BasisContradictionOptions = {}
+): BasisEntityOccurrence[] {
+  return extractEntityOccurrencesWithQuality(lines, options).occurrences;
 }
 
 export function extractUiElements(lines: BasisLine[]): BasisUiElement[] {
@@ -1001,7 +1012,7 @@ export function buildContradictionCandidates(
   options: BasisContradictionOptions & { declaredEntities?: BasisDeclaredEntity[] } = {}
 ): BasisContradictionCandidate[] {
   const lines = buildBasisLines(documents, options);
-  const occurrences = extractEntityOccurrences(lines);
+  const occurrences = extractEntityOccurrences(lines, options);
   const uiElements = extractUiElements(lines);
   const transitions = extractTransitions(lines, options);
   const parameters = extractParameterValues(documents, lines);

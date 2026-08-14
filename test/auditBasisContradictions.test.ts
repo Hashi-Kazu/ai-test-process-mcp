@@ -430,3 +430,27 @@ describe("renderBasisContradictionAudit 検査実行状況節", () => {
     }
   });
 });
+
+describe("renderBasisContradictionAudit idPatterns指定時のID出現数 (HSKZ-221 回帰)", () => {
+  it("idPatterns指定時、1.2節のID出現数がidPatternsで検出したIDを反映する(0件固定にならない)", () => {
+    const idPatterns = [
+      "(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])",
+      "(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])",
+    ];
+    const input: AuditBasisContradictionsInput = {
+      documents: [
+        { name: "item-definition", content: "|  | 031 | 1 | 独自施策システム等ID |" },
+      ],
+      idPatterns,
+    };
+    const md = renderBasisContradictionAudit(input);
+    const lines = md.split("\n");
+    const rowLine = lines.find((l) => l.startsWith("| item-definition |"));
+    expect(rowLine).toBeDefined();
+    const cells = (rowLine as string).split("|").map((c) => c.trim());
+    // | item-definition | ID出現数 | UI要素数 | 遷移数 | 数量表現数 | 改訂宣言数 |
+    const idCountCell = cells[2];
+    expect(idCountCell).not.toBe("0");
+    expect(Number(idCountCell)).toBe(1);
+  });
+});
