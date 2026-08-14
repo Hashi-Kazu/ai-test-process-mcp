@@ -468,11 +468,20 @@ export function renderDocumentDigestLines(
   for (const f of findings) {
     lines.push(`- [${f.severity}] ${escapeCell(f.document)}: ${f.detail}`);
   }
+  const totalDefinedIdCount = rows.reduce((sum, row) => sum + row.definedIdCount, 0);
   for (const source of unmatchedIdPatterns) {
-    lines.push(
-      `- [high] 指定パターンが1件も一致しなかった: \`${source}\`。idPatterns の誤りか、投入文書にそのID体系が無い。` +
-        `この状態では実在ID母集団が縮退したまま以降の検査・網羅率が算出されるため、パターンを修正するか指定を外して再実行すること。`
-    );
+    if (totalDefinedIdCount === 0) {
+      lines.push(
+        `- [high] 指定パターンが1件も一致しなかった: \`${source}\`。idPatterns の誤りか、投入文書にそのID体系が無い。` +
+          `この状態では実在ID母集団が縮退したまま以降の検査・網羅率が算出されるため、パターンを修正するか指定を外して再実行すること。`
+      );
+    } else {
+      lines.push(
+        `- [medium] 指定パターンが1件も一致しなかった: \`${source}\`。ただし既定パターン等で定義IDを計${formatCount(
+          totalDefinedIdCount
+        )}件検出済みのため、実在ID母集団が縮退しているとは限らない。このパターンは投入文書に存在しない書式（例: 成果物側の表セル分割形式）を想定していた可能性がある。idPatterns の対象文書と用途を見直すこと。`
+      );
+    }
   }
   if (findings.some((f) => IQC_FINDING_KINDS.includes(f.kind))) {
     lines.push(IQC_NOTE);

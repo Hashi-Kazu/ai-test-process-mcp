@@ -604,6 +604,23 @@ describe("件数・網羅率宣言（DCC-15）", () => {
     );
     expect(findings.some((f) => f.summary.includes("3 件"))).toBe(true);
   });
+
+  it("プレフィックス定義が0件のとき DCC-15 を high に固定化せず medium で検査不能を明示する", () => {
+    const analysis: ConsistencyDeliverable = {
+      name: "計画.md",
+      kind: "test-plan",
+      content: `# 計画\n\n- エラーコードは4件が、それぞれの発生条件で返却されることを確認する。\n`,
+    };
+    const index = buildCrossRefIdIndex([analysis]);
+    const subjectsInput = [{ keyword: "エラーコード", idPrefix: "E" }];
+    const claims = extractCountClaims([analysis], { countClaimSubjects: subjectsInput });
+    const findings = checkCountClaims(claims, index, subjectsInput).filter(
+      (f) => f.checkId === "DCC-15"
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].severity).toBe("medium");
+    expect(findings[0].summary).toContain("検査不能");
+  });
 });
 
 describe("網羅率の母集団照合（DCC-16 / DCC-17）", () => {
