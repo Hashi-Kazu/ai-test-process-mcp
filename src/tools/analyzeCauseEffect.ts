@@ -125,10 +125,14 @@ export function renderCauseEffectAnalysis(
   if (intermediateNodes.length === 0) {
     lines.push("- 対象なし");
   } else {
-    lines.push("| ID | 命題 | 論理 |");
-    lines.push("| --- | --- | --- |");
+    lines.push("| ID | 命題 | 論理 | 引用 | 裏付け |");
+    lines.push("| --- | --- | --- | --- | --- |");
     for (const node of intermediateNodes) {
-      lines.push(`| ${escapeCell(node.id)} | ${escapeCell(node.statement)} | ${node.logic ?? "and"} |`);
+      lines.push(
+        `| ${escapeCell(node.id)} | ${escapeCell(node.statement)} | ${node.logic ?? "and"} | ${escapeCell(
+          node.quote ?? "-"
+        )} | ${node.quote === undefined ? "-" : groundingLabel(node.id)} |`
+      );
     }
   }
   lines.push("");
@@ -545,6 +549,12 @@ export const analyzeCauseEffectInputShape = {
         id: z.string().min(1).describe("Intermediate node id (default prefix N)"),
         statement: z.string().min(1).describe("What this logical junction represents"),
         logic: z.enum(["and", "or"]).optional().describe("How incoming edges combine; defaults to and"),
+        quote: z
+          .string()
+          .optional()
+          .describe(
+            "Verbatim excerpt from specText backing this intermediate junction; optional, validated against specText when provided"
+          ),
         note: z.string().optional(),
       })
     )

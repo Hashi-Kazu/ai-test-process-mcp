@@ -80,6 +80,7 @@ export function buildCauseEffectGraph(input: AnalyzeCauseEffectInput): CauseEffe
       kind: "intermediate",
       statement: mid.statement,
       logic: mid.logic ?? "and",
+      quote: mid.quote,
       note: mid.note,
       incoming: [],
       outgoing: [],
@@ -822,15 +823,27 @@ export function findUngroundedNodeQuotes(input: AnalyzeCauseEffectInput): CauseE
   const findings: CauseEffectFinding[] = [];
   const normalizedSpec = normalizeForGrounding(input.specText);
 
-  const targets: { id: string; quote?: string; place: string; kindJa: string }[] = [];
-  input.causes.forEach((c, i) => targets.push({ id: c.id, quote: c.quote, place: `causes[${i}].quote`, kindJa: "原因" }));
+  const targets: { id: string; quote?: string; place: string; kindJa: string; quoteRequired: boolean }[] = [];
+  input.causes.forEach((c, i) =>
+    targets.push({ id: c.id, quote: c.quote, place: `causes[${i}].quote`, kindJa: "原因", quoteRequired: true })
+  );
   input.effects.forEach((e, i) =>
-    targets.push({ id: e.id, quote: e.quote, place: `effects[${i}].quote`, kindJa: "結果" })
+    targets.push({ id: e.id, quote: e.quote, place: `effects[${i}].quote`, kindJa: "結果", quoteRequired: true })
+  );
+  (input.intermediateNodes ?? []).forEach((n, i) =>
+    targets.push({
+      id: n.id,
+      quote: n.quote,
+      place: `intermediateNodes[${i}].quote`,
+      kindJa: "中間ノード",
+      quoteRequired: false,
+    })
   );
 
   for (const target of targets) {
     const normalizedQuote = target.quote === undefined ? "" : normalizeForGrounding(target.quote);
     if (normalizedQuote.length < 2) {
+      if (!target.quoteRequired) continue;
       findings.push({
         categoryId: "CEG-15",
         severity: "medium",
@@ -882,6 +895,10 @@ export function findUnmodeledSentences(
     const normalizedQuote = effect.quote === undefined ? "" : normalizeForGrounding(effect.quote);
     if (normalizedQuote.length >= 2) quotedNodes.push({ id: effect.id, normalizedQuote });
   }
+  for (const mid of input.intermediateNodes ?? []) {
+    const normalizedQuote = mid.quote === undefined ? "" : normalizeForGrounding(mid.quote);
+    if (normalizedQuote.length >= 2) quotedNodes.push({ id: mid.id, normalizedQuote });
+  }
 
   const findings: CauseEffectFinding[] = [];
   for (const sentence of sentences) {
@@ -909,6 +926,8 @@ export function findUnmodeledSentences(
 }
 
 // --- 14. CEG-17 論理接続語のモデル反映 ---
+// sentence.nodeIds は中間ノードの quote による紐づけも含む（findUnmodeledSentences 参照）ため、
+// 中間ノードの and/or 論理・not 辺・制約も本関数の走査対象に自動的に含まれる。
 
 export function findUnmodeledConnectives(
   input: AnalyzeCauseEffectInput,
