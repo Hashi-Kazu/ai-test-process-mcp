@@ -1,6 +1,6 @@
 {
   "name": "ai-test-process-mcp",
-  "version": "0.39.0",
+  "version": "0.39.1",
   "mcpName": "io.github.Hashi-Kazu/ai-test-process-mcp",
   "type": "module",
   "description": "MCP server providing AI-assisted test process tools, starting with JSTQB-based test plan draft generation and test design techniques.",
