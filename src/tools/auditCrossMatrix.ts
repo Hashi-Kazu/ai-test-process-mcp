@@ -346,6 +346,24 @@ export function renderCrossMatrixAudit(
         lines.push(`- 他 ${linkGrounding.length - FINDING_RENDER_LIMIT} 件`);
       }
     }
+
+    const derivedGrounding = findings.filter(
+      (f) => f.categoryId === "CMX-18" || f.categoryId === "CMX-19"
+    );
+    if (!input.documents || input.documents.length === 0) {
+      lines.push("- documents が未指定のため導出宣言の根拠裏付け照合を行えない(要確認)");
+    } else if (derivedGrounding.length === 0) {
+      lines.push("- 導出宣言の根拠欠落なし");
+    } else {
+      for (const f of derivedGrounding.slice(0, FINDING_RENDER_LIMIT)) {
+        lines.push(
+          `- [${f.severity}] ${escapeCell(f.categoryId)} ${escapeCell(f.target)} : ${escapeCell(f.detail)}`
+        );
+      }
+      if (derivedGrounding.length > FINDING_RENDER_LIMIT) {
+        lines.push(`- 他 ${derivedGrounding.length - FINDING_RENDER_LIMIT} 件`);
+      }
+    }
   }
   lines.push("");
 
@@ -389,7 +407,7 @@ export function renderCrossMatrixAudit(
   lines.push("### 2.11 サマリ");
   lines.push("");
   lines.push(
-    `- 軸数: ${summary.axisCount} / 軸ペア数: ${summary.pairCount} / 生成済みペア数: ${summary.generatedPairCount} / 要素総数: ${summary.totalItemCount} / 完全孤立要素数: ${summary.isolatedItemCount} / 空行数: ${summary.emptyRowTotal} / 空列数: ${summary.emptyColumnTotal} / 除外宣言数: ${summary.excludedLineTotal} / 全体充填率: ${summary.overallCellFillRatePercent}% / 検出事項数: ${summary.findingTotal}(うち high ${summary.highFindingTotal}) / 根拠未記入リンク数: ${summary.linksWithoutEvidenceTotal} / 未裏付けリンク数: ${summary.ungroundedLinkTotal} / 全体根拠裏付け充填率: ${summary.overallGroundedCellFillRatePercent}%`
+    `- 軸数: ${summary.axisCount} / 軸ペア数: ${summary.pairCount} / 生成済みペア数: ${summary.generatedPairCount} / 要素総数: ${summary.totalItemCount} / 完全孤立要素数: ${summary.isolatedItemCount} / 空行数: ${summary.emptyRowTotal} / 空列数: ${summary.emptyColumnTotal} / 除外宣言数: ${summary.excludedLineTotal} / 全体充填率: ${summary.overallCellFillRatePercent}% / 検出事項数: ${summary.findingTotal}(うち high ${summary.highFindingTotal}) / 根拠未記入リンク数: ${summary.linksWithoutEvidenceTotal} / 未裏付けリンク数: ${summary.ungroundedLinkTotal} / 全体根拠裏付け充填率: ${summary.overallGroundedCellFillRatePercent}% / 導出宣言の根拠未記入数: ${summary.derivedItemsWithoutEvidenceTotal} / 導出宣言の未裏付け数: ${summary.ungroundedDerivedItemTotal}`
   );
   lines.push("");
 
@@ -495,6 +513,23 @@ export const auditCrossMatrixInputShape = {
             z.object({
               id: z.string().describe("Item id, unique across all axes"),
               label: z.string().optional().describe("Display label; defaults to id"),
+              derivationKind: z
+                .enum(["derived"])
+                .optional()
+                .describe(
+                  "Set to \"derived\" when this item is an analytical product derived from the test basis " +
+                    "(e.g. a product risk item or a test condition synthesized from requirements) and therefore " +
+                    "does not appear verbatim in the basis text by design. When set, CMX-10 verbatim id/label " +
+                    "grounding is skipped for this item; instead derivationQuote is required and is checked " +
+                    "against documents (missing/too short -> CMX-18[high], not found in documents -> CMX-19[high])."
+                ),
+              derivationQuote: z
+                .string()
+                .optional()
+                .describe(
+                  "Verbatim excerpt from documents that this item was derived from. Required when " +
+                    "derivationKind is \"derived\" and documents are supplied."
+                ),
               links: z
                 .array(
                   z.union([

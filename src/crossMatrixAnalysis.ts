@@ -506,6 +506,7 @@ export function findUngroundedAxisItems(
   const result: { axisId: string; itemId: string; label: string }[] = [];
   for (const axis of axes) {
     for (const item of axis.items) {
+      if (item.derivationKind === "derived") continue;
       const label = itemLabel(item);
       const normalizedId = normalizeForGrounding(item.id);
       const normalizedLabel = normalizeForGrounding(label);
@@ -561,6 +562,46 @@ export function findLinkEvidenceIssues(
         }
         if (!corpus.includes(normalized)) ungrounded.push(issue);
       }
+    }
+  }
+  return { missing, ungrounded };
+}
+
+export interface CrossMatrixDerivedItemEvidenceIssue {
+  axisId: string;
+  itemId: string;
+  label: string;
+  quote?: string;
+}
+
+/**
+ * derivationKind: "derived" を宣言した軸要素について、derivationQuote の未記入と本文未裏付けを切り分ける。
+ * documents が未指定または0件のときは何も報告しない（CMX-10/16/17 と同じゲート条件）。
+ */
+export function findDerivedAxisItemEvidenceIssues(
+  axes: CrossMatrixAxisSpec[],
+  documents?: TestBasisDocument[]
+): { missing: CrossMatrixDerivedItemEvidenceIssue[]; ungrounded: CrossMatrixDerivedItemEvidenceIssue[] } {
+  if (!documents || documents.length === 0) return { missing: [], ungrounded: [] };
+  const corpus = buildGroundingCorpus(documents);
+  const missing: CrossMatrixDerivedItemEvidenceIssue[] = [];
+  const ungrounded: CrossMatrixDerivedItemEvidenceIssue[] = [];
+  for (const axis of axes) {
+    for (const item of axis.items) {
+      if (item.derivationKind !== "derived") continue;
+      const label = itemLabel(item);
+      const issue: CrossMatrixDerivedItemEvidenceIssue = {
+        axisId: axis.axisId,
+        itemId: item.id,
+        label,
+        ...(item.derivationQuote !== undefined ? { quote: item.derivationQuote } : {}),
+      };
+      const normalized = normalizeForGrounding(item.derivationQuote ?? "");
+      if (normalized.length < MIN_LINK_EVIDENCE_LENGTH) {
+        missing.push(issue);
+        continue;
+      }
+      if (!corpus.includes(normalized)) ungrounded.push(issue);
     }
   }
   return { missing, ungrounded };
@@ -706,6 +747,10 @@ export function summarizeCrossMatrix(
   linkEvidence: {
     missing: CrossMatrixLinkEvidenceIssue[];
     ungrounded: CrossMatrixLinkEvidenceIssue[];
+  } = { missing: [], ungrounded: [] },
+  derivedItemEvidence: {
+    missing: CrossMatrixDerivedItemEvidenceIssue[];
+    ungrounded: CrossMatrixDerivedItemEvidenceIssue[];
   } = { missing: [], ungrounded: [] }
 ): CrossMatrixSummary {
   let emptyRowTotal = 0;
@@ -754,6 +799,8 @@ export function summarizeCrossMatrix(
     linkDeclarationTotal: countResolvedCrossAxisLinks(axes),
     linksWithoutEvidenceTotal: linkEvidence.missing.length,
     ungroundedLinkTotal: linkEvidence.ungrounded.length,
+    derivedItemsWithoutEvidenceTotal: derivedItemEvidence.missing.length,
+    ungroundedDerivedItemTotal: derivedItemEvidence.ungrounded.length,
     overallGroundedCellFillRatePercent: rate(groundedFilledSum, groundedTotalSum),
     findingTotal: findings.length,
     highFindingTotal: findings.filter((f) => f.severity === "high").length,
@@ -927,6 +974,25 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
     });
   }
 
+  // CMX-18 / CMX-19 導出宣言の根拠引用の未記入・本文未裏付け
+  const derivedEvidence = findDerivedAxisItemEvidenceIssues(axes, input.documents);
+  for (const issue of derivedEvidence.missing) {
+    findings.push({
+      categoryId: "CMX-18",
+      severity: "high",
+      target: `${issue.axisId} / ${issue.itemId}`,
+      detail: `derivationKind:"derived" を宣言しているが derivationQuote が無い、または短すぎて本文と照合できない。表示名: ${issue.label}`,
+    });
+  }
+  for (const issue of derivedEvidence.ungrounded) {
+    findings.push({
+      categoryId: "CMX-19",
+      severity: "high",
+      target: `${issue.axisId} / ${issue.itemId}`,
+      detail: `derivationQuote「${issue.quote ?? ""}」が投入されたテストベース本文に存在しない。表示名: ${issue.label}`,
+    });
+  }
+
   // CMX-11 テストベースに定義があるのに軸に載っていないID
   const exclusionItemIds = new Set((input.exclusions ?? []).map((e) => e.itemId));
   for (const entry of findUnmappedDefinedIds(axes, input.documents, {
@@ -1047,6 +1113,6 @@ export function analyzeCrossMatrix(input: AuditCrossMatrixInput): CrossMatrixAud
     pairs,
     isolatedItems,
     findings,
-    summary: summarizeCrossMatrix(pairs, isolatedItems, findings, axes, linkEvidence),
+    summary: summarizeCrossMatrix(pairs, isolatedItems, findings, axes, linkEvidence, derivedEvidence),
   };
 }

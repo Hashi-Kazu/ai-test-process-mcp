@@ -6,6 +6,7 @@ import {
   findAsymmetricLinks,
   findAxisPopulationShrinkage,
   findDeclaredCoverageMismatches,
+  findDerivedAxisItemEvidenceIssues,
   findDuplicateAxisIds,
   findDuplicateItemIds,
   findIsolatedItems,
@@ -375,6 +376,19 @@ describe("cross matrix findings helpers", () => {
     expect(findUnmappedDefinedIds(baseAxes())).toEqual([]);
   });
 
+  it("findUngroundedAxisItems skips items declared as derivationKind: \"derived\" even when absent from the text", () => {
+    const documents = [
+      {
+        name: "risk-list.md",
+        content: ["# リスク一覧", "R-01 決済失敗", "R-02 在庫不整合"].join("\n"),
+      },
+    ];
+    const axes = baseAxes();
+    axes[0].items[2] = { ...axes[0].items[2], derivationKind: "derived", derivationQuote: "表示崩れの記述" };
+    const ungrounded = findUngroundedAxisItems(axes, documents);
+    expect(ungrounded.map((i) => i.itemId)).not.toContain("R-03");
+  });
+
   it("findUnmappedDefinedIds detects a colon-separated coverage target id defined but not on any axis (CMX-11)", () => {
     const documents = [
       {
@@ -646,6 +660,70 @@ describe("findLinkEvidenceIssues", () => {
       { axisId: "B", axisName: "軸B", items: [{ id: "B-1" }] },
     ];
     expect(findLinkEvidenceIssues(axes, linkedDocuments)).toEqual({ missing: [], ungrounded: [] });
+  });
+});
+
+describe("findDerivedAxisItemEvidenceIssues", () => {
+  function derivedAxes(quote?: string): CrossMatrixAxisSpec[] {
+    return [
+      {
+        axisId: "RISK",
+        axisName: "プロダクトリスク",
+        items: [
+          {
+            id: "R-DERIVED",
+            label: "決済遅延リスク",
+            derivationKind: "derived",
+            ...(quote !== undefined ? { derivationQuote: quote } : {}),
+          },
+        ],
+      },
+    ];
+  }
+
+  const documents: TestBasisDocument[] = [
+    { name: "spec.md", content: "決済APIのタイムアウトが5秒を超えると処理が中断される。" },
+  ];
+
+  it("reports nothing when documents is missing or empty", () => {
+    expect(findDerivedAxisItemEvidenceIssues(derivedAxes("決済APIのタイムアウトが5秒を超える"))).toEqual({
+      missing: [],
+      ungrounded: [],
+    });
+    expect(findDerivedAxisItemEvidenceIssues(derivedAxes("決済APIのタイムアウトが5秒を超える"), [])).toEqual({
+      missing: [],
+      ungrounded: [],
+    });
+  });
+
+  it("reports missing when derivationQuote is absent or too short to match", () => {
+    const { missing, ungrounded } = findDerivedAxisItemEvidenceIssues(derivedAxes(), documents);
+    expect(ungrounded).toEqual([]);
+    expect(missing).toEqual([
+      { axisId: "RISK", itemId: "R-DERIVED", label: "決済遅延リスク" },
+    ]);
+  });
+
+  it("reports ungrounded when derivationQuote is not found in the documents", () => {
+    const { missing, ungrounded } = findDerivedAxisItemEvidenceIssues(
+      derivedAxes("本文に存在しない引用文"),
+      documents
+    );
+    expect(missing).toEqual([]);
+    expect(ungrounded).toEqual([
+      {
+        axisId: "RISK",
+        itemId: "R-DERIVED",
+        label: "決済遅延リスク",
+        quote: "本文に存在しない引用文",
+      },
+    ]);
+  });
+
+  it("reports nothing when derivationQuote is a verbatim excerpt found in the documents", () => {
+    expect(
+      findDerivedAxisItemEvidenceIssues(derivedAxes("決済APIのタイムアウトが5秒を超える"), documents)
+    ).toEqual({ missing: [], ungrounded: [] });
   });
 });
 
