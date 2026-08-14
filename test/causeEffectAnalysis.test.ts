@@ -458,6 +458,45 @@ describe("findUngroundedNodeQuotes", () => {
     expect(ceg15[0].targetId).toBe("E1");
     expect(ceg15[0].severity).toBe("medium");
   });
+
+  it("reports CEG-14 (high) for an intermediate node whose quote is absent from specText", () => {
+    const input = baseInput({
+      specText: "金額が１０００円以上の場合、送料は無料とする。",
+      causes: [{ id: "C1", statement: "金額が1000円以上", quote: "金額が 1000 円以上" }],
+      intermediateNodes: [
+        { id: "N1", statement: "捏造した中間論理", quote: "会員ランクがゴールドである" },
+      ],
+      effects: [{ id: "E1", statement: "送料無料", quote: "送料は無料とする" }],
+      edges: [
+        { from: "C1", to: "N1" },
+        { from: "N1", to: "E1" },
+      ],
+    });
+
+    const findings = findUngroundedNodeQuotes(input);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0].categoryId).toBe("CEG-14");
+    expect(findings[0].severity).toBe("high");
+    expect(findings[0].targetId).toBe("N1");
+  });
+
+  it("does not report CEG-15 for an intermediate node with no quote specified", () => {
+    const input = baseInput({
+      specText: "金額が１０００円以上の場合、送料は無料とする。",
+      causes: [{ id: "C1", statement: "金額が1000円以上", quote: "金額が 1000 円以上" }],
+      intermediateNodes: [{ id: "N1", statement: "中間論理" }],
+      effects: [{ id: "E1", statement: "送料無料", quote: "送料は無料とする" }],
+      edges: [
+        { from: "C1", to: "N1" },
+        { from: "N1", to: "E1" },
+      ],
+    });
+
+    const findings = findUngroundedNodeQuotes(input);
+
+    expect(findings.some((f) => f.targetId === "N1")).toBe(false);
+  });
 });
 
 describe("splitSpecSentences + findUnmodeledSentences", () => {
@@ -483,6 +522,26 @@ describe("splitSpecSentences + findUnmodeledSentences", () => {
       expect(f.severity).toBe("medium");
     }
     expect(findings[0].detail).toContain("返品期限は14日以内とする");
+  });
+
+  it("marks a sentence as modeled via an intermediate node's quote alone", () => {
+    const input = baseInput({
+      specText: "会員である場合は送料を無料にする。返品期限は14日以内とする。",
+      causes: [{ id: "C1", statement: "会員である", quote: "会員である場合" }],
+      intermediateNodes: [{ id: "N1", statement: "返品期限判定", quote: "返品期限は14日以内とする" }],
+      effects: [{ id: "E1", statement: "送料無料", quote: "送料を無料にする" }],
+      edges: [
+        { from: "C1", to: "E1" },
+        { from: "N1", to: "E1" },
+      ],
+    });
+
+    const sentences = splitSpecSentences(input.specText);
+    const findings = findUnmodeledSentences(input, sentences);
+
+    expect(sentences[1].modeled).toBe(true);
+    expect(sentences[1].nodeIds).toContain("N1");
+    expect(findings.some((f) => f.targetId === "文2")).toBe(false);
   });
 });
 
@@ -518,6 +577,31 @@ describe("findUnmodeledConnectives", () => {
       edges: [
         { from: "C1", to: "E1" },
         { from: "C2", to: "E1" },
+      ],
+    });
+
+    const graph = buildCauseEffectGraph(input);
+    const sentences = splitSpecSentences(input.specText);
+    findUnmodeledSentences(input, sentences);
+
+    expect(findUnmodeledConnectives(input, graph, sentences)).toEqual([]);
+  });
+
+  it("does not report CEG-17 when an intermediate node's or-logic reflects a quoted sentence's connective", () => {
+    const input = baseInput({
+      specText: "会員または初回購入の場合は割引する",
+      causes: [
+        { id: "C1", statement: "会員である" },
+        { id: "C2", statement: "初回購入である" },
+      ],
+      intermediateNodes: [
+        { id: "N1", statement: "会員または初回購入", logic: "or", quote: "会員または初回購入の場合は割引する" },
+      ],
+      effects: [{ id: "E1", statement: "割引する" }],
+      edges: [
+        { from: "C1", to: "N1" },
+        { from: "C2", to: "N1" },
+        { from: "N1", to: "E1" },
       ],
     });
 

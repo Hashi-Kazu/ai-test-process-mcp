@@ -2389,6 +2389,7 @@ export interface CauseEffectIntermediateInput {
   id: string;
   statement: string;
   logic?: CauseEffectLogic;
+  quote?: string;
   note?: string;
 }
 
