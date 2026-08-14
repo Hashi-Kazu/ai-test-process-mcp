@@ -2,12 +2,14 @@ import { z } from "zod";
 import { completedToolsInputShape, renderNextToolsSection } from "../nextToolAnalysis.js";
 import { renderInspectabilitySection } from "../inspectabilityAnalysis.js";
 import {
+  buildTestBasisCorpus,
   renderTestBasisGroundingLines,
   sanitizeTestBasisDocuments,
   testBasisDocumentsInputShape,
   testBasisGroundingSignal,
   testBasisGroundingSummaryLine,
 } from "../testBasisGrounding.js";
+import { normalizeForGrounding } from "../groundingNormalization.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildConditionTraceability, findUncoveredConditionIds } from "../testCaseAnalysis.js";
 import {
@@ -494,6 +496,22 @@ export function computeTestArchitecture(spec: TestArchitectureSpec): TestArchite
       detail: `対象外として宣言した「${item.item}」に対象外判断の根拠が記入されていない。`,
     });
   }
+  if (spec.testBasisDocuments !== undefined && spec.testBasisDocuments.length > 0) {
+    const basis = buildTestBasisCorpus(sanitizeTestBasisDocuments(spec.testBasisDocuments));
+    for (const item of scope?.outOfScope ?? []) {
+      if (item.reasonKind !== "not-in-basis") continue;
+      const needle = normalizeForGrounding(item.item);
+      if (needle.length === 0 || !basis.corpus.includes(needle)) continue;
+      findings.push({
+        categoryId: "TAC-14",
+        severity: "medium",
+        target: "scope",
+        detail:
+          `対象外項目「${item.item}」は「本文に記述が無いこと」を根拠にしているが、` +
+          `テストベース本文に実際には言及が見つかった。宣言と実体が矛盾している。`,
+      });
+    }
+  }
   for (const entry of scope?.inScope ?? []) {
     const needle = entry.item.trim();
     if (needle.length === 0) continue;
@@ -683,13 +701,15 @@ export function collectTestArchitectureGroundingSubjects(
     }
   });
   (spec.scope?.outOfScope ?? []).forEach((item, i) => {
-    subjects.push({
-      kind: "label",
-      place: `scope.outOfScope[${i}].item`,
-      target: "scope.outOfScope",
-      fieldLabel: "スコープ項目",
-      text: item.item,
-    });
+    if (item.reasonKind !== "not-in-basis") {
+      subjects.push({
+        kind: "label",
+        place: `scope.outOfScope[${i}].item`,
+        target: "scope.outOfScope",
+        fieldLabel: "スコープ項目",
+        text: item.item,
+      });
+    }
     if (item.reason !== undefined) {
       subjects.push({
         kind: "quotation",
@@ -1179,7 +1199,22 @@ export const designTestArchitectureInputShape = {
   scope: z
     .object({
       inScope: z.array(z.object({ item: z.string(), reason: z.string().optional() })),
-      outOfScope: z.array(z.object({ item: z.string(), reason: z.string().optional() })),
+      outOfScope: z.array(
+        z.object({
+          item: z.string(),
+          reason: z.string().optional(),
+          reasonKind: z
+            .enum(["not-in-basis"])
+            .optional()
+            .describe(
+              "Set to \"not-in-basis\" when the out-of-scope reason itself is " +
+                "\"this item has no description in the test basis\" (e.g. excluding screens " +
+                "because the basis documents contain no UI description). " +
+                "When set, TBG-01 label grounding is skipped for this item, and instead " +
+                "TAC-14 verifies the reverse: that the item text truly does not appear in the basis."
+            ),
+        })
+      ),
     })
     .optional()
     .describe("Declared test scope; out-of-scope items require a reason"),

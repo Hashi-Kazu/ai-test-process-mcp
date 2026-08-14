@@ -2546,7 +2546,13 @@ export interface TestArchitectureConditionInput {
   containerIds: string[];              // 帰属先。0件・複数件を許し、検査で扱う
 }
 
-export interface TestArchitectureScopeItem { item: string; reason?: string; }
+export interface TestArchitectureScopeItem {
+  item: string;
+  reason?: string;
+  /** "not-in-basis": 対象外の根拠が「テストベース本文に記述が無いこと」自体である宣言。
+   *  この場合 item は実在照合(TBG-01)の対象から外し、代わりに本当に本文に存在しないかを逆方向に検査する。 */
+  reasonKind?: "not-in-basis";
+}
 export interface TestArchitectureScope {
   inScope: TestArchitectureScopeItem[];
   outOfScope: TestArchitectureScopeItem[];
