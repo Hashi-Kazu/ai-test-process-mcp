@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { coverageBalanceCriteria } from "../src/resources/coverageBalanceCriteria.js";
 
 describe("coverageBalanceCriteria", () => {
-  it("CBC-01..CBC-13 が重複なく全件存在する", () => {
+  it("CBC-01..CBC-14 が重複なく全件存在する", () => {
     const ids = coverageBalanceCriteria.categories.map((c) => c.id);
-    const expected = Array.from({ length: 13 }, (_, i) => `CBC-${String(i + 1).padStart(2, "0")}`);
+    const expected = Array.from({ length: 14 }, (_, i) => `CBC-${String(i + 1).padStart(2, "0")}`);
     expect(ids).toEqual(expected);
     expect(new Set(ids).size).toBe(ids.length);
   });

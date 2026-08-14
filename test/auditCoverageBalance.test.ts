@@ -87,8 +87,8 @@ describe("renderCoverageBalanceAudit", () => {
     expect(markdown).toContain("構成比(%)は観測値であり達成度ではない");
   });
 
-  it("判定区分表に CBC-01..CBC-13 が並ぶ", () => {
-    for (let i = 1; i <= 13; i++) {
+  it("判定区分表に CBC-01..CBC-14 が並ぶ", () => {
+    for (let i = 1; i <= 14; i++) {
       expect(markdown).toContain(`| CBC-${String(i).padStart(2, "0")} |`);
     }
   });
@@ -129,6 +129,20 @@ describe("renderCoverageBalanceAudit 検査不能の表示", () => {
     });
     expect(md).toContain("CBC-04");
     expect(md).toContain("宣言件数 9 件に対し、実集計は 1 件である");
+  });
+
+  it("カタログ外techniqueIdを宣言した場合はCBC-14へ振り分けられ、CBC-04の0件断定は出ない", () => {
+    const md = renderCoverageBalanceAudit({
+      testCases: [
+        ...baseInput.testCases,
+        { caseId: "TCS-085", techniqueId: "load-test" },
+        { caseId: "TCS-086", techniqueId: "load-test" },
+      ],
+      deliverables: baseInput.deliverables,
+      declaredDistributions: [{ axis: "technique", label: "load-test", declaredCount: 2 }],
+    });
+    expect(md).toContain("CBC-14");
+    expect(md).not.toContain("実集計は0件である");
   });
 
   it("本文に無い計上ケースIDが CBC-05 として出る", () => {

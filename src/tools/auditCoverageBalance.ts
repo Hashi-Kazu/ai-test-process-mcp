@@ -149,7 +149,7 @@ export function renderCoverageBalanceAudit(
   lines.push("");
   renderFindings(lines, findings, ["CBC-01", "CBC-02", "CBC-03"]);
   if (hasDeclared) {
-    renderFindings(lines, findings, ["CBC-04"]);
+    renderFindings(lines, findings, ["CBC-04", "CBC-14"]);
   } else {
     lines.push("- declaredDistributions が未指定のため宣言件数と実集計の照合ができない(要確認)");
   }

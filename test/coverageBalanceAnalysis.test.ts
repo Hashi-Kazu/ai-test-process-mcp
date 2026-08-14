@@ -178,6 +178,66 @@ describe("CBC-04", () => {
   it("未指定なら検査しない（検査不能）", () => {
     expect(checkDeclaredDistributions(undefined, rows)).toHaveLength(0);
   });
+
+  it("testCases 省略時（後方互換）は既存呼び出しが壊れない", () => {
+    const findings = checkDeclaredDistributions(
+      [{ axis: "perspective", label: "TPC-01", declaredCount: 2 }],
+      rows
+    );
+    expect(findings).toHaveLength(0);
+  });
+});
+
+describe("CBC-14", () => {
+  const casesWithUnknownTechnique: CoverageBalanceTestCase[] = [
+    ...cases,
+    { caseId: "TCS-085", techniqueId: "load-test" },
+    { caseId: "TCS-086", techniqueId: "load-test" },
+  ];
+  const rowsWithUnknownTechnique = {
+    perspective: buildPerspectiveDistribution(casesWithUnknownTechnique),
+    technique: buildTechniqueDistribution(casesWithUnknownTechnique),
+    "test-level": buildTestLevelDistribution(casesWithUnknownTechnique),
+  };
+
+  it("カタログ外IDを宣言件数どおりに宣言した場合、CBC-14のみを出しCBC-04は出さない", () => {
+    const findings = checkDeclaredDistributions(
+      [{ axis: "technique", label: "load-test", declaredCount: 2 }],
+      rowsWithUnknownTechnique,
+      casesWithUnknownTechnique
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].checkId).toBe("CBC-14");
+    expect(findings[0].subject).toBe("技法:load-test");
+    expect(findings.some((f) => f.checkId === "CBC-04")).toBe(false);
+  });
+
+  it("カタログ外IDの宣言件数が実件数と食い違ってもCBC-14のみを出し、summaryに宣言件数・該当ケースIDを含む", () => {
+    const findings = checkDeclaredDistributions(
+      [{ axis: "technique", label: "load-test", declaredCount: 5 }],
+      rowsWithUnknownTechnique,
+      casesWithUnknownTechnique
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].checkId).toBe("CBC-14");
+    expect(findings[0].summary).toContain("5");
+    expect(findings[0].summary).toContain("TCS-085");
+    expect(findings[0].summary).toContain("TCS-086");
+    expect(findings[0].summary).not.toContain("実集計は0件である");
+  });
+
+  it("カタログにも実データにも存在しないラベルは従来通りCBC-04が0件断定を出す（回帰）", () => {
+    const findings = checkDeclaredDistributions(
+      [{ axis: "technique", label: "not-declared-anywhere", declaredCount: 3 }],
+      rowsWithUnknownTechnique,
+      casesWithUnknownTechnique
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].checkId).toBe("CBC-04");
+    expect(findings[0].summary).toContain(
+      "区分「not-declared-anywhere」は集計軸の区分として存在せず、実集計は0件である"
+    );
+  });
 });
 
 describe("CBC-05 / CBC-06", () => {
