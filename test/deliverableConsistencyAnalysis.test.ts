@@ -547,6 +547,77 @@ describe("記述差分（DCC-12・DCC-13）", () => {
     const findings = pair(analysisText, designText);
     expect(findings.filter((f) => f.checkId === "DCC-13")).toHaveLength(0);
   });
+
+  it("表セル由来の擬似ID（プレフィックス空文字）はDCC-13/DCC-12の対象にせず、実在ID(TC-001)は対象のままにする（HSKZ-224）", () => {
+    const docA: ConsistencyDeliverable = {
+      name: "分析",
+      kind: "test-analysis",
+      content: `# 分析
+
+| ID | 内容 |
+| --- | --- |
+| 006-1 | 入場ゲートが3台構成で並行して入場処理できること |
+| TC-001 | 発券機の印字位置が仕様どおりであること |
+`,
+    };
+    const docB: ConsistencyDeliverable = {
+      name: "設計",
+      kind: "test-design",
+      content: `# 設計
+
+| ID | 内容 |
+| --- | --- |
+| 006-1 | 応答が1秒以内に完了すること |
+| TC-001 | QRコード読み取り精度が99%以上であること |
+`,
+    };
+
+    const input: AuditDeliverableConsistencyInput = {
+      deliverables: [docA, docB],
+      idPatterns: ["(\\d{3}-\\d{1,2})"],
+    };
+
+    const result = analyzeDeliverableConsistency(input);
+    const dcc13 = result.findings.filter((f) => f.checkId === "DCC-13");
+    const dcc12 = result.findings.filter((f) => f.checkId === "DCC-12");
+
+    expect(dcc13.some((f) => f.subject === "006-1")).toBe(false);
+    expect(dcc12.some((f) => f.subject.startsWith("006-1"))).toBe(false);
+    expect(dcc13.some((f) => f.subject === "TC-001")).toBe(true);
+  });
+
+  it("crossRefIdPrefixesで数値プレフィックスを明示指定した場合はDCC-13の対象に含める（HSKZ-224）", () => {
+    const docA: ConsistencyDeliverable = {
+      name: "分析",
+      kind: "test-analysis",
+      content: `# 分析
+
+| ID | 内容 |
+| --- | --- |
+| 006-1 | 入場ゲートが3台構成で並行して入場処理できること |
+`,
+    };
+    const docB: ConsistencyDeliverable = {
+      name: "設計",
+      kind: "test-design",
+      content: `# 設計
+
+| ID | 内容 |
+| --- | --- |
+| 006-1 | 応答が1秒以内に完了すること |
+`,
+    };
+
+    const input: AuditDeliverableConsistencyInput = {
+      deliverables: [docA, docB],
+      idPatterns: ["(\\d{3}-\\d{1,2})"],
+      crossRefIdPrefixes: ["006"],
+    };
+
+    const result = analyzeDeliverableConsistency(input);
+    const dcc13 = result.findings.filter((f) => f.checkId === "DCC-13");
+    expect(dcc13.some((f) => f.subject === "006-1")).toBe(true);
+  });
 });
 
 describe("件数・網羅率宣言（DCC-15）", () => {
