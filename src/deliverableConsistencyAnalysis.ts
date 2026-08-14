@@ -1063,9 +1063,13 @@ function unitValues(text: string): Map<string, string[]> {
   return map;
 }
 
-export function buildIdStatementDiffs(index: CrossRefIdEntry[]): IdStatementDiffRow[] {
+export function buildIdStatementDiffs(
+  index: CrossRefIdEntry[],
+  prefixes?: string[]
+): IdStatementDiffRow[] {
   const rows: IdStatementDiffRow[] = [];
-  for (const entry of index) {
+  const targets = prefixes === undefined ? index : index.filter((e) => inPrefixes(e.id, prefixes));
+  for (const entry of targets) {
     if (entry.statements.length < 2) continue;
     const base = entry.statements[0];
     for (let i = 1; i < entry.statements.length; i++) {
@@ -1660,7 +1664,7 @@ export function analyzeDeliverableConsistency(
     { includeCoverageTargetIds: input.includeCoverageTargetIds }
   );
   const sectionReferences = extractSectionReferences(deliverables, deliverableIndex);
-  const statementDiffs = buildIdStatementDiffs(crossRefIndex);
+  const statementDiffs = buildIdStatementDiffs(crossRefIndex, crossRefPrefixes);
   const countClaims = extractCountClaims(deliverables, {
     idPatterns: input.idPatterns,
     countClaimSubjects: input.countClaimSubjects,
