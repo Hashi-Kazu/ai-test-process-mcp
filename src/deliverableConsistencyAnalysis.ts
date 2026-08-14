@@ -107,6 +107,12 @@ function maskParenContent(text: string): string {
   return out;
 }
 
+/** 「item-definition:42」のような文書名:行番号引用を、文書ラベルとして扱わないための判定 */
+const CITATION_LABEL_REGEX = /^[A-Za-z][\w.-]*:\d+(?:-\d+)?$/;
+function isCitationLabel(label: string): boolean {
+  return CITATION_LABEL_REGEX.test(label);
+}
+
 function uniqueStrings(values: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -279,10 +285,12 @@ export function extractReferencedDocuments(
         const keys: { key: string; label: string }[] = [];
 
         // 1) 「13(発券機画面仕様書)」形式（括弧直前の番号）
-        const parenRe = /(?<![0-9])(\d{2})[（(]([^）)]{1,30})[）)]/g;
+        const parenRe = /(?<![0-9])(?<![A-Za-z0-9]-)(\d{2})[（(]([^）)]{1,30})[）)]/g;
         let m: RegExpExecArray | null;
         while ((m = parenRe.exec(sentence)) !== null) {
-          keys.push({ key: m[1], label: m[2].trim() });
+          const label = m[2].trim();
+          if (isCitationLabel(label)) continue;
+          keys.push({ key: m[1], label });
         }
 
         // 括弧内の理由句に含まれる番号を無効化してから残りを拾う

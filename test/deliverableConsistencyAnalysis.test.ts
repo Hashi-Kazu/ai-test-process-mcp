@@ -215,6 +215,70 @@ describe("参照テストベース文書（DCC-01〜DCC-05）", () => {
     expect(new Set(keys)).toEqual(new Set(["01", "02", "11", "12", "21", "71"]));
   });
 
+  it("「文書名:行番号」引用表記を実在するテストベース文書として誤抽出しない（複数個）", () => {
+    const doc: ConsistencyDeliverable = {
+      name: "分析結果",
+      kind: "test-analysis",
+      content:
+        "住所_町字の桁数は項目定義書 18（item-definition:42）と付番API仕様 120（fuban-api_spec:135）で食い違う。",
+    };
+    expect(extractReferencedDocuments([doc])).toEqual([]);
+  });
+
+  it("「文書名:行番号」引用表記を実在するテストベース文書として誤抽出しない（複数箇所の括弧）", () => {
+    const doc: ConsistencyDeliverable = {
+      name: "分析結果",
+      kind: "test-analysis",
+      content:
+        "US-11 API要求元の実装担当として、規定外の文字を設定した場合に E0002 が返るようにしたい（fuban-api_spec:243、item-definition:111-112）。",
+    };
+    expect(extractReferencedDocuments([doc])).toEqual([]);
+  });
+
+  it("ハイフン付きID（P-01）の末尾2桁を文書番号として誤抽出しない", () => {
+    const doc: ConsistencyDeliverable = {
+      name: "分析結果",
+      kind: "test-analysis",
+      content: "P-01（API要求元の実装担当）の目標と fuban-api_spec:169-176 の固定値記述による。",
+    };
+    const keys = extractReferencedDocuments([doc]).map((o) => o.documentKey);
+    expect(keys).not.toContain("01");
+  });
+
+  it("ハイフン付きID（031-24）の末尾2桁を文書番号として誤抽出しない", () => {
+    const doc: ConsistencyDeliverable = {
+      name: "分析結果",
+      kind: "test-analysis",
+      content:
+        "要件:031-24（ガイドワード GW-10（回数）を item-definition:49-52 の繰り返し 999 へ適用した。）",
+    };
+    const occurrences = extractReferencedDocuments([doc]);
+    const keys = occurrences.map((o) => o.documentKey);
+    const labels = occurrences.map((o) => o.documentLabel);
+    expect(keys).not.toContain("24");
+    expect(labels).not.toContain("ガイドワード GW-10（回数");
+  });
+
+  it("全角数字を含む項目名（Ｎ50）の末尾2桁を文書番号として誤抽出しない", () => {
+    const doc: ConsistencyDeliverable = {
+      name: "分析結果",
+      kind: "test-analysis",
+      content: "名_日本人_読み仮名 Ｎ50（item-definition:15-27）とAPI側の対応パラメータの整合。",
+    };
+    const keys = extractReferencedDocuments([doc]).map((o) => o.documentKey);
+    expect(keys).not.toContain("50");
+  });
+
+  it("既存の真陽性（13(発券機画面仕様書)形式）は引き続き抽出される", () => {
+    const doc: ConsistencyDeliverable = {
+      name: "計画書",
+      kind: "test-plan",
+      content: "13(発券機画面仕様書)・22(Webチケット画面仕様書)・72(データ連携仕様書)は未読のため、追加確認が必要。",
+    };
+    const keys = extractReferencedDocuments([doc]).map((o) => o.documentKey);
+    expect(new Set(keys)).toEqual(new Set(["13", "22", "72"]));
+  });
+
   it("片側の成果物にしか現れない文書を DCC-03 で検出する", () => {
     const dcc03 = subjects(checkReferencedDocumentConflicts(rows), "DCC-03");
     // 01/02/12/21/71 は計画書にしか現れない
