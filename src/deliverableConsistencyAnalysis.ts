@@ -1438,6 +1438,25 @@ export function checkCountClaims(
     );
     const declared = claim.declaredCount ?? 0;
     if (actualIds.length === declared) continue;
+
+    if (actualIds.length === 0) {
+      // 定義0件は「母集団が真に存在しない」場合と「idPatterns がこの成果物のID書式（表セル分割形式など）
+      // に一致していないだけ」の場合を決定的検査だけでは区別できない。high に固定化せず medium に留め、
+      // 検査不能である旨を明示する。
+      findings.push(
+        makeFinding({
+          checkId: "DCC-15",
+          severity: "medium",
+          subject: `${claim.keyword ?? ""} 件数宣言`,
+          summary: `${claim.deliverable} が「${claim.keyword}」について ${declared}件と宣言しているが、プレフィックス「${prefix}」で定義として認識されたIDは0件である。母集団が真に存在しないのか、idPatterns がこの成果物のID書式に一致していないだけなのかを、決定的検査だけでは区別できない（検査不能・要確認）。`,
+          places: [place],
+          question: `「${prefix}」のID（${claim.keyword}）が成果物本文にどのように書かれているかを確認し、idPatterns がその書式に一致していなければパターンを追加した上で再判定してください。`,
+          assumption: "暫定的に定義0件を母集団の真の欠如とは断定しない。",
+        })
+      );
+      continue;
+    }
+
     findings.push(
       makeFinding({
         checkId: "DCC-15",

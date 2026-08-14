@@ -247,12 +247,31 @@ describe("renderDocumentDigestLines", () => {
     expect(lines[2]).toContain("| 1 / 0 / 1 |");
   });
 
-  it("emits a [high] finding line for each unmatched idPatterns source", () => {
+  it("emits a [medium] finding line when the unmatched pattern's document already has other defined IDs (population not degraded)", () => {
     const rows = buildDocumentDigests([{ name: "doc.md", content: "EH-100 発券機起動" }]);
     const findings = findDocumentDigestFindings(rows);
     const lines = renderDocumentDigestLines(rows, findings, ["\\b(ZZZ)-(\\d+)\\b"]);
     expect(
-      lines.some((l) => l.startsWith("- [high] 指定パターンが1件も一致しなかった:") && l.includes("ZZZ"))
+      lines.some(
+        (l) =>
+          l.startsWith("- [medium] 指定パターンが1件も一致しなかった:") &&
+          l.includes("ZZZ") &&
+          l.includes("縮退しているとは限らない")
+      )
+    ).toBe(true);
+  });
+
+  it("emits a [high] finding line when no defined IDs exist at all across the documents (population truly degraded)", () => {
+    const rows = buildDocumentDigests([{ name: "doc.md", content: "何もIDらしき記述は無い。" }]);
+    const findings = findDocumentDigestFindings(rows);
+    const lines = renderDocumentDigestLines(rows, findings, ["\\b(ZZZ)-(\\d+)\\b"]);
+    expect(
+      lines.some(
+        (l) =>
+          l.startsWith("- [high] 指定パターンが1件も一致しなかった:") &&
+          l.includes("ZZZ") &&
+          l.includes("母集団が縮退したまま")
+      )
     ).toBe(true);
   });
 
