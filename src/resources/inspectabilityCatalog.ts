@@ -723,6 +723,12 @@ export const inspectabilityCatalog: Record<string, InspectabilityToolEntry> = {
         requires: ["declared-distribution"],
       },
       {
+        checkKey: "CBC-14",
+        catalogId: "CBC-14",
+        sectionLabel: "分布の宣言と実体の照合",
+        requires: ["declared-distribution"],
+      },
+      {
         checkKey: "CBC-05",
         catalogId: "CBC-05",
         sectionLabel: "分布の宣言と実体の照合",

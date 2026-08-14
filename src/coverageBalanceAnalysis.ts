@@ -362,16 +362,59 @@ const AXIS_LABEL: Record<CoverageBalanceAxis, string> = {
   "test-level": "テストレベル",
 };
 
-/** CBC-04 */
+/** 軸の生の宣言値（カタログ照合前）。CBC-14 判定に使う。 */
+function rawAxisValueOf(
+  axis: CoverageBalanceAxis,
+  tc: CoverageBalanceTestCase
+): string | undefined {
+  switch (axis) {
+    case "perspective":
+      return tc.perspectiveCategoryId?.trim();
+    case "technique":
+      return tc.techniqueId?.trim();
+    case "test-level":
+      return tc.testLevel;
+  }
+}
+
+function findRawAxisCaseIds(
+  axis: CoverageBalanceAxis,
+  label: string,
+  testCases: CoverageBalanceTestCase[]
+): string[] {
+  return testCases.filter((tc) => rawAxisValueOf(axis, tc) === label).map((tc) => tc.caseId);
+}
+
+/** CBC-04 / CBC-14 */
 export function checkDeclaredDistributions(
   declaredDistributions: CoverageBalanceDeclaredDistribution[] | undefined,
-  rows: CoverageBalanceRowsByAxis
+  rows: CoverageBalanceRowsByAxis,
+  testCases: CoverageBalanceTestCase[] = []
 ): CoverageBalanceFinding[] {
   if (declaredDistributions === undefined || declaredDistributions.length === 0) return [];
   const out: CoverageBalanceFinding[] = [];
   for (const declared of declaredDistributions) {
     const axisRows = rows[declared.axis] ?? [];
     const row = axisRows.find((r) => r.id === declared.label);
+
+    if (row === undefined) {
+      const rawCaseIds = findRawAxisCaseIds(declared.axis, declared.label, testCases);
+      if (rawCaseIds.length > 0) {
+        const subject = `${AXIS_LABEL[declared.axis]}:${declared.label}`;
+        out.push(
+          makeFinding({
+            checkId: "CBC-14",
+            severity: "high",
+            subject,
+            summary: `区分「${declared.label}」は${AXIS_LABEL[declared.axis]}カタログに未登録のため集計軸として解決できないが、当該IDを宣言したケースが ${rawCaseIds.length} 件存在する（宣言件数 ${declared.declaredCount} 件、該当ケース: ${rawCaseIds.join(", ")}）。実データは「未知」区分に計上されている。`,
+            question: "当該IDをカタログへ追加するか、宣言側の区分ラベルを既存カタログIDへ修正できるか。",
+            assumption: "カタログ未登録のため CBC-04 の件数照合は実施していない（要確認）。",
+          })
+        );
+        continue;
+      }
+    }
+
     const actual = row?.caseCount ?? 0;
     if (actual === declared.declaredCount) continue;
     const subject = `${AXIS_LABEL[declared.axis]}:${declared.label}`;
@@ -1048,11 +1091,15 @@ export function analyzeCoverageBalance(
 
   const findings = assignFindingNumbers([
     ...findUnknownAxisDeclarations(testCases, testPerspectiveCatalog, testTechniqueCatalog),
-    ...checkDeclaredDistributions(input.declaredDistributions, {
-      perspective: perspectiveRows,
-      technique: techniqueRows,
-      "test-level": levelRows,
-    }),
+    ...checkDeclaredDistributions(
+      input.declaredDistributions,
+      {
+        perspective: perspectiveRows,
+        technique: techniqueRows,
+        "test-level": levelRows,
+      },
+      testCases
+    ),
     ...checkCaseIdGrounding(testCases, input.deliverables, {
       caseIdPatterns: input.caseIdPatterns,
     }),

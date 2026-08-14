@@ -4572,7 +4572,8 @@ export type CoverageBalanceCheckId =
   | "CBC-10"
   | "CBC-11"
   | "CBC-12"
-  | "CBC-13";
+  | "CBC-13"
+  | "CBC-14";
 
 export type CoverageBalanceSeverity = "high" | "medium" | "info";
 

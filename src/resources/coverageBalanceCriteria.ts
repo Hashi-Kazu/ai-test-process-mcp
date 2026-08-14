@@ -128,6 +128,15 @@ export const coverageBalanceCriteria: CoverageBalanceCriteria = {
       recommendedAction:
         "既知用語の表記へ統一するか、意図的に別概念として使っているのであれば差異を用語集で明示すること。",
     },
+    {
+      id: "CBC-14",
+      nameJa: "宣言分布区分のカタログ未登録（要確認）",
+      severity: "high",
+      definition:
+        "declaredDistributions が参照する区分ラベルが、観点カテゴリカタログ・技法カタログの既知IDにも「未指定」「未知」バケットにも一致しないが、当該ラベルをそのまま宣言したテストケースは実在する。カタログに区分が未登録なため実集計軸として解決できず、宣言件数と実集計の件数照合ができない。",
+      recommendedAction:
+        "当該IDをカタログ（testdesign://perspective/catalog または testdesign://technique/catalog）へ追加するか、宣言側の区分ラベルを既存カタログIDへ修正すること。カタログ登録が完了するまでは CBC-04 の件数照合を実施しないこと。",
+    },
   ],
   glossaryHeadingKeywords: ["用語", "略語", "定義", "用語集", "glossary"],
   commonTermStopWords: [
@@ -196,5 +205,6 @@ export const coverageBalanceCriteria: CoverageBalanceCriteria = {
     "deliverables 未投入時は CBC-05 / CBC-06 / CBC-09〜CBC-13 が「検査不能（要確認）」であり、合格ではない。",
     "declaredDistributions 未指定時は CBC-04 が「検査不能（要確認）」であり、合格ではない。",
     "0件区分（CBC-07）は不合格ではない。対象外であることが成果物に明記されていれば妥当な状態である。",
+    "CBC-14 はカタログ未登録の区分ラベルを宣言に使っている場合の指摘であり、CBC-04（件数不一致）とは独立に検出する。データ自体は実在するため検査不能ではなく要確認である。",
   ],
 };
