@@ -340,3 +340,41 @@ describe("候補番号の決定的採番", () => {
     expect(checkIds).toEqual(sortedCheckIds);
   });
 });
+
+describe("buildBasisLines / extractEntityOccurrencesWithQuality - idPatterns 伝播 (HSKZ-221)", () => {
+  it("表形式・行頭パイプ: idPatternsで数字のみのIDを行頭IDとして検出する", () => {
+    const idPatterns = ["(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])"];
+    const documents: TestBasisDocument[] = [
+      { name: "item-definition", content: "|  | 031 | 1 | 独自施策システム等ID |" },
+    ];
+    const lines = buildBasisLines(documents, { idPatterns });
+    expect(lines[0].currentId).toBe("031-1");
+  });
+
+  it("1グループパターン: '-undefined' を生成しない", () => {
+    const idPatterns = ["(?<=^\\|\\s{0,3})\\d{1,3}\\s*\\|(?:\\s*\\|)*\\s*(E\\d{4})(?![0-9A-Za-z])"];
+    const documents: TestBasisDocument[] = [{ name: "doc", content: "| 1 | E1234 |" }];
+    const lines = buildBasisLines(documents, { idPatterns });
+    expect(lines[0].currentId).toBe("E1234");
+    expect(lines[0].currentId).not.toContain("undefined");
+  });
+
+  it("extractEntityOccurrencesWithQualityにidPatternsを渡すとID出現数に反映される", () => {
+    const idPatterns = ["(?<![0-9A-Za-z])(\\d{3})\\s*\\|\\s*(\\d{1,3})(?![0-9A-Za-z])"];
+    const documents: TestBasisDocument[] = [
+      { name: "item-definition", content: "|  | 031 | 1 | 独自施策システム等ID |" },
+    ];
+    const lines = buildBasisLines(documents, { idPatterns });
+    const { occurrences } = extractEntityOccurrencesWithQuality(lines, { idPatterns });
+    expect(occurrences.some((o) => o.id === "031-1")).toBe(true);
+  });
+
+  it("optionsを渡さない既存呼び出しは既定パターンのみで動作する(挙動不変)", () => {
+    const documents: TestBasisDocument[] = [
+      { name: "doc", content: "W-008-04 予約詳細画面\n本文" },
+    ];
+    const lines = buildBasisLines(documents);
+    const occurrences = extractEntityOccurrences(lines);
+    expect(occurrences.some((o) => o.id === "W-008-04")).toBe(true);
+  });
+});

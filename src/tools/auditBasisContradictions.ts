@@ -98,7 +98,7 @@ export function renderBasisContradictionAudit(
   const options = { idPatterns, relativeTargetTerms };
 
   const lines = buildBasisLines(documents, options);
-  const { occurrences, excluded } = extractEntityOccurrencesWithQuality(lines);
+  const { occurrences, excluded } = extractEntityOccurrencesWithQuality(lines, options);
   const uiElements = extractUiElements(lines);
   const transitions = extractTransitions(lines, options);
   const parameters = extractParameterValues(documents, lines);
